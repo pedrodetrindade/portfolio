@@ -3,6 +3,13 @@
      continua legível caso este arquivo falhe ao carregar */
   document.documentElement.classList.add('js');
 
+  /* largura real da barra de rolagem: 100vw a inclui, então elementos que
+     sangram de ponta a ponta precisam descontá-la para não gerar overflow */
+  const setScrollbarWidth = () => document.documentElement.style
+    .setProperty('--sbw', (window.innerWidth - document.documentElement.clientWidth) + 'px');
+  setScrollbarWidth();
+  window.addEventListener('resize', setScrollbarWidth, { passive: true });
+
   const base = location.pathname.includes('/work/') ? '../' : '';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = window.matchMedia('(pointer: fine)').matches;
@@ -184,70 +191,99 @@
     window.addEventListener('pageshow', ev => { if (ev.persisted) veil.classList.remove('on'); });
   }
 
+  /* Entrada: dispara assim que o elemento encosta na viewport, escalonando
+     em 70ms. O teto de 6 passos evita que o último item de uma leva grande
+     fique meio segundo esperando. */
   const io = new IntersectionObserver(es => {
-    const shown = es.filter(e => e.isIntersecting);
-    shown.forEach((e, i) => {
-      e.target.style.setProperty('--d', (i * 90) + 'ms');
+    let i = 0;
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.style.setProperty('--d', Math.min(i++, 6) * 70 + 'ms');
       e.target.classList.add('in');
       io.unobserve(e.target);
     });
-  }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
+  }, { threshold: .15, rootMargin: '0px 0px -8% 0px' });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+  /* ================== UM ÚNICO LAÇO DE SCROLL ==================
+     Header, inversão sobre a faixa clara e scrub dividem o mesmo frame.
+     Listeners separados brigavam pelo mesmo tick e liam layout três vezes. */
+  const lightBand = document.querySelector('.about-break');
+  let scrubWords = [], wordTops = [], litCount = 0;
+  let lastY = window.scrollY, queued = false;
+
+  /* mede uma vez e guarda a posição absoluta: ler rect de 120 palavras por
+     frame era o caminho curto para perder quadros */
+  const measureWords = () => {
+    const sy = window.scrollY;
+    wordTops = scrubWords.map(w => w.getBoundingClientRect().top + sy);
+    litCount = 0;
+    scrubWords.forEach(w => w.classList.remove('lit'));
+  };
+
+  /* só as palavras que cruzaram a linha mudam de classe, não a lista toda */
+  const paintScrub = limit => {
+    let n = litCount;
+    while (n < scrubWords.length && wordTops[n] < limit) scrubWords[n++].classList.add('lit');
+    while (n > 0 && wordTops[n - 1] >= limit) scrubWords[--n].classList.remove('lit');
+    litCount = n;
+  };
+
+  const readScroll = () => {
+    queued = false;
+    const y = window.scrollY;
+
+    headEl.style.transform = (y > lastY && y > 200) ? 'translateY(-130%)' : 'translateY(0)';
+    lastY = y;
+
+    if (lightBand) {
+      const r = lightBand.getBoundingClientRect();
+      headEl.classList.toggle('on-light', r.top <= 58 && r.bottom >= 10);
+    }
+
+    if (scrubWords.length) paintScrub(y + window.innerHeight * .72);
+  };
+
+  const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(readScroll); } };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', () => { if (scrubWords.length) measureWords(); onScroll(); }, { passive: true });
+
   if (!reduced) {
-    let words = [];
-    let ticking = false;
-
-    const paint = () => {
-      ticking = false;
-      const line = window.innerHeight * .72;
-      words.forEach(w => w.classList.toggle('lit', w.getBoundingClientRect().top < line));
-    };
-
     buildScrub = () => {
       document.querySelectorAll('.about p, .case-section p').forEach(p => {
         p.classList.add('scrub');
         p.innerHTML = p.textContent.trim().split(/\s+/)
           .map(w => `<span class="w">${w}</span>`).join(' ');
       });
-      words = [...document.querySelectorAll('.scrub .w')];
-      paint();
+      scrubWords = [...document.querySelectorAll('.scrub .w')];
+      measureWords();
+      readScroll();
     };
-
-    window.addEventListener('scroll', () => {
-      if (!ticking) { ticking = true; requestAnimationFrame(paint); }
-    }, { passive: true });
-
     buildScrub();
-  }
-
-  let last = 0;
-  const lightBand = document.querySelector('.about-break');
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY;
-    headEl.style.transform = (y > last && y > 200) ? 'translateY(-130%)' : 'translateY(0)';
-    last = y;
-    /* o header é de vidro claro: sobre a faixa clara ele precisa inverter */
-    if (lightBand) {
-      const r = lightBand.getBoundingClientRect();
-      headEl.classList.toggle('on-light', r.top <= 58 && r.bottom >= 10);
+    /* a fonte chega depois do primeiro layout e desloca tudo */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => { if (scrubWords.length) { measureWords(); readScroll(); } });
     }
-  });
+  }
+  readScroll();
 
-  /* ---- scroll suave por inércia (mesmo lerp .1 do Lenis, sem dependência) ----
-     Só entra na roda do mouse. Toque e teclado seguem nativos, e o alvo
-     resincroniza sempre que a rolagem vem de outra origem. */
+  /* ---- scroll suave por inércia ----
+     Só a roda do mouse é interceptada. Toque, teclado, âncoras e barra de
+     rolagem seguem nativos, e o alvo resincroniza quando a rolagem vem de
+     outra origem. Decaimento por tempo, para não acelerar em telas de 120Hz. */
   if (!reduced && fine) {
-    let target = window.scrollY, curr = target, raf = null, driving = false;
+    const LERP = .135;   // resposta imediata, assenta sem arrastar
+    const WHEEL = .9;    // multiplicador da roda
+    let target = window.scrollY, curr = target, raf = 0, driving = false, prev = 0;
     const maxY = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 
-    const step = () => {
-      curr += (target - curr) * .1;
-      if (Math.abs(target - curr) < .5) {
-        curr = target; raf = null; driving = false;
-        window.scrollTo(0, curr);
-        return;
-      }
+    const release = () => { if (raf) cancelAnimationFrame(raf); raf = 0; driving = false; prev = 0; };
+
+    const step = now => {
+      const dt = prev ? Math.min(now - prev, 50) : 16.7;
+      prev = now;
+      curr += (target - curr) * (1 - Math.pow(1 - LERP, dt / 16.7));
+      if (Math.abs(target - curr) < .4) { curr = target; window.scrollTo(0, curr); release(); return; }
       window.scrollTo(0, curr);
       raf = requestAnimationFrame(step);
     };
@@ -257,15 +293,16 @@
       if (document.body.classList.contains('locked')) return;  // portal ou overlay aberto
       if (e.target.closest && e.target.closest('.overlay')) return;
       e.preventDefault();
-      if (!driving) { curr = window.scrollY; driving = true; }
-      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      if (!driving) { curr = target = window.scrollY; driving = true; prev = 0; }
+      const delta = (e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * WHEEL;
       target = Math.min(maxY(), Math.max(0, target + delta));
       if (!raf) raf = requestAnimationFrame(step);
     }, { passive: false });
 
-    window.addEventListener('scroll', () => {
-      if (!driving) { target = curr = window.scrollY; }
-    }, { passive: true });
+    window.addEventListener('scroll', () => { if (!driving) target = curr = window.scrollY; }, { passive: true });
+    /* âncoras e skip link rolam nativo: devolve o controle antes de brigarem */
+    document.addEventListener('click', e => { if (e.target.closest('a[href^="#"]')) release(); }, true);
+    window.addEventListener('pagehide', release);
   }
 
   const glow = document.querySelector('.cursor-glow');

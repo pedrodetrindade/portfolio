@@ -50,10 +50,10 @@ ink #0A0C11 · ink-2 #12151D · paper #E7E9F0 · cream #EAE1CC · accent #AEBAD0
 3. Capa: título centralizado, glow monocromático subindo do rodapé, barra com cargo,
    relógio ao vivo do Rio e "role para explorar", wordmark gigante em marca-d'água.
 4. Sobre: faixa full-bleed clara quebrando o fundo escuro. O título da seção fica
-   dentro da faixa, junto com o retrato à esquerda e a bio à direita. A faixa tem
-   orbes difusas, grain em multiply, vinheta e bordas em máscara que derretem no
-   escuro em vez de cortar seco. Dentro dela o texto inverte para tom escuro e o
-   header ganha a classe `on-light` para não sumir no fundo claro.
+   dentro da faixa, junto com o retrato à esquerda e a bio à direita. A borda
+   contra o escuro é limpa, sem névoa: a troca de seção se resolve por contraste
+   e ritmo vertical. Dentro da faixa o texto inverte para tom escuro e o header
+   ganha a classe `on-light` para não sumir no fundo claro.
 5. Trabalhos: 4 cards grandes com tags translúcidas no topo e título sobreposto na base.
 6. Ferramentas: grade de cards.
 7. Contato: título, CTA em pill, links de e-mail, LinkedIn e Behance. Footer.
@@ -69,21 +69,20 @@ Todo texto novo precisa dos dois atributos.
 - CTA "Contato" fica no topo, ao lado do menu, e abre o painel de contato.
 - Painel de contato: nome, e-mail e mensagem apenas. Sem campos de orçamento ou escopo.
 - Transições entre páginas: véu escurece, navega, a próxima entra em fade.
-- Entrada das seções: fade e subida suave em easing expo-out (1.15s), escalonadas em
-  90ms entre os elementos que aparecem juntos na tela.
-- Scroll por inércia na roda do mouse, com o mesmo lerp .1 que o midu.design usa via
-  Lenis, mas escrito à mão para não trazer dependência. Toque e teclado seguem
-  nativos, e o alvo resincroniza quando a rolagem vem de outra origem. Não age com
-  overlay aberto, para não brigar com o scroll interno do painel.
+- Entrada das seções: 24px e opacidade em 650ms, escalonadas em 70ms com teto de
+  seis passos, disparando assim que o elemento encosta na viewport.
+- Scroll por inércia na roda do mouse. O midu.design usa Lenis (lerp .1); aqui é
+  escrito à mão, com decaimento por tempo para não acelerar em telas de 120Hz.
+  Toque, teclado, âncoras e barra de rolagem seguem nativos, e o alvo resincroniza
+  quando a rolagem vem de outra origem. Não age com overlay aberto.
 - Scrub de leitura: nos parágrafos do Sobre e dos cases as palavras clareiam conforme
   cruzam 72% da altura da tela. O JS quebra o texto em spans e precisa reconstruí-los
   a cada troca de idioma, porque a tradução reescreve o `innerHTML`.
 - Glow suave seguindo o cursor pelo site.
 - Selo translúcido "ver caso" acompanhando o mouse sobre os cards de projeto.
 
-Sob `prefers-reduced-motion` o site tira deslocamento, parallax e scroll por inércia,
-mas mantém os fades de opacidade, que não causam desconforto vestibular. Efeitos que
-dependem de cursor são desligados em telas touch.
+Sob `prefers-reduced-motion` o conteúdo aparece imediatamente, sem deslocamento e sem
+scroll por inércia. Efeitos que dependem de cursor são desligados em telas touch.
 
 Atenção ao testar: navegadores headless, incluindo o painel de preview do Claude Code,
 reportam `prefers-reduced-motion: reduce` por padrão. No Windows, o mesmo acontece se

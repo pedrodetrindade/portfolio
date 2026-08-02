@@ -24,6 +24,29 @@ HTML. Para mudar o menu, edite o array `MENU` no topo do arquivo.
 **Caminhos relativos.** As páginas em `work/` usam `../` para css, js e voltar à
 home. O JS detecta a pasta com `location.pathname.includes('/work/')`.
 
+## Sistema de movimento
+
+Um easing e três durações em `:root`. Use os tokens, não invente valores:
+`--ease-out-smooth` (padrão), `--ease-out-expo`, `--dur-fast` 350ms,
+`--dur-default` 650ms, `--dur-slow` 900ms. Nada de `ease-in-out` genérico,
+nada linear, nada de `transition:all`, nada acima de 900ms em elemento comum.
+
+Entradas usam `.reveal`: 24px de deslocamento e opacidade, 650ms, escalonadas
+em 70ms com teto de 6 passos. Títulos sobem de 32px, rótulos de 14px, mídia de
+30px com escala .988. Sem blur em entrada.
+
+**Nenhum `filter:blur()` no site.** Gradiente radial já é suave por natureza e
+o blur só custava pintura. Se precisar de brilho, alargue os stops do gradiente.
+`backdrop-filter` continua permitido no vidro fosco da UI flutuante.
+
+**Um único listener de scroll**, passivo e com throttle por rAF, alimenta
+header, inversão sobre a faixa clara e scrub. Não adicione outro: some no
+laço existente em `js/main.js`.
+
+O scroll por inércia é próprio, sem biblioteca, com decaimento por tempo
+(lerp .135, roda a .9). Intercepta só a roda do mouse. Toque, teclado, âncoras
+e barra de rolagem seguem nativos.
+
 ## Direção visual
 
 Fundo carvão-azulado dessaturado, baixo contraste, elegante e maduro.
@@ -56,10 +79,17 @@ ainda não é o conteúdo real dos trabalhos.
 A seção de experiência foi removida de propósito: essa informação fica só no
 LinkedIn e no currículo. Redes sociais são apenas LinkedIn e Behance.
 
-**Sob `prefers-reduced-motion` só os fades sobrevivem: deslocamento e scroll por
-inércia são desligados.** Navegadores headless (inclusive o painel de preview)
-reportam isso por padrão, e no Windows também acontece com "Efeitos de animação"
-desligado. Antes de investigar o código, confirme a preferência.
+**Sob `prefers-reduced-motion` o conteúdo aparece imediatamente:** durações vão
+a 0.01ms, os `.reveal` são forçados a opacidade 1 e sem deslocamento, e o JS
+nem instala o scroll por inércia. Navegadores headless (inclusive o painel de
+preview) reportam essa preferência por padrão, e no Windows também acontece com
+"Efeitos de animação" desligado. Antes de investigar o código, confirme a
+preferência.
+
+**`100vw` inclui a barra de rolagem.** Elementos que sangram de ponta a ponta
+precisam de `calc(100vw - var(--sbw))`, com `--sbw` medido pelo JS. Ignorar isso
+gera overflow horizontal e deixa a faixa curta à direita. `html` e `body` usam
+`overflow-x:clip` como rede.
 
 **O CSS só esconde os `.reveal` se `<html>` tiver a classe `js`,** que o próprio
 `js/main.js` adiciona. Sem isso a página continua legível caso o JS falhe. Não
