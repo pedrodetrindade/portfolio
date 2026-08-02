@@ -115,14 +115,30 @@
   const gate = document.getElementById('gate');
   if (gate) {
     lockBackground(true);
-    const firstLangBtn = gate.querySelector('.langbtn');
-    if (firstLangBtn) firstLangBtn.focus();
+    /* foco no contêiner, não no primeiro botão: focar o botão de português
+       pintava nele o anel de :focus-visible e o fazia parecer selecionado */
+    gate.focus({ preventScroll: true });
+    requestAnimationFrame(() => gate.classList.add('in'));
+
+    let leaving = false;
     document.querySelectorAll('#gate .langbtn').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (leaving) return;                 // trava clique duplo
+        leaving = true;
         setLang(btn.dataset.lang);
-        gate.classList.add('hide');
-        document.body.classList.remove('locked');
-        lockBackground(false);
+        btn.classList.add('chosen');
+        gate.classList.add('leaving');
+
+        /* o portfólio já está montado atrás da intro, então a saída pode
+           sobrepor a entrada: nada de tela vazia entre os dois estados */
+        setTimeout(() => { gate.classList.add('hide'); }, 300);
+        setTimeout(() => {
+          document.body.classList.remove('locked');
+          lockBackground(false);
+          if (mainEl) mainEl.focus({ preventScroll: true });
+        }, 340);
+        /* tira as massas de luz do ar depois da transição */
+        setTimeout(() => { if (gate.parentNode) gate.remove(); }, 1100);
       });
     });
   } else {

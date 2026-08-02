@@ -98,3 +98,14 @@ esconda conteúdo em CSS sem essa proteção.
 **O header é de vidro claro e some sobre a faixa clara do Sobre.** O JS alterna a
 classe `on-light` no `header` durante a rolagem. Qualquer elemento novo no topo
 precisa de uma variante `header.on-light`.
+
+**Nunca dê `focus()` num dos botões de idioma ao carregar.** O foco vai no
+`#gate`, que tem `tabindex="-1"`. Focar o primeiro botão pintava nele o anel de
+`:focus-visible` e o fazia parecer pré-selecionado. Pela mesma razão, a regra
+global de `:focus-visible` não pode declarar `border-radius`: ela sobrescrevia o
+formato pílula dos botões e os deixava retangulares só no foco.
+
+**A intro sai em cascata e é removida do DOM.** `#gate.in` escalona a entrada,
+`#gate.leaving` escalona a saída na ordem inversa, e o `#gate` é removido depois
+de 1100ms para as massas de luz pararem de animar. Elementos novos na intro
+precisam da classe `.g-step` para entrar no escalonamento.

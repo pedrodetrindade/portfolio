@@ -44,7 +44,12 @@ Tokens principais (ver `:root` em css/style.css):
 ink #0A0C11 · ink-2 #12151D · paper #E7E9F0 · cream #EAE1CC · accent #AEBAD0 · muted #787E8D
 
 ## Estrutura atual
-1. Portal de idioma na entrada (PT/EN), a cada carregamento.
+1. Tela de entrada: funciona como intro do portfólio, não como etapa funcional.
+   Tag "portfolio", nome em escala de herói, orientação bilíngue e os dois botões
+   de idioma com bandeira em SVG circular. Fundo com três massas de luz em
+   gradiente radial derivando em loops longos e dessincronizados, mais grain.
+   Ao escolher o idioma a saída é escalonada na ordem inversa da entrada e
+   sobrepõe a revelação da home, que já está montada atrás.
 2. Topo: marca à esquerda, botão "Menu" centralizado, seletor PT/EN e CTA "Contato"
    à direita. A nav é uma grade de três colunas para o Menu ficar no centro exato.
 3. Capa: título centralizado, glow monocromático subindo do rodapé, barra com cargo,

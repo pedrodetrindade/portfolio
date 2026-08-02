@@ -31,18 +31,46 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=21">
+<link rel="stylesheet" href="css/style.css?v=23">
 </head>
 <body class="locked">
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
 
-<div id="gate">
+<div id="gate" tabindex="-1" role="dialog" aria-modal="true" aria-label="Pedro de Trindade · Portfolio">
+  <div class="gate-bg" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
   <div class="gate-inner">
-    <div class="gate-brand">Pedro de Trindade<span>.</span></div>
-    <p class="gate-sub">Escolha o idioma · Choose your language</p>
-    <div class="gate-opts">
-      <button class="langbtn" data-lang="pt">Português<small>PT-BR</small></button>
-      <button class="langbtn" data-lang="en">English<small>EN</small></button>
+    <span class="gate-tag g-step">Portfolio</span>
+    <div class="gate-name g-step">Pedro de Trindade<span>.</span></div>
+    <p class="gate-sub g-step">Escolha o idioma <i>·</i> Choose your language</p>
+    <div class="gate-opts g-step">
+
+      <button class="langbtn" data-lang="pt" lang="pt-BR" aria-label="Continuar em português">
+        <svg class="flag" viewBox="0 0 24 24" aria-hidden="true">
+          <clipPath id="fbr"><circle cx="12" cy="12" r="12"/></clipPath>
+          <g clip-path="url(#fbr)">
+            <rect width="24" height="24" fill="#009B3A"/>
+            <path d="M12 3.4 20.6 12 12 20.6 3.4 12Z" fill="#FEDF00"/>
+            <circle cx="12" cy="12" r="4.2" fill="#002776"/>
+            <path d="M8.1 10.8a4.2 4.2 0 0 1 7.7 1.5" stroke="#fff" stroke-width="1.1" fill="none"/>
+          </g>
+        </svg>
+        <span class="lb"><b>Português</b><small>PT-BR</small></span>
+      </button>
+
+      <button class="langbtn" data-lang="en" lang="en" aria-label="Continue in English">
+        <svg class="flag" viewBox="0 0 24 24" aria-hidden="true">
+          <clipPath id="fuk"><circle cx="12" cy="12" r="12"/></clipPath>
+          <g clip-path="url(#fuk)">
+            <rect width="24" height="24" fill="#012169"/>
+            <path d="M0 0 24 24M24 0 0 24" stroke="#fff" stroke-width="5"/>
+            <path d="M0 0 24 24M24 0 0 24" stroke="#C8102E" stroke-width="2.6"/>
+            <path d="M12 0V24M0 12H24" stroke="#fff" stroke-width="8"/>
+            <path d="M12 0V24M0 12H24" stroke="#C8102E" stroke-width="4.6"/>
+          </g>
+        </svg>
+        <span class="lb"><b>English</b><small>EN</small></span>
+      </button>
+
     </div>
   </div>
 </div>
@@ -218,6 +246,6 @@
 
 <div class="card-cue" aria-hidden="true"><span data-pt="ver caso" data-en="view case">ver caso</span></div>
 
-<script src="js/main.js?v=21"></script>
+<script src="js/main.js?v=23"></script>
 </body>
 </html>
