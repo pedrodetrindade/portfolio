@@ -90,6 +90,23 @@
 
   let buildScrub = null;
 
+  /* ---- botão de contato: quanto o ícone anda para chegar ao centro ----
+     Depende da largura do rótulo, que muda com o idioma. Precisa estar
+     declarado antes de setLang: nas páginas sem portal o setLang roda ainda
+     durante este IIFE, e uma const declarada abaixo estouraria na zona morta
+     temporal, matando todo o resto do script. */
+  function measureCta(){
+    const cta = document.querySelector('.nav-cta');
+    if (!cta) return;
+    const label = cta.querySelector('.nc-label');
+    if (!label || getComputedStyle(label).display === 'none') {
+      cta.style.setProperty('--nc-shift', '0px');
+      return;
+    }
+    const gap = parseFloat(getComputedStyle(cta).columnGap) || 0;
+    cta.style.setProperty('--nc-shift', ((label.offsetWidth + gap) / 2) + 'px');
+  }
+
   function setLang(lang){
     document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
     document.querySelectorAll('[data-pt]').forEach(el => {
@@ -103,6 +120,7 @@
     document.querySelectorAll('.lang-sw button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
     localStorage.setItem('lang', lang);
     if (buildScrub) buildScrub();
+    measureCta();
   }
 
   const headEl = document.querySelector('header');
@@ -127,18 +145,22 @@
         leaving = true;
         setLang(btn.dataset.lang);
         btn.classList.add('chosen');
-        gate.classList.add('leaving');
+        /* 300ms só para a confirmação do botão ser percebida antes da saída */
+        setTimeout(() => gate.classList.add('leaving'), 300);
 
-        /* o portfólio já está montado atrás da intro, então a saída pode
-           sobrepor a entrada: nada de tela vazia entre os dois estados */
-        setTimeout(() => { gate.classList.add('hide'); }, 300);
+        /* a home entra enquanto a intro ainda sai: ~350ms de sobreposição,
+           sem tela vazia e sem corte entre os dois estados */
         setTimeout(() => {
           document.body.classList.remove('locked');
           lockBackground(false);
+          document.body.classList.add('entering');
+        }, 640);
+        setTimeout(() => { gate.classList.add('hide'); }, 700);
+        setTimeout(() => {
           if (mainEl) mainEl.focus({ preventScroll: true });
-        }, 340);
-        /* tira as massas de luz do ar depois da transição */
-        setTimeout(() => { if (gate.parentNode) gate.remove(); }, 1100);
+          document.body.classList.remove('entering');
+          if (gate.parentNode) gate.remove();   // para as massas de luz
+        }, 1750);
       });
     });
   } else {
@@ -146,12 +168,16 @@
   }
   document.querySelectorAll('.lang-sw button').forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
 
-  /* ---- overlays ---- */
-  let lastFocused = null;
-  function openOverlay(el){
+  /* ---- overlays ----
+     modal=true  : painel de contato, trava fundo e move o foco
+     modal=false : menu em hover no desktop, não trava nada nem rouba foco */
+  let lastFocused = null, modalOpen = false;
+  function openOverlay(el, modal = true){
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
-    lastFocused = document.activeElement;
     el.classList.add('open');
+    modalOpen = modal;
+    if (!modal) return;
+    lastFocused = document.activeElement;
     document.body.classList.add('locked');
     lockBackground(true);
     const focusTarget = el.querySelector('.overlay-x');
@@ -162,7 +188,9 @@
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     if (!gate || gate.classList.contains('hide')) document.body.classList.remove('locked');
     lockBackground(false);
-    if (wasOpen && lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    /* devolver o foco só faz sentido se ele tiver sido movido na abertura */
+    if (wasOpen && modalOpen && lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    modalOpen = false;
   }
 
   const menu = document.getElementById('menu');
@@ -172,13 +200,52 @@
     const openMenu = e.target.closest('[data-menu]');
     const openContact = e.target.closest('[data-contact]');
     const close = e.target.closest('[data-close]');
-    if (openMenu) { e.preventDefault(); openOverlay(menu); return; }
+    if (openMenu) {
+      e.preventDefault();
+      /* clique alterna, para quem prefere clicar e para o teclado */
+      if (menu.classList.contains('open')) closeOverlays();
+      else openOverlay(menu, true);
+      return;
+    }
     if (openContact) { e.preventDefault(); openOverlay(contactPanel); return; }
     if (close) { e.preventDefault(); closeOverlays(); return; }
     if (e.target.classList.contains('overlay')) closeOverlays();
+    /* no modo dropdown o véu não cobre a página, então fechar ao clicar fora
+       precisa ser explícito */
+    if (menu.classList.contains('open') && menu.classList.contains('dropdown') &&
+        !e.target.closest('.overlay-sheet') && !e.target.closest('[data-menu]')) closeOverlays();
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlays(); });
   document.querySelectorAll('.menu-item').forEach(a => a.addEventListener('click', closeOverlays));
+
+  /* ---- menu por hover no desktop ----
+     Abre sem atraso, fecha com 170ms de carência. A região interativa cobre
+     o botão, o painel e a ponte invisível entre eles, então o cursor pode
+     atravessar o vão sem piscar. */
+  if (fine) {
+    menu.classList.add('dropdown');
+    const trigger = document.querySelector('[data-menu]');
+    const sheet = menu.querySelector('.overlay-sheet');
+    let closeTimer = null;
+    const hold = () => { clearTimeout(closeTimer); closeTimer = null; };
+    const openSoft = () => { hold(); if (!menu.classList.contains('open')) openOverlay(menu, false); };
+    const closeSoon = () => { hold(); closeTimer = setTimeout(closeOverlays, 170); };
+    [trigger, menu, sheet].forEach(el => {
+      if (!el) return;
+      el.addEventListener('mouseenter', openSoft);
+      el.addEventListener('mouseleave', closeSoon);
+    });
+    /* foco por teclado no botão também abre, sem mover o foco */
+    if (trigger) {
+      trigger.addEventListener('focus', openSoft);
+      menu.addEventListener('focusout', ev => {
+        if (!menu.contains(ev.relatedTarget) && ev.relatedTarget !== trigger) closeSoon();
+      });
+    }
+  }
+
+  measureCta();
+  window.addEventListener('resize', measureCta, { passive: true });
 
   document.getElementById('cform').addEventListener('submit', e => {
     e.preventDefault();
@@ -224,7 +291,6 @@
   /* ================== UM ÚNICO LAÇO DE SCROLL ==================
      Header, inversão sobre a faixa clara e scrub dividem o mesmo frame.
      Listeners separados brigavam pelo mesmo tick e liam layout três vezes. */
-  const lightBand = document.querySelector('.about-break');
   let scrubWords = [], wordTops = [], litCount = 0;
   let lastY = window.scrollY, queued = false;
 
@@ -251,11 +317,6 @@
 
     headEl.style.transform = (y > lastY && y > 200) ? 'translateY(-130%)' : 'translateY(0)';
     lastY = y;
-
-    if (lightBand) {
-      const r = lightBand.getBoundingClientRect();
-      headEl.classList.toggle('on-light', r.top <= 58 && r.bottom >= 10);
-    }
 
     if (scrubWords.length) paintScrub(y + window.innerHeight * .72);
   };
@@ -288,7 +349,7 @@
      rolagem seguem nativos, e o alvo resincroniza quando a rolagem vem de
      outra origem. Decaimento por tempo, para não acelerar em telas de 120Hz. */
   if (!reduced && fine) {
-    const LERP = .135;   // resposta imediata, assenta sem arrastar
+    const LERP = .115;   // um pouco mais macio, ainda sem atraso perceptível
     const WHEEL = .9;    // multiplicador da roda
     let target = window.scrollY, curr = target, raf = 0, driving = false, prev = 0;
     const maxY = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);

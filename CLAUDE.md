@@ -24,12 +24,36 @@ HTML. Para mudar o menu, edite o array `MENU` no topo do arquivo.
 **Caminhos relativos.** As páginas em `work/` usam `../` para css, js e voltar à
 home. O JS detecta a pasta com `location.pathname.includes('/work/')`.
 
+## Paleta
+
+Escura, monocromática e levemente quente, puxada para marrom. Tudo sai dos
+tokens em `:root`: `--ink` #0D0A0A (fundo), `--ink-2` #261B1D (superfícies),
+`--ink-3` #403638 (elevadas), `--paper` #F2EEEE (texto), `--muted` #B7ACAC
+(secundário), `--muted-2` #8A7E7E, `--accent` #A29595, `--cream` #C9BDBD.
+
+Para compor alpha use os triplets `--paper-rgb`, `--ink-rgb` e `--warm-rgb`
+dentro de `rgba()`. Não escreva valores literais de cor em componente.
+
+Nenhuma seção usa fundo claro. A separação vem de elevação mínima de tom,
+hairlines e ritmo vertical.
+
+## Tipografia
+
+Tracking baixo, natural e editorial. Teto de `.06em`, e só em rótulo curto.
+Corpo em `normal` ou `-.01em`, títulos entre `-.02em` e `-.05em`, rótulos
+pequenos entre 0 e `.04em`. Tracking alto é o que faz um layout parecer
+gerado por IA: não volte a subir esses valores.
+
 ## Sistema de movimento
 
-Um easing e três durações em `:root`. Use os tokens, não invente valores:
-`--ease-out-smooth` (padrão), `--ease-out-expo`, `--dur-fast` 350ms,
-`--dur-default` 650ms, `--dur-slow` 900ms. Nada de `ease-in-out` genérico,
-nada linear, nada de `transition:all`, nada acima de 900ms em elemento comum.
+Dois easings e cinco durações em `:root`. Use os tokens, não invente valores:
+`--ease-soft` (.16,1,.3,1), `--ease-smooth` (.22,1,.36,1), `--dur-micro` 350ms,
+`--dur-fast` 500ms, `--dur-default` 700ms, `--dur-slow` 950ms, `--dur-ambient`
+1400ms. `--ease-out-smooth` e `--ease-out-expo` continuam como aliases legados.
+Nada de `ease-in-out` genérico, nada linear, nada de `transition:all`, nada
+elástico e nada de bounce.
+
+**Hover é `--dur-micro`.** Subir isso deixa a interface com resposta atrasada.
 
 Entradas usam `.reveal`: 24px de deslocamento e opacidade, 650ms, escalonadas
 em 70ms com teto de 6 passos. Títulos sobem de 32px, rótulos de 14px, mídia de
@@ -104,6 +128,17 @@ precisa de uma variante `header.on-light`.
 `:focus-visible` e o fazia parecer pré-selecionado. Pela mesma razão, a regra
 global de `:focus-visible` não pode declarar `border-radius`: ela sobrescrevia o
 formato pílula dos botões e os deixava retangulares só no foco.
+
+**O menu é dropdown por hover onde existe cursor.** O JS adiciona `.dropdown`
+ao `#menu` quando `pointer:fine`, e nesse modo ele não trava a rolagem nem
+deixa o fundo inerte: é painel, não modal. A carência de 170ms e a ponte
+invisível `.overlay.dropdown::before` cobrem o vão entre botão e painel; sem
+elas o cursor sai da região interativa no meio do caminho e o menu pisca.
+
+**`setLang` roda durante o IIFE nas páginas sem portal.** Qualquer `const`
+declarada depois dele e usada dentro dele estoura na zona morta temporal e
+mata o resto do script, deixando todo `.reveal` invisível. Foi o que aconteceu
+com `measureCta`. Declare helpers usados por `setLang` acima dele.
 
 **A intro sai em cascata e é removida do DOM.** `#gate.in` escalona a entrada,
 `#gate.leaving` escalona a saída na ordem inversa, e o `#gate` é removido depois
