@@ -49,8 +49,11 @@ ink #0A0C11 · ink-2 #12151D · paper #E7E9F0 · cream #EAE1CC · accent #AEBAD0
    à direita. A nav é uma grade de três colunas para o Menu ficar no centro exato.
 3. Capa: título centralizado, glow monocromático subindo do rodapé, barra com cargo,
    relógio ao vivo do Rio e "role para explorar", wordmark gigante em marca-d'água.
-4. Sobre: faixa full-bleed em cinza claro quebrando o fundo escuro, com retrato à
-   esquerda e bio à direita. Dentro da faixa o texto inverte para tom escuro.
+4. Sobre: faixa full-bleed clara quebrando o fundo escuro. O título da seção fica
+   dentro da faixa, junto com o retrato à esquerda e a bio à direita. A faixa tem
+   orbes difusas, grain em multiply, vinheta e bordas em máscara que derretem no
+   escuro em vez de cortar seco. Dentro dela o texto inverte para tom escuro e o
+   header ganha a classe `on-light` para não sumir no fundo claro.
 5. Trabalhos: 4 cards grandes com tags translúcidas no topo e título sobreposto na base.
 6. Ferramentas: grade de cards.
 7. Contato: título, CTA em pill, links de e-mail, LinkedIn e Behance. Footer.
@@ -66,18 +69,26 @@ Todo texto novo precisa dos dois atributos.
 - CTA "Contato" fica no topo, ao lado do menu, e abre o painel de contato.
 - Painel de contato: nome, e-mail e mensagem apenas. Sem campos de orçamento ou escopo.
 - Transições entre páginas: véu escurece, navega, a próxima entra em fade.
-- Entrada das seções: fade e subida suave, escalonadas em 90ms entre os elementos que
-  aparecem juntos na tela.
+- Entrada das seções: fade e subida suave em easing expo-out (1.15s), escalonadas em
+  90ms entre os elementos que aparecem juntos na tela.
+- Scroll por inércia na roda do mouse, com o mesmo lerp .1 que o midu.design usa via
+  Lenis, mas escrito à mão para não trazer dependência. Toque e teclado seguem
+  nativos, e o alvo resincroniza quando a rolagem vem de outra origem. Não age com
+  overlay aberto, para não brigar com o scroll interno do painel.
 - Scrub de leitura: nos parágrafos do Sobre e dos cases as palavras clareiam conforme
   cruzam 72% da altura da tela. O JS quebra o texto em spans e precisa reconstruí-los
   a cada troca de idioma, porque a tradução reescreve o `innerHTML`.
 - Glow suave seguindo o cursor pelo site.
 - Selo translúcido "ver caso" acompanhando o mouse sobre os cards de projeto.
 
-Tudo respeita `prefers-reduced-motion` e é desativado em telas touch quando faz sentido.
+Sob `prefers-reduced-motion` o site tira deslocamento, parallax e scroll por inércia,
+mas mantém os fades de opacidade, que não causam desconforto vestibular. Efeitos que
+dependem de cursor são desligados em telas touch.
+
 Atenção ao testar: navegadores headless, incluindo o painel de preview do Claude Code,
-reportam `prefers-reduced-motion: reduce` por padrão, então as animações não aparecem
-ali. Para ver o movimento, abra o `index.html` no navegador normal.
+reportam `prefers-reduced-motion: reduce` por padrão. No Windows, o mesmo acontece se
+"Efeitos de animação" estiver desligado em Configurações > Acessibilidade > Efeitos
+visuais. Nesses casos só os fades aparecem, e é o comportamento esperado.
 
 ## Próximos passos
 1. Trocar as prévias placeholder por imagens reais dos projetos.

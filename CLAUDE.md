@@ -56,6 +56,15 @@ ainda não é o conteúdo real dos trabalhos.
 A seção de experiência foi removida de propósito: essa informação fica só no
 LinkedIn e no currículo. Redes sociais são apenas LinkedIn e Behance.
 
-**Animações não aparecem sob `prefers-reduced-motion`, e navegadores headless
-(inclusive o painel de preview) reportam isso por padrão.** Se o movimento parecer
-quebrado, teste no navegador normal antes de investigar o código.
+**Sob `prefers-reduced-motion` só os fades sobrevivem: deslocamento e scroll por
+inércia são desligados.** Navegadores headless (inclusive o painel de preview)
+reportam isso por padrão, e no Windows também acontece com "Efeitos de animação"
+desligado. Antes de investigar o código, confirme a preferência.
+
+**O CSS só esconde os `.reveal` se `<html>` tiver a classe `js`,** que o próprio
+`js/main.js` adiciona. Sem isso a página continua legível caso o JS falhe. Não
+esconda conteúdo em CSS sem essa proteção.
+
+**O header é de vidro claro e some sobre a faixa clara do Sobre.** O JS alterna a
+classe `on-light` no `header` durante a rolagem. Qualquer elemento novo no topo
+precisa de uma variante `header.on-light`.

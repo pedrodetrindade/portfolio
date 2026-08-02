@@ -70,6 +70,18 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;transition:transform .4s e
 .menu-btn i{width:9px;height:9px;flex:none;
   background-image:radial-gradient(circle,var(--muted) 1.4px,transparent 1.5px);
   background-size:4.5px 4.5px}
+/* header sobre a faixa clara do Sobre: inverte para manter legibilidade */
+.brand,.menu-btn,.menu-btn i,.lang-sw button,.nav-cta{
+  transition:color .45s ease,background .45s ease,border-color .45s ease,background-image .45s ease}
+header.on-light .brand{color:var(--ink)}
+header.on-light .brand span{color:#9A8A63}
+header.on-light .menu-btn{color:var(--ink);background:rgba(10,12,17,.06);border-color:rgba(10,12,17,.18)}
+header.on-light .menu-btn:hover{background:rgba(10,12,17,.12);border-color:rgba(10,12,17,.3)}
+header.on-light .menu-btn i{background-image:radial-gradient(circle,rgba(10,12,17,.5) 1.4px,transparent 1.5px)}
+header.on-light .lang-sw button{color:rgba(10,12,17,.4)}
+header.on-light .lang-sw button.on{color:var(--ink)}
+header.on-light .nav-cta{background:var(--ink);color:var(--paper)}
+
 .nav-cta{display:inline-flex;align-items:center;gap:.55em;cursor:pointer;font-family:var(--font);
   font-size:.88rem;font-weight:500;color:var(--ink);padding:.6rem 1.1rem;border-radius:100px;
   background:var(--paper);border:none;transition:transform .25s,opacity .25s}
@@ -150,14 +162,41 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .card-cue.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 @media(pointer:coarse){.card-cue{display:none}}
 
-.about-break{background:var(--paper);color:var(--ink);
+#about{padding-block:0}
+.about-break{color:var(--ink);overflow:hidden;isolation:isolate;
   width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;
-  padding:clamp(3rem,7vw,5rem) var(--gutter)}
-.about-grid{max-width:1280px;margin-inline:auto;display:grid;grid-template-columns:1fr;gap:2.4rem}
+  padding:clamp(6rem,10vw,8.5rem) var(--gutter);
+  background:
+    radial-gradient(54% 48% at 12% 2%,rgba(104,124,170,.42),transparent 60%),
+    radial-gradient(40% 36% at 91% 14%,rgba(198,178,132,.38),transparent 62%),
+    radial-gradient(64% 56% at 78% 106%,rgba(88,106,150,.40),transparent 64%),
+    radial-gradient(120% 90% at 50% 50%,transparent 52%,rgba(10,12,17,.10)),
+    linear-gradient(180deg,#EEF0F5,#DCE0EA);
+  /* as bordas derretem no fundo escuro em vez de cortar seco */
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 68px,#000 calc(100% - 68px),transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0,#000 68px,#000 calc(100% - 68px),transparent 100%)}
+/* grain: multiply porque soft-light some em fundo claro */
+.about-break::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:var(--grain-url);opacity:.16;mix-blend-mode:multiply}
+.break-orbs{position:absolute;inset:0;z-index:0;pointer-events:none}
+.break-orbs i{position:absolute;display:block;border-radius:50%;filter:blur(70px)}
+.break-orbs .o1{width:32vw;height:32vw;top:-8vw;left:3vw;
+  background:radial-gradient(circle,rgba(92,112,160,.50),transparent 66%)}
+.break-orbs .o2{width:25vw;height:25vw;bottom:-7vw;right:7vw;
+  background:radial-gradient(circle,rgba(196,172,118,.46),transparent 64%)}
+.break-orbs .o3{width:21vw;height:21vw;top:34%;left:54%;
+  background:radial-gradient(circle,rgba(70,88,132,.32),transparent 62%)}
+.about-inner{position:relative;z-index:1;max-width:1280px;margin-inline:auto}
+/* cabeçalho da seção sobre fundo claro */
+.about-break .sec-head{border-top-color:rgba(10,12,17,.16)}
+.about-break .sec-head h2{color:var(--ink)}
+.about-break .sec-head .count{color:rgba(10,12,17,.42)}
+.about-grid{display:grid;grid-template-columns:1fr;gap:2.4rem}
 @media(min-width:860px){.about-grid{grid-template-columns:.86fr 1.14fr;gap:3.4rem;align-items:start}}
 .portrait{position:relative;aspect-ratio:4/5;border-radius:22px;overflow:hidden;
   border:1px solid rgba(10,12,17,.14);display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 50% 38%,#1c212d,#0b0d13 78%)}
+  background:radial-gradient(circle at 50% 38%,#1c212d,#0b0d13 78%);
+  box-shadow:0 34px 70px rgba(10,12,17,.22)}
 .portrait::after{content:"";position:absolute;inset:0;background:var(--grain-url);opacity:.4;
   mix-blend-mode:soft-light;pointer-events:none}
 .portrait-img{position:relative;width:100%;height:100%;object-fit:cover}
@@ -193,10 +232,12 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 footer{border-top:1px solid var(--line);padding-block:2.5rem;font-family:var(--mono);font-size:.74rem;color:var(--muted-2);
   display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
 
-.reveal{opacity:0;transform:translateY(28px);
-  transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);
-  transition-delay:var(--d,0ms)}
-.reveal.in{opacity:1;transform:none}
+/* easing expo-out: sai rápido e assenta devagar, sensação "soft".
+   Só esconde se o JS estiver vivo para revelar de volta. */
+.js .reveal{opacity:0;transform:translateY(22px);
+  transition:opacity 1.15s cubic-bezier(.16,1,.3,1),transform 1.15s cubic-bezier(.16,1,.3,1);
+  transition-delay:var(--d,0ms);will-change:opacity,transform}
+.js .reveal.in{opacity:1;transform:none;will-change:auto}
 
 /* scrub: palavras clareiam conforme a leitura avança */
 .scrub{color:var(--muted-2)}
@@ -204,9 +245,14 @@ footer{border-top:1px solid var(--line);padding-block:2.5rem;font-family:var(--m
 .scrub .w.lit{color:var(--paper)}
 .about-break .scrub .w.lit{color:var(--ink)}
 
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}
-  .reveal{opacity:1;transform:none}
-  .scrub .w{color:inherit}
+/* Movimento reduzido: tira deslocamento, parallax e scroll suave,
+   mas mantém os fades de opacidade, que não causam desconforto vestibular. */
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;scroll-behavior:auto!important}
+  *{transition-property:opacity,color,background-color,border-color!important;
+    transition-duration:.5s!important}
+  .js .reveal{transform:none}
+  .cursor-glow,.card-cue{display:none}
   html{scroll-behavior:auto}}
 
 /* ===== ACCESSIBILITY: focus & skip link ===== */

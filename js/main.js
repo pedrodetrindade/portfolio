@@ -1,4 +1,8 @@
 (function(){
+  /* marca que o JS está vivo: sem isso o CSS não esconde nada, e a página
+     continua legível caso este arquivo falhe ao carregar */
+  document.documentElement.classList.add('js');
+
   const base = location.pathname.includes('/work/') ? '../' : '';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = window.matchMedia('(pointer: fine)').matches;
@@ -218,11 +222,51 @@
   }
 
   let last = 0;
+  const lightBand = document.querySelector('.about-break');
   window.addEventListener('scroll', () => {
     const y = window.scrollY;
     headEl.style.transform = (y > last && y > 200) ? 'translateY(-130%)' : 'translateY(0)';
     last = y;
+    /* o header é de vidro claro: sobre a faixa clara ele precisa inverter */
+    if (lightBand) {
+      const r = lightBand.getBoundingClientRect();
+      headEl.classList.toggle('on-light', r.top <= 58 && r.bottom >= 10);
+    }
   });
+
+  /* ---- scroll suave por inércia (mesmo lerp .1 do Lenis, sem dependência) ----
+     Só entra na roda do mouse. Toque e teclado seguem nativos, e o alvo
+     resincroniza sempre que a rolagem vem de outra origem. */
+  if (!reduced && fine) {
+    let target = window.scrollY, curr = target, raf = null, driving = false;
+    const maxY = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+    const step = () => {
+      curr += (target - curr) * .1;
+      if (Math.abs(target - curr) < .5) {
+        curr = target; raf = null; driving = false;
+        window.scrollTo(0, curr);
+        return;
+      }
+      window.scrollTo(0, curr);
+      raf = requestAnimationFrame(step);
+    };
+
+    window.addEventListener('wheel', e => {
+      if (e.ctrlKey) return;                                   // pinça de zoom
+      if (document.body.classList.contains('locked')) return;  // portal ou overlay aberto
+      if (e.target.closest && e.target.closest('.overlay')) return;
+      e.preventDefault();
+      if (!driving) { curr = window.scrollY; driving = true; }
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      target = Math.min(maxY(), Math.max(0, target + delta));
+      if (!raf) raf = requestAnimationFrame(step);
+    }, { passive: false });
+
+    window.addEventListener('scroll', () => {
+      if (!driving) { target = curr = window.scrollY; }
+    }, { passive: true });
+  }
 
   const glow = document.querySelector('.cursor-glow');
   if (glow && fine && !reduced) {
