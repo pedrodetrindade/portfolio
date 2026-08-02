@@ -25,7 +25,7 @@ index.html          home (capa, trabalhos, sobre, ferramentas, experiência, con
 css/style.css       todo o CSS do site
 js/main.js          todo o JS; injeta menu, painel de contato e transições em todas as páginas
 work/case-01..04    páginas de case, bilíngues, mesmo sistema visual
-assets/             imagens reais dos projetos (ainda vazio)
+assets/             favicon, ícone Apple e imagem Open Graph. Faltam as imagens dos projetos
 CNAME               pedrodetrindade.com
 ```
 
@@ -44,38 +44,58 @@ Tokens principais (ver `:root` em css/style.css):
 ink #0A0C11 · ink-2 #12151D · paper #E7E9F0 · cream #EAE1CC · accent #AEBAD0 · muted #787E8D
 
 ## Estrutura atual
-1. Portal de idioma na entrada (PT/EN), a cada carregamento; seletor PT/EN no topo.
-2. Capa: título centralizado, glow monocromático subindo do rodapé, barra com cargo,
+1. Portal de idioma na entrada (PT/EN), a cada carregamento.
+2. Topo: marca à esquerda, botão "Menu" centralizado, seletor PT/EN e CTA "Contato"
+   à direita. A nav é uma grade de três colunas para o Menu ficar no centro exato.
+3. Capa: título centralizado, glow monocromático subindo do rodapé, barra com cargo,
    relógio ao vivo do Rio e "role para explorar", wordmark gigante em marca-d'água.
-3. Trabalhos: 4 cards grandes com tags translúcidas no topo e título sobreposto na base.
-4. Sobre: bio real e destaques de trajetória.
-5. Ferramentas: grade de cards.
-6. Experiência: 7 posições em duas colunas (período/local à esquerda, cargo e descrição à direita).
-7. Contato + footer.
+4. Sobre: faixa full-bleed em cinza claro quebrando o fundo escuro, com retrato à
+   esquerda e bio à direita. Dentro da faixa o texto inverte para tom escuro.
+5. Trabalhos: 4 cards grandes com tags translúcidas no topo e título sobreposto na base.
+6. Ferramentas: grade de cards.
+7. Contato: título, CTA em pill, links de e-mail, LinkedIn e Behance. Footer.
+
+A seção de experiência foi removida do site. Essa informação vive apenas no LinkedIn
+e no currículo.
 
 Bilíngue via atributos `data-pt` / `data-en` em cada elemento traduzível.
-Todo texto novo precisa dos dois atributos, incluindo datas (Abr/Apr, Set/Sep, Ago/Aug).
+Todo texto novo precisa dos dois atributos.
 
 ## Interações
-- Menu overlay em vidro fosco com miniaturas, CTA e redes (botão "Menu" no topo).
+- Menu overlay em vidro fosco com miniaturas e redes (LinkedIn e Behance).
+- CTA "Contato" fica no topo, ao lado do menu, e abre o painel de contato.
 - Painel de contato: nome, e-mail e mensagem apenas. Sem campos de orçamento ou escopo.
 - Transições entre páginas: véu escurece, navega, a próxima entra em fade.
+- Entrada das seções: fade e subida suave, escalonadas em 90ms entre os elementos que
+  aparecem juntos na tela.
+- Scrub de leitura: nos parágrafos do Sobre e dos cases as palavras clareiam conforme
+  cruzam 72% da altura da tela. O JS quebra o texto em spans e precisa reconstruí-los
+  a cada troca de idioma, porque a tradução reescreve o `innerHTML`.
 - Glow suave seguindo o cursor pelo site.
 - Selo translúcido "ver caso" acompanhando o mouse sobre os cards de projeto.
+
 Tudo respeita `prefers-reduced-motion` e é desativado em telas touch quando faz sentido.
+Atenção ao testar: navegadores headless, incluindo o painel de preview do Claude Code,
+reportam `prefers-reduced-motion: reduce` por padrão, então as animações não aparecem
+ali. Para ver o movimento, abra o `index.html` no navegador normal.
 
 ## Próximos passos
 1. Trocar as prévias placeholder por imagens reais dos projetos.
    Cada prévia é uma `<div class="scene pX"></div>`.
    Substituir por: `<img src="assets/case-01.jpg" class="scene" alt="...">`
    (mesmo enquadramento, grain e hover continuam funcionando).
-2. Curadoria: escrever o conteúdo real de cada case (contexto, processo, resultado).
+2. Colocar o retrato real no Sobre. Hoje é um placeholder `.portrait` com um selo
+   escrito "foto". Substituir por:
+   `<img src="assets/pedro.jpg" class="portrait-img" alt="Pedro de Trindade">`
+3. Curadoria: escrever o conteúdo real de cada case (contexto, processo, resultado).
    Hoje é texto placeholder genérico. Elevar a nível de direção criativa sênior.
-3. Deploy: criar conta e repositório no GitHub, enviar os arquivos, apontar o DNS.
-4. Acabamento: favicon, meta tags Open Graph, performance, acessibilidade.
-5. Confirmar as URLs de LinkedIn, Behance e Instagram (hoje assumem /pedrodetrindade).
+4. Deploy: o repositório já existe em github.com/pedrodetrindade/portfolio.
+   Falta enviar os arquivos, ligar o Pages e apontar o DNS.
+5. Confirmar as URLs de LinkedIn e Behance (hoje assumem /pedrodetrindade).
 6. Decidir o envio do formulário: hoje abre o cliente de e-mail via `mailto:`.
    Para envio real sem sair do site, usar um serviço como Formspree (tem plano grátis).
+7. Acabamento restante: performance e revisão final de acessibilidade.
+   Favicon, Open Graph, foco visível, skip link e `aria-label` bilíngue já estão feitos.
 
 ## Deploy no GitHub Pages (resumo)
 - Criar conta no GitHub e um repositório público (ex.: `pedrodetrindade`).

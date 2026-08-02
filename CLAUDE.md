@@ -42,9 +42,20 @@ Registro premium, claro e estratégico. Evitar tom que soe gerado por IA.
 
 ## Estado atual
 
-Home e 4 páginas de case prontas e funcionando. O que ainda falta está listado em
-"Próximos passos" no brief: imagens reais dos projetos, conteúdo real dos cases,
-deploy e acabamento (favicon, Open Graph, acessibilidade).
+Home e 4 páginas de case prontas e funcionando. Favicon, Open Graph e a primeira
+camada de acessibilidade (skip link, foco visível, `aria-label` bilíngue, `inert`
+no fundo com overlay aberto) já estão no lugar.
 
-As prévias dos projetos são placeholders em gradiente (`<div class="scene pX">`) e
-o texto dos cases é genérico, ainda não é o conteúdo real dos trabalhos.
+O que ainda falta está listado em "Próximos passos" no brief: imagens reais dos
+projetos e do retrato, conteúdo real dos cases, deploy e performance.
+
+As prévias dos projetos são placeholders em gradiente (`<div class="scene pX">`),
+o retrato do Sobre é um placeholder `.portrait`, e o texto dos cases é genérico,
+ainda não é o conteúdo real dos trabalhos.
+
+A seção de experiência foi removida de propósito: essa informação fica só no
+LinkedIn e no currículo. Redes sociais são apenas LinkedIn e Behance.
+
+**Animações não aparecem sob `prefers-reduced-motion`, e navegadores headless
+(inclusive o painel de preview) reportam isso por padrão.** Se o movimento parecer
+quebrado, teste no navegador normal antes de investigar o código.

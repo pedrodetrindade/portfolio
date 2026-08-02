@@ -6,8 +6,7 @@
   const MENU = [
     { pt:'Início',      en:'Home',       href: base + 'index.html',           scene:'p2' },
     { pt:'Trabalhos',   en:'Work',       href: base + 'index.html#work',      scene:'p1' },
-    { pt:'Sobre',       en:'About',      href: base + 'index.html#about',     scene:'p3' },
-    { pt:'Experiência', en:'Experience', href: base + 'index.html#experience',scene:'p4' }
+    { pt:'Sobre',       en:'About',      href: base + 'index.html#about',     scene:'p3' }
   ];
 
   document.body.insertAdjacentHTML('beforeend', `
@@ -18,7 +17,7 @@
         <div class="overlay-top">
           <span class="brand">Pedro de Trindade<span>.</span></span>
           <span class="overlay-note" data-pt="aberto a novos projetos" data-en="open to new projects">aberto a novos projetos</span>
-          <button class="overlay-x" data-close aria-label="Fechar">✕</button>
+          <button class="overlay-x" data-close data-pt-label="Fechar" data-en-label="Close" aria-label="Fechar">✕</button>
         </div>
         <nav class="menu-list">
           ${MENU.map(i => `
@@ -27,23 +26,19 @@
               <span class="menu-thumb"><i class="scene ${i.scene}"></i></span>
             </a>`).join('')}
         </nav>
-        <button class="menu-cta" data-contact>
-          <span data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</span><i>→</i>
-        </button>
         <div class="overlay-foot">
           <div class="k" data-pt="redes" data-en="social">redes</div>
-          <a href="https://www.linkedin.com/in/pedrodetrindade" target="_blank" rel="noopener">LinkedIn</a>
-          <a href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener">Behance</a>
-          <a href="https://www.instagram.com/pedrodetrindade" target="_blank" rel="noopener">Instagram</a>
+          <a class="soc" href="https://www.linkedin.com/in/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>LinkedIn</a>
+          <a class="soc" href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="17" fill="currentColor">Bē</text></svg>Behance</a>
         </div>
       </div>
     </div>
 
-    <div class="overlay" id="contact-panel" role="dialog" aria-modal="true" aria-label="Contato">
+    <div class="overlay" id="contact-panel" role="dialog" aria-modal="true" data-pt-label="Contato" data-en-label="Contact" aria-label="Contato">
       <div class="overlay-sheet">
         <div class="overlay-top">
           <span class="brand">Pedro de Trindade<span>.</span></span>
-          <button class="overlay-x" data-close aria-label="Fechar">✕</button>
+          <button class="overlay-x" data-close data-pt-label="Fechar" data-en-label="Close" aria-label="Fechar">✕</button>
         </div>
         <div class="cform">
           <h2 data-pt="Vamos construir o futuro da sua marca." data-en="Let's build the future of your brand.">Vamos construir o futuro da sua marca.</h2>
@@ -82,23 +77,41 @@
     setInterval(tick, 30000);
   }
 
+  let buildScrub = null;
+
   function setLang(lang){
     document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
     document.querySelectorAll('[data-pt]').forEach(el => {
       const v = lang === 'pt' ? el.dataset.pt : el.dataset.en;
       if (v !== undefined) el.innerHTML = v;
     });
+    document.querySelectorAll('[data-pt-label]').forEach(el => {
+      const v = lang === 'pt' ? el.dataset.ptLabel : el.dataset.enLabel;
+      if (v !== undefined) el.setAttribute('aria-label', v);
+    });
     document.querySelectorAll('.lang-sw button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
     localStorage.setItem('lang', lang);
+    if (buildScrub) buildScrub();
+  }
+
+  const headEl = document.querySelector('header');
+  const mainEl = document.querySelector('main');
+  const footEl = document.querySelector('footer');
+  function lockBackground(state){
+    [headEl, mainEl, footEl].forEach(el => { if (el) el.inert = state; });
   }
 
   const gate = document.getElementById('gate');
   if (gate) {
+    lockBackground(true);
+    const firstLangBtn = gate.querySelector('.langbtn');
+    if (firstLangBtn) firstLangBtn.focus();
     document.querySelectorAll('#gate .langbtn').forEach(btn => {
       btn.addEventListener('click', () => {
         setLang(btn.dataset.lang);
         gate.classList.add('hide');
         document.body.classList.remove('locked');
+        lockBackground(false);
       });
     });
   } else {
@@ -107,14 +120,22 @@
   document.querySelectorAll('.lang-sw button').forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
 
   /* ---- overlays ---- */
+  let lastFocused = null;
   function openOverlay(el){
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+    lastFocused = document.activeElement;
     el.classList.add('open');
     document.body.classList.add('locked');
+    lockBackground(true);
+    const focusTarget = el.querySelector('.overlay-x');
+    if (focusTarget) focusTarget.focus();
   }
   function closeOverlays(){
+    const wasOpen = document.querySelector('.overlay.open');
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     if (!gate || gate.classList.contains('hide')) document.body.classList.remove('locked');
+    lockBackground(false);
+    if (wasOpen && lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
   }
 
   const menu = document.getElementById('menu');
@@ -160,15 +181,46 @@
   }
 
   const io = new IntersectionObserver(es => {
-    es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, { threshold: .12 });
+    const shown = es.filter(e => e.isIntersecting);
+    shown.forEach((e, i) => {
+      e.target.style.setProperty('--d', (i * 90) + 'ms');
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    });
+  }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+  if (!reduced) {
+    let words = [];
+    let ticking = false;
+
+    const paint = () => {
+      ticking = false;
+      const line = window.innerHeight * .72;
+      words.forEach(w => w.classList.toggle('lit', w.getBoundingClientRect().top < line));
+    };
+
+    buildScrub = () => {
+      document.querySelectorAll('.about p, .case-section p').forEach(p => {
+        p.classList.add('scrub');
+        p.innerHTML = p.textContent.trim().split(/\s+/)
+          .map(w => `<span class="w">${w}</span>`).join(' ');
+      });
+      words = [...document.querySelectorAll('.scrub .w')];
+      paint();
+    };
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(paint); }
+    }, { passive: true });
+
+    buildScrub();
+  }
+
   let last = 0;
-  const head = document.querySelector('header');
   window.addEventListener('scroll', () => {
     const y = window.scrollY;
-    head.style.transform = (y > last && y > 200) ? 'translateY(-130%)' : 'translateY(0)';
+    headEl.style.transform = (y > last && y > 200) ? 'translateY(-130%)' : 'translateY(0)';
     last = y;
   });
 
