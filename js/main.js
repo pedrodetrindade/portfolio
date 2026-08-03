@@ -144,7 +144,32 @@
     cta.style.setProperty('--nc-shift', ((label.offsetWidth + gap) / 2) + 'px');
   }
 
-  function setLang(lang){
+  /* ---- idioma inicial ----
+     Sem geolocalização por IP: exigiria uma chamada de rede a cada visita,
+     com latência bem na intro, dependência externa e limite de requisições.
+     Dois sinais nativos resolvem melhor e de graça:
+       1. navegador em português -> pt (diz o idioma que a pessoa quer ler,
+          o que é mais preciso que o país onde ela está)
+       2. fuso horário do Brasil -> pt (pega quem usa o sistema em inglês)
+     Qualquer outro caso cai em inglês. */
+  const TZ_BR = /^America\/(Sao_Paulo|Bahia|Fortaleza|Recife|Belem|Manaus|Cuiaba|Campo_Grande|Porto_Velho|Boa_Vista|Rio_Branco|Maceio|Araguaina|Santarem|Eirunepe)$/;
+  function detectLang(){
+    /* escolha explícita do usuário manda em tudo */
+    const saved = localStorage.getItem('lang');
+    if (saved === 'pt' || saved === 'en') return saved;
+
+    const langs = navigator.languages && navigator.languages.length
+      ? navigator.languages : [navigator.language || ''];
+    if (langs.some(l => /^pt\b|^pt-/i.test(l))) return 'pt';
+
+    let tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    if (TZ_BR.test(tz)) return 'pt';
+
+    return 'en';
+  }
+
+  function setLang(lang, explicit){
     document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
     document.querySelectorAll('[data-pt]').forEach(el => {
       const v = lang === 'pt' ? el.dataset.pt : el.dataset.en;
@@ -161,7 +186,10 @@
     if (codeBox) codeBox.textContent = lang === 'pt' ? 'PT' : 'EN';
     document.querySelectorAll('.lp-menu [data-lang]').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.lang === lang)));
-    localStorage.setItem('lang', lang);
+    /* só grava quando a pessoa escolhe. Se gravasse a detecção automática,
+       ela viraria uma escolha permanente e o site pararia de acompanhar
+       quem trocar o idioma do navegador ou abrir de outro país. */
+    if (explicit) localStorage.setItem('lang', lang);
     if (buildScrub) buildScrub();
     measureCta();
     paintStamp();          // o formato de data muda com o idioma
@@ -174,7 +202,7 @@
     [headEl, mainEl, footEl].forEach(el => { if (el) el.inert = state; });
   }
 
-  setLang(localStorage.getItem("lang") || "pt");
+  setLang(detectLang());
 
   /* ================== INTRO ==================
      Não há dois nomes. O véu cobre a página, o próprio .hero-name sobe acima
@@ -216,7 +244,7 @@
       setOpen(!langPick.classList.contains('open'));
     });
     opts.forEach(o => o.addEventListener('click', () => {
-      setLang(o.dataset.lang);      // não recarrega, não move o scroll
+      setLang(o.dataset.lang, true);   // explícito: grava e passa a mandar
       setOpen(false);
       toggle.focus();
     }));

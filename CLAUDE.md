@@ -138,6 +138,11 @@ viewport e a continuidade com a intro quebra.
 `.caps-grid li` e `.mask-reveal`. Sem isso, se o JS falhar, o conteúdo some ou a
 intro cobre o site para sempre.
 
+**O idioma inicial é detectado, não fixo.** `detectLang()` olha
+`navigator.languages` e, como segundo sinal, o fuso horário brasileiro. Escolha
+explícita no seletor manda em tudo e é a única coisa gravada em `localStorage`:
+gravar a detecção automática a congelaria como preferência permanente.
+
 **Números só com dado verificável.** Nada de estimativa: o que estiver pendente
 fica comentado no HTML, não publicado.
 
