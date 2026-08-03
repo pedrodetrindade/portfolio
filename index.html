@@ -10,7 +10,7 @@
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<meta name="theme-color" content="#0A0C11">
+<meta name="theme-color" content="#0D0A0A">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pedro de Trindade">
@@ -30,52 +30,19 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=26">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=28">
 </head>
-<body class="locked">
+<body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
 
-<div id="gate" tabindex="-1" role="dialog" aria-modal="true" aria-label="Pedro de Trindade · Portfolio">
-  <div class="gate-bg" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
-  <div class="gate-inner">
-    <span class="gate-tag g-step">Portfolio</span>
-    <div class="gate-name g-step">Pedro de Trindade<span>.</span></div>
-    <p class="gate-sub g-step">Escolha o idioma <i>·</i> Choose your language</p>
-    <div class="gate-opts g-step">
-
-      <button class="langbtn" data-lang="pt" lang="pt-BR" aria-label="Continuar em português">
-        <svg class="flag" viewBox="0 0 24 24" aria-hidden="true">
-          <clipPath id="fbr"><circle cx="12" cy="12" r="12"/></clipPath>
-          <g clip-path="url(#fbr)">
-            <rect width="24" height="24" fill="#009B3A"/>
-            <path d="M12 3.4 20.6 12 12 20.6 3.4 12Z" fill="#FEDF00"/>
-            <circle cx="12" cy="12" r="4.2" fill="#002776"/>
-            <path d="M8.1 10.8a4.2 4.2 0 0 1 7.7 1.5" stroke="#fff" stroke-width="1.1" fill="none"/>
-          </g>
-        </svg>
-        <span class="lb"><b>Português</b><small>PT-BR</small></span>
-      </button>
-
-      <button class="langbtn" data-lang="en" lang="en" aria-label="Continue in English">
-        <svg class="flag" viewBox="0 0 24 24" aria-hidden="true">
-          <clipPath id="fuk"><circle cx="12" cy="12" r="12"/></clipPath>
-          <g clip-path="url(#fuk)">
-            <rect width="24" height="24" fill="#012169"/>
-            <path d="M0 0 24 24M24 0 0 24" stroke="#fff" stroke-width="5"/>
-            <path d="M0 0 24 24M24 0 0 24" stroke="#C8102E" stroke-width="2.6"/>
-            <path d="M12 0V24M0 12H24" stroke="#fff" stroke-width="8"/>
-            <path d="M12 0V24M0 12H24" stroke="#C8102E" stroke-width="4.6"/>
-          </g>
-        </svg>
-        <span class="lb"><b>English</b><small>EN</small></span>
-      </button>
-
-    </div>
-  </div>
+<!-- Assinatura de entrada: só o nome, uma vez por sessão. O JS remove a
+     camada depois da transição e não a repete na mesma sessão. -->
+<div id="intro" aria-hidden="true">
+  <div class="intro-mask"><span class="intro-name">Pedro de Trindade<i>.</i></span></div>
 </div>
 
-<div class="glow" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+<div class="glow" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div></div>
 <div class="cursor-glow" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 
@@ -94,44 +61,26 @@
 </header>
 
 <main class="wrap" id="top" tabindex="-1">
+
+  <!-- ===== HERO: o nome é o assunto. Sem frase de impacto. ===== -->
   <section class="hero">
-    <div class="hero-bloom" aria-hidden="true"></div>
+    <span class="hero-tag h-step" data-pt="diretor de arte &amp; designer sênior" data-en="art director &amp; senior designer">diretor de arte &amp; designer sênior</span>
 
-    <h1 class="hero-title reveal" data-pt="Marca não é enfeite. É a prova visível de que a empresa <em>sabe o que faz.</em>" data-en="A brand isn't decoration. It's visible proof the company <em>knows what it's doing.</em>">Marca não é enfeite. É a prova visível de que a empresa <em>sabe o que faz.</em></h1>
+    <h1 class="hero-name">
+      <span class="hn-mask h-step"><span class="hn-line">Pedro de</span></span>
+      <span class="hn-mask h-step"><span class="hn-line">Trindade<i>.</i></span></span>
+    </h1>
 
-    <div class="hero-bar reveal">
-      <span data-pt="diretor de arte &amp; designer sênior" data-en="art director &amp; senior designer">diretor de arte &amp; designer sênior</span>
-      <span class="hero-clock"><b id="clock">--:--</b> Rio de Janeiro, BR</span>
-      <a class="hero-scroll" href="#work" data-pt="role para explorar ↓" data-en="scroll to explore ↓">role para explorar ↓</a>
-    </div>
-
-    <div class="hero-wordmark" aria-hidden="true">Pedro de Trindade</div>
-  </section>
-
-  <section id="about">
-    <div class="about-break">
-      <div class="about-inner">
-        <div class="sec-head reveal">
-          <h2 data-pt="Sobre" data-en="About">Sobre</h2>
-          <span class="count" data-pt="perfil" data-en="profile">perfil</span>
-        </div>
-        <div class="about-grid">
-          <div class="about-photo reveal">
-            <div class="portrait">
-              <!-- Substituir por: <img src="assets/pedro.jpg" class="portrait-img" alt="Pedro de Trindade"> -->
-              <span class="portrait-hint" data-pt="foto" data-en="photo">foto</span>
-            </div>
-          </div>
-        <div class="about reveal">
-          <p data-pt="Designer com experiência em direção criativa e de arte, atuando há seis anos em design, branding e estratégia de marketing desde 2020, na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio." data-en="A designer working in creative and art direction, with six years across design, branding and marketing strategy since 2020, building brands, campaigns and communication ecosystems that connect creative vision, positioning and business objectives.">Designer com experiência em direção criativa e de arte, atuando há seis anos em design, branding e estratégia de marketing desde 2020, na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio.</p>
-          <p data-pt="Ao longo da trajetória, desenvolvi soluções visuais e estratégicas para marcas que buscavam fortalecer presença, gerar valor e ampliar relevância em seus mercados, em contextos B2B e B2C: criação e evolução de marcas, campanhas, apresentações estratégicas, lançamentos de produtos e rebrandings." data-en="Throughout this trajectory, I've developed visual and strategic solutions for brands looking to strengthen their presence, generate value and expand relevance in their markets, across B2B and B2C: brand creation and evolution, campaigns, strategic presentations, product launches and rebrands.">Ao longo da trajetória, desenvolvi soluções visuais e estratégicas para marcas que buscavam fortalecer presença, gerar valor e ampliar relevância em seus mercados, em contextos B2B e B2C: criação e evolução de marcas, campanhas, apresentações estratégicas, lançamentos de produtos e rebrandings.</p>
-          <p data-pt="Também estive envolvido em projetos de fintechs e ativos digitais, incorporando inteligência artificial ao fluxo criativo para ganhar eficiência e escala, além de experiência direta com criativos para tráfego pago, validando hipóteses e otimizando peças com base em resultado." data-en="I've also worked on fintech and digital asset projects, bringing AI into the creative workflow to gain efficiency and scale, alongside direct experience with paid media creative, testing and optimizing assets based on performance.">Também estive envolvido em projetos de fintechs e ativos digitais, incorporando inteligência artificial ao fluxo criativo para ganhar eficiência e escala, além de experiência direta com criativos para tráfego pago, validando hipóteses e otimizando peças com base em resultado.</p>
-        </div>
-        </div>
-      </div>
+    <div class="hero-foot">
+      <span class="hero-when h-step">
+        <b data-pt="Brasil" data-en="Brazil">Brasil</b>
+        <span id="stamp">&nbsp;</span>
+      </span>
+      <a class="hero-scroll h-step" href="#work" data-pt="role para explorar ↓" data-en="scroll to explore ↓">role para explorar ↓</a>
     </div>
   </section>
 
+  <!-- ===== PROJETOS ===== -->
   <section id="work">
     <div class="sec-head reveal">
       <h2 data-pt="Trabalhos selecionados" data-en="Selected work">Trabalhos selecionados</h2>
@@ -144,7 +93,6 @@
         <div class="card-tags">
           <span data-pt="branding" data-en="branding">branding</span>
           <span data-pt="design system" data-en="design system">design system</span>
-          <span data-pt="governança" data-en="governance">governança</span>
         </div>
         <div class="card-foot">
           <div>
@@ -159,7 +107,6 @@
         <div class="scene p2"></div>
         <div class="card-tags">
           <span data-pt="direção de arte" data-en="art direction">direção de arte</span>
-          <span data-pt="identidade" data-en="identity">identidade</span>
           <span data-pt="campanha" data-en="campaign">campanha</span>
         </div>
         <div class="card-foot">
@@ -175,7 +122,6 @@
         <div class="scene p3"></div>
         <div class="card-tags">
           <span data-pt="direção criativa" data-en="creative direction">direção criativa</span>
-          <span data-pt="apresentações" data-en="presentations">apresentações</span>
           <span data-pt="storytelling" data-en="storytelling">storytelling</span>
         </div>
         <div class="card-foot">
@@ -191,7 +137,6 @@
         <div class="scene p4"></div>
         <div class="card-tags">
           <span data-pt="identidade" data-en="identity">identidade</span>
-          <span data-pt="design" data-en="design">design</span>
           <span data-pt="sistema visual" data-en="visual system">sistema visual</span>
         </div>
         <div class="card-foot">
@@ -206,35 +151,134 @@
     </div>
   </section>
 
-  <section id="tools">
-    <div class="sec-head reveal">
-      <h2 data-pt="Ferramentas" data-en="Tools">Ferramentas</h2>
-      <span class="count" data-pt="stack" data-en="stack">stack</span>
-    </div>
-    <div class="tools-grid">
-      <div class="tool-card reveal"><div class="l" data-pt="Direção &amp; identidade" data-en="Direction &amp; identity">Direção &amp; identidade</div><div class="v">Ai · Ps · Id</div></div>
-      <div class="tool-card reveal"><div class="l" data-pt="Interface &amp; sistema" data-en="Interface &amp; system">Interface &amp; sistema</div><div class="v">Figma</div></div>
-      <div class="tool-card reveal"><div class="l" data-pt="Movimento &amp; vídeo" data-en="Motion &amp; video">Movimento &amp; vídeo</div><div class="v">Ae · Pr · DaVinci</div></div>
-      <div class="tool-card reveal"><div class="l" data-pt="3D" data-en="3D">3D</div><div class="v">Blender</div></div>
-      <div class="tool-card reveal"><div class="l" data-pt="IA generativa" data-en="Generative AI">IA generativa</div><div class="v">Claude · Firefly · Midjourney</div></div>
-      <div class="tool-card reveal"><div class="l" data-pt="Growth &amp; gestão" data-en="Growth &amp; management">Growth &amp; gestão</div><div class="v" data-pt="Meta Ads · Google Ads · Notion" data-en="Meta Ads · Google Ads · Notion">Meta Ads · Google Ads · Notion</div></div>
+  <!-- ===== SOBRE: retrato à esquerda, texto e capacidades à direita ===== -->
+  <section id="about">
+    <div class="about-break">
+      <div class="about-inner">
+        <div class="about-grid">
+
+          <figure class="about-photo">
+            <div class="portrait mask-reveal">
+              <!-- Trocar por: <img src="assets/pedro.jpg" class="portrait-img" width="900" height="1125" alt="Pedro de Trindade"> -->
+              <span class="portrait-hint" data-pt="foto" data-en="photo">foto</span>
+            </div>
+          </figure>
+
+          <div class="about-copy">
+            <h2 class="about-head" data-pt="Marca não é enfeite. É a prova visível de que a empresa sabe o que faz." data-en="A brand isn't decoration. It's visible proof the company knows what it's doing.">Marca não é enfeite. É a prova visível de que a empresa sabe o que faz.</h2>
+
+            <p class="about-lead reveal" data-pt="Designer com experiência em direção criativa e de arte, atuando há seis anos em design, branding e estratégia de marketing desde 2020, na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio." data-en="A designer working in creative and art direction, with six years across design, branding and marketing strategy since 2020, building brands, campaigns and communication ecosystems that connect creative vision, positioning and business objectives.">Designer com experiência em direção criativa e de arte, atuando há seis anos em design, branding e estratégia de marketing desde 2020, na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio.</p>
+
+            <div class="caps">
+              <span class="caps-k reveal" data-pt="Capacidades" data-en="Capabilities">Capacidades</span>
+              <ul class="caps-grid">
+                <li data-pt="Direção de arte" data-en="Art direction">Direção de arte</li>
+                <li data-pt="Identidade visual" data-en="Visual identity">Identidade visual</li>
+                <li data-pt="Direção criativa" data-en="Creative direction">Direção criativa</li>
+                <li data-pt="Naming e posicionamento" data-en="Naming and positioning">Naming e posicionamento</li>
+                <li data-pt="Campanhas e key visuals" data-en="Campaigns and key visuals">Campanhas e key visuals</li>
+                <li data-pt="Apresentações estratégicas" data-en="Strategic presentations">Apresentações estratégicas</li>
+                <li data-pt="Motion e audiovisual" data-en="Motion and audiovisual">Motion e audiovisual</li>
+                <li data-pt="IA no fluxo criativo" data-en="AI in the creative workflow">IA no fluxo criativo</li>
+              </ul>
+            </div>
+
+            <button class="ghost-cta reveal" data-contact data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</button>
+          </div>
+
+        </div>
+      </div>
     </div>
   </section>
 
-  <section id="contact" class="contact">
-    <div class="sec-head reveal">
-      <h2 data-pt="Contato" data-en="Contact">Contato</h2>
-      <span class="count" data-pt="vamos conversar" data-en="let's talk">vamos conversar</span>
+  <!-- ===== COMO EU CONSIGO TE AJUDAR ===== -->
+  <section id="help">
+    <h2 class="help-title reveal" data-pt="Como eu consigo te ajudar" data-en="How I can help you">Como eu consigo te ajudar</h2>
+    <div class="help-grid">
+
+      <div class="help-item">
+        <span class="hi-num">01</span>
+        <span class="hi-line" aria-hidden="true"></span>
+        <h3 data-pt="Direção de arte" data-en="Art direction">Direção de arte</h3>
+        <p data-pt="Conduzo a linguagem visual da marca em todos os pontos onde ela aparece: key visuals, redes, peças institucionais e materiais impressos." data-en="I lead a brand's visual language everywhere it shows up: key visuals, social, institutional pieces and print.">Conduzo a linguagem visual da marca em todos os pontos onde ela aparece: key visuals, redes, peças institucionais e materiais impressos.</p>
+      </div>
+
+      <div class="help-item">
+        <span class="hi-num">02</span>
+        <span class="hi-line" aria-hidden="true"></span>
+        <h3 data-pt="Marca e identidade" data-en="Brand and identity">Marca e identidade</h3>
+        <p data-pt="Crio e reposiciono marcas desde a concepção, envolvendo naming, estratégia de posicionamento, identidade visual e as diretrizes que mantêm tudo consistente." data-en="I create and reposition brands from the ground up: naming, positioning strategy, visual identity and the guidelines that keep it all consistent.">Crio e reposiciono marcas desde a concepção, envolvendo naming, estratégia de posicionamento, identidade visual e as diretrizes que mantêm tudo consistente.</p>
+      </div>
+
+      <div class="help-item">
+        <span class="hi-num">03</span>
+        <span class="hi-line" aria-hidden="true"></span>
+        <h3 data-pt="Campanhas e digital" data-en="Campaigns and digital">Campanhas e digital</h3>
+        <p data-pt="Campanhas, apresentações estratégicas, web e audiovisual, com criativos testados em tráfego pago e fluxos de IA para ganhar escala sem perder a marca de vista." data-en="Campaigns, strategic decks, web and audiovisual, with creative tested in paid media and AI workflows for scale without losing sight of the brand.">Campanhas, apresentações estratégicas, web e audiovisual, com criativos testados em tráfego pago e fluxos de IA para ganhar escala sem perder a marca de vista.</p>
+      </div>
+
     </div>
-    <h2 class="big reveal" data-pt="Um projeto em mente? Escreve pra mim." data-en="Got a project in mind? Write to me.">Um projeto em mente? Escreve pra mim.</h2>
-    <button class="cta-pill reveal" data-contact>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.7" y="5" width="18.6" height="14" rx="3.2"/><path d="M3.5 7.7l7.1 5a2.4 2.4 0 0 0 2.8 0l7.1-5"/></svg>
-      <span data-pt="Entrar em contato" data-en="Get in touch">Entrar em contato</span>
-    </button>
+  </section>
+
+  <!-- ===== NÚMEROS =====
+       Só dados verificáveis no próprio conteúdo do site. Para acrescentar,
+       copie um bloco .stat: data-count é o alvo do count-up.
+       PENDENTES de confirmação, deixados de fora de propósito para não
+       publicar número inventado: marcas atendidas, lançamentos, mercados. -->
+  <section id="numbers">
+    <div class="num-head">
+      <span class="eyebrow reveal" data-pt="trajetória" data-en="trajectory">trajetória</span>
+      <h2 class="reveal" data-pt="O que sustenta o trabalho" data-en="What the work is built on">O que sustenta o trabalho</h2>
+    </div>
+    <div class="stats">
+
+      <div class="stat">
+        <div class="stat-v"><span data-count="6" data-pad="2">06</span></div>
+        <span class="stat-line" aria-hidden="true"></span>
+        <h3 data-pt="Anos de prática" data-en="Years of practice">Anos de prática</h3>
+        <p data-pt="Em design, branding e estratégia de marketing, desde 2020." data-en="Across design, branding and marketing strategy, since 2020.">Em design, branding e estratégia de marketing, desde 2020.</p>
+      </div>
+
+      <div class="stat">
+        <div class="stat-v"><span data-count="4" data-pad="2">04</span></div>
+        <span class="stat-line" aria-hidden="true"></span>
+        <h3 data-pt="Casos selecionados" data-en="Selected cases">Casos selecionados</h3>
+        <p data-pt="O recorte que representa a prática hoje, reunido neste portfólio." data-en="The cut that represents the practice today, gathered in this portfolio.">O recorte que representa a prática hoje, reunido neste portfólio.</p>
+      </div>
+
+      <div class="stat">
+        <div class="stat-v"><span data-count="120">120</span><em>+</em></div>
+        <span class="stat-line" aria-hidden="true"></span>
+        <h3 data-pt="Países alcançados" data-en="Countries reached">Países alcançados</h3>
+        <p data-pt="Presença da marca cujo rebranding liderei, unificando frentes de negócio distintas." data-en="Reach of the brand whose rebrand I led, unifying separate business fronts.">Presença da marca cujo rebranding liderei, unificando frentes de negócio distintas.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== CTA FINAL ===== -->
+  <section id="contact" class="contact">
+    <h2 class="contact-big">
+      <span class="hn-mask reveal"><span class="hn-line" data-pt="Vamos trabalhar" data-en="Let's work">Vamos trabalhar</span></span>
+      <span class="hn-mask reveal"><span class="hn-line em" data-pt="juntos" data-en="together">juntos</span></span>
+    </h2>
+
+    <p class="mail-k reveal" data-pt="Escreva para" data-en="Drop me an email">Escreva para</p>
+
+    <div class="mail-row reveal">
+      <a class="mail-link" href="mailto:contact@pedrodetrindade.com">contact@pedrodetrindade.com</a>
+      <button class="copy-btn" data-copy="contact@pedrodetrindade.com"
+              data-pt-label="Copiar endereço de e-mail" data-en-label="Copy email address"
+              aria-label="Copiar endereço de e-mail">
+        <svg class="ico-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 5.2A2.7 2.7 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3c0 1.2.8 2.2 1.9 2.5"/></svg>
+        <svg class="ico-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 12.6l4.6 4.6L19.2 7.4"/></svg>
+      </button>
+      <span class="copy-flash" role="status" aria-live="polite"></span>
+    </div>
+
     <div class="links reveal">
-      <a href="mailto:contact@pedrodetrindade.com">✉ contact@pedrodetrindade.com</a>
-      <a href="https://www.linkedin.com/in/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>/ pedrodetrindade</a>
-      <a href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="17" fill="currentColor">Bē</text></svg>/ pedrodetrindade</a>
+      <a href="https://www.linkedin.com/in/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>LinkedIn</a>
+      <a href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="17" fill="currentColor">Bē</text></svg>Behance</a>
     </div>
   </section>
 </main>
@@ -246,6 +290,6 @@
 
 <div class="card-cue" aria-hidden="true"><span data-pt="ver caso" data-en="view case">ver caso</span></div>
 
-<script src="js/main.js?v=26"></script>
+<script src="js/main.js?v=28"></script>
 </body>
 </html>

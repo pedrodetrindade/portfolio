@@ -77,15 +77,33 @@
   const yr = document.getElementById('yr');
   if (yr) yr.textContent = new Date().getFullYear();
 
-  const clock = document.getElementById('clock');
-  if (clock) {
-    const tick = () => {
-      clock.textContent = new Date().toLocaleTimeString('pt-BR', {
-        timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit'
-      });
-    };
-    tick();
-    setInterval(tick, 30000);
+  /* ---- carimbo de data e hora do Brasil ----
+     Sempre America/Sao_Paulo, nunca o fuso do aparelho. Sem segundos na
+     tela, então um tique por minuto basta. */
+  const stamp = document.getElementById('stamp');
+  let stampTimer = null;
+  function paintStamp(){
+    if (!stamp) return;
+    const loc = document.documentElement.lang === 'en' ? 'en-GB' : 'pt-BR';
+    const now = new Date();
+    /* por partes: o formato pronto do pt-BR vem com "de" no meio
+       ("02 de ago. de 2026") e fica verboso para um carimbo */
+    const p = {};
+    new Intl.DateTimeFormat(loc, {
+      timeZone:'America/Sao_Paulo', day:'2-digit', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit', hour12:false
+    }).formatToParts(now).forEach(x => { p[x.type] = x.value; });
+    const mes = (p.month || '').replace(/\.$/, '');
+    stamp.textContent = `${p.day} ${mes} ${p.year} · ${p.hour}:${p.minute} BRT`;
+  }
+  if (stamp) {
+    paintStamp();
+    /* alinha o primeiro tique com a virada do minuto e só então periodiza */
+    stampTimer = setTimeout(() => {
+      paintStamp();
+      stampTimer = setInterval(paintStamp, 60000);
+    }, (60 - new Date().getSeconds()) * 1000);
+    window.addEventListener('pagehide', () => { clearTimeout(stampTimer); clearInterval(stampTimer); });
   }
 
   let buildScrub = null;
@@ -121,6 +139,7 @@
     localStorage.setItem('lang', lang);
     if (buildScrub) buildScrub();
     measureCta();
+    paintStamp();          // o formato de data muda com o idioma
   }
 
   const headEl = document.querySelector('header');
@@ -130,41 +149,36 @@
     [headEl, mainEl, footEl].forEach(el => { if (el) el.inert = state; });
   }
 
-  const gate = document.getElementById('gate');
-  if (gate) {
-    lockBackground(true);
-    /* foco no contêiner, não no primeiro botão: focar o botão de português
-       pintava nele o anel de :focus-visible e o fazia parecer selecionado */
-    gate.focus({ preventScroll: true });
-    requestAnimationFrame(() => gate.classList.add('in'));
+  setLang(localStorage.getItem("lang") || "pt");
 
-    let leaving = false;
-    document.querySelectorAll('#gate .langbtn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (leaving) return;                 // trava clique duplo
-        leaving = true;
-        setLang(btn.dataset.lang);
-        btn.classList.add('chosen');
-        /* 300ms só para a confirmação do botão ser percebida antes da saída */
-        setTimeout(() => gate.classList.add('leaving'), 300);
+  /* ================== INTRO: assinatura de entrada ==================
+     Só na primeira visita da sessão. sessionStorage, não localStorage: numa
+     próxima sessão a intro volta a aparecer. Sem progresso falso e sem
+     esperar os assets do site inteiro. */
+  const intro = document.getElementById("intro");
+  const heroOn = () => document.body.classList.add("hero-in");
 
-        /* a home entra enquanto a intro ainda sai: ~350ms de sobreposição,
-           sem tela vazia e sem corte entre os dois estados */
-        setTimeout(() => {
-          document.body.classList.remove('locked');
-          lockBackground(false);
-          document.body.classList.add('entering');
-        }, 640);
-        setTimeout(() => { gate.classList.add('hide'); }, 700);
-        setTimeout(() => {
-          if (mainEl) mainEl.focus({ preventScroll: true });
-          document.body.classList.remove('entering');
-          if (gate.parentNode) gate.remove();   // para as massas de luz
-        }, 1750);
-      });
-    });
+  if (!intro) {
+    heroOn();
+  } else if (reduced || sessionStorage.getItem("introSeen")) {
+    intro.remove();
+    heroOn();
   } else {
-    setLang(localStorage.getItem('lang') || 'pt');
+    sessionStorage.setItem("introSeen", "1");
+    document.body.classList.add("locked");
+    requestAnimationFrame(() => intro.classList.add("in"));
+    /* 820ms de entrada, ~420ms de permanência, e a saída começa. A hero
+       acende 300ms antes de a intro terminar: é a sobreposição. */
+    setTimeout(() => {
+      intro.classList.add("out");
+      document.body.classList.remove("locked");
+      document.body.classList.add("entering");
+    }, 1240);
+    setTimeout(heroOn, 1540);
+    setTimeout(() => {
+      document.body.classList.remove("entering");
+      if (intro.parentNode) intro.remove();
+    }, 2500);
   }
   document.querySelectorAll('.lang-sw button').forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
 
@@ -186,7 +200,7 @@
   function closeOverlays(){
     const wasOpen = document.querySelector('.overlay.open');
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
-    if (!gate || gate.classList.contains('hide')) document.body.classList.remove('locked');
+    document.body.classList.remove('locked');
     lockBackground(false);
     /* devolver o foco só faz sentido se ele tiver sido movido na abertura */
     if (wasOpen && modalOpen && lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
@@ -288,6 +302,104 @@
   }, { threshold: .15, rootMargin: '0px 0px -8% 0px' });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+  /* ---- coreografias por bloco ----
+     Cada seção tem gesto próprio, mas todas compartilham os mesmos tokens.
+     Um observador só, com o alvo decidido pelo tipo do elemento. */
+  const choreo = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      choreo.unobserve(el);
+
+      if (el.classList.contains('caps-grid')) {
+        [...el.children].forEach((li, i) => { li.style.transitionDelay = (i * 55) + 'ms'; });
+        el.classList.add('in');
+        return;
+      }
+      if (el.classList.contains('help-item') || el.classList.contains('stat')) {
+        const col = +el.dataset.col || 0;
+        const base = col * 110;
+        const line = el.querySelector('.hi-line,.stat-line');
+        if (line) line.style.transitionDelay = base + 'ms';
+        el.querySelectorAll('.hi-num,h3,p,.stat-v').forEach((n, i) => {
+          n.style.transitionDelay = (base + 120 + i * 70) + 'ms';
+        });
+        el.classList.add('in');
+        if (el.classList.contains('stat')) countUp(el);
+        return;
+      }
+      el.classList.add('in');
+    });
+  }, { threshold: .18, rootMargin: '0px 0px -6% 0px' });
+
+  document.querySelectorAll('.mask-reveal,.caps-grid').forEach(el => choreo.observe(el));
+  document.querySelectorAll('.help-item,.stat').forEach((el, i) => {
+    el.dataset.col = i % 3;
+    choreo.observe(el);
+  });
+
+  /* ---- count-up ----
+     Só uma vez por número, só quando visível, e desacelerando no fim.
+     Sob movimento reduzido o valor final aparece direto. */
+  function countUp(stat){
+    const node = stat.querySelector('[data-count]');
+    if (!node || node.dataset.done) return;
+    node.dataset.done = '1';
+    const alvo = parseInt(node.dataset.count, 10);
+    const pad = parseInt(node.dataset.pad || '0', 10);
+    const fmt = v => String(v).padStart(pad, '0');
+    if (reduced || !Number.isFinite(alvo)) { node.textContent = fmt(alvo); return; }
+    const dur = 1400, t0 = performance.now();
+    const passo = now => {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 4);            // desacelera no fim
+      node.textContent = fmt(Math.round(alvo * eased));
+      if (p < 1) requestAnimationFrame(passo);
+    };
+    node.textContent = fmt(0);
+    requestAnimationFrame(passo);
+  }
+
+  /* ---- copiar e-mail ----
+     Layout preservado: o aviso é absoluto e o ícone troca por opacidade. */
+  const copyBtn = document.querySelector('.copy-btn');
+  if (copyBtn) {
+    const flash = document.querySelector('.copy-flash');
+    let resetTimer = null;
+    copyBtn.addEventListener('click', async () => {
+      const txt = copyBtn.dataset.copy;
+      let ok = true;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(txt);
+        } else {
+          /* fallback para file:// e contextos sem Clipboard API */
+          const ta = document.createElement('textarea');
+          ta.value = txt;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;top:-999px;opacity:0';
+          document.body.appendChild(ta);
+          ta.select();
+          ok = document.execCommand('copy');
+          ta.remove();
+        }
+      } catch (err) { ok = false; }
+
+      const pt = document.documentElement.lang !== 'en';
+      if (flash) {
+        flash.textContent = ok ? (pt ? 'Copiado' : 'Copied')
+                               : (pt ? 'Selecione e copie' : 'Select and copy');
+        flash.classList.add('on');
+      }
+      copyBtn.classList.toggle('done', ok);
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        copyBtn.classList.remove('done');
+        if (flash) flash.classList.remove('on');
+      }, 2100);
+    });
+  }
+
   /* ================== UM ÚNICO LAÇO DE SCROLL ==================
      Header, inversão sobre a faixa clara e scrub dividem o mesmo frame.
      Listeners separados brigavam pelo mesmo tick e liam layout três vezes. */
@@ -327,7 +439,7 @@
 
   if (!reduced) {
     buildScrub = () => {
-      document.querySelectorAll('.about p, .case-section p').forEach(p => {
+      document.querySelectorAll('.about-lead, .case-section p').forEach(p => {
         p.classList.add('scrub');
         p.innerHTML = p.textContent.trim().split(/\s+/)
           .map(w => `<span class="w">${w}</span>`).join(' ');

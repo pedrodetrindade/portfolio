@@ -33,38 +33,41 @@ CSS e JS são compartilhados pelas 5 páginas. Os links usam `?v=N` para furar o
 do navegador: ao editar `css/style.css` ou `js/main.js`, incremente esse número em
 todas as páginas, senão o navegador continua servindo a versão antiga.
 
-## Direção visual (referências: Mercury + midu.design)
-Técnico, clean, elegante, maduro. Baixo contraste.
-- Fundo: carvão-azulado profundo e dessaturado (não preto puro).
-- Texturas-assinatura: orbes/esferas de luz difusas, grain, vidro fosco (blur/translucidez).
-- Sobreposições (selos, botões flutuantes, tags) sempre translúcidas, nunca creme sólido.
-- Tipografia: Onest (display/corpo) + JetBrains Mono (rótulos técnicos, sempre minúsculos).
+## Direção visual
+Escura, monocromática, levemente quente e puxada para marrom. Clean, editorial,
+baixo contraste, sem peso tipográfico exagerado.
+- Fundo: quase preto quente, não preto puro.
+- Texturas: grain e massas de luz muito discretas. Nenhum filter:blur() no site.
+- Tipografia: Onest (display/corpo, teto de peso 600) + JetBrains Mono (rótulos).
+- Tracking baixo: teto de .06em, e só em rótulo curto.
 
 Tokens principais (ver `:root` em css/style.css):
-ink #0A0C11 · ink-2 #12151D · paper #E7E9F0 · cream #EAE1CC · accent #AEBAD0 · muted #787E8D
+ink #0D0A0A · ink-2 #261B1D · ink-3 #403638 · paper #F2EEEE · muted #B7ACAC ·
+muted-2 #8A7E7E · accent #A29595 · cream #C9BDBD
 
 ## Estrutura atual
-1. Tela de entrada: funciona como intro do portfólio, não como etapa funcional.
-   Tag "portfolio", nome em escala de herói, orientação bilíngue e os dois botões
-   de idioma com bandeira em SVG circular. Fundo com três massas de luz em
-   gradiente radial derivando em loops longos e dessincronizados, mais grain.
-   Ao escolher o idioma a saída é escalonada na ordem inversa da entrada e
-   sobrepõe a revelação da home, que já está montada atrás.
-2. Topo: marca à esquerda, botão "Menu" centralizado, seletor PT/EN e CTA "Contato"
-   à direita. A nav é uma grade de três colunas para o Menu ficar no centro exato.
-3. Capa: título centralizado, glow monocromático subindo do rodapé, barra com cargo,
-   relógio ao vivo do Rio e "role para explorar", wordmark gigante em marca-d'água.
-4. Sobre: faixa full-bleed clara quebrando o fundo escuro. O título da seção fica
-   dentro da faixa, junto com o retrato à esquerda e a bio à direita. A borda
-   contra o escuro é limpa, sem névoa: a troca de seção se resolve por contraste
-   e ritmo vertical. Dentro da faixa o texto inverte para tom escuro e o header
-   ganha a classe `on-light` para não sumir no fundo claro.
-5. Trabalhos: 4 cards grandes com tags translúcidas no topo e título sobreposto na base.
-6. Ferramentas: grade de cards.
-7. Contato: título, CTA em pill, links de e-mail, LinkedIn e Behance. Footer.
+1. Intro: assinatura curta com "Pedro de Trindade.", só na primeira visita da
+   sessão (sessionStorage). Sem porcentagem falsa e sem spinner. A hero acende
+   antes de a intro terminar.
+2. Topo: marca à esquerda, "Menu" centralizado, PT/EN e CTA "Contato" à direita.
+3. Hero: o nome ocupa a primeira viewport, em duas linhas mascaradas, peso 600.
+   Sem frase de impacto. Em volta ficam a tag profissional, o carimbo de data e
+   hora do Brasil e "role para explorar".
+4. Trabalhos: 4 cards grandes.
+5. Sobre: retrato à esquerda, headline, parágrafo, grade de capacidades e CTA
+   à direita. Faixa com elevação mínima de tom, sem fundo claro.
+6. Como eu consigo te ajudar: três frentes numeradas, com linha que cresce.
+7. Números: três dados verificáveis, com count-up uma única vez.
+8. Contato: headline grande em duas linhas, e-mail copiável e redes. Footer.
 
-A seção de experiência foi removida do site. Essa informação vive apenas no LinkedIn
-e no currículo.
+A seção de experiência foi removida do site: essa informação vive só no LinkedIn
+e no currículo. A de ferramentas saiu na revisão estrutural, por sobrepor as
+capacidades do Sobre.
+
+**Números só com dado verificável.** Hoje são seis anos de prática (desde 2020),
+quatro casos selecionados e 120+ países alcançados pela marca cujo rebranding o
+Pedro liderou. Marcas atendidas, lançamentos e mercados seguem pendentes de
+confirmação e estão comentados no HTML, não inventados.
 
 Bilíngue via atributos `data-pt` / `data-en` em cada elemento traduzível.
 Todo texto novo precisa dos dois atributos.

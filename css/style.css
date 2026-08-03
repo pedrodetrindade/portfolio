@@ -28,8 +28,9 @@
   --dur-micro:350ms;
   --dur-fast:500ms;
   --dur-default:700ms;
-  --dur-slow:950ms;
-  --dur-ambient:1400ms;
+  --dur-slow:1000ms;
+  --dur-reveal:1200ms;
+  --dur-ambient:1600ms;
   --grain-url:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -51,86 +52,28 @@ body.locked{overflow:hidden;height:100dvh}
 .cursor-glow.on{opacity:1}
 @media(prefers-reduced-motion:reduce),(pointer:coarse){.cursor-glow{display:none}}
 .orb{position:absolute;border-radius:50%}
-.orb.a{width:82vw;height:82vw;top:-34vw;right:-24vw;background:radial-gradient(circle,rgba(89,79,79,.30),rgba(89,79,79,.10) 42%,transparent 70%)}
-.orb.b{width:70vw;height:70vw;bottom:-30vw;left:-26vw;background:radial-gradient(circle,rgba(64,54,56,.34),rgba(64,54,56,.12) 44%,transparent 72%)}
-.orb.c{width:52vw;height:52vw;top:38%;left:46%;background:radial-gradient(circle,rgba(115,104,104,.13),transparent 68%)}
+.orb.a{width:88vw;height:88vw;top:-40vw;right:-30vw;background:radial-gradient(circle,rgba(89,79,79,.20),rgba(89,79,79,.06) 44%,transparent 72%)}
+.orb.b{width:76vw;height:76vw;bottom:-36vw;left:-30vw;background:radial-gradient(circle,rgba(64,54,56,.22),rgba(64,54,56,.07) 46%,transparent 74%)}
 
-.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.45;mix-blend-mode:soft-light;background:var(--grain-url)}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.3;mix-blend-mode:soft-light;background:var(--grain-url)}
 a{color:inherit;text-decoration:none}
 
-/* ===== TELA DE ENTRADA (intro + idioma) ===== */
-#gate{position:fixed;inset:0;z-index:100;min-height:100svh;overflow:hidden;isolation:isolate;
-  display:flex;align-items:center;justify-content:center;background:var(--ink);outline:none;
-  transition:opacity 550ms var(--ease-out-smooth),visibility 550ms}
-#gate.hide{opacity:0;visibility:hidden}
-
-/* fundo orgânico: massas de luz em gradiente radial, que já nascem difusas.
-   Nada de filter:blur() aqui, só transform e opacity, que são baratos. */
-.gate-bg{position:absolute;inset:0;z-index:0;pointer-events:none;
-  transition:opacity 700ms var(--ease-out-smooth)}
-.blob{position:absolute;display:block;border-radius:50%;will-change:transform;
-  animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.45,0,.55,1)}
-.blob.b1{width:62vmax;height:62vmax;top:-24vmax;left:-14vmax;animation-name:drift-a;animation-duration:38s;
-  background:radial-gradient(circle,rgba(89,79,79,.46),rgba(89,79,79,.15) 42%,transparent 70%)}
-.blob.b2{width:54vmax;height:54vmax;bottom:-22vmax;right:-12vmax;animation-name:drift-b;animation-duration:46s;
-  background:radial-gradient(circle,rgba(115,104,104,.34),rgba(115,104,104,.10) 44%,transparent 72%)}
-.blob.b3{width:46vmax;height:46vmax;top:26%;left:38%;animation-name:drift-c;animation-duration:54s;
-  background:radial-gradient(circle,rgba(64,54,56,.50),rgba(64,54,56,.16) 46%,transparent 74%)}
-@keyframes drift-a{
-  0%,100%{transform:translate3d(0,0,0) scale(1)}
-  50%    {transform:translate3d(8%,6%,0) scale(1.14)}}
-@keyframes drift-b{
-  0%,100%{transform:translate3d(0,0,0) scale(1.06)}
-  50%    {transform:translate3d(-7%,-5%,0) scale(.94)}}
-@keyframes drift-c{
-  0%,100%{transform:translate3d(0,0,0) scale(.96)}
-  50%    {transform:translate3d(-6%,7%,0) scale(1.1)}}
-/* grain por cima das massas de luz, sob o conteúdo */
-#gate::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:var(--grain-url);opacity:.4;mix-blend-mode:soft-light}
-
-.gate-inner{position:relative;z-index:2;text-align:center;
-  padding:2rem clamp(1.25rem,4vw,3rem);max-width:min(1280px,94vw)}
-
-.gate-tag{display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;
-  text-transform:lowercase;color:var(--accent);
-  padding:.5rem 1.1rem;border-radius:100px;
-  border:1px solid rgba(var(--paper-rgb),.18);background:rgba(var(--paper-rgb),.05);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-
-/* nome como herói: quebra em duas linhas quando precisar, nunca corta */
-.gate-name{margin-top:1.6rem;font-size:clamp(3rem,8.2vw,7.5rem);font-weight:700;
-  line-height:.92;letter-spacing:-.05em;text-wrap:balance}
-.gate-name span{color:var(--cream)}
-
-.gate-sub{font-size:.92rem;letter-spacing:.005em;color:var(--muted);margin-top:1.8rem}
-.gate-sub i{font-style:normal;color:var(--muted-2);margin-inline:.5em}
-
-.gate-opts{margin-top:2.4rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-.langbtn{display:inline-flex;align-items:center;gap:.85em;cursor:pointer;
-  font-family:var(--font);color:var(--paper);text-align:left;
-  padding:.85rem 1.5rem;border-radius:100px;
-  border:1px solid rgba(var(--paper-rgb),.16);background:rgba(var(--paper-rgb),.05);
-  backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);
-  box-shadow:0 2px 10px rgba(0,0,0,.18);
-  transition:transform var(--dur-micro) var(--ease-out-smooth),
-             background-color var(--dur-micro) var(--ease-out-smooth),
-             border-color var(--dur-micro) var(--ease-out-smooth),
-             box-shadow var(--dur-micro) var(--ease-out-smooth),
-             opacity var(--dur-micro) var(--ease-out-smooth)}
-.langbtn .flag{width:22px;height:22px;flex:none;border-radius:50%;
-  box-shadow:0 0 0 1px rgba(var(--paper-rgb),.22)}
-.langbtn .lb{display:flex;flex-direction:column;line-height:1.15}
-.langbtn .lb b{font-size:.98rem;font-weight:500}
-.langbtn .lb small{font-family:var(--mono);font-size:.64rem;letter-spacing:.015em;color:var(--muted);margin-top:.2rem}
-.langbtn:hover{transform:translateY(-2px) scale(1.015);
-  background:rgba(var(--paper-rgb),.09);border-color:rgba(var(--paper-rgb),.3);
-  box-shadow:0 10px 26px rgba(0,0,0,.26)}
-.langbtn:active{transform:translateY(-1px) scale(1.005)}
-/* o botão escolhido confirma a escolha antes da intro sair */
-.langbtn.chosen{background:rgba(var(--paper-rgb),.14);border-color:var(--cream)}
-@media(max-width:420px){.gate-opts{flex-direction:column;align-items:stretch}
-  .langbtn{justify-content:center}}
+/* ===== INTRO: assinatura de entrada ===== */
+#intro{display:none}
+.js #intro{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  background:var(--ink);padding-inline:var(--gutter);
+  transition:opacity var(--dur-reveal) var(--ease-soft),visibility var(--dur-reveal)}
+#intro.out{opacity:0;visibility:hidden;pointer-events:none}
+/* a máscara corta a linha e o nome sobe por dentro dela */
+.intro-mask{overflow:hidden;padding-bottom:.14em;margin-bottom:-.14em}
+.js .intro-name{display:block;font-size:clamp(1.9rem,5.4vw,4.2rem);font-weight:500;
+  letter-spacing:-.035em;line-height:1;white-space:nowrap;
+  transform:translateY(105%);opacity:0}
+#intro.in .intro-name{transform:none;opacity:1;
+  transition:transform 820ms var(--ease-soft),opacity 620ms var(--ease-soft)}
+#intro.out .intro-name{transform:translateY(-38%);opacity:0;
+  transition:transform var(--dur-reveal) var(--ease-soft),opacity 700ms var(--ease-soft)}
+.intro-name i{font-style:normal;color:var(--cream)}
 
 .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;color:var(--accent);font-weight:500;
   display:inline-flex;align-items:center;gap:.6em}
@@ -175,33 +118,30 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;transition:transform var(-
   .nav-cta:hover svg{transform:translateX(var(--nc-shift,0px)) scale(1.12)}}
 @media(max-width:480px){.nav-cta .nc-label{display:none}}
 
-/* ===== HERO ===== */
+/* ===== HERO: o nome ocupa a primeira viewport ===== */
 .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;
-  padding-top:7rem;padding-bottom:0}
-.hero-bloom{position:absolute;z-index:-1;left:50%;bottom:-6%;translate:-50% 0;
-  width:min(120vw,1500px);height:min(76vh,700px);pointer-events:none;
-  background:radial-gradient(ellipse 54% 64% at 50% 62%,rgba(201,189,189,.16),rgba(201,189,189,.05) 46%,transparent 74%),
-    radial-gradient(ellipse 78% 50% at 50% 74%,rgba(89,79,79,.20),transparent 78%)}
-.hero-title{font-size:clamp(2.2rem,5.6vw,4.9rem);font-weight:600;line-height:1.03;letter-spacing:-.032em;
-  max-width:19ch;margin-inline:auto;text-align:center}
-.hero-title em{font-style:normal;color:var(--muted)}
+  padding-top:8rem;padding-bottom:2.5rem;gap:2.2rem}
 
-.hero-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem 2rem;
-  margin-top:auto;padding-top:2.6rem;font-family:var(--mono);font-size:.74rem;color:var(--muted);letter-spacing:.015em}
-.hero-clock b{color:var(--paper);font-weight:500}
-.hero-scroll{transition:color var(--dur-micro) var(--ease-out-smooth)}
+.hero-tag{font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;color:var(--accent)}
+
+/* Peso 600 é o teto. A presença vem da escala e do tracking, não do peso.
+   Cada linha tem a própria máscara, e sobe por dentro dela. */
+.hero-name{font-size:clamp(3.4rem,11.4vw,10.5rem);font-weight:600;
+  line-height:.9;letter-spacing:-.055em;margin:0}
+.hn-mask{display:block;overflow:hidden;padding-bottom:.1em;margin-bottom:-.1em}
+.hn-line{display:block}
+.js .h-step .hn-line,.js .hn-mask.reveal .hn-line{transform:translateY(105%)}
+.hn-line i{font-style:normal;color:var(--cream)}
+.hero-name .hn-mask{opacity:1}
+
+.hero-foot{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;
+  gap:.9rem 2rem;margin-top:auto;padding-top:3rem;
+  font-family:var(--mono);font-size:.74rem;color:var(--muted-2);letter-spacing:.015em}
+.hero-when b{color:var(--muted);font-weight:400}
+.hero-when #stamp{margin-left:.7em}
+.hero-scroll{color:var(--muted-2);transition:color var(--dur-micro) var(--ease-soft)}
 .hero-scroll:hover{color:var(--paper)}
 
-/* "Pedro de Trindade" mede 7,956em de largura nesta fonte e tracking (medido no
-   navegador). O elemento sangra até a largura do .wrap, que trava em 1280px.
-   Daí os dois limites: 11.6vw enquanto a viewport manda, 156px depois que o
-   container para de crescer. Sem overflow:hidden, porque era ele que cortava. */
-.hero-wordmark{font-size:min(11.6vw,156px);font-weight:700;letter-spacing:-.05em;line-height:.95;
-  white-space:nowrap;text-align:center;
-  margin:1.2rem calc(var(--gutter) * -1) -.06em;
-  color:rgba(var(--paper-rgb),.13);
-  -webkit-user-select:none;user-select:none}
-@media(max-width:640px){.hero-bar{justify-content:flex-start}}
 
 section{padding-block:clamp(4rem,8vw,7rem)}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:2rem;
@@ -270,37 +210,108 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .about-break::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
   background:var(--grain-url);opacity:.3;mix-blend-mode:soft-light}
 .about-inner{position:relative;z-index:1;max-width:1280px;margin-inline:auto}
-.about-grid{display:grid;grid-template-columns:1fr;gap:2.4rem}
-@media(min-width:860px){.about-grid{grid-template-columns:.86fr 1.14fr;gap:3.4rem;align-items:start}}
-.portrait{position:relative;aspect-ratio:4/5;border-radius:22px;overflow:hidden;
-  border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 50% 38%,#33262A,#150F10 78%);
-  box-shadow:0 34px 70px rgba(var(--ink-rgb),.5)}
-.portrait::after{content:"";position:absolute;inset:0;background:var(--grain-url);opacity:.4;
+.about-grid{display:grid;grid-template-columns:1fr;gap:2.6rem}
+@media(min-width:900px){.about-grid{grid-template-columns:.82fr 1.18fr;gap:clamp(2.6rem,5vw,4.5rem);align-items:start}}
+.about-photo{margin:0}
+.portrait{position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 38%,#33262A,#150F10 78%)}
+.portrait::after{content:"";position:absolute;inset:0;background:var(--grain-url);opacity:.3;
   mix-blend-mode:soft-light;pointer-events:none}
 .portrait-img{position:relative;width:100%;height:100%;object-fit:cover}
-.portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted);
-  background:rgba(var(--paper-rgb),.08);border:1px solid var(--line-strong);border-radius:100px;
-  padding:.5rem 1.1rem;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted-2);
+  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:100px;padding:.5rem 1.1rem}
+/* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala */
+.js .mask-reveal{clip-path:inset(100% 0 0 0);transform:scale(1.03)}
+.js .mask-reveal.in{clip-path:inset(0 0 0 0);transform:none;
+  transition:clip-path var(--dur-reveal) var(--ease-soft),transform var(--dur-reveal) var(--ease-soft)}
 
-.about p{font-size:clamp(1.1rem,1.6vw,1.35rem);font-weight:300;color:var(--paper);max-width:60ch;letter-spacing:-.01em}
-.about p+p{margin-top:1.4rem;color:var(--muted-2);font-size:1.05rem}
+.about-head{font-size:clamp(1.6rem,3.1vw,2.5rem);font-weight:500;line-height:1.14;
+  letter-spacing:-.03em;max-width:22ch;text-wrap:balance}
+.about-lead{margin-top:1.6rem;font-size:clamp(1rem,1.25vw,1.1rem);font-weight:300;
+  color:var(--muted);max-width:58ch;letter-spacing:-.005em;line-height:1.68}
 
-.tools-grid{display:grid;grid-template-columns:1fr;gap:1.4rem}
-@media(min-width:640px){.tools-grid{grid-template-columns:1fr 1fr;gap:1.6rem}}
-@media(min-width:1000px){.tools-grid{grid-template-columns:1fr 1fr 1fr;gap:1.6rem}}
-.tool-card{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:1.6rem;
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-.tool-card .l{font-size:1rem;color:var(--paper);font-weight:500}
-.tool-card .v{margin-top:.6rem;color:var(--muted);font-family:var(--mono);font-size:.8rem}
+.caps{margin-top:2.8rem}
+.caps-k{display:block;font-family:var(--mono);font-size:.7rem;letter-spacing:.03em;color:var(--muted-2);
+  padding-bottom:.9rem;border-bottom:1px solid var(--line)}
+.caps-grid{list-style:none;display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:560px){.caps-grid{grid-template-columns:1fr 1fr;column-gap:2.4rem}}
+.caps-grid li{font-size:.95rem;font-weight:400;color:var(--paper);
+  padding:.85rem 0;border-bottom:1px solid var(--line)}
+.js .caps-grid li{opacity:0;transform:translateY(12px);
+  transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
+.js .caps-grid.in li{opacity:1;transform:none}
 
-.contact h2.big{font-size:clamp(2rem,5vw,4rem);font-weight:500;letter-spacing:-.03em;line-height:1.05;max-width:14ch}
-.cta-pill{display:inline-flex;align-items:center;gap:.6em;margin-top:2rem;cursor:pointer;
-  font-family:var(--font);font-size:.95rem;font-weight:500;color:var(--ink);
-  background:var(--paper);border:none;border-radius:100px;padding:.95rem 1.6rem;
-  transition:transform var(--dur-micro) var(--ease-out-smooth),opacity var(--dur-micro) var(--ease-out-smooth)}
-.cta-pill:hover{transform:translateY(-2px);opacity:.9}
-.cta-pill svg{width:14px;height:14px;flex:none}
+.ghost-cta{display:inline-flex;align-items:center;gap:.6em;margin-top:2.4rem;cursor:pointer;
+  font-family:var(--font);font-size:.92rem;font-weight:500;color:var(--paper);
+  background:transparent;border:1px solid var(--line-strong);border-radius:100px;padding:.85rem 1.6rem;
+  transition:transform var(--dur-micro) var(--ease-soft),border-color var(--dur-micro) var(--ease-soft),
+             background-color var(--dur-micro) var(--ease-soft)}
+.ghost-cta::after{content:"→";transition:transform var(--dur-micro) var(--ease-soft)}
+.ghost-cta:hover{transform:translateY(-2px);border-color:var(--accent);background:rgba(var(--paper-rgb),.05)}
+.ghost-cta:hover::after{transform:translateX(4px)}
+
+/* ===== COMO EU CONSIGO TE AJUDAR ===== */
+.help-title{font-size:clamp(1.9rem,4.4vw,3.4rem);font-weight:500;letter-spacing:-.035em;
+  line-height:1.06;text-align:center;margin-bottom:clamp(3rem,6vw,5rem);text-wrap:balance}
+.help-grid{display:grid;grid-template-columns:1fr;gap:3rem}
+@media(min-width:820px){.help-grid{grid-template-columns:repeat(3,1fr);gap:clamp(2rem,3.5vw,3.4rem)}}
+.help-item .hi-num{display:block;font-family:var(--mono);font-size:.78rem;color:var(--muted-2);margin-bottom:1rem}
+/* a linha cresce da esquerda, é o gesto que abre cada coluna */
+.hi-line,.stat-line{display:block;height:1px;background:var(--line-strong);transform-origin:left}
+.js .hi-line,.js .stat-line{transform:scaleX(0)}
+.js .in .hi-line,.js .hi-line.in,.js .in .stat-line,.js .stat-line.in{transform:scaleX(1);
+  transition:transform var(--dur-reveal) var(--ease-soft)}
+.help-item h3{margin-top:1.6rem;font-size:clamp(1.3rem,2.1vw,1.7rem);font-weight:500;letter-spacing:-.025em}
+.help-item p{margin-top:1.3rem;font-size:.95rem;font-weight:300;color:var(--muted);
+  line-height:1.66;max-width:38ch;letter-spacing:-.005em}
+
+/* ===== NÚMEROS ===== */
+.num-head{margin-bottom:clamp(3rem,6vw,5rem);max-width:34ch}
+.num-head h2{margin-top:1.2rem;font-size:clamp(1.8rem,3.8vw,2.9rem);font-weight:500;
+  letter-spacing:-.035em;line-height:1.1}
+.stats{display:grid;grid-template-columns:1fr;gap:2.8rem}
+@media(min-width:640px){.stats{grid-template-columns:1fr 1fr;gap:2.6rem}}
+@media(min-width:1000px){.stats{grid-template-columns:repeat(3,1fr);gap:clamp(2rem,3.5vw,3.2rem)}}
+.stat-v{display:flex;align-items:baseline;font-size:clamp(3.4rem,7.4vw,5.6rem);font-weight:600;
+  letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.stat-v em{font-style:normal;color:var(--muted-2);font-size:.62em;margin-left:.06em}
+.stat-line{margin-top:1.6rem}
+.stat h3{margin-top:1.4rem;font-size:1.02rem;font-weight:500;letter-spacing:-.015em}
+.stat p{margin-top:.7rem;font-size:.9rem;font-weight:300;color:var(--muted-2);line-height:1.6;max-width:32ch}
+
+/* ===== CTA FINAL ===== */
+.contact{text-align:center}
+.contact-big{font-size:clamp(2.8rem,10vw,8rem);font-weight:600;line-height:.94;
+  letter-spacing:-.055em;margin-bottom:clamp(2.5rem,5vw,3.6rem)}
+.contact-big .em{color:var(--muted-2)}
+.mail-k{font-family:var(--mono);font-size:.76rem;letter-spacing:.02em;color:var(--muted-2)}
+.mail-row{margin-top:1rem;display:inline-flex;align-items:center;gap:.8rem;position:relative}
+.mail-link{font-size:clamp(1.05rem,2.4vw,1.7rem);font-weight:400;letter-spacing:-.02em;
+  color:var(--paper);border-bottom:1px solid var(--line-strong);padding-bottom:.12em;
+  transition:border-color var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft)}
+.mail-link:hover{border-color:var(--accent)}
+.copy-btn{position:relative;flex:none;width:2.6rem;height:2.6rem;display:grid;place-items:center;
+  cursor:pointer;border-radius:12px;color:var(--muted);
+  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);
+  transition:transform var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft),
+             border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft)}
+.copy-btn:hover{transform:translateY(-2px);color:var(--paper);border-color:var(--line-strong)}
+.copy-btn svg{position:absolute;width:17px;height:17px;
+  transition:opacity var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
+.copy-btn .ico-done{opacity:0;transform:scale(.7)}
+.copy-btn.done{color:var(--paper);border-color:var(--accent)}
+.copy-btn.done .ico-copy{opacity:0;transform:scale(.7)}
+.copy-btn.done .ico-done{opacity:1;transform:none}
+/* o aviso é absoluto: aparecer não pode empurrar o e-mail de lugar */
+.copy-flash{position:absolute;left:50%;translate:-50% 0;top:calc(100% + .9rem);white-space:nowrap;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;color:var(--muted);
+  opacity:0;transform:translateY(-4px);pointer-events:none;
+  transition:opacity var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
+.copy-flash.on{opacity:1;transform:none}
+.contact .links{justify-content:center}
+
+
 .contact .links{margin-top:2.5rem;display:flex;flex-wrap:wrap;gap:1.4rem;font-family:var(--mono);font-size:.82rem}
 .contact .links a{padding:.7rem 1.1rem;border:1px solid var(--line-strong);border-radius:10px;color:var(--muted);
   display:inline-flex;gap:.5em;align-items:center;
@@ -323,14 +334,19 @@ footer{border-top:1px solid var(--line);padding-block:2.5rem;font-family:var(--m
              transform var(--dur-default) var(--ease-out-smooth);
   transition-delay:var(--d,0ms)}
 .js .reveal.in{opacity:1;transform:none}
-/* títulos entram de um pouco mais longe, rótulos de bem perto */
-.js .hero-title.reveal,.js .contact h2.big.reveal{transform:translateY(32px)}
-.js .hero-bar.reveal,.js .sec-head.reveal{transform:translateY(14px)}
+/* rótulos entram de bem perto */
+.js .sec-head.reveal,.js .caps-k.reveal,.js .mail-k.reveal{transform:translateY(14px)}
 /* mídia: deslocamento contido e uma escala quase imperceptível */
-.js .card.reveal,.js .about-photo.reveal{transform:translateY(30px) scale(.988)}
-.js .hero-title.reveal.in,.js .contact h2.big.reveal.in,
-.js .hero-bar.reveal.in,.js .sec-head.reveal.in,
-.js .card.reveal.in,.js .about-photo.reveal.in{transform:none}
+.js .card.reveal{transform:translateY(30px) scale(.988)}
+.js .sec-head.reveal.in,.js .caps-k.reveal.in,
+.js .mail-k.reveal.in,.js .card.reveal.in{transform:none}
+/* máscara de linha: só o transform interno anima, o pai não some */
+.js .hn-mask.reveal{opacity:1;transform:none}
+.js .hn-mask.reveal .hn-line{transition:transform var(--dur-reveal) var(--ease-soft);
+  transition-delay:var(--d,0ms)}
+.js .hn-mask.reveal.in .hn-line{transform:none}
+/* títulos editoriais entram inteiros, sem quebrar em palavra */
+.js .about-head.reveal,.js .help-title.reveal,.js .num-head h2.reveal{transform:translateY(20px)}
 
 /* scrub: palavras clareiam conforme a leitura avança */
 .scrub{color:var(--muted-2)}
@@ -349,41 +365,35 @@ footer{border-top:1px solid var(--line);padding-block:2.5rem;font-family:var(--m
   .js .reveal,.js .reveal.in{opacity:1!important;transform:none!important}
   .scrub .w{color:inherit}
   .cursor-glow,.card-cue{display:none}
-  /* intro: conteúdo imediatamente visível e massas de luz paradas */
-  .js .g-step{opacity:1!important;transform:none!important}
-  #gate.leaving .g-step{opacity:0!important;transform:none!important}
-  .blob{animation:none!important}
+  /* nada preso em estado inicial: intro, máscaras, linhas e capacidades */
+  #intro{display:none}
+  .js .h-step,.js .hn-line,.js .caps-grid li{opacity:1!important;transform:none!important}
+  .js .mask-reveal{clip-path:none!important;transform:none!important}
+  .hi-line,.stat-line{transform:scaleX(1)!important}
   body.entering main,body.entering footer{animation:none!important}
   /* menu simplificado: aparece sem escalonar nem deslizar */
   .overlay.dropdown .menu-item,.overlay.dropdown .overlay-foot{
     opacity:1!important;transform:none!important;transition-delay:0ms!important}}
 
-/* ===== ENTRADA E SAÍDA DA INTRO =====
-   Escalona tag, nome, orientação e botões. Na saída a ordem se inverte:
-   os botões somem primeiro e o nome por último. */
-.js .g-step{opacity:0;transform:translateY(24px);
-  transition:opacity 700ms var(--ease-out-smooth),transform 700ms var(--ease-out-smooth)}
-#gate.in .g-step{opacity:1;transform:none}
-#gate.in .gate-tag {transition-delay:80ms}
-#gate.in .gate-name{transition-delay:160ms}
-#gate.in .gate-sub {transition-delay:250ms}
-#gate.in .gate-opts{transition-delay:330ms}
-
-/* Saída: cada elemento com duração e distância próprias, para a coreografia
-   não soar mecânica. Os botões descem, o resto sobe. */
-#gate.leaving .g-step{transition-duration:var(--dur-slow)}
-#gate.leaving .gate-opts{opacity:0;transform:translateY(10px);transition-delay:0ms;transition-duration:650ms}
-#gate.leaving .gate-sub {opacity:0;transform:translateY(-8px);transition-delay:90ms;transition-duration:700ms}
-#gate.leaving .gate-name{opacity:0;transform:translateY(-16px) scale(.985);transition-delay:170ms;transition-duration:var(--dur-slow)}
-#gate.leaving .gate-tag {opacity:0;transform:translateY(-12px);transition-delay:250ms;transition-duration:800ms}
-/* o fundo é a única coisa que atravessa os dois estados, então sai por último */
-#gate.leaving .gate-bg{opacity:0;transition-duration:var(--dur-ambient)}
-/* o gate espera a coreografia antes de sumir de vez */
-#gate.hide{transition-duration:var(--dur-slow)}
+/* ===== ENTRADA DA HERO =====
+   Encadeia com a saída da intro. As duas linhas do nome sobem por dentro
+   das máscaras; tag, carimbo e "role para explorar" vêm em sequência curta. */
+.js .h-step{opacity:0;transform:translateY(18px);
+  transition:opacity var(--dur-slow) var(--ease-soft),transform var(--dur-slow) var(--ease-soft)}
+.js body.hero-in .h-step,.js .hero-in .h-step{opacity:1;transform:none}
+.hero-in .hero-name .hn-line{transform:none;
+  transition:transform var(--dur-reveal) var(--ease-soft)}
+.hero-in .hero-tag{transition-delay:60ms}
+.hero-in .hero-name .hn-mask:nth-of-type(1) .hn-line{transition-delay:80ms}
+.hero-in .hero-name .hn-mask:nth-of-type(2) .hn-line{transition-delay:170ms}
+.hero-in .hero-name .hn-mask:nth-of-type(1){transition-delay:80ms}
+.hero-in .hero-name .hn-mask:nth-of-type(2){transition-delay:170ms}
+.hero-in .hero-when{transition-delay:330ms}
+.hero-in .hero-scroll{transition-delay:400ms}
 
 /* a home sobe de leve enquanto a intro ainda está saindo */
 body.entering main,body.entering footer{animation:home-in var(--dur-slow) var(--ease-soft) both}
-@keyframes home-in{from{opacity:.4;transform:translateY(14px) scale(.995)}to{opacity:1;transform:none}}
+@keyframes home-in{from{opacity:.55;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 /* ===== ACCESSIBILITY: focus & skip link =====
    Sem border-radius aqui: era ele que quadrava o botão de idioma em foco.
@@ -513,3 +523,11 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .case-nav a:hover{color:var(--paper)}
 .case-nav a.next{text-align:right;align-items:flex-end}
 .case-nav .lbl{font-size:.7rem;color:var(--muted-2);letter-spacing:.035em}
+
+/* ===== ENTRADAS POR BLOCO (coreografia via .in do observador) ===== */
+.js .help-item .hi-num,.js .help-item h3,.js .help-item p,
+.js .stat .stat-v,.js .stat h3,.js .stat p{
+  opacity:0;transform:translateY(20px);
+  transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
+.js .help-item.in .hi-num,.js .help-item.in h3,.js .help-item.in p,
+.js .stat.in .stat-v,.js .stat.in h3,.js .stat.in p{opacity:1;transform:none}

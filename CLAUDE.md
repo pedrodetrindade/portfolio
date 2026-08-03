@@ -48,8 +48,8 @@ gerado por IA: não volte a subir esses valores.
 
 Dois easings e cinco durações em `:root`. Use os tokens, não invente valores:
 `--ease-soft` (.16,1,.3,1), `--ease-smooth` (.22,1,.36,1), `--dur-micro` 350ms,
-`--dur-fast` 500ms, `--dur-default` 700ms, `--dur-slow` 950ms, `--dur-ambient`
-1400ms. `--ease-out-smooth` e `--ease-out-expo` continuam como aliases legados.
+`--dur-fast` 500ms, `--dur-default` 700ms, `--dur-slow` 1000ms, `--dur-reveal` 1200ms,
+`--dur-ambient` 1600ms. `--ease-out-smooth` e `--ease-out-expo` continuam como aliases legados.
 Nada de `ease-in-out` genérico, nada linear, nada de `transition:all`, nada
 elástico e nada de bounce.
 
@@ -64,23 +64,12 @@ o blur só custava pintura. Se precisar de brilho, alargue os stops do gradiente
 `backdrop-filter` continua permitido no vidro fosco da UI flutuante.
 
 **Um único listener de scroll**, passivo e com throttle por rAF, alimenta
-header, inversão sobre a faixa clara e scrub. Não adicione outro: some no
+header e scrub. Não adicione outro: some no
 laço existente em `js/main.js`.
 
 O scroll por inércia é próprio, sem biblioteca, com decaimento por tempo
-(lerp .135, roda a .9). Intercepta só a roda do mouse. Toque, teclado, âncoras
+(lerp .115, roda a .9). Intercepta só a roda do mouse. Toque, teclado, âncoras
 e barra de rolagem seguem nativos.
-
-## Direção visual
-
-Fundo carvão-azulado dessaturado, baixo contraste, elegante e maduro.
-Texturas-assinatura: orbes de luz difusas, grain, vidro fosco.
-Sobreposições (selos, botões flutuantes, tags) sempre translúcidas, nunca creme sólido.
-Tipografia: Onest para display e corpo, JetBrains Mono para rótulos técnicos,
-sempre em minúsculas.
-
-Animações precisam respeitar `prefers-reduced-motion` e desligar em telas touch
-quando dependem de cursor.
 
 ## Escrita
 
@@ -119,15 +108,9 @@ gera overflow horizontal e deixa a faixa curta à direita. `html` e `body` usam
 `js/main.js` adiciona. Sem isso a página continua legível caso o JS falhe. Não
 esconda conteúdo em CSS sem essa proteção.
 
-**O header é de vidro claro e some sobre a faixa clara do Sobre.** O JS alterna a
-classe `on-light` no `header` durante a rolagem. Qualquer elemento novo no topo
-precisa de uma variante `header.on-light`.
-
-**Nunca dê `focus()` num dos botões de idioma ao carregar.** O foco vai no
-`#gate`, que tem `tabindex="-1"`. Focar o primeiro botão pintava nele o anel de
-`:focus-visible` e o fazia parecer pré-selecionado. Pela mesma razão, a regra
-global de `:focus-visible` não pode declarar `border-radius`: ela sobrescrevia o
-formato pílula dos botões e os deixava retangulares só no foco.
+**A regra global de `:focus-visible` não pode declarar `border-radius`.** Ela
+sobrescreve o formato próprio de cada elemento e deixa pílulas retangulares só
+no foco.
 
 **O menu é dropdown por hover onde existe cursor.** O JS adiciona `.dropdown`
 ao `#menu` quando `pointer:fine`, e nesse modo ele não trava a rolagem nem
@@ -140,7 +123,17 @@ declarada depois dele e usada dentro dele estoura na zona morta temporal e
 mata o resto do script, deixando todo `.reveal` invisível. Foi o que aconteceu
 com `measureCta`. Declare helpers usados por `setLang` acima dele.
 
-**A intro sai em cascata e é removida do DOM.** `#gate.in` escalona a entrada,
-`#gate.leaving` escalona a saída na ordem inversa, e o `#gate` é removido depois
-de 1100ms para as massas de luz pararem de animar. Elementos novos na intro
-precisam da classe `.g-step` para entrar no escalonamento.
+**A intro (`#intro`) roda uma vez por sessão, via `sessionStorage`.** Nunca use
+`localStorage` aqui: o usuário precisa voltar a vê-la numa próxima sessão. Ela é
+removida do DOM ao fim, e `body.hero-in` é o que dispara a entrada da hero.
+
+**Tudo que começa escondido precisa da guarda `.js`.** Vale para `#intro`
+(`display:none` por padrão), `.hn-line`, `.hi-line`, `.stat-line`,
+`.caps-grid li` e `.mask-reveal`. Sem isso, se o JS falhar, o conteúdo some ou a
+intro cobre o site para sempre.
+
+**Números só com dado verificável.** Nada de estimativa: o que estiver pendente
+fica comentado no HTML, não publicado.
+
+**Peso tipográfico vai até 600.** A fonte só carrega 300/400/500/600, então
+qualquer 700 vira falso-negrito.
