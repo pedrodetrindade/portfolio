@@ -123,12 +123,18 @@ declarada depois dele e usada dentro dele estoura na zona morta temporal e
 mata o resto do script, deixando todo `.reveal` invisível. Foi o que aconteceu
 com `measureCta`. Declare helpers usados por `setLang` acima dele.
 
-**A intro (`#intro`) roda uma vez por sessão, via `sessionStorage`.** Nunca use
-`localStorage` aqui: o usuário precisa voltar a vê-la numa próxima sessão. Ela é
-removida do DOM ao fim, e `body.hero-in` é o que dispara a entrada da hero.
+**A intro não tem um segundo nome.** O `.intro-veil` cobre a página e a própria
+`.hero` sobe acima dele (`body.intro-mode`), então o `.hero-name` é literalmente
+o mesmo elemento nas duas etapas: nenhum crossfade entre cópias, nenhum salto.
+O que muda é só a escala, via `--nscale` 1.06 -> 1 com `transform-origin:50% 50%`,
+que mantém o centro fixo. Roda uma vez por sessão via `sessionStorage`.
 
-**Tudo que começa escondido precisa da guarda `.js`.** Vale para `#intro`
-(`display:none` por padrão), `.hn-line`, `.hi-line`, `.stat-line`,
+**A hero centra o nome porque só ele está no fluxo.** Tag, carimbo e "role para
+explorar" são absolutos. Se algum deles voltar ao fluxo, o nome sai do centro do
+viewport e a continuidade com a intro quebra.
+
+**Tudo que começa escondido precisa da guarda `.js`.** Vale para `.intro-veil`
+(`display:none` sob movimento reduzido), `.hn-line`, `.hi-line`, `.stat-line`,
 `.caps-grid li` e `.mask-reveal`. Sem isso, se o JS falhar, o conteúdo some ou a
 intro cobre o site para sempre.
 

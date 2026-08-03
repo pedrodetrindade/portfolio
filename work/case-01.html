@@ -31,7 +31,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/style.css?v=28">
+<link rel="stylesheet" href="../css/style.css?v=30">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
@@ -45,7 +45,26 @@
     <a class="brand" href="../index.html">Pedro de Trindade<span>.</span></a>
     <button class="menu-btn" data-menu data-pt-label="Abrir menu" data-en-label="Open menu" aria-label="Abrir menu"><i></i><span data-pt="Menu" data-en="Menu">Menu</span></button>
     <div class="nav-right">
-      <div class="lang-sw"><button data-lang="pt" class="on">PT</button><button data-lang="en">EN</button></div>
+      <div class="lang-pick">
+        <button class="lp-toggle" aria-expanded="false" aria-haspopup="listbox"
+                data-pt-label="Trocar idioma" data-en-label="Change language" aria-label="Trocar idioma">
+          <span class="lp-flag" data-lp-flag></span>
+          <span class="lp-code" data-lp-code>PT</span>
+          <svg class="lp-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+        </button>
+        <ul class="lp-menu" role="listbox" data-pt-label="Idiomas" data-en-label="Languages" aria-label="Idiomas">
+          <li role="none"><button role="option" aria-selected="true" data-lang="pt">
+            <span class="lp-flag" data-flag="br"></span>
+            <span class="lp-txt"><b>Português</b><small>PT-BR</small></span>
+            <svg class="lp-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          </button></li>
+          <li role="none"><button role="option" aria-selected="false" data-lang="en">
+            <span class="lp-flag" data-flag="uk"></span>
+            <span class="lp-txt"><b>English</b><small>EN</small></span>
+            <svg class="lp-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          </button></li>
+        </ul>
+      </div>
       <button class="nav-cta" data-contact data-pt-label="Abrir o painel de contato" data-en-label="Open the contact panel" aria-label="Abrir o painel de contato">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.7" y="5" width="18.6" height="14" rx="3.2"/><path d="M3.5 7.7l7.1 5a2.4 2.4 0 0 0 2.8 0l7.1-5"/></svg>
         <span class="nc-label" data-pt="Contato" data-en="Contact">Contato</span>
@@ -109,6 +128,6 @@
   <span>© <span id="yr"></span> · Rio de Janeiro, BR</span>
 </footer>
 
-<script src="../js/main.js?v=28"></script>
+<script src="../js/main.js?v=30"></script>
 </body>
 </html>

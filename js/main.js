@@ -108,6 +108,25 @@
 
   let buildScrub = null;
 
+  /* ---- bandeiras ----
+     SVG inline em vez de emoji: no Windows o emoji de bandeira não renderiza,
+     sai como "BR". Sem clipPath, para não colidir id entre instâncias: o
+     recorte circular vem do border-radius no CSS. */
+  const FLAGS = {
+    br: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" fill="#009B3A"/>' +
+        '<path d="M12 3.6 20.4 12 12 20.4 3.6 12Z" fill="#FEDF00"/>' +
+        '<circle cx="12" cy="12" r="4.1" fill="#002776"/>' +
+        '<path d="M8.2 10.9a4.1 4.1 0 0 1 7.5 1.4" stroke="#fff" stroke-width="1.05" fill="none"/></svg>',
+    uk: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" fill="#012169"/>' +
+        '<path d="M0 0 24 24M24 0 0 24" stroke="#fff" stroke-width="5"/>' +
+        '<path d="M0 0 24 24M24 0 0 24" stroke="#C8102E" stroke-width="2.6"/>' +
+        '<path d="M12 0V24M0 12H24" stroke="#fff" stroke-width="8"/>' +
+        '<path d="M12 0V24M0 12H24" stroke="#C8102E" stroke-width="4.6"/></svg>'
+  };
+  document.querySelectorAll('[data-flag]').forEach(el => {
+    el.innerHTML = FLAGS[el.dataset.flag] || '';
+  });
+
   /* ---- botão de contato: quanto o ícone anda para chegar ao centro ----
      Depende da largura do rótulo, que muda com o idioma. Precisa estar
      declarado antes de setLang: nas páginas sem portal o setLang roda ainda
@@ -135,7 +154,13 @@
       const v = lang === 'pt' ? el.dataset.ptLabel : el.dataset.enLabel;
       if (v !== undefined) el.setAttribute('aria-label', v);
     });
-    document.querySelectorAll('.lang-sw button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+    /* seletor: bandeira, código e o check do idioma atual */
+    const flagBox = document.querySelector('[data-lp-flag]');
+    const codeBox = document.querySelector('[data-lp-code]');
+    if (flagBox) flagBox.innerHTML = FLAGS[lang === 'pt' ? 'br' : 'uk'];
+    if (codeBox) codeBox.textContent = lang === 'pt' ? 'PT' : 'EN';
+    document.querySelectorAll('.lp-menu [data-lang]').forEach(b =>
+      b.setAttribute('aria-selected', String(b.dataset.lang === lang)));
     localStorage.setItem('lang', lang);
     if (buildScrub) buildScrub();
     measureCta();
@@ -151,36 +176,60 @@
 
   setLang(localStorage.getItem("lang") || "pt");
 
-  /* ================== INTRO: assinatura de entrada ==================
-     Só na primeira visita da sessão. sessionStorage, não localStorage: numa
-     próxima sessão a intro volta a aparecer. Sem progresso falso e sem
-     esperar os assets do site inteiro. */
-  const intro = document.getElementById("intro");
-  const heroOn = () => document.body.classList.add("hero-in");
+  /* ================== INTRO ==================
+     Não há dois nomes. O véu cobre a página, o próprio .hero-name sobe acima
+     dele, e o que muda entre as etapas é só a escala: 1.06 -> 1. É o mesmo
+     elemento, no mesmo lugar, então não existe crossfade nem salto.
+     Roda uma vez por sessão (sessionStorage, não localStorage). */
+  const heroName = document.querySelector('.hero-name');
+  const heroOn = () => document.body.classList.add('hero-in');
 
-  if (!intro) {
-    heroOn();
-  } else if (reduced || sessionStorage.getItem("introSeen")) {
-    intro.remove();
+  if (!heroName) {
+    heroOn();                                   // páginas de case
+  } else if (reduced || sessionStorage.getItem('introSeen')) {
     heroOn();
   } else {
-    sessionStorage.setItem("introSeen", "1");
-    document.body.classList.add("locked");
-    requestAnimationFrame(() => intro.classList.add("in"));
-    /* 820ms de entrada, ~420ms de permanência, e a saída começa. A hero
-       acende 300ms antes de a intro terminar: é a sobreposição. */
-    setTimeout(() => {
-      intro.classList.add("out");
-      document.body.classList.remove("locked");
-      document.body.classList.add("entering");
-    }, 1240);
-    setTimeout(heroOn, 1540);
-    setTimeout(() => {
-      document.body.classList.remove("entering");
-      if (intro.parentNode) intro.remove();
-    }, 2500);
+    sessionStorage.setItem('introSeen', '1');
+    document.body.classList.add('intro-mode');
+    /* as linhas do nome sobem por dentro das máscaras (820ms) */
+    requestAnimationFrame(() => document.body.classList.add('name-in'));
+    /* ~320ms de pausa e a composição assenta: véu sai, escala volta a 1 e
+       os secundários entram por cima da cauda desse movimento */
+    setTimeout(heroOn, 1160);
+    /* só então o nome volta ao empilhamento normal e a página destrava */
+    setTimeout(() => document.body.classList.remove('intro-mode'), 2200);
   }
-  document.querySelectorAll('.lang-sw button').forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
+  /* ---- seletor de idioma ----
+     Clique, teclado e toque. Fecha ao clicar fora e com Escape, devolvendo
+     o foco ao gatilho. A troca não recarrega nada e não mexe no scroll. */
+  const langPick = document.querySelector('.lang-pick');
+  if (langPick) {
+    const toggle = langPick.querySelector('.lp-toggle');
+    const opts = [...langPick.querySelectorAll('.lp-menu [data-lang]')];
+    const setOpen = state => {
+      langPick.classList.toggle('open', state);
+      toggle.setAttribute('aria-expanded', String(state));
+      if (state) opts.find(o => o.getAttribute('aria-selected') === 'true')?.focus();
+    };
+    toggle.addEventListener('click', e => {
+      e.stopPropagation();
+      setOpen(!langPick.classList.contains('open'));
+    });
+    opts.forEach(o => o.addEventListener('click', () => {
+      setLang(o.dataset.lang);      // não recarrega, não move o scroll
+      setOpen(false);
+      toggle.focus();
+    }));
+    document.addEventListener('click', e => {
+      if (!langPick.contains(e.target)) setOpen(false);
+    });
+    langPick.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { setOpen(false); toggle.focus(); }
+      if (e.key === 'ArrowDown' && !langPick.classList.contains('open')) {
+        e.preventDefault(); setOpen(true);
+      }
+    });
+  }
 
   /* ---- overlays ----
      modal=true  : painel de contato, trava fundo e move o foco
