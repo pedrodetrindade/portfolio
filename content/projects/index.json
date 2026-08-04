@@ -78,7 +78,7 @@
       "year": 2025,
       "cover": "assets/projetos/case-03/capa.jpg",
       "coverMobile": "",
-      "coverLight": false
+      "coverLight": true
     },
     {
       "slug": "case-04",
