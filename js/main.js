@@ -793,8 +793,14 @@
     /* 0.6 e não 0.88: o conteúdo só começa a se revelar quando a seção já
        entrou fundo na tela, e não assim que encosta na borda de baixo. É o que
        dá a sensação de capítulo. No estreito antecipa para 0.82, senão o
-       celular mostra tela vazia por tempo demais. */
-    pintarEntradas(y + window.innerHeight * (estreito.matches ? .86 : .74));
+       celular mostra tela vazia por tempo demais.
+       Rede de segurança do fim de página: numa página curta o limite acima
+       nunca chega a alcançar um elemento colado ao rodapé (o "voltar ao topo",
+       por exemplo), porque não sobra scroll suficiente para satisfazer a
+       conta. Ao encostar no fim real do documento, revela tudo que restou,
+       sem depender do limite proporcional à viewport. */
+    const noFimDaPagina = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
+    pintarEntradas(noFimDaPagina ? Infinity : y + window.innerHeight * (estreito.matches ? .86 : .74));
     pintarFundos(y);
   };
 

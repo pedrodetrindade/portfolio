@@ -17,7 +17,9 @@
     "nextHintLabelPt": "Continue para ver os projetos",
     "nextHintLabelEn": "Continue to see the projects",
     "nextHintNamePt": "Projetos",
-    "nextHintNameEn": "Projects"
+    "nextHintNameEn": "Projects",
+    "backgroundVideo": "",
+    "backgroundVideoPoster": ""
   },
 
   "sections": {

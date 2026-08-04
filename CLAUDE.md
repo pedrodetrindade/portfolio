@@ -108,19 +108,71 @@ camada fixa cobrindo o viewport com blend obriga o navegador a remisturar tudo
 a cada quadro. O `.grain` global usa opacidade simples por isso. Blend segue
 permitido em elemento pequeno, onde a área é limitada.
 
-**O fundo de vidro líquido é um componente só, `.liquid-bg`,** usado por capa,
-projetos e sobre. Quatro massas animadas por transform (`.lq1` a `.lq4`), uma
-base quente e uma vinheta, ambas com `background-size:100% 100vh` e
-`repeat-y`: as massas se ancoram nas bordas do bloco, então numa seção de três
-telas o miolo ficaria vazio se a cor viesse só delas. `.hero-liquid` é apenas
-o acréscimo da capa, o esmaecimento durante a intro. Mudou a composição, mudou
-nas três seções.
+**O fundo de vidro líquido é só da capa.** Já serviu projetos e sobre também,
+mas voltou atrás: as duas destoavam do resto do site, que é todo `--ink` plano
+(mesma cor em projetos, rodapé e "o que eu faço"). A classe ficou genérica,
+`.liquid-bg`, porque é reutilizável, não porque está em uso em mais de um
+lugar. Se um pedido futuro for "o mesmo fundo em outra seção", primeiro
+confirme se é o vidro líquido animado que devem querer, ou o plano que já é
+o padrão do site — da última vez era o segundo.
 
-**Fundo fora da tela não anima.** São doze camadas em movimento se todas
-rodarem juntas. O laço de scroll marca `.parado` no que está a mais de uma tela
-de distância e o CSS aplica `animation-play-state:paused`. Nada de
-`display:none` ali: a camada precisa continuar composta para não repintar do
-zero ao voltar. `medirFundos()` acompanha `medirAlvos()` em toda remedição.
+**Fundo fora da tela não anima.** O laço de scroll marca `.parado` no
+`.liquid-bg` quando ele está a mais de uma tela de distância, e o CSS aplica
+`animation-play-state:paused`. Nada de `display:none` ali: a camada precisa
+continuar composta para não repintar do zero ao voltar. `medirFundos()`
+acompanha `medirAlvos()` em toda remedição. Hoje só a capa usa `.liquid-bg`,
+então o mecanismo é infraestrutura pronta para quando outra seção precisar,
+não algo em uso agora.
+
+**Help e FAQ cabem numa tela de 1920x1080** (`min-height:100svh`, não mais
+112svh). `#work` e `#contact` ficam de fora desse grupo de propósito: `#work`
+é a seção mais longa da página e não deve encolher junto; `#contact` saiu
+depois, porque centralizar um conteúdo curto (headline, e-mail, dois links)
+numa caixa quase do tamanho da tela deixava grande demais o vazio entre o fim
+do conteúdo e a linha do rodapé. `#contact` cresce só pelo próprio conteúdo
+mais o padding, como `#work`. Se o conteúdo de help ou faq crescer (mais um
+item de FAQ, um parágrafo maior), o `min-height` deixa de mandar e a seção
+cresce pelo próprio conteúdo, sem quebrar o layout.
+
+**O disclaimer do rodapé mora empilhado com o "voltar ao topo",** dentro de
+`.foot-row` (agora `flex-direction:column`), não sozinho depois do marquee e
+não mais na mesma linha do botão. Ele já morou sozinho depois do marquee, na
+faixa que `.edge-blur` (o desfoque fixo do fundo da janela) borra
+permanentemente, e ficava difícil de ler. O marquee, decorativo e com baixa
+opacidade, é o fim visual real da página; o bloco utilitário (voltar ao topo
+em cima, crédito embaixo) fica acima dele, os dois centralizados.
+
+**O indicador "continue" da hero (`.next-hint`) é sempre centralizado por
+`left:50% + translateX(-50%)`.** Qualquer regra que troque o `transform` dele
+(a entrada disparada pela intro, por exemplo) precisa manter o
+`translateX(-50%)` e mexer só no eixo Y, senão o botão perde a centralização
+e ainda "desliza" de lado ao entrar. Já aconteceu: a transição de
+`intro-mode` para `hero-sec` sobrescrevia o transform inteiro para
+`translateX(10px)` → `none`, produzindo um botão torto com uma animação
+lateral indesejada em vez de só opacidade e um leve movimento vertical.
+
+**O header não tem fundo próprio, só uma vinheta fixa (`header::before`) que
+escurece o topo da tela, igual à `.lq-veil` da capa.** Marca, status de
+disponibilidade e seletor de idioma não têm contraste garantido contra o que
+rola por baixo do header fixo (uma capa de projeto clara, o retrato do
+Sobre); sem essa vinheta o contraste virava loteria dependendo da seção.
+É gradiente puro (`rgba(var(--ink-rgb),...)`), sem `backdrop-filter`: a
+vinheta do rodapé (`.edge-blur`) continua sendo o único blur em área larga do
+site.
+
+**A vinheta do header precisa continuar opaca (~.86) até depois da altura real
+do conteúdo, não só até a metade da própria caixa.** A primeira versão
+esmaecia a partir de 55% de uma caixa de `clamp(6rem,15vh,10rem)` e, no pior
+caso (6rem = 96px), a pílula de Menu/Disponibilidade (~85px de fundo do
+header) já caía numa faixa a ~0.34 de opacidade, contraste insuficiente sobre
+um fundo bem claro. Agora o trecho forte vai até 80% de uma caixa com piso de
+`7rem`, cobrindo o conteúdo real do header com margem antes de começar a
+esmaecer. `.avail` ("Disponível para projetos") também perdeu o
+`color:var(--muted-2)` com `opacity:.82`: mesmo com a vinheta mais forte,
+combinar uma cor já baixa com uma opacidade extra por cima não sobrava
+contraste sobre fundo muito claro. Passou para `--muted` sem opacity extra,
+que ainda lê mais quieto que o Menu (esse em `--paper`, peso Medium) sem
+depender só da vinheta para ficar legível.
 
 ## Sangramento de ponta a ponta
 
@@ -163,6 +215,24 @@ nem instala o scroll por inércia. Navegadores headless (inclusive o painel de
 preview) reportam essa preferência por padrão, e no Windows também acontece com
 "Efeitos de animação" desligado. Antes de investigar o código, confirme a
 preferência.
+
+**Aba em segundo plano trava transições de CSS a meio caminho, não só
+`requestAnimationFrame`.** Ao testar uma entrada acionada por `classList.add`
+(por exemplo `.reveal.in`) com `document.visibilityState === 'hidden'`, o
+`getComputedStyle` pode devolver o valor inicial da transição para sempre, como
+se a regra de destino nunca tivesse existido. Isso já pareceu um bug de
+especificidade de CSS uma vez. Para medir o estado final sem depender da aba
+estar em primeiro plano, zere a transição no elemento (`el.style.transition=
+'none'`), force reflow (`el.offsetWidth`) e só então leia o computed style.
+
+**`display:flex` num elemento pai bloca (`blockify`) o `display:inline-flex`
+de um filho para `display:flex`.** É por isso que `.mail-row` (inline-flex,
+pensado para centralizar via `text-align:center` do pai) precisou de
+`justify-content:center` própria: o `#contact` virou flex column para
+centralizar em `min-height:100svh`, e isso estica todo filho direto à largura
+total do container, ignorando `text-align`. `.contact .links` já resolvia isso
+do mesmo jeito; qualquer novo filho direto de uma seção com esse layout
+precisa do mesmo tratamento, não de `text-align` ou `margin:auto`.
 
 **Sangramento de ponta a ponta: veja a seção própria acima.** `html` e `body`
 usam `overflow-x:clip` como rede, e é justamente por isso que um sangramento

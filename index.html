@@ -34,7 +34,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=79">
+<link rel="stylesheet" href="css/style.css?v=82">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
@@ -102,6 +102,13 @@
          derivam devagar por transform. A vinheta central existe para proteger
          o contraste do nome e dos rótulos pequenos. -->
     <div class="liquid-bg hero-liquid" aria-hidden="true">
+      <!-- Vídeo de fundo opcional, configurável pelo CMS (content/home.json,
+           hero.backgroundVideo). Some por padrão: js/content-render.js só tira
+           o hidden e mostra o <video> quando existe uma URL configurada. As
+           massas animadas (.lq1-4) somem nesse caso via .liquid-bg.has-video,
+           mas a vinheta (.lq-veil) continua por cima, protegendo o contraste
+           do nome como já fazia sobre a névoa. -->
+      <video class="hero-video" muted loop playsinline autoplay hidden></video>
       <i class="lq lq1"></i><i class="lq lq2"></i><i class="lq lq3"></i><i class="lq lq4"></i>
       <span class="lq-veil"></span>
     </div>
@@ -508,6 +515,6 @@
      HTML da página já existe. Precisa vir antes de main.js, que é quem lê
      data-pt/data-en para decidir o idioma exibido. -->
 <script src="js/content-render.js?v=4"></script>
-<script src="js/main.js?v=78"></script>
+<script src="js/main.js?v=79"></script>
 </body>
 </html>

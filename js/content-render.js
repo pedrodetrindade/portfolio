@@ -50,6 +50,23 @@
     setText(nhLabel, hero.nextHintLabelPt, hero.nextHintLabelEn);
     setText(nhName, hero.nextHintNamePt, hero.nextHintNameEn);
 
+    /* Vídeo de fundo da capa, opcional. Ignorado sob prefers-reduced-motion:
+       um vídeo autoplay é a própria coisa que essa preferência pede para não
+       rodar, e as massas de vidro líquido (que ali já ficam paradas, ver
+       main.js/pintarFundos) seguem servindo de fundo. */
+    if (hero.backgroundVideo) {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var video = document.querySelector('.hero .hero-video');
+      var liquidBg = document.querySelector('.hero .liquid-bg');
+      if (video && liquidBg && !reduced) {
+        video.src = hero.backgroundVideo;
+        if (hero.backgroundVideoPoster) video.poster = hero.backgroundVideoPoster;
+        video.hidden = false;
+        liquidBg.classList.add('has-video');
+        video.play().catch(function () {});
+      }
+    }
+
     if (H.work) {
       setText(document.querySelector('.wi-title'), H.work.titlePt, H.work.titleEn);
       setText(document.querySelector('.wi-context'), H.work.contextPt, H.work.contextEn);

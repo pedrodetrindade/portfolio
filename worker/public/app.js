@@ -405,9 +405,11 @@
       fieldRow('Localização (EN)', '', '<input type="text" id="hero_locen" value="' + esc(hero.locationEn) + '">') +
       fieldRow('Frase de efeito (PT)', '', '<textarea id="hero_claimpt">' + esc(hero.claimPt) + '</textarea>') +
       fieldRow('Frase de efeito (EN)', '', '<textarea id="hero_claimen">' + esc(hero.claimEn) + '</textarea>') +
-      fieldRow('Mostrar "disponível para projetos"', '', switchControl('hero_avail', hero.showAvailability));
-    ['tagpt', 'tagen', 'locpt', 'locen', 'claimpt', 'claimen'].forEach(function (k) {
-      var map = { tagpt: 'tagPt', tagen: 'tagEn', locpt: 'locationPt', locen: 'locationEn', claimpt: 'claimPt', claimen: 'claimEn' };
+      fieldRow('Mostrar "disponível para projetos"', '', switchControl('hero_avail', hero.showAvailability)) +
+      fieldRow('Vídeo de fundo da capa (URL)', 'Em branco mantém o fundo animado atual. Aceita um caminho do repositório (assets/...) ou uma URL completa de um vídeo hospedado.', '<input type="text" id="hero_bgvideo" value="' + esc(hero.backgroundVideo) + '" placeholder="assets/capa.mp4">') +
+      fieldRow('Poster do vídeo (URL, opcional)', 'Imagem mostrada antes do vídeo carregar.', '<input type="text" id="hero_bgposter" value="' + esc(hero.backgroundVideoPoster) + '" placeholder="assets/capa-poster.jpg">');
+    ['tagpt', 'tagen', 'locpt', 'locen', 'claimpt', 'claimen', 'bgvideo', 'bgposter'].forEach(function (k) {
+      var map = { tagpt: 'tagPt', tagen: 'tagEn', locpt: 'locationPt', locen: 'locationEn', claimpt: 'claimPt', claimen: 'claimEn', bgvideo: 'backgroundVideo', bgposter: 'backgroundVideoPoster' };
       bindText('hero_' + k, function (v) { hero[map[k]] = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); });
     });
     bindSwitch('hero_avail', function (v) { hero.showAvailability = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); });

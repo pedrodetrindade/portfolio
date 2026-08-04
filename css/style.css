@@ -311,6 +311,21 @@ body.intro-mode{overflow:hidden}
 
 header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
   transition:transform var(--dur-default) var(--ease-out-smooth)}
+/* Vinheta fixa do topo: mesma lógica da .lq-veil, protege o contraste do texto
+   do header puxando o miolo de volta para o fundo do site. Sem ela, marca,
+   status e o seletor de idioma liam a cor de qualquer coisa que rolasse por
+   baixo (capa de projeto clara, retrato claro) e o contraste virava loteria.
+   Gradiente puro, sem blur: a regra de "backdrop-filter só no rodapé" continua
+   valendo, isso aqui é só tinta.
+   A primeira versão começava a esmaecer a 55% da própria altura e chegava ao
+   conteúdo real do header (~85px, margem + pílula) já em ~0.34 de opacidade,
+   contraste insuficiente sobre um fundo claro. Agora o trecho forte (.86) vai
+   até 80% de uma caixa com piso de 7rem (112px): o conteúdo do header sempre
+   cai dentro da parte forte, e só o excedente decorativo, abaixo dele, esmaece. */
+header::before{content:"";position:absolute;left:0;right:0;top:0;
+  height:clamp(7rem,15vh,10rem);z-index:-1;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(var(--ink-rgb),.86) 0%,
+    rgba(var(--ink-rgb),.86) 80%,transparent 100%)}
 .nav{margin:1.1rem var(--gutter);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1.4rem}
 /* ===== CAIXA COMPARTILHADA: MENU + DISPONIBILIDADE =====
    Um contorno só, um raio só, um material só. O fundo e a borda vivem no
@@ -398,6 +413,13 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
   overflow:hidden;pointer-events:none}
 .hero-stack{position:relative;z-index:1}
 
+/* Vídeo de fundo da capa: cobre a mesma caixa das massas de vidro líquido e
+   fica atrás delas no DOM, então a vinheta (.lq-veil), sempre por último,
+   continua por cima protegendo o contraste. Com vídeo ativo (.has-video),
+   as massas somem para não brigar visualmente com a imagem em movimento. */
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.liquid-bg.has-video .lq{display:none}
+
 .lq{position:absolute;display:block;border-radius:50%}
 .lq1{width:76vw;height:76vw;top:-26vw;left:-16vw;
   background:radial-gradient(circle,rgba(92,62,48,.50),rgba(74,50,40,.22) 38%,rgba(58,40,34,.07) 62%,transparent 78%);
@@ -484,11 +506,15 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
 /* ===== TAG DE DISPONIBILIDADE =====
    Vive ao lado do botão Menu, no bloco central do topo: assim não consome uma
    faixa própria na hero. Só o ponto se move; o fundo da tag fica parado. */
-/* Status, não botão: peso Regular, corpo menor, contraste mais baixo e nenhum
-   cursor de clique. Não deve competir com o Menu nem parecer acionável. */
+/* Status, não botão: peso Regular, corpo menor e nenhum cursor de clique. Não
+   deve competir com o Menu nem parecer acionável, mas precisa continuar
+   legível sozinho: era --muted-2 com opacity:.82 por cima, contraste baixo
+   demais para se sustentar sobre a vinheta do header num fundo muito claro.
+   --muted sem opacity extra já basta para diferenciar do Menu (esse sim em
+   --paper, peso Medium). */
 .avail{display:inline-flex;align-items:center;gap:.55em;
-  font-size:.7rem;font-weight:var(--w-regular);letter-spacing:.02em;color:var(--muted-2);
-  padding:.3rem .85rem .3rem .2rem;white-space:nowrap;opacity:.82;
+  font-size:.7rem;font-weight:var(--w-regular);letter-spacing:.02em;color:var(--muted);
+  padding:.3rem .85rem .3rem .2rem;white-space:nowrap;
   background:none;border:none}
 .avail-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#9EAD8B;
   animation:pulso-disp 1600ms var(--ease-smooth) infinite}
@@ -583,9 +609,14 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 #help{padding-block:clamp(3.5rem,9vh,var(--help-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--help-pad-bottom-desktop,5rem))}
 #faq{padding-block:clamp(3.5rem,9vh,var(--faq-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--faq-pad-bottom-desktop,5rem))}
 #contact{padding-block:clamp(3.5rem,9vh,var(--contact-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--contact-pad-bottom-desktop,5rem))}
+/* #contact saiu do grupo min-height:100svh: centralizado numa caixa quase do
+   tamanho da tela, o vazio entre o fim do conteúdo (redes sociais) e a linha
+   do rodapé ficava grande demais em telas largas. Sem min-height, a seção
+   cresce só pelo próprio conteúdo mais o padding acima, igual a #work. */
 @media(min-width:900px){
-  #help,#faq,#contact{min-height:100svh;display:flex;flex-direction:column;
+  #help,#faq{min-height:100svh;display:flex;flex-direction:column;
     justify-content:center}
+  #contact{display:flex;flex-direction:column;justify-content:center}
 }
 /* faixa "tablet": 640px a 899px */
 @media(max-width:899px) and (min-width:640px){
@@ -978,15 +1009,15 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
   font-size:.74rem;color:var(--muted-2);
   display:flex;flex-direction:column;gap:1.15rem}
-/* Botão e disclaimer dividem uma linha, os dois centrados. O disclaimer vivia
+/* Botão e disclaimer empilhados, os dois centrados. O disclaimer vivia
    sozinho depois do marquee, exatamente na faixa que .edge-blur (o desfoque
    fixo do rodapé da janela) borra sem parar: texto pequeno perdendo nitidez
    permanentemente é o pior lugar para uma informação de crédito. Subir para
-   esta linha tira o texto de debaixo do desfoque, e o marquee, decorativo e já
+   este bloco tira o texto de debaixo do desfoque, e o marquee, decorativo e já
    com baixa opacidade, vira o verdadeiro fim visual da página. */
-.foot-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
-  gap:1.4rem 2rem}
-.foot-note{font-size:.72rem;font-weight:var(--w-light);line-height:1.5;
+.foot-row{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1rem}
+.foot-note{font-size:.82rem;font-weight:var(--w-light);line-height:1.5;
   color:var(--muted-2);opacity:.78;text-align:center}
 .foot-yr{white-space:nowrap}
 
@@ -1166,9 +1197,9 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
 /* O indicador da hero não pode depender do observador de rolagem: ele fica no
    rodapé da primeira dobra e só entraria na conta depois de um scroll. Aqui ele
    é comandado pela própria intro, junto com os outros secundários. */
-.js body.intro-mode:not(.hero-sec) .hero .next-hint{opacity:0;transform:translateX(10px)}
+.js body.intro-mode:not(.hero-sec) .hero .next-hint{opacity:0;transform:translateX(-50%) translateY(10px)}
 .js body.hero-sec .hero .next-hint,
-.js body.hero-in .hero .next-hint{opacity:1;transform:none;
+.js body.hero-in .hero .next-hint{opacity:1;transform:translateX(-50%);
   transition:opacity 1350ms var(--ease-soft) 360ms,transform 1350ms var(--ease-soft) 360ms}
 
 /* ===== ACCESSIBILITY: focus & skip link =====
