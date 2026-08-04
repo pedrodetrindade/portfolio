@@ -1,6 +1,5 @@
 {
   "$schema": "Conteúdo textual e configurações da Home. Os valores abaixo são os que o site já usava.",
-
   "hero": {
     "name": "Pedro de Trindade",
     "tagPt": "Diretor de Arte & Designer Sênior",
@@ -21,16 +20,74 @@
     "backgroundVideo": "",
     "backgroundVideoPoster": ""
   },
-
   "sections": {
     "$note": "spacingTop/spacingBottom agora têm três níveis: {desktop, tablet, mobile}. desktop:null herda o padrão global (content/global.json > layout); tablet:null herda o desktop resolvido desta mesma seção; mobile:null herda o tablet resolvido. work e about já tinham um espaçamento maior que o padrão global antes do CMS existir — por isso, mesmo com os três níveis em null aqui, eles continuam diferentes: o número property deles mora direto no CSS como o valor de quando não há nenhuma configuração, e o JSON só entra em ação quando alguém troca esse número pelo painel. visible controla mostrar/esconder — na v1 isso só é seguro para about, help e faq: hero, work e contact sustentam partes do layout e da navegação (o indicador da capa aponta pra work, o rodapé depende do fluxo terminar em contact), então visible nelas é ignorado pelo site por enquanto.",
-    "work":    { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
-    "about":   { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
-    "help":    { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
-    "faq":     { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
-    "contact": { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } }
+    "work": {
+      "visible": true,
+      "spacingTop": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      },
+      "spacingBottom": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      }
+    },
+    "about": {
+      "visible": true,
+      "spacingTop": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      },
+      "spacingBottom": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      }
+    },
+    "help": {
+      "visible": true,
+      "spacingTop": {
+        "desktop": 80,
+        "tablet": null,
+        "mobile": null
+      },
+      "spacingBottom": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      }
+    },
+    "faq": {
+      "visible": true,
+      "spacingTop": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      },
+      "spacingBottom": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      }
+    },
+    "contact": {
+      "visible": true,
+      "spacingTop": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      },
+      "spacingBottom": {
+        "desktop": null,
+        "tablet": null,
+        "mobile": null
+      }
+    }
   },
-
   "work": {
     "titlePt": "Uma seleção de trabalhos construídos entre direção de arte, identidade e estratégia.",
     "titleEn": "A selection of work shaped across art direction, identity, and strategy.",
@@ -41,104 +98,191 @@
     "columnsDesktop": 2,
     "gap": 25.6
   },
-
   "about": {
-    "kickerPt": "Sobre", "kickerEn": "About",
+    "kickerPt": "Sobre",
+    "kickerEn": "About",
     "leadPt": "Designer com experiência em direção criativa e de arte, atuando há seis anos em design, branding e estratégia de marketing desde 2020, na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio.",
     "leadEn": "A designer working in creative and art direction, with six years across design, branding and marketing strategy since 2020, building brands, campaigns and communication ecosystems that connect creative vision, positioning and business objectives.",
     "subPt": "Ao longo da trajetória, desenvolvi soluções visuais e estratégicas para marcas que buscavam fortalecer presença, gerar valor e ampliar relevância em seus mercados, em contextos B2B e B2C. Também estive envolvido em projetos de fintechs e ativos digitais, incorporando inteligência artificial ao fluxo criativo.",
     "subEn": "Along the way I've built visual and strategic solutions for brands looking to strengthen presence, generate value and expand relevance in their markets, across B2B and B2C. I've also worked on fintech and digital asset projects, bringing AI into the creative workflow.",
     "photo": "assets/pedro.png",
-    "capabilitiesLabelPt": "Capacidades", "capabilitiesLabelEn": "Capabilities",
+    "capabilitiesLabelPt": "Capacidades",
+    "capabilitiesLabelEn": "Capabilities",
     "capabilities": [
-      { "pt": "Direção de arte", "en": "Art direction" },
-      { "pt": "Identidade visual", "en": "Visual identity" },
-      { "pt": "Direção criativa", "en": "Creative direction" },
-      { "pt": "Naming e posicionamento", "en": "Naming and positioning" },
-      { "pt": "Campanhas e key visuals", "en": "Campaigns and key visuals" },
-      { "pt": "Apresentações estratégicas", "en": "Strategic presentations" },
-      { "pt": "Motion e audiovisual", "en": "Motion and audiovisual" },
-      { "pt": "IA no fluxo criativo", "en": "AI in the creative workflow" }
+      {
+        "pt": "Direção de arte",
+        "en": "Art direction"
+      },
+      {
+        "pt": "Identidade visual",
+        "en": "Visual identity"
+      },
+      {
+        "pt": "Direção criativa",
+        "en": "Creative direction"
+      },
+      {
+        "pt": "Naming e posicionamento",
+        "en": "Naming and positioning"
+      },
+      {
+        "pt": "Campanhas e key visuals",
+        "en": "Campaigns and key visuals"
+      },
+      {
+        "pt": "Apresentações estratégicas",
+        "en": "Strategic presentations"
+      },
+      {
+        "pt": "Motion e audiovisual",
+        "en": "Motion and audiovisual"
+      },
+      {
+        "pt": "IA no fluxo criativo",
+        "en": "AI in the creative workflow"
+      }
     ],
-    "ctaTalkPt": "Vamos conversar", "ctaTalkEn": "Let's talk"
+    "ctaTalkPt": "Vamos conversar",
+    "ctaTalkEn": "Let's talk"
   },
-
   "help": {
-    "kickerPt": "atuação", "kickerEn": "expertise",
-    "titlePt": "O que eu faço", "titleEn": "What I do",
+    "kickerPt": "atuação",
+    "kickerEn": "expertise",
+    "titlePt": "O que eu faço",
+    "titleEn": "What I do",
     "leadPt": "Quatro frentes que funcionam como um sistema: a estratégia define o rumo, a direção criativa transforma esse rumo em linguagem, a comunicação coloca a marca em circulação e a tecnologia amplia sua capacidade de evoluir e ganhar escala.",
     "leadEn": "Four areas working as a system: strategy sets the direction, creative direction turns that direction into language, communication puts the brand into circulation, and technology expands its ability to evolve and scale.",
     "items": [
       {
-        "titlePt": "Direção Criativa & Direção de Arte", "titleEn": "Creative Direction & Art Direction",
+        "titlePt": "Direção Criativa & Direção de Arte",
+        "titleEn": "Creative Direction & Art Direction",
         "textPt": "Traduzo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca entre campanhas, conteúdos, produtos e experiências.",
         "textEn": "I translate strategy into concepts, narratives, and visual systems, guiding brand expression across campaigns, content, products, and experiences.",
         "tags": [
-          { "pt": "conceitos criativos", "en": "creative concepts" },
-          { "pt": "direção de arte", "en": "art direction" },
-          { "pt": "motion & audiovisual", "en": "motion & audiovisual" }
+          {
+            "pt": "conceitos criativos",
+            "en": "creative concepts"
+          },
+          {
+            "pt": "direção de arte",
+            "en": "art direction"
+          },
+          {
+            "pt": "motion & audiovisual",
+            "en": "motion & audiovisual"
+          }
         ]
       },
       {
-        "titlePt": "Estratégia & Gestão de Marca", "titleEn": "Strategy & Brand Management",
+        "titlePt": "Estratégia & Gestão de Marca",
+        "titleEn": "Strategy & Brand Management",
         "textPt": "Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, mantêm consistência e evoluem ao longo do tempo.",
         "textEn": "I connect positioning, communication, and business objectives to guide how brands present themselves, maintain consistency, and evolve over time.",
         "tags": [
-          { "pt": "posicionamento", "en": "positioning" },
-          { "pt": "diretrizes de marca", "en": "brand guidelines" },
-          { "pt": "governança criativa", "en": "creative governance" }
+          {
+            "pt": "posicionamento",
+            "en": "positioning"
+          },
+          {
+            "pt": "diretrizes de marca",
+            "en": "brand guidelines"
+          },
+          {
+            "pt": "governança criativa",
+            "en": "creative governance"
+          }
         ]
       },
       {
-        "titlePt": "Campanhas & Comunicação de Negócio", "titleEn": "Campaigns & Business Communication",
+        "titlePt": "Campanhas & Comunicação de Negócio",
+        "titleEn": "Campaigns & Business Communication",
         "textPt": "Transformo desafios de comunicação em campanhas, apresentações estratégicas e experiências digitais que fortalecem a marca, organizam narrativas complexas e apoiam marketing, produto e comercial.",
         "textEn": "I turn communication challenges into campaigns, strategic presentations, and digital experiences that strengthen the brand, organize complex narratives, and support marketing, product, and sales.",
         "tags": [
-          { "pt": "campanhas integradas", "en": "integrated campaigns" },
-          { "pt": "apresentações estratégicas", "en": "strategic presentations" },
-          { "pt": "experiências digitais", "en": "digital experiences" }
+          {
+            "pt": "campanhas integradas",
+            "en": "integrated campaigns"
+          },
+          {
+            "pt": "apresentações estratégicas",
+            "en": "strategic presentations"
+          },
+          {
+            "pt": "experiências digitais",
+            "en": "digital experiences"
+          }
         ]
       },
       {
-        "titlePt": "Operações Criativas & Inteligência Artificial", "titleEn": "Creative Operations & Artificial Intelligence",
+        "titlePt": "Operações Criativas & Inteligência Artificial",
+        "titleEn": "Creative Operations & Artificial Intelligence",
         "textPt": "Estruturo processos, critérios e fluxos que conectam estratégia, criação e execução, integrando inteligência artificial para ampliar eficiência, repertório e escala sem comprometer a consistência da marca.",
         "textEn": "I structure processes, criteria, and workflows that connect strategy, creation, and execution, integrating artificial intelligence to expand efficiency, repertoire, and scale without compromising brand consistency.",
         "tags": [
-          { "pt": "sistemas criativos", "en": "creative systems" },
-          { "pt": "IA aplicada", "en": "applied AI" },
-          { "pt": "processos & automação", "en": "processes & automation" }
+          {
+            "pt": "sistemas criativos",
+            "en": "creative systems"
+          },
+          {
+            "pt": "IA aplicada",
+            "en": "applied AI"
+          },
+          {
+            "pt": "processos & automação",
+            "en": "processes & automation"
+          }
         ]
       }
     ]
   },
-
   "faq": {
-    "titlePt": "Perguntas frequentes", "titleEn": "FAQs",
+    "titlePt": "Perguntas frequentes",
+    "titleEn": "FAQs",
     "items": [
-      { "qPt": "Com que tipo de clientes você normalmente trabalha?", "qEn": "What types of clients do you usually work with?",
+      {
+        "qPt": "Com que tipo de clientes você normalmente trabalha?",
+        "qEn": "What types of clients do you usually work with?",
         "aPt": "Trabalho com startups, empresas em crescimento e marcas consolidadas que buscam construir, reposicionar ou fortalecer sua presença visual e estratégica.",
-        "aEn": "I work with startups, growing companies, and established brands looking to build, reposition, or strengthen their visual and strategic presence." },
-      { "qPt": "Quais serviços você oferece?", "qEn": "What services do you offer?",
+        "aEn": "I work with startups, growing companies, and established brands looking to build, reposition, or strengthen their visual and strategic presence."
+      },
+      {
+        "qPt": "Quais serviços você oferece?",
+        "qEn": "What services do you offer?",
         "aPt": "Atuo com direção criativa, direção de arte, branding, identidade visual, campanhas, design digital e sistemas de comunicação adaptados às necessidades de cada projeto.",
-        "aEn": "I work across creative direction, art direction, branding, visual identity, campaigns, digital design, and communication systems shaped around each project's needs." },
-      { "qPt": "Como funciona o início de um projeto?", "qEn": "How does a project begin?",
+        "aEn": "I work across creative direction, art direction, branding, visual identity, campaigns, digital design, and communication systems shaped around each project's needs."
+      },
+      {
+        "qPt": "Como funciona o início de um projeto?",
+        "qEn": "How does a project begin?",
         "aPt": "O trabalho começa com uma conversa de alinhamento para entender contexto, objetivos, desafios, escopo e prioridades. A partir disso, estruturo uma proposta e um caminho de execução.",
-        "aEn": "The process starts with an alignment conversation to understand the context, goals, challenges, scope, and priorities. From there, I structure a proposal and execution path." },
-      { "qPt": "Quanto tempo leva um projeto típico?", "qEn": "How long does a typical project take?",
+        "aEn": "The process starts with an alignment conversation to understand the context, goals, challenges, scope, and priorities. From there, I structure a proposal and execution path."
+      },
+      {
+        "qPt": "Quanto tempo leva um projeto típico?",
+        "qEn": "How long does a typical project take?",
         "aPt": "O prazo varia conforme o escopo, a complexidade e as entregas envolvidas. O cronograma é definido com clareza antes do início do projeto.",
-        "aEn": "Timing depends on the scope, complexity, and deliverables involved. A clear schedule is defined before the project begins." },
-      { "qPt": "Como você estrutura propostas e valores?", "qEn": "How do you structure proposals and pricing?",
+        "aEn": "Timing depends on the scope, complexity, and deliverables involved. A clear schedule is defined before the project begins."
+      },
+      {
+        "qPt": "Como você estrutura propostas e valores?",
+        "qEn": "How do you structure proposals and pricing?",
         "aPt": "Cada proposta é desenvolvida de acordo com o escopo, a complexidade, o prazo e o formato de colaboração, seja por projeto ou acompanhamento contínuo.",
-        "aEn": "Each proposal is shaped around the scope, complexity, timeline, and collaboration format, whether it is project-based or an ongoing partnership." },
-      { "qPt": "Você oferece suporte após a entrega?", "qEn": "Do you offer support after delivery?",
+        "aEn": "Each proposal is shaped around the scope, complexity, timeline, and collaboration format, whether it is project-based or an ongoing partnership."
+      },
+      {
+        "qPt": "Você oferece suporte após a entrega?",
+        "qEn": "Do you offer support after delivery?",
         "aPt": "Sim. Quando o projeto exige continuidade, podemos estruturar uma etapa de acompanhamento, evolução de materiais ou novas entregas após o lançamento.",
-        "aEn": "Yes. When a project requires continuity, we can structure ongoing support, material evolution, or additional deliverables after launch." }
+        "aEn": "Yes. When a project requires continuity, we can structure ongoing support, material evolution, or additional deliverables after launch."
+      }
     ]
   },
-
   "contact": {
-    "titleLine1Pt": "Vamos trabalhar", "titleLine1En": "Let's work",
-    "titleLine2Pt": "juntos", "titleLine2En": "together",
-    "mailLabelPt": "Escreva para", "mailLabelEn": "Drop me an email"
+    "titleLine1Pt": "Vamos trabalhar",
+    "titleLine1En": "Let's work",
+    "titleLine2Pt": "juntos",
+    "titleLine2En": "together",
+    "mailLabelPt": "Escreva para",
+    "mailLabelEn": "Drop me an email"
   }
 }
