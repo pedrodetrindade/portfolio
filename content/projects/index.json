@@ -130,7 +130,7 @@
     },
     {
       "slug": "case-03-copia-copia",
-      "visible": false,
+      "visible": true,
       "featured": false,
       "cardSize": "normal",
       "order": 6,
