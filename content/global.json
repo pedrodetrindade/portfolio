@@ -3,7 +3,7 @@
   "colors": {
     "background": {
       "hex": "#0d0a0a",
-      "opacity": 18
+      "opacity": 100
     },
     "backgroundSecondary": {
       "hex": "#261B1D",
@@ -14,8 +14,8 @@
       "opacity": 100
     },
     "textPrimary": {
-      "hex": "#F2EEEE",
-      "opacity": 100
+      "hex": "#f2eeee",
+      "opacity": 5
     },
     "textSecondary": {
       "hex": "#B7ACAC",
