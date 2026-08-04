@@ -578,6 +578,7 @@
       fieldRow('Papel (PT / EN)', '', '<input type="text" id="pe_rolept" value="' + esc(P.hero.rolePt) + '" style="max-width:160px"><input type="text" id="pe_roleen" value="' + esc(P.hero.roleEn) + '" style="max-width:160px">') +
       fieldRow('Escopo (PT / EN)', '', '<input type="text" id="pe_scopept" value="' + esc(P.hero.scopePt) + '" style="max-width:160px"><input type="text" id="pe_scopeen" value="' + esc(P.hero.scopeEn) + '" style="max-width:160px">') +
       fieldRow('Capa', 'caminho do arquivo — envie por Mídia e cole aqui', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
+      fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
       '</div></details>' +
       '<details class="group"><summary>Contexto / processo / resultado</summary><div class="group-body">' +
       textBlocks.map(function (b, i) {
@@ -602,6 +603,7 @@
     bindText('pe_roleen', function (v) { P.hero.roleEn = v; save(); });
     bindText('pe_scopept', function (v) { P.hero.scopePt = v; save(); });
     bindText('pe_scopeen', function (v) { P.hero.scopeEn = v; save(); });
+    bindSwitch('pe_coverlight', function (v) { indexEntry.coverLight = v; markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); });
     bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); });
     document.getElementById('pe_status').addEventListener('change', function (e) { P.status = e.target.value; save(); });
     document.getElementById('pe_year').addEventListener('change', function (e) { P.year = Number(e.target.value); indexEntry.year = P.year; save(); });

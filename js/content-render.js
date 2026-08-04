@@ -187,7 +187,7 @@
               return '<span data-pt="' + esc(t) + '" data-en="' + esc(tagsEn[i] || t) + '">' + esc(t) + '</span>';
             }).join('');
             return '' +
-              '<a class="card reveal" href="work/' + esc(p.slug) + '.html">' +
+              '<a class="card reveal' + (p.coverLight ? ' card--light' : '') + '" href="work/' + esc(p.slug) + '.html">' +
               '  <div class="scene"><img src="' + esc(p.cover) + '" alt="" onerror="this.remove()"></div>' +
               '  <div class="card-tags">' + tagsHtml + '</div>' +
               '  <div class="card-foot">' +

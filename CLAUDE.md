@@ -176,6 +176,18 @@ opacidade extra por cima não sobrava contraste sobre fundo muito claro, nem
 com o drop-shadow. Passou para `--muted` sem opacity extra, que ainda lê mais
 quieto que o Menu (esse em `--paper`, peso Medium).
 
+**Cards com capa predominantemente clara (o amarelo do Assertivo, por
+exemplo) têm uma segunda defesa além do drop-shadow: `coverLight:true` em
+`content/projects/index.json` marca o card com a classe `.card--light`, e o
+header troca para texto escuro (`.on-light`) só enquanto esse card passa por
+baixo dele.** Mais limpo que empilhar sombra escura sobre um fundo já claro.
+`js/main.js` (`medirClaros`/`pintarClaros`) mede a posição documento-relativa
+de todo `.card--light` e liga a classe pela mesma lógica de comparação de
+posição por scroll que o resto do arquivo usa (`medirAlvos`/`pintarEntradas`,
+`medirFundos`/`pintarFundos`) — não `IntersectionObserver`, que não reavalia
+quando o deslocamento vem do transform do `.smooth-holder`. Editável pelo
+painel do CMS (campo "Capa clara?" no editor de projeto).
+
 ## Sangramento de ponta a ponta
 
 **Use `var(--vw)`, medido pelo JS, e não `calc(100vw - var(--sbw))`.** A regra

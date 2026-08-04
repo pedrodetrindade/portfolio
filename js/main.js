@@ -774,6 +774,30 @@
     }
   };
 
+  /* ===== HEADER SOBRE CAPA CLARA =====
+     Alternativa ao drop-shadow fixo: cards marcados --light no CMS (capa
+     predominantemente clara, tipo o amarelo do Assertivo) fazem o header
+     trocar para texto escuro só enquanto passam por baixo dele, em vez de
+     depender de uma sombra permanente. Mesmo mecanismo de posição por
+     scroll que os outros blocos desta seção, não IntersectionObserver: a
+     rolagem suave desloca o conteúdo por transform no .smooth-holder, e o
+     navegador não reavalia interseção quando o deslocamento vem de
+     transform de ancestral. */
+  let claros = [], headAltura = headEl.offsetHeight, headNaClara = false;
+  const medirClaros = () => {
+    headAltura = headEl.offsetHeight;
+    claros = [...document.querySelectorAll('.card--light')].map(el => {
+      const r = el.getBoundingClientRect();
+      return { topo: r.top + posVisual, base: r.bottom + posVisual };
+    });
+  };
+  const pintarClaros = y => {
+    const onLight = claros.length > 0 && claros.some(c => c.topo < y + headAltura && c.base > y);
+    if (onLight === headNaClara) return;
+    headNaClara = onLight;
+    headEl.classList.toggle('on-light', onLight);
+  };
+
   const readScroll = () => {
     queued = false;
     const y = posVisual;
@@ -788,6 +812,7 @@
       headEl.style.transform = esconder ? 'translateY(-130%)' : 'translateY(0)';
     }
     lastY = y;
+    pintarClaros(y);
 
     if (scrubWords.length) paintScrub(y + window.innerHeight * .72);
     /* 0.6 e não 0.88: o conteúdo só começa a se revelar quando a seção já
@@ -816,6 +841,7 @@
     if (scrubWords.length) measureWords();
     medirAlvos();
     medirFundos();
+    medirClaros();
     medirDeslocamentoNome();
     onScroll();
   }, { passive: true });
@@ -840,12 +866,14 @@
         if (scrubWords.length) measureWords();
         medirAlvos();
         medirFundos();
+        medirClaros();
         readScroll();
       });
     }
   }
   medirAlvos();
   medirFundos();
+  medirClaros();
   readScroll();
 
   /* ================== ROLAGEM SUAVE POR TRANSFORM ==================
@@ -897,6 +925,7 @@
       if (scrubWords.length) measureWords();
       medirAlvos();
       medirFundos();
+      medirClaros();
     };
 
     const aplicar = () => {

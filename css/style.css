@@ -332,6 +332,19 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
    fundo muito claro. */
 .brand,.menu-btn,.avail,.lp-toggle{
   filter:drop-shadow(0 1px 2px rgba(var(--ink-rgb),.6))}
+
+/* Sobre um card marcado --light no CMS (ver content/projects/index.json,
+   coverLight), o header troca para texto escuro em vez de contar só com o
+   drop-shadow: mais limpo que forçar sombra escura sobre texto que já é
+   escuro. js/main.js (medirClaros/pintarClaros) liga esta classe pela mesma
+   lógica de posição por scroll que o resto do arquivo usa, porque
+   IntersectionObserver não reavalia com a rolagem suave por transform. */
+header.on-light .brand,header.on-light .menu-btn,
+header.on-light .avail,header.on-light .lp-toggle{
+  color:var(--ink);filter:none}
+header.on-light .brand span{color:var(--ink-3)}
+header.on-light .menu-btn i{background-image:radial-gradient(circle,var(--ink-3) 1.4px,transparent 1.5px)}
+header.on-light .lp-arrow{color:var(--ink-3)}
 /* ===== CAIXA COMPARTILHADA: MENU + DISPONIBILIDADE =====
    Um contorno só, um raio só, um material só. O fundo e a borda vivem no
    container; o botão e o status ficam sem contorno próprio, senão o conjunto

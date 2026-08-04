@@ -1,5 +1,5 @@
 {
-  "$schema": "Lista e ordem dos projetos exibidos na grade da Home. O conteúdo completo de cada projeto mora em content/projects/<slug>.json.",
+  "$schema": "Lista e ordem dos projetos exibidos na grade da Home. O conteúdo completo de cada projeto mora em content/projects/<slug>.json. coverLight marca capas predominantemente claras (ex.: o amarelo do case-04): com isso o header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima desse card, em vez de depender de sombra.",
   "cardSizes": ["normal", "largo", "alto", "grande", "largura-completa"],
   "projects": [
     {
@@ -17,7 +17,8 @@
       "tagsEn": ["branding", "design system"],
       "year": 2026,
       "cover": "assets/projetos/case-01/capa.jpg",
-      "coverMobile": ""
+      "coverMobile": "",
+      "coverLight": false
     },
     {
       "slug": "case-02",
@@ -34,7 +35,8 @@
       "tagsEn": ["art direction", "campaign"],
       "year": 2025,
       "cover": "assets/projetos/case-02/capa.jpg",
-      "coverMobile": ""
+      "coverMobile": "",
+      "coverLight": false
     },
     {
       "slug": "case-03",
@@ -51,7 +53,8 @@
       "tagsEn": ["creative direction", "storytelling"],
       "year": 2025,
       "cover": "assets/projetos/case-03/capa.jpg",
-      "coverMobile": ""
+      "coverMobile": "",
+      "coverLight": false
     },
     {
       "slug": "case-04",
@@ -68,7 +71,8 @@
       "tagsEn": ["identity", "visual system"],
       "year": 2024,
       "cover": "assets/projetos/case-04/capa.jpg",
-      "coverMobile": ""
+      "coverMobile": "",
+      "coverLight": true
     }
   ]
 }
