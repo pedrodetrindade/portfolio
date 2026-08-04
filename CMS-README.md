@@ -7,6 +7,91 @@ Access). Ele foi escrito para quem não mexe em código no dia a dia.
 
 ---
 
+## Revisão funcional antes do deploy
+
+Antes de publicar, o sistema passou por uma segunda rodada de revisão focada
+em cinco pontos. O que segue é o que foi de fato encontrado ao testar — não
+uma lista do que deveria funcionar.
+
+**Grade de projetos: já era dinâmica, nenhuma mudança precisou ser feita.**
+Testado ao vivo com 6 projetos simulados: a grade renderizou todos, sem
+limite de 4, sem `slice`, sem componente fixo por posição — ela sempre leu
+`content/projects/index.json` por inteiro. O "4 projetos" que existe hoje é
+só porque há 4 projetos reais cadastrados, não uma trava no código.
+
+**Navegação "próximo projeto": tinha um bug real, corrigido.** Ela dependia
+de campos `prevProject`/`nextProject` gravados à mão em cada JSON de
+projeto. Um projeto novo, criado pelo painel, nascia com esses campos vazios
+e os vizinhos dele nunca eram atualizados para apontar para ele — ou seja,
+criar um 5º projeto não quebrava a grade (que já era dinâmica), mas ficava
+com a navegação "próximo" cega para ele. Corrigido: a navegação agora é
+calculada em `js/content-render.js` a partir da posição do projeto na lista
+ordenada e visível de `projects/index.json`, a cada carregamento de página.
+Testado inserindo um 5º projeto entre o 4º e o 1º: o "próximo" do 4º passou
+a apontar para o novo projeto automaticamente, sem editar nenhum arquivo do
+projeto 4. Os campos `prevProject`/`nextProject` foram removidos dos 4 JSONs
+existentes (não fazem mais nada).
+
+**Criar, duplicar e excluir projeto: as duas últimas não existiam, foram
+adicionadas.** O painel só tinha "criar" e "editar". Agora tem `DELETE
+/api/projects/:slug` (remove a entrada do índice, o JSON e a página HTML —
+não apaga imagens em `assets/`, porque não há garantia de que não sejam
+reaproveitadas em outro lugar) e `POST /api/projects/:slug/duplicate`
+(clona o projeto de origem com um novo slug, título com "(cópia)" e nasce
+como rascunho oculto). Os dois pedem confirmação no painel antes de chamar o
+Worker.
+
+**Espaçamento responsivo: era só desktop, agora é desktop/tablet/celular com
+herança de verdade.** Antes, o painel só controlava o teto de telas grandes;
+tablet e celular usavam um número fixo, igual para os dois, sem controle
+nenhum. Agora cada seção da Home e cada espaçamento global têm três níveis
+independentes (`{desktop, tablet, mobile}`), reaproveitando os dois pontos de
+corte que o CSS já usava para outra coisa (900px e 640px) — nenhum
+breakpoint novo foi criado. Um nível em branco herda o nível anterior da
+mesma seção (celular herda tablet, que herda desktop); o painel mostra um
+selo "herdando de X" ou "próprio" para cada campo, com um botão para voltar a
+herdar. Testado nas três larguras: o valor renderizado (via
+`getComputedStyle`) mudou corretamente em cada faixa.
+
+Duas coisas quebraram nessa implementação e foram corrigidas antes de eu
+considerar isso pronto:
+1. A herança inicial calculava o tablet a partir do desktop *já resolvido*
+   da seção, mesmo quando a seção inteira não tinha valor próprio nenhum —
+   isso fazia `help`/`faq`/`contact` perderem o tablet de verdade do global
+   (104px) e caírem de volta no desktop (96px). Corrigido: uma seção sem
+   nenhum valor próprio agora herda cada nível do global diretamente, nível
+   a nível, em vez de herdar o desktop emprestado como se fosse seu.
+2. As regras de mídia responsivas de `.about-break` foram escritas antes da
+   regra base dela no arquivo CSS — como as duas têm a mesma especificidade,
+   a regra base (sem condição de largura) vencia sempre, e o padding de
+   tablet/celular nunca mudava de verdade. Corrigido movendo as regras
+   responsivas para depois da regra base.
+
+`work` e `about` continuam com respiro maior que o padrão global, exatamente
+como antes: a hierarquia sabe diferenciar "seção sem valor próprio, usa o
+padrão global" (help/faq/contact) de "seção sem valor próprio, usa o número
+fixo que já existia no CSS dela" (work/about) — sem essa distinção, ligar o
+CMS teria encolhido essas duas seções para o valor genérico assim que o
+painel fosse aberto pela primeira vez.
+
+**O que ainda não está coberto**, por ser uma extensão real de escopo, não
+uma correção do que já existia: espaçamento responsivo por bloco dentro da
+página de projeto, gap interno do hero, distância título-texto e
+texto-botão. Nenhum desses tinha QUALQUER token hoje — criar os três exigiria
+adicionar CSS novo em vários lugares do hero e do template de projeto, o
+tipo de expansão que este pedido especificamente pediu para evitar. Ficam
+registrados aqui como próximo passo natural, não como pendência escondida.
+
+**Segurança:** as mesmas checagens de whitelist de caminho, sanitização de
+nome de upload e "falha fechada" do Cloudflare Access foram testadas de novo
+depois de adicionar as rotas de excluir/duplicar (novas superfícies de
+ataque em potencial) e continuam se comportando como antes — as duas rotas
+novas passam pela mesma verificação de Access que todas as outras, e usam
+regex nos parâmetros de URL que rejeitam `../` e caracteres fora de
+`[a-z0-9-]`.
+
+---
+
 ## A. Resumo técnico simples
 
 **O que foi criado:** o portfólio continua exatamente o mesmo site estático de
@@ -96,6 +181,19 @@ fonte, com formatos e pesos que o site não usa — o site carrega só um
 arquivo `.woff2` de 43KB). Os arquivos continuam no seu disco, só saíram do
 histórico do Git a partir de agora, porque não têm relação com o
 funcionamento do site.
+
+### Alterados na revisão pré-deploy
+
+| Arquivo | O que mudou |
+|---|---|
+| `css/style.css` | Espaçamento de seção (global e por seção da Home) e gap da grade de projetos ganharam três variáveis cada (`-desktop`, `-tablet`, `-mobile`), reaproveitando os breakpoints 900px/640px que já existiam. |
+| `js/content.js` | Resolve a herança de três níveis (global → seção, desktop → tablet → celular) antes de escrever as variáveis de CSS. |
+| `js/content-render.js` | Navegação "próximo projeto" deixou de depender de campos gravados à mão e passou a ser calculada pela posição do projeto na lista ordenada e visível. |
+| `content/global.json`, `content/home.json` | `sectionSpacingTop/Bottom` e `gridGap` (global) e `spacingTop/Bottom` (por seção) viraram objetos `{desktop, tablet, mobile}`. |
+| `content/projects/case-0X.json` | Removidos os campos `prevProject`/`nextProject`, agora calculados em tempo real. |
+| `worker/src/github.js` | Nova função `deleteFile`. |
+| `worker/src/index.js` | Novas rotas `DELETE /api/projects/:slug` e `POST /api/projects/:slug/duplicate`; método `DELETE` liberado na checagem geral. |
+| `worker/public/app.js` | Painel de layout ganhou seletor de dispositivo (Desktop/Tablet/Celular) com selos de herança; lista de projetos ganhou os botões Duplicar e Excluir. |
 
 ---
 

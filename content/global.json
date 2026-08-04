@@ -34,14 +34,14 @@
   },
 
   "layout": {
-    "$note": "Os valores de espaçamento aqui controlam o teto em telas grandes (o site continua fluido entre esse teto e o mínimo já programado em CSS). O celular tem seu próprio ajuste fixo no CSS e não é controlado por este arquivo na v1.",
+    "$note": "Cada valor de espaçamento é {desktop, tablet, mobile}. tablet:null herda o número de desktop; mobile:null herda o número resolvido de tablet. Os números aqui são exatamente os que o site já usava em cada faixa (desktop >=900px, tablet 640-899px, celular <640px, os mesmos dois pontos de corte que o CSS já usava para outras coisas). Cada um controla o teto em pixels; o site continua fluido entre esse teto e o mínimo já programado no CSS.",
     "contentMaxWidth": 1680,
     "pageGutterDesktop": 56,
     "pageGutterMobile": 20,
-    "sectionSpacingTop": 96,
-    "sectionSpacingBottom": 80,
-    "gridGap": 25.6,
-    "breakpoints": { "tablet": 899, "desktop": 900 }
+    "sectionSpacingTop": { "desktop": 96, "tablet": 104, "mobile": null },
+    "sectionSpacingBottom": { "desktop": 80, "tablet": 104, "mobile": null },
+    "gridGap": { "desktop": 25.6, "tablet": null, "mobile": null },
+    "breakpoints": { "mobile": 639, "tablet": 899, "desktop": 900 }
   },
 
   "motion": {

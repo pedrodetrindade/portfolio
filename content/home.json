@@ -21,12 +21,12 @@
   },
 
   "sections": {
-    "$note": "spacingTop/spacingBottom em null herdam o padrão global (content/global.json > layout). Um número em pixels sobrescreve só aquela seção. visible controla mostrar/esconder — na v1 isso só é seguro para about, help e faq: hero, work e contact sustentam партes do layout e da navegação (o indicador da capa aponta pra work, o rodapé depende do fluxo terminar em contact), então visible nelas é ignorado pelo site por enquanto.",
-    "work":    { "visible": true, "spacingTop": null, "spacingBottom": null },
-    "about":   { "visible": true, "spacingTop": null, "spacingBottom": null },
-    "help":    { "visible": true, "spacingTop": null, "spacingBottom": null },
-    "faq":     { "visible": true, "spacingTop": null, "spacingBottom": null },
-    "contact": { "visible": true, "spacingTop": null, "spacingBottom": null }
+    "$note": "spacingTop/spacingBottom agora têm três níveis: {desktop, tablet, mobile}. desktop:null herda o padrão global (content/global.json > layout); tablet:null herda o desktop resolvido desta mesma seção; mobile:null herda o tablet resolvido. work e about já tinham um espaçamento maior que o padrão global antes do CMS existir — por isso, mesmo com os três níveis em null aqui, eles continuam diferentes: o número property deles mora direto no CSS como o valor de quando não há nenhuma configuração, e o JSON só entra em ação quando alguém troca esse número pelo painel. visible controla mostrar/esconder — na v1 isso só é seguro para about, help e faq: hero, work e contact sustentam partes do layout e da navegação (o indicador da capa aponta pra work, o rodapé depende do fluxo terminar em contact), então visible nelas é ignorado pelo site por enquanto.",
+    "work":    { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
+    "about":   { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
+    "help":    { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
+    "faq":     { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } },
+    "contact": { "visible": true, "spacingTop": { "desktop": null, "tablet": null, "mobile": null }, "spacingBottom": { "desktop": null, "tablet": null, "mobile": null } }
   },
 
   "work": {

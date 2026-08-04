@@ -1,5 +1,5 @@
 import { verifyAccessJWT } from './access.js';
-import { GithubError, readFile, writeFile, writeBinaryFile } from './github.js';
+import { GithubError, readFile, writeFile, writeBinaryFile, deleteFile } from './github.js';
 import {
   MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
   UPLOAD_DIR, isPathWritable, sanitizeUploadName, isSlugValid, bytesOf
@@ -106,6 +106,10 @@ async function route(request, env) {
   var projectMatch = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)$/);
   if (projectMatch && method === 'GET') return handleGetFile(env, 'content/projects/' + projectMatch[1] + '.json');
   if (projectMatch && method === 'PUT') return handlePutFile(request, env, 'content/projects/' + projectMatch[1] + '.json', null);
+  if (projectMatch && method === 'DELETE') return handleDeleteProject(env, projectMatch[1]);
+
+  var duplicateMatch = url.pathname.match(/^\/api\/projects\/([a-z0-9-]+)\/duplicate$/);
+  if (duplicateMatch && method === 'POST') return handleDuplicateProject(request, env, duplicateMatch[1]);
 
   if (url.pathname === '/api/projects' && method === 'POST') return handleCreateProject(request, env);
 
@@ -151,8 +155,12 @@ async function handleCreateProject(request, env) {
       { type: 'text', labelPt: 'processo', labelEn: 'process', textPt: '', textEn: '' },
       { type: 'text', labelPt: 'resultado', labelEn: 'result', textPt: '', textEn: '' },
       { type: 'gallery', images: [] }
-    ],
-    prevProject: '', nextProject: ''
+    ]
+    /* sem prevProject/nextProject: a navegação para o próximo projeto é
+       calculada em js/content-render.js a partir da posição deste projeto
+       em content/projects/index.json, então o projeto novo já entra
+       corretamente na sequência assim que ganha uma "order", sem precisar
+       editar os vizinhos. */
   };
 
   var template = await readFile(env, 'work/case-01.html');
@@ -178,6 +186,98 @@ async function handleCreateProject(request, env) {
     ok: true, slug: slug,
     commits: [r1.commit.sha, r2.commit.sha, r3.commit.sha],
     note: 'Projeto criado como rascunho (status: draft, visible: false). Edite o conteúdo e publique quando estiver pronto.'
+  });
+}
+
+/* Duplica um projeto existente: copia o JSON do projeto de origem (com um
+   novo slug e "(cópia)" no título, para não sair publicado com o mesmo
+   título do original por engano), copia a entrada do índice como oculta,
+   e clona a página HTML do projeto de origem (não a de case-01 fixo) —
+   assim uma duplicata de um projeto que já tenha sido editado no HTML
+   (o que hoje não acontece, mas pode vir a acontecer) parte da versão
+   certa. */
+async function handleDuplicateProject(request, env, sourceSlug) {
+  var body = await readJsonBody(request);
+  var newSlug = body && body.slug;
+  if (!isSlugValid(newSlug)) {
+    return json({ error: 'invalid_slug', message: 'Use apenas letras minúsculas, números e hífen (ex: campanha-2027-copia).' }, 400);
+  }
+  if (newSlug === sourceSlug) {
+    return json({ error: 'same_slug', message: 'O novo slug precisa ser diferente do projeto original.' }, 400);
+  }
+
+  var existingTarget = await readFile(env, 'content/projects/' + newSlug + '.json');
+  if (existingTarget) return json({ error: 'slug_taken', message: 'Já existe um projeto com este slug.' }, 409);
+
+  var sourceFile = await readFile(env, 'content/projects/' + sourceSlug + '.json');
+  if (!sourceFile) return json({ error: 'not_found', message: 'Projeto de origem não encontrado: ' + sourceSlug }, 404);
+  var sourceData = JSON.parse(sourceFile.content);
+
+  var indexFile = await readFile(env, 'content/projects/index.json');
+  if (!indexFile) return json({ error: 'index_missing', message: 'content/projects/index.json não encontrado.' }, 500);
+  var index = JSON.parse(indexFile.content);
+  var sourceEntry = (index.projects || []).filter(function (p) { return p.slug === sourceSlug; })[0];
+  if (!sourceEntry) return json({ error: 'not_found', message: 'Projeto de origem não está no índice.' }, 404);
+
+  var newData = JSON.parse(JSON.stringify(sourceData)); /* cópia profunda simples, o conteúdo é só JSON */
+  newData.slug = newSlug;
+  newData.status = 'draft';
+  newData.hero.titlePt = (newData.hero.titlePt || '') + ' (cópia)';
+  newData.hero.titleEn = (newData.hero.titleEn || '') + ' (copy)';
+
+  var nextOrder = (index.projects || []).reduce(function (max, p) { return Math.max(max, p.order || 0); }, 0) + 1;
+  var newEntry = JSON.parse(JSON.stringify(sourceEntry));
+  newEntry.slug = newSlug;
+  newEntry.visible = false;
+  newEntry.featured = false;
+  newEntry.order = nextOrder;
+  newEntry.titlePt = newData.hero.titlePt;
+  newEntry.titleEn = newData.hero.titleEn;
+  index.projects = index.projects || [];
+  index.projects.push(newEntry);
+
+  var sourceTemplate = await readFile(env, 'work/' + sourceSlug + '.html');
+  if (!sourceTemplate) return json({ error: 'template_missing', message: 'work/' + sourceSlug + '.html não encontrado.' }, 500);
+
+  var r1 = await writeFile(env, 'content/projects/' + newSlug + '.json', JSON.stringify(newData, null, 2) + '\n', 'cms: duplica ' + sourceSlug + ' em ' + newSlug);
+  var r2 = await writeFile(env, 'content/projects/index.json', JSON.stringify(index, null, 2) + '\n', 'cms: adiciona ' + newSlug + ' (cópia de ' + sourceSlug + ') ao índice', indexFile.sha);
+  var r3 = await writeFile(env, 'work/' + newSlug + '.html', sourceTemplate.content, 'cms: cria página ' + newSlug + ' como cópia de ' + sourceSlug);
+
+  return json({
+    ok: true, slug: newSlug,
+    commits: [r1.commit.sha, r2.commit.sha, r3.commit.sha],
+    note: 'Cópia criada como rascunho oculto (status: draft, visible: false).'
+  });
+}
+
+/* Exclui um projeto: remove a entrada do índice, apaga o JSON e a página
+   HTML. Pede confirmação no painel antes de chegar aqui (o Worker não pede
+   confirmação de novo — quem confirma é a interface, o Worker só executa).
+   Não apaga a capa nem as imagens da galeria em assets/projetos/: podem
+   ter sido reaproveitadas manualmente em outro lugar, e apagar arquivo de
+   imagem sem certeza de uso único é mais risco do que benefício aqui. */
+async function handleDeleteProject(env, slug) {
+  var indexFile = await readFile(env, 'content/projects/index.json');
+  if (!indexFile) return json({ error: 'index_missing', message: 'content/projects/index.json não encontrado.' }, 500);
+  var index = JSON.parse(indexFile.content);
+  var before = (index.projects || []).length;
+  index.projects = (index.projects || []).filter(function (p) { return p.slug !== slug; });
+  if (index.projects.length === before) {
+    return json({ error: 'not_found', message: 'Projeto não está no índice: ' + slug }, 404);
+  }
+
+  var r1 = await writeFile(env, 'content/projects/index.json', JSON.stringify(index, null, 2) + '\n', 'cms: remove ' + slug + ' do índice', indexFile.sha);
+
+  var projectFile = await readFile(env, 'content/projects/' + slug + '.json');
+  var r2 = projectFile ? await deleteFile(env, 'content/projects/' + slug + '.json', projectFile.sha, 'cms: exclui conteúdo de ' + slug) : null;
+
+  var pageFile = await readFile(env, 'work/' + slug + '.html');
+  var r3 = pageFile ? await deleteFile(env, 'work/' + slug + '.html', pageFile.sha, 'cms: exclui página de ' + slug) : null;
+
+  return json({
+    ok: true, slug: slug,
+    commits: [r1.commit.sha, r2 && r2.commit.sha, r3 && r3.commit.sha].filter(Boolean),
+    note: 'Projeto excluído. As imagens em assets/projetos/' + slug + '/ não foram apagadas.'
   });
 }
 
@@ -266,7 +366,7 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    if (!['GET', 'PUT', 'POST'].includes(request.method)) {
+    if (!['GET', 'PUT', 'POST', 'DELETE'].includes(request.method)) {
       return json({ error: 'method_not_allowed' }, 405);
     }
 

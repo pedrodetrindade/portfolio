@@ -41,6 +41,12 @@
   function num(v, fallback) {
     return (typeof v === 'number' && isFinite(v)) ? v : fallback;
   }
+  /* compartilhado entre applyGlobalTokens e applySectionSpacing */
+  function clampNum(v, min, max) {
+    v = Number(v);
+    if (!isFinite(v)) return null;
+    return Math.min(max, Math.max(min, v));
+  }
 
   /* ---------- FASE A: tokens visuais ---------- */
   var GLOBAL = xhrJSON('content/global.json?v=1') || {};
@@ -119,9 +125,34 @@
     if (gMobile !== null && gDesktop !== null) {
       root.setProperty('--page-gutter', 'clamp(' + gMobile + 'px,3vw,' + gDesktop + 'px)');
     }
-    setPx('--section-pad-top', l.sectionSpacingTop, 0, 600);
-    setPx('--section-pad-bottom', l.sectionSpacingBottom, 0, 600);
-    setPx('--grid-gap', l.gridGap, 0, 200);
+    /* Espaçamento e gap agora têm três níveis: {desktop, tablet, mobile}.
+       tablet:null herda o desktop já resolvido; mobile:null herda o tablet
+       já resolvido — por isso a resolução acontece nesta ordem, tablet
+       antes de mobile, cada um podendo cair no valor do nível anterior. */
+    function resolveTiers(obj, min, max) {
+      if (!obj || typeof obj !== 'object') return null;
+      var d = clampNum(obj.desktop, min, max);
+      if (d === null) return null;
+      var tRaw = (obj.tablet == null) ? null : clampNum(obj.tablet, min, max);
+      var t = tRaw !== null ? tRaw : d;
+      var mRaw = (obj.mobile == null) ? null : clampNum(obj.mobile, min, max);
+      var mo = mRaw !== null ? mRaw : t;
+      return { desktop: d, tablet: t, mobile: mo };
+    }
+    function setTieredPx(prefix, obj, min, max) {
+      var r = resolveTiers(obj, min, max);
+      if (!r) return null;
+      root.setProperty(prefix + '-desktop', r.desktop + 'px');
+      root.setProperty(prefix + '-tablet', r.tablet + 'px');
+      root.setProperty(prefix + '-mobile', r.mobile + 'px');
+      return r;
+    }
+    var globalPadTop = setTieredPx('--section-pad-top', l.sectionSpacingTop, 0, 600);
+    var globalPadBottom = setTieredPx('--section-pad-bottom', l.sectionSpacingBottom, 0, 600);
+    setTieredPx('--grid-gap', l.gridGap, 0, 200);
+    /* guardado para applySectionSpacing poder herdar o padrão global sem
+       precisar ler content/global.json de novo */
+    window.__CMS_GLOBAL_SPACING__ = { top: globalPadTop, bottom: globalPadBottom };
 
     var m = g.motion || {};
     if (typeof m.durationHover === 'number') root.setProperty('--dur-hover', clampNum(m.durationHover, 0, 3000) + 'ms');
@@ -143,15 +174,67 @@
   /* Aplica as sobreposições de espaçamento por seção da Home (hierarquia:
      global -> seção). Só faz sentido na Home; nas páginas de projeto não há
      seções desse tipo ainda. */
+  /* help, faq e contact usam o padrão global quando não têm valor próprio
+     (é assim que já funcionavam antes desta seção existir: o CSS deles
+     nasceu igual ao número global). work e about já tinham um respiro maior
+     que o padrão antes do CMS existir, escrito direto no CSS deles — então,
+     sem valor próprio configurado aqui, eles não devem herdar o número
+     genérico do padrão global, e sim continuar no literal do próprio CSS.
+     É por isso que esta lista existe: sem ela, ligar o CMS empurraria work e
+     about para o espaçamento menor de help/faq/contact, uma mudança visual
+     que ninguém pediu. */
+  var SECOES_USAM_PADRAO_GLOBAL = { help: true, faq: true, contact: true, work: false, about: false };
+
+  function resolveSectionTier(sectionTiers, globalTiers, useGlobalDefault, min, max) {
+    /* sectionTiers: {desktop,tablet,mobile}, cada um number|null.
+       globalTiers: {desktop,tablet,mobile} já resolvidos (todos number) ou null.
+       Devolve {desktop,tablet,mobile} com algum number, ou null onde não há
+       nada para escrever (e então a var() correspondente fica sem valor,
+       caindo no literal do próprio CSS).
+       A regra que importa aqui: um nível só herda do nível anterior DESTA
+       MESMA seção quando a seção tem algum valor próprio configurado. Se a
+       seção inteira está em branco (nenhum nível seu, em lugar nenhum), ela
+       não deve herdar o "desktop emprestado do global" como se fosse seu -
+       cada nível dela herda o nível equivalente do global diretamente. Sem
+       essa distinção, faq (que não tem valor próprio) acabava herdando
+       tablet = desktop (96), perdendo o tablet real do global (104). */
+    sectionTiers = sectionTiers || {};
+    var ownDesktop = (sectionTiers.desktop == null) ? null : clampNum(sectionTiers.desktop, min, max);
+    var hasOwnDesktop = ownDesktop !== null;
+    var desktop = hasOwnDesktop ? ownDesktop : (useGlobalDefault && globalTiers ? globalTiers.desktop : null);
+
+    var ownTablet = (sectionTiers.tablet == null) ? null : clampNum(sectionTiers.tablet, min, max);
+    var hasOwnTablet = ownTablet !== null;
+    var tablet;
+    if (hasOwnTablet) tablet = ownTablet;
+    else if (hasOwnDesktop) tablet = desktop; /* herda o desktop PRÓPRIO desta seção */
+    else tablet = (useGlobalDefault && globalTiers) ? globalTiers.tablet : desktop; /* sem override nenhum: usa o tablet do global */
+
+    var ownMobile = (sectionTiers.mobile == null) ? null : clampNum(sectionTiers.mobile, min, max);
+    var hasOwnMobile = ownMobile !== null;
+    var mobile;
+    if (hasOwnMobile) mobile = ownMobile;
+    else if (hasOwnTablet || hasOwnDesktop) mobile = tablet; /* seção tem override em algum nível: herda o tablet resolvido dela */
+    else mobile = (useGlobalDefault && globalTiers) ? globalTiers.mobile : tablet;
+
+    return { desktop: desktop, tablet: tablet, mobile: mobile };
+  }
+
   function applySectionSpacing(home) {
     var sections = (home && home.sections) || {};
     var root2 = document.documentElement.style;
+    var g = window.__CMS_GLOBAL_SPACING__ || {};
     var keys = ['work', 'about', 'help', 'faq', 'contact'];
     keys.forEach(function (key) {
       var s = sections[key];
       if (!s) return;
-      if (typeof s.spacingTop === 'number') root2.setProperty('--' + key + '-pad-top', Math.max(0, Math.min(600, s.spacingTop)) + 'px');
-      if (typeof s.spacingBottom === 'number') root2.setProperty('--' + key + '-pad-bottom', Math.max(0, Math.min(600, s.spacingBottom)) + 'px');
+      var useGlobal = SECOES_USAM_PADRAO_GLOBAL[key];
+      var top = resolveSectionTier(s.spacingTop, g.top, useGlobal, 0, 600);
+      var bottom = resolveSectionTier(s.spacingBottom, g.bottom, useGlobal, 0, 600);
+      ['desktop', 'tablet', 'mobile'].forEach(function (tier) {
+        if (top[tier] !== null) root2.setProperty('--' + key + '-pad-top-' + tier, top[tier] + 'px');
+        if (bottom[tier] !== null) root2.setProperty('--' + key + '-pad-bottom-' + tier, bottom[tier] + 'px');
+      });
     });
   }
   if (!isCase) applySectionSpacing(window.__CMS_HOME__);

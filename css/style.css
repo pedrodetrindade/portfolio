@@ -558,35 +558,50 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    #work fica de fora do grupo reduzido abaixo de propósito: é a seção mais
    longa da página e a mais fotografada nas revisões, então mantém o respiro
    original enquanto as outras encolhem. */
-/* Espaçamento por seção, em duas camadas: o painel escreve
-   --section-pad-top/bottom (o padrão global) e, quando uma seção usa valor
-   próprio em vez do padrão, --work-pad-top etc. Cada var() cai para o número
-   que o site já usava se nada tiver sido configurado ainda, e a seção some do
-   grupo de min-height:100svh quando ganha um respiro maior que o de uma tela,
-   porque aí é o próprio conteúdo que deve mandar no tamanho.
-   #work usa valor próprio de propósito: é a seção mais longa da página e a
-   mais fotografada nas revisões, então não encolhe com as demais. */
-#work{padding-block:clamp(5.5rem,20vh,var(--work-pad-top,13rem)) clamp(5rem,17vh,var(--work-pad-bottom,11rem))}
+/* Espaçamento por seção, com três camadas de dispositivo cada.
+   js/content.js resolve a herança (global -> seção, desktop -> tablet ->
+   celular) e escreve, para cada seção e lado, três variáveis já resolvidas:
+   --{seção}-pad-{lado}-desktop, -tablet e -mobile. O CSS aqui não decide
+   herança nenhuma, só lê o número certo por faixa de largura — quem decide
+   "esse valor herda do anterior" é o JS (e o painel, que é quem mostra o
+   selo "herdando"). Os literais depois da vírgula em var(...) são o que o
+   site já usava antes de existir CMS: se o JSON faltar ou o script falhar,
+   a aparência atual continua exatamente igual.
+   Os dois breakpoints (900px e 640px) já existiam no projeto para outra
+   finalidade (empilhamento do cabeçalho do hero); reaproveitados aqui em vez
+   de criar um terceiro ponto de corte novo.
+   #work fica de fora do grupo de min-height:100svh de propósito: é a seção
+   mais longa da página e a mais fotografada nas revisões, então não encolhe
+   com as demais. */
+#work{padding-block:clamp(5.5rem,20vh,var(--work-pad-top-desktop,13rem)) clamp(5rem,17vh,var(--work-pad-bottom-desktop,11rem))}
 /* help, faq e contact têm conteúdo curto (uma lista, um accordion, um e-mail)
    dentro de um min-height quase do tamanho da tela: era esse min-height, não
    o padding, que sobrava como vazio. 112svh estourava a tela por 12%; 100svh
    cabe nela exatamente, que é o pedido. O padding também caiu, para quando o
    conteúdo cresce (accordion aberto, texto mais longo em inglês) e passa a
    mandar mais do que o min-height. */
-#help{padding-block:clamp(3.5rem,9vh,var(--help-pad-top,var(--section-pad-top,6rem)))
-                    clamp(3rem,7vh,var(--help-pad-bottom,var(--section-pad-bottom,5rem)))}
-#faq{padding-block:clamp(3.5rem,9vh,var(--faq-pad-top,var(--section-pad-top,6rem)))
-                   clamp(3rem,7vh,var(--faq-pad-bottom,var(--section-pad-bottom,5rem)))}
-#contact{padding-block:clamp(3.5rem,9vh,var(--contact-pad-top,var(--section-pad-top,6rem)))
-                       clamp(3rem,7vh,var(--contact-pad-bottom,var(--section-pad-bottom,5rem)))}
+#help{padding-block:clamp(3.5rem,9vh,var(--help-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--help-pad-bottom-desktop,5rem))}
+#faq{padding-block:clamp(3.5rem,9vh,var(--faq-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--faq-pad-bottom-desktop,5rem))}
+#contact{padding-block:clamp(3.5rem,9vh,var(--contact-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--contact-pad-bottom-desktop,5rem))}
 @media(min-width:900px){
   #help,#faq,#contact{min-height:100svh;display:flex;flex-direction:column;
     justify-content:center}
 }
-@media(max-width:899px){
-  #work{padding-block:clamp(6rem,11vh,8.75rem)}
-  #help,#faq,#contact{padding-block:clamp(4.5rem,9vh,6.5rem)}
-  .about-break{padding-block:clamp(5rem,10vh,7rem)}
+/* faixa "tablet": 640px a 899px */
+@media(max-width:899px) and (min-width:640px){
+  #work{padding-block:var(--work-pad-top-tablet,8.75rem) var(--work-pad-bottom-tablet,8.75rem)}
+  #help{padding-block:var(--help-pad-top-tablet,6.5rem) var(--help-pad-bottom-tablet,6.5rem)}
+  #faq{padding-block:var(--faq-pad-top-tablet,6.5rem) var(--faq-pad-bottom-tablet,6.5rem)}
+  #contact{padding-block:var(--contact-pad-top-tablet,6.5rem) var(--contact-pad-bottom-tablet,6.5rem)}
+}
+/* faixa "celular": abaixo de 640px. Sem override próprio, cada seção herda o
+   valor da faixa tablet (mesmo literal de fallback), então nada muda até o
+   painel gravar um número específico para o celular. */
+@media(max-width:639px){
+  #work{padding-block:var(--work-pad-top-mobile,8.75rem) var(--work-pad-bottom-mobile,8.75rem)}
+  #help{padding-block:var(--help-pad-top-mobile,6.5rem) var(--help-pad-bottom-mobile,6.5rem)}
+  #faq{padding-block:var(--faq-pad-top-mobile,6.5rem) var(--faq-pad-bottom-mobile,6.5rem)}
+  #contact{padding-block:var(--contact-pad-top-mobile,6.5rem) var(--contact-pad-bottom-mobile,6.5rem)}
 }
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:2rem;
   border-top:1px solid var(--line);padding-top:1.4rem;margin-bottom:3rem}
@@ -594,8 +609,10 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .sec-head .count{font-family:var(--mono);font-size:.78rem;color:var(--muted-2)}
 
 /* WORK CARDS */
-.cards{display:grid;grid-template-columns:1fr;gap:var(--grid-gap,1.6rem)}
-@media(min-width:860px){.cards{grid-template-columns:1fr 1fr;gap:var(--grid-gap,1.6rem)}}
+/* mesmo esquema de três camadas do espaçamento de seção, resolvido pelo JS */
+.cards{display:grid;grid-template-columns:1fr;gap:var(--grid-gap-mobile,var(--grid-gap-desktop,1.6rem))}
+@media(min-width:640px) and (max-width:899px){.cards{gap:var(--grid-gap-tablet,var(--grid-gap-desktop,1.6rem))}}
+@media(min-width:860px){.cards{grid-template-columns:1fr 1fr;gap:var(--grid-gap-desktop,1.6rem)}}
 .card{position:relative;display:block;aspect-ratio:4/3.4;border-radius:var(--radius-card,22px);overflow:hidden;
   border:1px solid var(--line-strong);background:var(--ink-2);
   transition:border-color var(--dur-hover) var(--ease-hover),
@@ -683,8 +700,18 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   --bleed:var(--vw,100vw);
   width:var(--bleed);position:relative;left:50%;
   margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2);
-  padding:clamp(5rem,10vh,var(--about-pad-top,8rem)) var(--gutter) clamp(4.5rem,8vh,var(--about-pad-bottom,6.5rem));
+  padding:clamp(5rem,10vh,var(--about-pad-top-desktop,8rem)) var(--gutter) clamp(4.5rem,8vh,var(--about-pad-bottom-desktop,6.5rem));
   border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+/* Precisa vir depois da regra base acima: mesma especificidade (uma classe
+   só), então quem vier depois no arquivo é quem manda. As duas faixas
+   responsivas de .about-break moravam antes da regra base e nunca
+   venciam a cascata — o padding de celular nunca mudava de verdade. */
+@media(max-width:899px) and (min-width:640px){
+  .about-break{padding-block:var(--about-pad-top-tablet,7rem) var(--about-pad-bottom-tablet,7rem)}
+}
+@media(max-width:639px){
+  .about-break{padding-block:var(--about-pad-top-mobile,7rem) var(--about-pad-bottom-mobile,7rem)}
+}
 .about-inner{position:relative;z-index:1;max-width:var(--content-max);margin-inline:auto}
 /* grid editorial de 12 colunas: retrato em 5, conteúdo em 6, com uma coluna de
    respiro entre eles, usando a largura toda do container */

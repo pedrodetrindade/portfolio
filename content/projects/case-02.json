@@ -1,5 +1,5 @@
 {
-  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, na ordem, o que aparece na página depois da capa: sempre 3 blocos de texto (contexto/processo/resultado) e 1 galeria com 2 imagens, hoje. Novos tipos de bloco pedem ajuste no template, não só no JSON.",
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, na ordem, o que aparece na página depois da capa: sempre 3 blocos de texto (contexto/processo/resultado) e 1 galeria com 2 imagens, hoje. Novos tipos de bloco pedem ajuste no template, não só no JSON. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe mais campo prevProject/nextProject aqui.",
   "slug": "case-02",
   "status": "published",
   "client": "",
@@ -39,8 +39,5 @@
         { "src": "assets/projetos/case-02/galeria-1.jpg", "alt": "" },
         { "src": "assets/projetos/case-02/galeria-2.jpg", "alt": "" }
     ] }
-  ],
-
-  "prevProject": "case-01",
-  "nextProject": "case-03"
+  ]
 }

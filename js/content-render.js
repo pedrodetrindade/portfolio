@@ -231,13 +231,23 @@
       }
     }
 
-    /* navegação para o próximo projeto: precisa do título dele, que mora no
-       índice, não no próprio arquivo do projeto */
+    /* navegação para o próximo projeto: calculada pela posição do projeto
+       atual na lista visível e ordenada, nunca por um campo prevProject/
+       nextProject gravado à mão. Um campo gravado à mão é exatamente o tipo
+       de coisa que quebra sem avisar quando um projeto novo é criado: o
+       vizinho de cima continuaria apontando para o antigo "próximo", porque
+       nada o obrigaria a saber que alguém foi inserido no meio. Calculando
+       na hora, inserir um projeto em qualquer posição já encaixa ele na
+       sequência dos vizinhos automaticamente, sem editar mais nada. */
     try {
       var idx = window.__CMS_PROJECTS_INDEX__;
       var navEl = document.querySelector('.case-nav');
-      if (navEl && idx && Array.isArray(idx.projects) && P.nextProject) {
-        var nextP = idx.projects.filter(function (p) { return p.slug === P.nextProject; })[0];
+      if (navEl && idx && Array.isArray(idx.projects)) {
+        var visible = idx.projects.filter(function (p) { return p.visible !== false; })
+          .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+        var myPos = -1;
+        for (var vi = 0; vi < visible.length; vi++) if (visible[vi].slug === P.slug) { myPos = vi; break; }
+        var nextP = myPos !== -1 && visible.length > 1 ? visible[(myPos + 1) % visible.length] : null;
         if (nextP) {
           var links = navEl.querySelectorAll('a');
           if (links[1]) {

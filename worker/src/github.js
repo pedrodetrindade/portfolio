@@ -107,4 +107,21 @@ async function writeBinaryFile(env, path, base64Content, message, expectedSha) {
   return githubRequest(env, 'PUT', 'contents/' + path, body);
 }
 
-export { GithubError, readFile, writeFile, writeBinaryFile };
+/* Exclui um arquivo. expectedSha é obrigatório na API do GitHub para
+   delete (o mesmo controle de concorrência da escrita: garante que
+   ninguém apague um arquivo que mudou desde a última leitura). Excluir um
+   arquivo que já não existe não é um erro aqui — devolve null como se
+   tivesse dado certo, porque o resultado desejado (o arquivo não existir)
+   já está alcançado. */
+async function deleteFile(env, path, expectedSha, message) {
+  try {
+    return await githubRequest(env, 'DELETE', 'contents/' + path, {
+      message: message, sha: expectedSha, branch: env.GITHUB_BRANCH
+    });
+  } catch (e) {
+    if (e instanceof GithubError && e.kind === 'not_found') return null;
+    throw e;
+  }
+}
+
+export { GithubError, readFile, writeFile, writeBinaryFile, deleteFile };

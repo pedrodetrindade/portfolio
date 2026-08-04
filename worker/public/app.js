@@ -232,60 +232,134 @@
   }
 
   /* ---------- Layout e espaçamentos ---------- */
+  /* dispositivo selecionado no momento para os campos de espaçamento —
+     compartilhado pela seção global e por seção da Home, para não misturar
+     três números na tela ao mesmo tempo (item explícito do pedido) */
+  var layoutDevice = 'desktop';
+  var DEVICE_LABEL = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Celular' };
+  var DEVICE_PARENT = { tablet: 'desktop', mobile: 'tablet' }; /* de quem cada nível herda por padrão */
+
+  function deviceTabsHtml(groupId) {
+    return '<div class="tabs-device" data-group="' + groupId + '">' +
+      ['desktop', 'tablet', 'mobile'].map(function (d) {
+        return '<button data-device="' + d + '" class="' + (d === layoutDevice ? 'active' : '') + '">' + DEVICE_LABEL[d] + '</button>';
+      }).join('') + '</div>';
+  }
+
+  /* Campo de espaçamento com três níveis. `obj` é {desktop,tablet,mobile}
+     (cada um number|null). Mostra o valor do dispositivo atual: se for
+     null, mostra o número herdado do nível anterior (calculado aqui, do
+     mesmo jeito que js/content.js calcula no site) e avisa com o selo
+     "herdando". Um valor próprio troca o selo para "próprio" e libera o
+     botão de voltar a herdar. */
+  function tieredSpacingField(label, hint, obj, min, max, onChange, onInheritReset, fallbackDesktop, fallbackNote) {
+    obj = obj || { desktop: null, tablet: null, mobile: null };
+    /* fallbackDesktop cobre o caso de uma seção sem nenhum valor próprio: o
+       número mostrado como "herdando" precisa ser o que o site realmente
+       usa (o padrão global, ou — para projetos e sobre — o valor fixo que
+       já existia no CSS antes do CMS, que este painel não substitui até
+       alguém realmente configurar algo aqui). */
+    var baseDesktop = obj.desktop != null ? obj.desktop : (typeof fallbackDesktop === 'number' ? fallbackDesktop : min);
+    var resolved = { desktop: baseDesktop, tablet: null, mobile: null };
+    resolved.tablet = obj.tablet != null ? obj.tablet : resolved.desktop;
+    resolved.mobile = obj.mobile != null ? obj.mobile : resolved.tablet;
+
+    var d = layoutDevice;
+    var isCustom = obj[d] != null;
+    var value = resolved[d];
+    var inheritsFrom = DEVICE_PARENT[d] ? DEVICE_LABEL[DEVICE_PARENT[d]] : null;
+
+    var fieldId = 'tf_' + Math.random().toString(36).slice(2, 9);
+    var badge = isCustom
+      ? '<span class="badge custom">próprio</span>'
+      : (inheritsFrom ? '<span class="badge default">herdando de ' + inheritsFrom + '</span>'
+        : '<span class="badge default">' + (fallbackNote || 'padrão') + '</span>');
+    var resetBtn = (isCustom && inheritsFrom) ? '<button class="btn small" data-reset-field="' + fieldId + '">Voltar a herdar</button>' : '';
+
+    var html = fieldRow(label, hint, sliderControl(fieldId, value, min, max, 'px') + badge + resetBtn);
+
+    /* registra os handlers depois de o HTML entrar no DOM (feito pelo chamador) */
+    tieredSpacingField._pending = tieredSpacingField._pending || [];
+    tieredSpacingField._pending.push({ fieldId: fieldId, min: min, max: max, onChange: onChange, onInheritReset: onInheritReset, canReset: isCustom && inheritsFrom });
+    return html;
+  }
+  function wireTieredFields() {
+    (tieredSpacingField._pending || []).forEach(function (p) {
+      bindSlider(p.fieldId, p.min, p.max, function (v) { p.onChange(layoutDevice, v); });
+      if (p.canReset) {
+        var btn = document.querySelector('[data-reset-field="' + p.fieldId + '"]');
+        if (btn) btn.addEventListener('click', function () { p.onInheritReset(layoutDevice); });
+      }
+    });
+    tieredSpacingField._pending = [];
+  }
+  function wireDeviceTabs(container, onSwitch) {
+    container.querySelectorAll('.tabs-device button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        layoutDevice = btn.getAttribute('data-device');
+        onSwitch();
+      });
+    });
+  }
+
   function renderLayout() {
     wirePreviewBlock('previewSlotLayout');
     var l = state.global.layout;
+
     document.getElementById('layoutGlobalBody').innerHTML =
       fieldRow('Largura máxima do conteúdo', 'contentMaxWidth · px', sliderControl('lay_maxw', l.contentMaxWidth, LIMITS.contentWidth[0], LIMITS.contentWidth[1], 'px')) +
       fieldRow('Margem lateral (telas grandes)', 'pageGutterDesktop · px', sliderControl('lay_gutd', l.pageGutterDesktop, 0, 200, 'px')) +
       fieldRow('Margem lateral (celular)', 'pageGutterMobile · px', sliderControl('lay_gutm', l.pageGutterMobile, 0, 100, 'px')) +
-      fieldRow('Espaço padrão acima da seção', 'sectionSpacingTop · px', sliderControl('lay_st', l.sectionSpacingTop, LIMITS.spacing[0], LIMITS.spacing[1], 'px')) +
-      fieldRow('Espaço padrão abaixo da seção', 'sectionSpacingBottom · px', sliderControl('lay_sb', l.sectionSpacingBottom, LIMITS.spacing[0], LIMITS.spacing[1], 'px')) +
-      fieldRow('Gap da grade de projetos', 'gridGap · px', sliderControl('lay_gap', l.gridGap, LIMITS.gap[0], LIMITS.gap[1], 'px'));
+      deviceTabsHtml('global') +
+      tieredSpacingField('Espaço antes da seção', 'sectionSpacingTop · padrão para as seções que não têm valor próprio', l.sectionSpacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
+        function (dev, v) { l.sectionSpacingTop[dev] = v; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); },
+        function (dev) { l.sectionSpacingTop[dev] = null; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); }) +
+      tieredSpacingField('Espaço depois da seção', 'sectionSpacingBottom', l.sectionSpacingBottom, LIMITS.spacing[0], LIMITS.spacing[1],
+        function (dev, v) { l.sectionSpacingBottom[dev] = v; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); },
+        function (dev) { l.sectionSpacingBottom[dev] = null; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); }) +
+      tieredSpacingField('Espaço entre colunas (gap da grade de projetos)', 'gridGap', l.gridGap, LIMITS.gap[0], LIMITS.gap[1],
+        function (dev, v) { l.gridGap[dev] = v; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); },
+        function (dev) { l.gridGap[dev] = null; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); });
+    wireTieredFields();
     [['lay_maxw', 'contentMaxWidth', LIMITS.contentWidth], ['lay_gutd', 'pageGutterDesktop', [0, 200]],
-     ['lay_gutm', 'pageGutterMobile', [0, 100]], ['lay_st', 'sectionSpacingTop', LIMITS.spacing],
-     ['lay_sb', 'sectionSpacingBottom', LIMITS.spacing], ['lay_gap', 'gridGap', LIMITS.gap]].forEach(function (m) {
+     ['lay_gutm', 'pageGutterMobile', [0, 100]]].forEach(function (m) {
       bindSlider(m[0], m[2][0], m[2][1], function (v) {
         state.global.layout[m[1]] = v;
         markDirty('content/global.json', state.global, state.globalSha);
         schedulePreview();
       });
     });
+    wireDeviceTabs(document.getElementById('layoutGlobalBody'), renderLayout);
 
     var sections = state.home.sections;
     var labels = { work: 'Projetos', about: 'Sobre', help: 'O que eu faço', faq: 'FAQ', contact: 'Contato' };
-    document.getElementById('layoutSectionsBody').innerHTML = Object.keys(labels).map(function (key) {
-      var s = sections[key] || {};
-      var usesDefault = s.spacingTop == null && s.spacingBottom == null;
-      return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">' +
-        '<b>' + esc(labels[key]) + '</b>' +
-        '<span class="badge ' + (usesDefault ? 'default' : 'custom') + '" id="badge_sec_' + key + '">' + (usesDefault ? 'usando padrão global' : 'valor próprio') + '</span>' +
-        '</div>' +
-        fieldRow('Espaço acima', '', sliderControl('sec_' + key + '_top', s.spacingTop != null ? s.spacingTop : state.global.layout.sectionSpacingTop, LIMITS.spacing[0], LIMITS.spacing[1], 'px')) +
-        fieldRow('Espaço abaixo', '', sliderControl('sec_' + key + '_bot', s.spacingBottom != null ? s.spacingBottom : state.global.layout.sectionSpacingBottom, LIMITS.spacing[0], LIMITS.spacing[1], 'px')) +
-        fieldRow('', '', '<button class="btn small" id="btn_sec_' + key + '_reset">Usar padrão global</button>') +
-        '</div>';
-    }).join('');
-    Object.keys(labels).forEach(function (key) {
-      bindSlider('sec_' + key + '_top', LIMITS.spacing[0], LIMITS.spacing[1], function (v) {
-        state.home.sections[key] = state.home.sections[key] || {};
-        state.home.sections[key].spacingTop = v;
-        document.getElementById('badge_sec_' + key).className = 'badge custom'; document.getElementById('badge_sec_' + key).textContent = 'valor próprio';
-        markDirty('content/home.json', state.home, state.homeSha); schedulePreview();
-      });
-      bindSlider('sec_' + key + '_bot', LIMITS.spacing[0], LIMITS.spacing[1], function (v) {
-        state.home.sections[key] = state.home.sections[key] || {};
-        state.home.sections[key].spacingBottom = v;
-        document.getElementById('badge_sec_' + key).className = 'badge custom'; document.getElementById('badge_sec_' + key).textContent = 'valor próprio';
-        markDirty('content/home.json', state.home, state.homeSha); schedulePreview();
-      });
-      document.getElementById('btn_sec_' + key + '_reset').addEventListener('click', function () {
-        state.home.sections[key].spacingTop = null; state.home.sections[key].spacingBottom = null;
-        markDirty('content/home.json', state.home, state.homeSha);
-        renderLayout(); schedulePreview();
-      });
-    });
+    /* work e about já tinham respiro próprio, fixo no CSS, antes do CMS
+       existir — sem valor gravado aqui, o site usa esse número fixo, não o
+       padrão global. help/faq/contact sempre usaram o padrão global. */
+    var USA_PADRAO_GLOBAL = { help: true, faq: true, contact: true, work: false, about: false };
+    document.getElementById('layoutSectionsBody').innerHTML = deviceTabsHtml('sections') +
+      Object.keys(labels).map(function (key) {
+        var s = sections[key] || {};
+        s.spacingTop = s.spacingTop || { desktop: null, tablet: null, mobile: null };
+        s.spacingBottom = s.spacingBottom || { desktop: null, tablet: null, mobile: null };
+        var usesGlobal = USA_PADRAO_GLOBAL[key];
+        var fbTop = usesGlobal ? state.global.layout.sectionSpacingTop.desktop : null;
+        var fbBottom = usesGlobal ? state.global.layout.sectionSpacingBottom.desktop : null;
+        var note = usesGlobal ? null : 'valor fixo do site (ainda não editável nesta seção)';
+        return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
+          '<b>' + esc(labels[key]) + '</b>' +
+          tieredSpacingField('Espaço antes da seção', '', s.spacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
+            function (dev, v) { s.spacingTop[dev] = v; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
+            function (dev) { s.spacingTop[dev] = null; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
+            fbTop, note) +
+          tieredSpacingField('Espaço depois da seção', '', s.spacingBottom, LIMITS.spacing[0], LIMITS.spacing[1],
+            function (dev, v) { s.spacingBottom[dev] = v; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
+            function (dev) { s.spacingBottom[dev] = null; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
+            fbBottom, note) +
+          '</div>';
+      }).join('');
+    wireTieredFields();
+    wireDeviceTabs(document.getElementById('layoutSectionsBody'), renderLayout);
   }
 
   /* ---------- Header e footer ---------- */
@@ -412,6 +486,8 @@
         '<button class="btn small" data-act="down">↓</button>' +
         '<button class="btn small" data-act="edit">Editar</button>' +
         '<button class="btn small" data-act="toggle">' + (p.visible === false ? 'Mostrar' : 'Ocultar') + '</button>' +
+        '<button class="btn small" data-act="duplicate">Duplicar</button>' +
+        '<button class="btn small danger" data-act="delete">Excluir</button>' +
         '</div></div>';
     }).join('');
     document.querySelectorAll('#projectsList .list-row').forEach(function (row) {
@@ -426,6 +502,38 @@
     var list = state.projectsIndex.projects;
     var p = list.filter(function (x) { return x.slug === slug; })[0];
     if (!p) return;
+
+    if (action === 'duplicate') {
+      var suggestion = slug + '-copia';
+      var newSlug = prompt('Slug do projeto duplicado:', suggestion);
+      if (!newSlug) return;
+      toast('Duplicando "' + slug + '"…');
+      api('/api/projects/' + slug + '/duplicate', { method: 'POST', body: { slug: newSlug } }).then(function () {
+        toast('Duplicado como "' + newSlug + '" (rascunho oculto).', 'ok');
+        return api('/api/projects');
+      }).then(function (res) {
+        state.projectsIndex = res.data; state.projectsIndexSha = res.sha;
+        renderProjectsList();
+      }).catch(function (e) { toast(e.message, 'err'); });
+      return;
+    }
+
+    if (action === 'delete') {
+      var sure = confirm('Excluir "' + (p.titlePt || slug) + '" definitivamente?\n\nIsso remove a página e o conteúdo do projeto do GitHub (as imagens em assets/ não são apagadas). Esta ação não pode ser desfeita pelo painel.');
+      if (!sure) return;
+      toast('Excluindo "' + slug + '"…');
+      api('/api/projects/' + slug, { method: 'DELETE' }).then(function () {
+        toast('Projeto excluído.', 'ok');
+        if (state.editingSlug === slug) { state.editingSlug = null; document.getElementById('projectEditor').innerHTML = ''; }
+        delete state.projects[slug];
+        return api('/api/projects');
+      }).then(function (res) {
+        state.projectsIndex = res.data; state.projectsIndexSha = res.sha;
+        renderProjectsList();
+      }).catch(function (e) { toast(e.message, 'err'); });
+      return;
+    }
+
     if (action === 'toggle') { p.visible = p.visible === false ? true : false; }
     if (action === 'up' || action === 'down') {
       var sorted = list.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
