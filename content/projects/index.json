@@ -58,7 +58,7 @@
     },
     {
       "slug": "case-03",
-      "visible": false,
+      "visible": true,
       "featured": false,
       "cardSize": "normal",
       "order": 3,
@@ -106,7 +106,7 @@
     },
     {
       "slug": "case-03-copia",
-      "visible": false,
+      "visible": true,
       "featured": false,
       "cardSize": "normal",
       "order": 5,
