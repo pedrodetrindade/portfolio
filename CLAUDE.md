@@ -159,13 +159,18 @@ foi uma vinheta de largura cheia (`header::before`, gradiente escuro fixo no
 topo, sem blur). Funcionava, mas pintava uma faixa visível mesmo sobre o
 fundo escuro padrão do site, lendo como uma sombra que não deveria estar ali.
 Foi trocada por `filter:drop-shadow(...)` direto em `.brand`, `.menu-btn`,
-`.avail` e `.lp-toggle`: dois drop-shadow empilhados (um justo, para nitidez
-da borda do glifo; um mais largo, para segurar contraste até sobre fundo bem
-claro). `filter` e não `text-shadow` porque também precisa cobrir os ícones
-SVG (seta do idioma, ponto do Menu), e `text-shadow` não pinta forma
-vetorial. Sem retângulo pintado: invisível sobre o próprio fundo escuro do
-site, só aparece (como halo escuro em volta da letra) quando o fundo por trás
-realmente precisa. `.avail` ("Disponível para projetos") também perdeu o
+`.avail` e `.lp-toggle`. `filter` e não `text-shadow` porque também precisa
+cobrir os ícones SVG (seta do idioma, ponto do Menu), e `text-shadow` não
+pinta forma vetorial. Sem retângulo pintado: invisível sobre o próprio fundo
+escuro do site, só aparece (como halo escuro em volta da letra) quando o
+fundo por trás realmente precisa. Passou por duas calibragens: a primeira
+empilhava dois drop-shadow, um deles com 7px de raio e opacidade .55, forte e
+espalhada demais, visível até onde não precisava; a segunda, um só
+drop-shadow com opacidade .4, ficou fraca demais e voltou a perder a letra
+sobre um fundo bem claro. Raio curto (2px, sem segunda camada) com opacidade
+média (.6) é o meio-termo: imperceptível sobre o fundo escuro padrão do site,
+mas ainda segura a borda da letra sobre um fundo muito claro.
+`.avail` ("Disponível para projetos") também perdeu o
 `color:var(--muted-2)` com `opacity:.82`: combinar uma cor já baixa com uma
 opacidade extra por cima não sobrava contraste sobre fundo muito claro, nem
 com o drop-shadow. Passou para `--muted` sem opacity extra, que ainda lê mais

@@ -318,15 +318,20 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
    lendo como uma sombra indevida. drop-shadow resolve o mesmo problema (marca,
    pílula de Menu/Disponibilidade e seletor de idioma sem contraste garantido
    contra o que rola por baixo) sem pintar retângulo nenhum: escurece só o
-   contorno de cada glifo e ícone, then invisível sobre o próprio fundo escuro
-   do site e só aparece quando o fundo por baixo realmente precisa dele. Dois
-   drop-shadow empilhados: um justo, para nitidez da borda, e um mais largo,
-   para segurar contraste até sobre fundo bem claro (testado com uma imagem
-   quase branca atrás do header). filter, não text-shadow, porque também
-   precisa cobrir os ícones SVG (seta do idioma, ponto do Menu). */
+   contorno de cada glifo e ícone, invisível sobre o próprio fundo escuro do
+   site e só aparece quando o fundo por baixo realmente precisa dele. filter,
+   não text-shadow, porque também precisa cobrir os ícones SVG (seta do
+   idioma, ponto do Menu).
+   A primeira versão (dois drop-shadow, um deles com 7px de raio e opacidade
+   .55) ficou forte e espalhada demais, visível mesmo onde não precisava. A
+   segunda, só um drop-shadow bem fraco (opacidade .4), deixou de segurar a
+   letra sobre um fundo bem claro (testado com uma imagem quase branca atrás
+   do header). Raio curto (2px, sem segunda camada "espalhada") com opacidade
+   média (.6) é o meio-termo: continua imperceptível sobre o fundo escuro
+   padrão do site, mas ainda define a borda da letra o bastante sobre um
+   fundo muito claro. */
 .brand,.menu-btn,.avail,.lp-toggle{
-  filter:drop-shadow(0 1px 2px rgba(var(--ink-rgb),.7))
-         drop-shadow(0 0 7px rgba(var(--ink-rgb),.55))}
+  filter:drop-shadow(0 1px 2px rgba(var(--ink-rgb),.6))}
 /* ===== CAIXA COMPARTILHADA: MENU + DISPONIBILIDADE =====
    Um contorno só, um raio só, um material só. O fundo e a borda vivem no
    container; o botão e o status ficam sem contorno próprio, senão o conjunto
