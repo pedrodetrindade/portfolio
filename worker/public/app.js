@@ -302,6 +302,31 @@
     });
   }
 
+  /* Espaço antes/depois (e, quando includeGap, espaço entre elementos) de um
+     bloco de uma página de projeto. target[key] é o objeto de espaçamento do
+     bloco: {marginTop:{desktop,tablet,mobile}, marginBottom:{...}, gap:{...}}.
+     Ausente = bloco sem nenhuma personalização, e o site usa o espaçamento
+     que já existia (ver js/content-render.js, blockStyleCss). */
+  function blockSpacingFields(target, key, onSave, includeGap) {
+    var spacing = target[key] || (target[key] = {});
+    if (!spacing.marginTop) spacing.marginTop = { desktop: null, tablet: null, mobile: null };
+    if (!spacing.marginBottom) spacing.marginBottom = { desktop: null, tablet: null, mobile: null };
+    if (includeGap && !spacing.gap) spacing.gap = { desktop: null, tablet: null, mobile: null };
+    var html =
+      tieredSpacingField('Espaço antes', 'margin-top', spacing.marginTop, LIMITS.spacing[0], LIMITS.spacing[1],
+        function (dev, v) { spacing.marginTop[dev] = v; onSave(); },
+        function (dev) { spacing.marginTop[dev] = null; onSave(); renderProjectEditor(); }, 0, 'padrão do site') +
+      tieredSpacingField('Espaço depois', 'margin-bottom', spacing.marginBottom, LIMITS.spacing[0], LIMITS.spacing[1],
+        function (dev, v) { spacing.marginBottom[dev] = v; onSave(); },
+        function (dev) { spacing.marginBottom[dev] = null; onSave(); renderProjectEditor(); }, 0, 'padrão do site');
+    if (includeGap) {
+      html += tieredSpacingField('Espaço entre elementos', 'gap', spacing.gap, LIMITS.gap[0], LIMITS.gap[1],
+        function (dev, v) { spacing.gap[dev] = v; onSave(); },
+        function (dev) { spacing.gap[dev] = null; onSave(); renderProjectEditor(); }, 0, 'padrão do site');
+    }
+    return html;
+  }
+
   function renderLayout() {
     wirePreviewBlock('previewSlotLayout');
     var l = state.global.layout;
@@ -580,19 +605,30 @@
       fieldRow('Capa', 'caminho do arquivo — envie por Mídia e cole aqui', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
       fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
       '</div></details>' +
+      '<details class="group"><summary>Espaçamento da capa</summary><div class="group-body">' +
+      deviceTabsHtml('cover-spacing') +
+      blockSpacingFields(P, 'coverSpacing', function () { save(); }, false) +
+      '</div></details>' +
       '<details class="group"><summary>Contexto / processo / resultado</summary><div class="group-body">' +
       textBlocks.map(function (b, i) {
         return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
           '<b>' + esc(b.labelPt) + '</b>' +
           fieldRow('Texto (PT)', '', '<textarea id="pe_block_' + i + '_pt">' + esc(b.textPt) + '</textarea>') +
           fieldRow('Texto (EN)', '', '<textarea id="pe_block_' + i + '_en">' + esc(b.textEn) + '</textarea>') +
+          deviceTabsHtml('block-spacing-' + i) +
+          blockSpacingFields(b, 'spacing', function () { save(); }, false) +
           '</div>';
       }).join('') + '</div></details>' +
       '<details class="group"><summary>Galeria (' + galleryBlock.images.length + ' imagens)</summary><div class="group-body">' +
       galleryBlock.images.map(function (img, i) {
         return fieldRow('Imagem ' + (i + 1), '', '<input type="text" id="pe_gal_' + i + '" value="' + esc(img.src) + '">' +
           '<button class="btn small danger" data-gal-remove="' + i + '">remover</button>');
-      }).join('') + '<button class="btn small" id="pe_gal_add">+ adicionar imagem</button></div></details>';
+      }).join('') + '<button class="btn small" id="pe_gal_add">+ adicionar imagem</button>' +
+      '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
+      '<b data-pt="Espaçamento da galeria">Espaçamento da galeria</b>' +
+      deviceTabsHtml('gallery-spacing') +
+      blockSpacingFields(galleryBlock, 'spacing', function () { save(); }, true) +
+      '</div></details>';
 
     function save() { markDirty('content/projects/' + slug + '.json', P, cached.sha); }
     bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); });
@@ -622,6 +658,9 @@
     if (coverUpload) coverUpload.addEventListener('change', function () { uploadFile(coverUpload.files[0], slug, function (path) {
       P.cover = path; indexEntry.cover = path; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); renderProjectEditor();
     }); });
+
+    wireTieredFields();
+    wireDeviceTabs(editorEl, renderProjectEditor);
   }
 
   function uploadFile(file, slug, onDone) {

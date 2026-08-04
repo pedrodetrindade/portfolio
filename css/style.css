@@ -1328,19 +1328,56 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .case-meta div span{display:block;color:var(--accent);margin-bottom:.35rem;letter-spacing:.035em}
 .case-meta div p{color:var(--paper);font-family:var(--font);font-size:.92rem}
 
+/* ===== ESPAÇAMENTO POR BLOCO (páginas de projeto) =====
+   Cada bloco (a capa, cada seção de texto, a galeria) recebe --block-mt-* e
+   --block-mb-* como propriedade CSS embutida NO PRÓPRIO ELEMENTO, escritas
+   por js/content-render.js a partir de content/projects/<slug>.json. É o
+   mesmo esquema de três níveis do espaçamento de seção (ver mais acima,
+   --help-pad-top-desktop etc.), só que declarado inline em vez de em :root,
+   porque aqui quem varia é o bloco individual, não a página inteira.
+   Sem nenhuma configuração, os literais depois da vírgula reproduzem
+   exatamente o espaçamento que já existia (1rem antes da capa, 2.6rem entre
+   seções de texto, 1rem antes da galeria, 1.4rem entre as imagens dela) —
+   instalar o controle não muda nenhum projeto existente. */
 .case-cover{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;position:relative;
-  border:1px solid var(--line-strong);background:var(--ink-2);margin-top:1rem}
+  border:1px solid var(--line-strong);background:var(--ink-2);
+  margin-top:var(--block-mt-desktop,1rem);margin-bottom:var(--block-mb-desktop,0px)}
 .case-cover .scene{filter:none;transform:none}
 
-.case-body{display:grid;gap:2.6rem}
+/* .case-body não usa mais gap: precisava de um valor só para todos os
+   filhos, e cada .case-section (bloco de texto) agora carrega o próprio
+   espaço antes/depois. O grid em si só empilha; quem afasta um bloco do
+   outro é a margem de cada um. */
+.case-body{display:grid}
+.case-section{margin-top:var(--block-mt-desktop,0px);margin-bottom:var(--block-mb-desktop,0px)}
 .case-section .k{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:.02em;
   border-top:1px solid var(--line);padding-top:1.2rem;margin-bottom:1rem}
 .case-section p{font-size:1.02rem;color:var(--muted);max-width:64ch}
 .case-section p+p{margin-top:1.1rem}
 
-.case-gallery{display:grid;grid-template-columns:1fr;gap:1.4rem;margin-top:1rem}
+.case-gallery{display:grid;grid-template-columns:1fr;
+  gap:var(--block-gap-desktop,1.4rem);
+  margin-top:var(--block-mt-desktop,1rem);margin-bottom:var(--block-mb-desktop,0px)}
 @media(min-width:640px){.case-gallery{grid-template-columns:1fr 1fr}}
 .case-gallery .thumb{aspect-ratio:4/3}
+@media(max-width:899px) and (min-width:640px){
+  .case-cover{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,1rem));
+    margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px))}
+  .case-section{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,0px));
+    margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px))}
+  .case-gallery{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,1rem));
+    margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px));
+    gap:var(--block-gap-tablet,var(--block-gap-desktop,1.4rem))}
+}
+@media(max-width:639px){
+  .case-cover{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,1rem)));
+    margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)))}
+  .case-section{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,0px)));
+    margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)))}
+  .case-gallery{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,1rem)));
+    margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)));
+    gap:var(--block-gap-mobile,var(--block-gap-tablet,var(--block-gap-desktop,1.4rem)))}
+}
 
 .case-nav{display:flex;justify-content:space-between;gap:1.6rem;border-top:1px solid var(--line);
   padding-top:2rem;font-family:var(--mono);font-size:.8rem}

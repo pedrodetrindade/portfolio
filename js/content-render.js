@@ -221,16 +221,49 @@
         '<div><span data-pt="escopo" data-en="scope">escopo</span><p data-pt="' + esc(h.scopePt) + '" data-en="' + esc(h.scopeEn) + '">' + esc(h.scopePt) + '</p></div>';
     }
 
+    /* Espaçamento por bloco: sempre escreve --block-mt-desktop e
+       --block-mb-desktop (o número já resolvido — a personalização do bloco,
+       se houver, ou o valor de contexto que reproduz o espaçamento atual) e
+       só escreve as variáveis de tablet/celular quando existe mesmo um
+       número próprio para aquele nível — sem isso, o CSS já cai em cascata
+       para o nível anterior (ver css/style.css, bloco "ESPAÇAMENTO POR
+       BLOCO"). É o mesmo desenho de content.js para o espaçamento de seção,
+       só que embutido no próprio elemento em vez de em :root, porque aqui
+       quem varia é a instância do bloco, não a página inteira. */
+    function tierVars(prop, spacingField, contextualDesktopDefault) {
+      var obj = spacingField || {};
+      var d = typeof obj.desktop === 'number' ? obj.desktop : contextualDesktopDefault;
+      var out = ['--' + prop + '-desktop:' + d + 'px'];
+      if (typeof obj.tablet === 'number') out.push('--' + prop + '-tablet:' + obj.tablet + 'px');
+      if (typeof obj.mobile === 'number') out.push('--' + prop + '-mobile:' + obj.mobile + 'px');
+      return out;
+    }
+    /* devolve o CSS "nu" (sem o wrapper style="..."), para tanto montar um
+       atributo dentro de um innerHTML quanto chamar setAttribute direto */
+    function blockStyleCss(spacing, mtDefault, mbDefault, gapDefault) {
+      spacing = spacing || {};
+      var parts = tierVars('block-mt', spacing.marginTop, mtDefault).concat(tierVars('block-mb', spacing.marginBottom, mbDefault));
+      if (gapDefault != null) parts = parts.concat(tierVars('block-gap', spacing.gap, gapDefault));
+      return parts.join(';');
+    }
+
     var coverImg = document.querySelector('.case-cover .scene img');
     if (coverImg && P.cover) coverImg.setAttribute('src', base + P.cover);
+    var coverEl = document.querySelector('.case-cover');
+    if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 16, 0));
 
     var blocks = Array.isArray(P.blocks) ? P.blocks : [];
     var bodyEl = document.querySelector('.case-body');
     if (bodyEl) {
       var textBlocks = blocks.filter(function (b) { return b.type === 'text'; });
       if (textBlocks.length) {
-        bodyEl.innerHTML = textBlocks.map(function (b) {
-          return '<div class="case-section">' +
+        bodyEl.innerHTML = textBlocks.map(function (b, i) {
+          /* espaço depois reproduz o antigo gap:2.6rem entre blocos de
+             texto (41,6px), exceto no último, que não tinha espaço extra
+             depois dele (o vão para a galeria já vinha da seção externa) */
+          var isLast = i === textBlocks.length - 1;
+          var css = blockStyleCss(b.spacing, 0, isLast ? 0 : 41.6);
+          return '<div class="case-section" style="' + css + '">' +
             '<div class="k reveal" data-pt="' + esc(b.labelPt) + '" data-en="' + esc(b.labelEn) + '">' + esc(b.labelPt) + '</div>' +
             '<p class="reveal" data-pt="' + esc(b.textPt) + '" data-en="' + esc(b.textEn) + '">' + esc(b.textPt) + '</p>' +
             '</div>';
@@ -242,6 +275,7 @@
     if (galleryEl) {
       var galleryBlock = blocks.filter(function (b) { return b.type === 'gallery'; })[0];
       if (galleryBlock && Array.isArray(galleryBlock.images)) {
+        galleryEl.setAttribute('style', blockStyleCss(galleryBlock.spacing, 16, 0, 22.4));
         galleryEl.innerHTML = galleryBlock.images.map(function (img) {
           return '<div class="thumb reveal"><div class="scene"><img src="' + esc(base + img.src) + '" alt="' + esc(img.alt || '') + '" onerror="this.remove()"></div></div>';
         }).join('');

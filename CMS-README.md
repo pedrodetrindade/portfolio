@@ -7,6 +7,115 @@ Access). Ele foi escrito para quem não mexe em código no dia a dia.
 
 ---
 
+## Segunda revisão: espaçamento por bloco e validação final antes do deploy
+
+### A. Estado anterior
+
+O que já funcionava, confirmado de novo nesta rodada: a grade de projetos já
+era 100% dinâmica (sem limite de 4), a navegação "próximo projeto" já era
+calculada pela posição na lista (corrigida na revisão anterior), e duplicar/
+excluir projeto já existiam no Worker e no painel.
+
+O que estava faltando de verdade: espaçamento individual por bloco dentro da
+página de projeto. Cada bloco (capa, cada seção de texto, galeria) só tinha
+um número fixo de espaço, igual para todos os projetos, sem controle nenhum
+no painel — apesar de o restante do CMS já ter o sistema de três níveis
+(desktop/tablet/celular) pronto para o espaçamento de seção.
+
+Nenhum bug de regressão foi encontrado nas áreas já entregues (grade
+dinâmica, navegação, duplicar/excluir): o diff destes arquivos desde a
+revisão anterior mostra zero alteração neles.
+
+### B. O que foi implementado
+
+**Espaçamento por bloco**, com os mesmos três níveis (desktop/tablet/celular,
+os mesmos breakpoints 900px/640px, herança nível a nível) já usados no
+espaçamento de seção — sem inventar um segundo sistema. Cada bloco de uma
+página de projeto agora aceita:
+
+- **espaço antes** (`margin-top`) e **espaço depois** (`margin-bottom`) — a
+  capa, cada bloco de texto (contexto/processo/resultado) e a galeria;
+- **espaço entre elementos** (`gap`) — só a galeria, que é o único bloco com
+  mais de um elemento interno hoje.
+
+Margem, padding e gap continuam sendo tratados como propriedades diferentes:
+o espaço "antes/depois" de um bloco é margem (afasta o bloco dos vizinhos), o
+espaço "entre elementos" é gap (afasta imagens umas das outras dentro do
+mesmo bloco). Nenhum bloco atual tem padding interno próprio configurável — a
+capa, o texto e a galeria não têm um "miolo" que precise de respiro interno
+distinto da margem, então esse controle não existe porque não haveria o que
+ele fizesse (documentado como limitação abaixo, não escondido).
+
+**Onde os números moram:** dentro do próprio bloco, em
+`content/projects/<slug>.json` — `blocks[i].spacing` para cada bloco de texto
+e para a galeria, `coverSpacing` no nível raiz do projeto para a capa. Cada
+um é `{marginTop:{desktop,tablet,mobile}, marginBottom:{...}}` (a galeria
+ganha também `gap:{...}`). Um campo ausente ou `null` em qualquer nível significa
+"sem valor próprio nesse nível", e o site usa o espaçamento que já existia
+antes do CMS (2,6rem/41,6px entre blocos de texto, exceto o último; 1rem/16px
+antes da capa e da galeria; 1,4rem/22,4px de gap na galeria) — nenhum projeto
+existente mudou de aparência com esta implementação.
+
+**Como chega à tela:** `js/content-render.js` calcula, para cada bloco, o
+número final de cada nível (a personalização do bloco, ou o valor de
+contexto que reproduz o espaçamento atual) e escreve como propriedade CSS
+diretamente no elemento do bloco (`--block-mt-desktop` etc.) — o mesmo
+desenho do espaçamento de seção, só que embutido no elemento em vez de em
+`:root`, porque aqui quem varia é a instância do bloco, não a página inteira.
+`css/style.css` só lê essas variáveis por faixa de largura; toda a lógica de
+herança fica em JavaScript, testável e sem duplicação entre painel e site.
+
+**No painel:** cada bloco (capa, cada seção de texto, galeria) ganhou sua
+própria aba de dispositivo e os campos "Espaço antes" / "Espaço depois" (e
+"Espaço entre elementos" na galeria), com o mesmo selo "próprio"/"herdando de
+X" e botão "Voltar a herdar" já usados no espaçamento de seção.
+
+### C. Testes — o que foi executado e como
+
+| Teste | Ambiente | Resultado |
+|---|---|---|
+| Sintaxe de `js/content-render.js`, `worker/public/app.js` depois das mudanças | Navegador, `new Function()` sobre o arquivo servido | OK nos dois |
+| Espaçamento de bloco sem nenhuma personalização (projeto existente, case-01) | Navegador, `getComputedStyle` nos 3 blocos de texto + capa + galeria | Valores exatamente iguais aos antigos (41,6px entre textos exceto o último, 0px no último, 16px antes da capa/galeria, 22,4px de gap) |
+| Herança de um valor de bloco por dispositivo (desktop=120px, sem tablet, celular=48px) | Navegador, `getComputedStyle` em 700px e 390px de largura | Tablet herdou 120px do desktop; celular usou seu próprio 48px |
+| Bloco sem nenhum campo de espaçamento no JSON (simulando um projeto recém-criado) | Navegador, chamando a mesma função de resolução isoladamente | Nenhum `NaN`/`undefined` no CSS gerado |
+| Grade com 5 e 6 projetos simulados (quantidade ímpar e maior que 4) | Navegador, injeção do índice em memória + nova renderização | Renderizou todos, sem limite, sem erro |
+| Whitelist de caminho, sanitização de slug/upload, JWT do Access | Navegador, execução isolada das funções do Worker | Mesmos resultados da revisão anterior — nenhuma proteção enfraquecida |
+
+**O que não foi possível testar nesta sessão:** o fluxo completo de criar um
+projeto pelo painel de verdade (abrir o painel publicado, clicar em "criar",
+publicar, recarregar e confirmar persistência no GitHub) depende de um
+Worker publicado com um token real do GitHub — nenhum dos dois existe neste
+ambiente de desenvolvimento (sem Cloudflare, sem `wrangler`, sem Node/`npm`
+instalados aqui). O que foi verificado, em vez disso, foi a corretude da
+lógica de cada rota (`handleCreateProject`, `handleDuplicateProject`,
+`handleDeleteProject` em `worker/src/index.js`) por leitura de código e por
+execução isolada das funções puras que elas usam (validação de slug, gap,
+espaçamento). Isso é revisão de código e teste unitário isolado, não teste de
+integração — a diferença está registrada aqui de propósito, não apresentada
+como "testado" sem qualificação.
+
+### D. Limitações restantes
+
+- Nenhum bloco tem padding interno configurável (só margem entre blocos e gap
+  dentro da galeria) — nenhum bloco atual tem um "miolo" que precisasse disso.
+- Criar/duplicar/excluir projeto pelo painel real, publicado, com um Worker
+  de verdade: não testado nesta sessão (falta de credenciais/infraestrutura
+  aqui, não falta de implementação — ver seção C).
+- Tipografia, tamanhos de card além de "normal" e mídia em vídeo continuam
+  como na entrega anterior: fora do escopo desta rodada.
+
+### E. Um incidente durante esta revisão
+
+Um comando de terminal usado para incrementar o número de versão dos
+arquivos (`?v=N` no CSS/JS, para o navegador não servir a versão antiga em
+cache) tinha um erro de sintaxe e, em vez de só trocar o número, apagou a
+linha inteira do `<link rel="stylesheet">` e do `<script src=".../content-
+render.js">` nos 5 arquivos HTML. Percebido e corrigido antes de qualquer
+commit — nenhuma versão publicada chegou a ter esse problema. Registrado
+aqui por transparência, não porque tenha afetado o resultado final.
+
+---
+
 ## Revisão funcional antes do deploy
 
 Antes de publicar, o sistema passou por uma segunda rodada de revisão focada
