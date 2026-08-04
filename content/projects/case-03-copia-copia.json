@@ -1,0 +1,65 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, na ordem, o que aparece na página depois da capa: sempre 3 blocos de texto (contexto/processo/resultado) e 1 galeria com 2 imagens, hoje. Novos tipos de bloco pedem ajuste no template, não só no JSON. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe mais campo prevProject/nextProject aqui.",
+  "slug": "case-03-copia-copia",
+  "status": "draft",
+  "client": "",
+  "year": 2025,
+  "category": "direcao-criativa",
+  "services": [
+    "Direção criativa"
+  ],
+  "seo": {
+    "title": "Ativos digitais: narrativa institucional · Pedro de Trindade",
+    "description": "Case: narrativa institucional para ativos digitais. Direção criativa e storytelling por Pedro de Trindade."
+  },
+  "hero": {
+    "eyebrowPt": "direção criativa",
+    "eyebrowEn": "creative direction",
+    "titlePt": "Ativos digitais: narrativa institucional (cópia) (cópia)",
+    "titleEn": "Digital assets: institutional narrative (copy) (copy)",
+    "subtitlePt": "Construção de uma narrativa institucional para um setor técnico por natureza, traduzindo complexidade em confiança visual.",
+    "subtitleEn": "Building an institutional narrative for a sector technical by nature, translating complexity into visual trust.",
+    "rolePt": "Direção criativa",
+    "roleEn": "Creative direction",
+    "scopePt": "Apresentações, storytelling",
+    "scopeEn": "Presentations, storytelling"
+  },
+  "cover": "assets/projetos/case-03/capa.jpg",
+  "coverMobile": "",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "Materiais institucionais explicavam produto e tecnologia, mas não comunicavam a maturidade e a confiança que o negócio já havia conquistado.",
+      "textEn": "Institutional materials explained product and technology, but did not communicate the maturity and trust the business had already earned."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "Estruturação de uma narrativa única, aplicada a apresentações institucionais e materiais de investidor, com hierarquia clara de informação.",
+      "textEn": "Structuring a single narrative, applied to institutional decks and investor materials, with a clear information hierarchy."
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
+      "textPt": "Um padrão de comunicação institucional reutilizável, que elevou a percepção de solidez do negócio diante de parceiros e investidores.",
+      "textEn": "A reusable institutional communication standard that raised the perception of the business's solidity to partners and investors."
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/projetos/case-03/galeria-1.jpg",
+          "alt": ""
+        },
+        {
+          "src": "assets/projetos/case-03/galeria-2.jpg",
+          "alt": ""
+        }
+      ]
+    }
+  ]
+}
