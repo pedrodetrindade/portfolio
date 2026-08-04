@@ -15,7 +15,7 @@
     },
     "textPrimary": {
       "hex": "#f2eeee",
-      "opacity": 5
+      "opacity": 100
     },
     "textSecondary": {
       "hex": "#B7ACAC",
