@@ -51,12 +51,12 @@
     "help": {
       "visible": true,
       "spacingTop": {
-        "desktop": 4,
+        "desktop": 75,
         "tablet": null,
         "mobile": null
       },
       "spacingBottom": {
-        "desktop": 10,
+        "desktop": 75,
         "tablet": null,
         "mobile": null
       }
@@ -64,12 +64,12 @@
     "faq": {
       "visible": true,
       "spacingTop": {
-        "desktop": 10,
+        "desktop": 75,
         "tablet": null,
         "mobile": null
       },
       "spacingBottom": {
-        "desktop": 6,
+        "desktop": 75,
         "tablet": null,
         "mobile": null
       }
