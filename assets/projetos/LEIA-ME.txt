@@ -1,0 +1,30 @@
+COMO COLOCAR AS FOTOS DOS PROJETOS
+====================================
+
+Cada projeto tem sua própria pasta aqui dentro: case-01, case-02, case-03, case-04.
+Isso corresponde às páginas work/case-01.html, case-02.html, case-03.html e case-04.html
+(na mesma ordem em que os projetos aparecem na home).
+
+Dentro de cada pasta, salve os arquivos EXATAMENTE com estes nomes:
+
+  capa.jpg       -> a imagem principal do projeto. Aparece em dois lugares:
+                    o card na home E o topo da página do case. Uma foto só,
+                    reaproveitada nos dois.
+
+  galeria-1.jpg  -> primeira imagem da galeria, dentro da página do case.
+  galeria-2.jpg  -> segunda imagem da galeria, dentro da página do case.
+
+Ou seja, cada pasta precisa de até 3 arquivos: capa.jpg, galeria-1.jpg e galeria-2.jpg.
+
+REGRAS SIMPLES:
+- O nome tem que ser exatamente esse, tudo minúsculo, sem acento e sem espaço.
+- Pode ser .jpg ou .png — nesse caso troque só a extensão do arquivo (ex: capa.png)
+  e me avise, porque o HTML aponta para .jpg por padrão.
+- Não precisa editar nenhum código. Assim que o arquivo estiver na pasta certa
+  com o nome certo, a foto aparece sozinha no site (é só recarregar a página).
+- Se uma foto ainda não existir, o site continua mostrando o fundo cinza com
+  textura no lugar dela — nada quebra por faltar imagem.
+
+Formato recomendado: fotos na horizontal (paisagem), a mesma proporção
+aproximada de um cartão de visita deitado. O site corta o excesso
+automaticamente para preencher o quadro, sem distorcer.

@@ -1,0 +1,14 @@
+# Copie este arquivo para ".dev.vars" (sem ".example") na mesma pasta.
+# ".dev.vars" é lido só pelo "wrangler dev" (ambiente local) e nunca é
+# enviado ao Cloudflare nem ao GitHub — está no .gitignore deste projeto.
+#
+# NÃO escreva um token de verdade aqui se este arquivo puder ser sincronizado
+# para algum lugar público. Prefira gerar um token de teste, de vida curta,
+# para o próprio desenvolvimento local (ver README, seção D).
+
+# Fine-grained Personal Access Token do GitHub, só para uso local.
+GITHUB_TOKEN=coloque_aqui_um_token_de_teste
+
+# Liga o painel sem exigir login do Cloudflare Access, só localmente.
+# NUNCA defina isto como variável ou secret em produção.
+DEV_AUTH_BYPASS=true

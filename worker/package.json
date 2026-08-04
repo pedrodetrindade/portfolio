@@ -1,0 +1,14 @@
+{
+  "name": "portfolio-admin-worker",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Painel administrativo e API do portfólio de Pedro de Trindade, hospedados em um Cloudflare Worker.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

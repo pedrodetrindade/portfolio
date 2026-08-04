@@ -1,3 +1,19 @@
+/* ===== SWITZER =====
+   Arquivo variável local, copiado de Switzer_Complete/Fonts/WEB/fonts/ para
+   assets/fonts/: publicar o pacote inteiro levaria OTF, TTF e dezoito pesos
+   para o servidor sem necessidade. Uma declaração só, com o eixo limitado a
+   300–500, porque o teto do site é Medium. O navegador nunca recebe permissão
+   para pedir mais que isso, e font-synthesis desligado impede negrito falso.
+   Nada é baixado da internet. */
+@font-face{
+  font-family:"Switzer";
+  src:url("../assets/fonts/Switzer-Variable.woff2") format("woff2-variations"),
+      url("../assets/fonts/Switzer-Variable.woff2") format("woff2");
+  font-style:normal;
+  font-weight:var(--w-light) 500;
+  font-display:swap;
+}
+
 :root{
   /* ===== PALETA: escura, monocromática, levemente quente =====
      Toda cor do site sai daqui. Os triplets existem para compor alpha
@@ -10,14 +26,50 @@
   --muted-2:#8A7E7E;      /* texto terciário */
   --accent:#A29595;       /* rótulos e detalhes */
   --cream:#C9BDBD;        /* realce quente discreto */
+  /* O nome da hero tem cor própria e única: marrom-claro, o mesmo na intro e na
+     capa. A continuidade do elemento depende de a cor nunca mudar no caminho.
+     9,9:1 de contraste sobre o fundo, bem acima do mínimo. */
+  --color-hero-name:#C2B3B3;
   --ink-rgb:13,10,10;
   --paper-rgb:242,238,238;
   --warm-rgb:115,104,104;
-  --line:rgba(var(--warm-rgb),.20);
-  --line-strong:rgba(var(--warm-rgb),.36);
+  /* Opacidade da borda separada da cor: o CMS controla as duas de forma
+     independente, sem exigir rgba() manual. --line e --line-strong continuam
+     existindo com o mesmo resultado de sempre, só que compostas a partir de
+     um número editável em vez de um valor cravado. */
+  --border-opacity:.20;
+  --border-opacity-strong:.36;
+  --line:rgba(var(--warm-rgb),var(--border-opacity));
+  --line-strong:rgba(var(--warm-rgb),var(--border-opacity-strong));
   --glass:rgba(38,27,29,.55);
-  --font:'Onest',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;
-  --gutter:clamp(1.25rem,5vw,5rem);
+  /* ===== ARREDONDAMENTO =====
+     Quatro famílias, e só estas: card (grade de projetos), image (capa e
+     galeria dos cases), button (todo botão em cápsula) e field (campos de
+     formulário). Detalhes pequenos de interface (miniatura do menu, ícone de
+     copiar) continuam com o número próprio deles: são cápsulas de navegação,
+     não o "arredondamento de imagem" que o painel expõe. */
+  --radius-card:22px;
+  --radius-image:16px;
+  --radius-button:100px;
+  --radius-field:12px;
+  /* Uma família só no site inteiro. O token --mono continua existindo porque é
+     usado em dezenas de regras, mas aponta para a mesma Switzer: o que dava
+     textura de rótulo técnico agora vem do tracking e do tamanho, não de uma
+     segunda família. */
+  --font:"Switzer","Helvetica Neue",Arial,sans-serif;
+  --mono:var(--font);
+  /* ===== PESOS: o teto do site é 500 =====
+     Medium para destaque, Regular para intermediário, Light para texto corrido. */
+  --w-medium:500;
+  --w-regular:400;
+  --w-light:300;
+  /* ===== CONTAINER FLUIDO ===== */
+  --page-gutter:clamp(20px,3vw,56px);
+  --content-max:1680px;
+  --gutter:var(--page-gutter);
+  /* ===== INTERAÇÃO ===== */
+  --dur-hover:420ms;
+  --ease-hover:cubic-bezier(.16,1,.3,1);
   /* ===== SISTEMA DE MOVIMENTO =====
      Início responsivo, final desacelerado, distâncias curtas.
      Nada de ease-in-out genérico, nada linear, nada elástico. */
@@ -31,23 +83,56 @@
   --dur-slow:1000ms;
   --dur-reveal:1200ms;
   --dur-ambient:1600ms;
+  /* Entrada dos blocos. Alinhada à cauda do lerp .04 da rolagem: o conteúdo
+     chega no mesmo tempo em que a página assenta, e o conjunto lê como um
+     movimento só. Não use isto em hover, que continua em --dur-micro. */
+  --dur-enter:1500ms;
   --grain-url:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 *{box-sizing:border-box;margin:0;padding:0}
+/* impede o navegador de fabricar negrito ou itálico que a fonte não tem */
+html,body{font-synthesis:none;-webkit-font-synthesis:none}
 /* clip em vez de hidden: contém o sangramento lateral sem criar um
-   contêiner de rolagem nem inflar o scrollWidth do documento */
-html{scroll-behavior:smooth;overflow-x:clip}
-body{font-family:var(--font);background:var(--ink);color:var(--paper);line-height:1.6;font-weight:400;
+   contêiner de rolagem nem inflar o scrollWidth do documento.
+   scrollbar-gutter reserva a calha sempre: durante a intro o body trava a
+   rolagem, a barra sumia e a página inteira alargava uns 15px, deslocando o
+   nome e a frase no exato momento da passagem para a capa. */
+html{scroll-behavior:smooth;overflow-x:clip;scrollbar-gutter:stable}
+body{font-family:var(--font);background:var(--ink);color:var(--paper);line-height:1.6;font-weight:var(--w-regular);
   -webkit-font-smoothing:antialiased;overflow-x:clip;position:relative}
 body.locked{overflow:hidden;height:100dvh}
 
 /* Nenhum filter:blur() no site. Gradiente radial já é suave por natureza;
    o blur só custava pintura. Os stops foram alargados para compensar. */
-.glow{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden}
-.cursor-glow{position:fixed;top:0;left:0;width:420px;height:420px;margin:-210px 0 0 -210px;
+/* will-change promove estas camadas fixas para o compositor. Sob rolagem
+   dirigida por JS (window.scrollTo por quadro), tudo que é position:fixed é
+   repintado a cada quadro junto com o conteúdo; promovidas, elas viram
+   texturas prontas na GPU e só ficam paradas. É o que separa uma rolagem
+   suave em JS de uma que engasga, e o que o Lenis do midu.design depende
+   para parecer fluido. Não espalhe will-change: em excesso ele consome
+   memória de vídeo e piora. Aqui são só as três camadas de fundo fixas. */
+/* ===== ROLAGEM SUAVE POR TRANSFORM =====
+   O JS envolve main+footer no .smooth-holder e dá ao body a altura do conteúdo,
+   para a barra de rolagem nativa continuar existindo. A roda nunca é
+   interceptada: a rolagem acontece no compositor, e o holder apenas persegue a
+   posição com translate3d, que é composto na GPU e não repinta.
+   Só vale com a classe .smooth no <html>, que o JS adiciona: sem JS, ou com
+   movimento reduzido, a página rola normalmente e nada disso se aplica. */
+.smooth .smooth-holder{position:fixed;top:0;left:0;width:100%;
+  will-change:transform;backface-visibility:hidden}
+.smooth body{overflow:visible}
+
+.glow{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden;
+  will-change:transform}
+/* 273px contra os 420px anteriores: 35% menor. O centro subiu de .13 para .156
+   (20% mais intenso) e os stops fecharam de 42%/70% para 34%/62%, o que
+   concentra a luz em vez de dispersá-la. A borda continua sem contorno visível,
+   porque o gradiente termina em transparente. Tons de #C2B3B3 e #736868, os
+   mesmos marrons do site. Move por translate3d, nunca por top/left. */
+.cursor-glow{position:fixed;top:0;left:0;width:273px;height:273px;margin:-136px 0 0 -136px;
   border-radius:50%;pointer-events:none;z-index:-1;opacity:0;
-  background:radial-gradient(circle,rgba(201,189,189,.13),rgba(115,104,104,.06) 42%,transparent 70%);
-  transform:translate(var(--mx,50vw),var(--my,50vh));
+  background:radial-gradient(circle,rgba(194,179,179,.156),rgba(115,104,104,.07) 34%,transparent 62%);
+  transform:translate3d(var(--mx,50vw),var(--my,50vh),0);
   transition:transform .55s var(--ease-out-smooth),opacity var(--dur-default) var(--ease-out-smooth)}
 .cursor-glow.on{opacity:1}
 @media(prefers-reduced-motion:reduce),(pointer:coarse){.cursor-glow{display:none}}
@@ -55,16 +140,46 @@ body.locked{overflow:hidden;height:100dvh}
 .orb.a{width:88vw;height:88vw;top:-40vw;right:-30vw;background:radial-gradient(circle,rgba(89,79,79,.20),rgba(89,79,79,.06) 44%,transparent 72%)}
 .orb.b{width:76vw;height:76vw;bottom:-36vw;left:-30vw;background:radial-gradient(circle,rgba(64,54,56,.22),rgba(64,54,56,.07) 46%,transparent 74%)}
 
-.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.3;mix-blend-mode:soft-light;background:var(--grain-url)}
+/* Sem mix-blend-mode aqui. Camada fixa em tela cheia com blend força o navegador
+   a remisturar todo o viewport a cada quadro da rolagem, e era o que fazia o
+   scroll agarrar. Blend segue nos elementos pequenos, onde a área é limitada.
+   A opacidade compensa a troca: ajuste só este número se o grão pedir. */
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.06;background:var(--grain-url);
+  will-change:transform}
+/* ===== DESFOQUE DE BORDA INFERIOR =====
+   Faixa fixa no rodapé da janela que borra o que passa por baixo e some para
+   cima por máscara. Acompanha a página inteira e dá a sensação de o conteúdo
+   se dissolver em vez de ser cortado pela borda da tela.
+   É o único backdrop-filter em área larga do site: fica no rodapé, tem altura
+   contida e não recebe transform, então não é reavaliado a cada quadro.
+   Desligado em movimento reduzido e onde não há suporte a máscara. */
+.edge-blur{position:fixed;left:0;right:0;bottom:0;height:clamp(4.5rem,9vh,8rem);
+  z-index:40;pointer-events:none;
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.65) 42%,transparent 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.65) 42%,transparent 100%)}
+@media(prefers-reduced-motion:reduce){.edge-blur{display:none}}
+@supports not ((mask-image:linear-gradient(#000,transparent)) or
+               (-webkit-mask-image:linear-gradient(#000,transparent))){
+  .edge-blur{display:none}
+}
+
 a{color:inherit;text-decoration:none}
 
 /* ===== INTRO =====
    Não existe um segundo nome. O véu cobre a página e o próprio .hero-name
    sobe acima dele, então é literalmente o mesmo elemento que atravessa as
    duas etapas: nenhum crossfade entre cópias, nenhum salto de posição. */
+/* a saída do véu é longa de propósito: em 1s a passagem para a capa lia como
+   corte. 2,7s dá tempo de o nome trocar de cor e os secundários entrarem por
+   cima da cauda do fundido, e não de o véu simplesmente sumir.
+   A duração vem do JS junto com o resto da linha do tempo: é o mesmo fator de
+   escala da intro, e assim não existe número de intro escrito fora do arquivo
+   que manda nela. O fallback só cobre a janela antes de o script rodar. */
 .intro-veil{position:fixed;inset:0;z-index:90;background:var(--ink);
   opacity:0;visibility:hidden;pointer-events:none;
-  transition:opacity var(--dur-slow) var(--ease-soft),visibility var(--dur-slow)}
+  transition:opacity var(--intro-veil,2700ms) var(--ease-soft),
+             visibility var(--intro-veil,2700ms)}
 .js body.intro-mode .intro-veil{opacity:1;visibility:visible}
 /* o véu começa a sair junto com o assentamento do nome, não depois dele */
 .js body.intro-mode.hero-in .intro-veil{opacity:0}
@@ -75,32 +190,167 @@ body.intro-mode{overflow:hidden}
    por cima do véu que se dissolve. A classe sai no fim e tudo volta ao
    empilhamento normal, sem passar por cima do header. */
 .js body.intro-mode .hero{position:relative;z-index:95}
+/* Com a rolagem suave, a .hero vive dentro do .smooth-holder, que é fixed e
+   cria contexto de empilhamento próprio: o z-index dela deixa de alcançar o
+   véu e a intro vira uma tela preta. Quem precisa subir é o holder. Só a hero
+   ocupa a primeira dobra, então nada mais aparece por cima do véu. */
+.js body.intro-mode .smooth-holder{z-index:95}
 
-.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;color:var(--accent);font-weight:500;
+/* ===== TRANSFORMAÇÃO DO NOME NA INTRO =====
+   Uma única transformação contínua que ocupa a intro inteira: começa 20% maior
+   e quase apagado, e só chega a escala 1 com opacidade 1 nos últimos 5%.
+   Nada de varredura por máscara nem gradiente no texto: a revelação é opacidade
+   e escala, e a cor não muda em momento algum.
+
+   A curva mora nos próprios keyframes, e a interpolação entre eles é linear de
+   propósito. Um easing forte de saída (como o .16,1,.3,1 do projeto) resolveria
+   quase todo o movimento nos primeiros instantes e deixaria o nome parado
+   esperando o fim da intro, que é exatamente o que se quer evitar aqui.
+
+   A duração vem de --intro-dur, que o JS escreve a partir de INTRO_MS: os dois
+   não podem divergir, senão o nome termina antes ou depois do véu sair.
+
+   Ao final a animação segura o estado com forwards. Quando .intro-mode sai, a
+   regra deixa de valer e o nome cai em scale(1)/opacity 1, que é exatamente
+   onde a animação parou: mesmo elemento, mesma posição, sem salto e sem
+   crossfade com uma segunda cópia. */
+/* Estado de partida sem animação. O véu já cobre a página desde o primeiro
+   quadro, mas o nome fica acima dele, então ele precisa nascer já apagado e
+   desfocado, exatamente como o quadro 0% da animação: sem isso apareceria
+   nítido por um instante antes de a animação assumir. */
+.js body.intro-mode .hero-name{transform-origin:50% 50%;
+  opacity:.1;filter:blur(8px);
+  transform:translateY(var(--nome-dy,0px)) scale(1.12)}
+/* A animação só entra com .name-in, que o JS adiciona depois de medir o
+   deslocamento. Disparar junto com .intro-mode fazia a animação capturar um
+   --nome-dy ainda calculado com a fonte de sistema, e o nome começava fora do
+   centro. Trocar o var depois não corrige uma animação já iniciada. */
+.js body.intro-mode.name-in .hero-name{
+  animation:nome-intro var(--intro-dur,2000ms) linear forwards}
+/* Escala inicial de 1.12 como padrão, e não 1.2. Abaixo de ~1277px a fonte do
+   nome cresce com a viewport (10.4vw) e o texto já ocupa 83% da largura da
+   janela: em 1.2 ele chega a 99,8% e sai da tela pela esquerda. Medido a 1000px,
+   dava -6px. Com 1.12 a ocupação fica em 93,2% em qualquer largura dessa faixa.
+   Acima de 1360px a fonte está travada no teto de 8.3rem, o texto para de
+   crescer junto com a tela e aí 1.2 cabe com folga: é o desktop de verdade.
+
+   --nome-dy é a distância entre o centro do nome na composição final e o centro
+   exato da viewport, medida pelo JS. A animação parte desse deslocamento e
+   termina em zero: o nome começa centrado na tela e sobe até seu lugar na capa,
+   junto com a escala, numa transformação só. Sem a medição, o valor mudaria a
+   cada proporção de tela e o nome não ficaria centrado na intro.
+
+   O blur existe só nos primeiros ~280ms, para o texto não surgir do nada. É a
+   única exceção à regra de não usar filter:blur() no site: dura um instante,
+   afeta um elemento e some antes de a rolagem existir. */
+/* ETAPA 1, 0 a 800ms: o nome fica absolutamente parado no centro, em escala
+   1.2, e só a luz o atravessa. A revelação é clip-path na .hn-line, uma faixa
+   contínua da esquerda para a direita, sem digitação e sem letra por letra.
+   Opacidade e blur correm junto, no mesmo intervalo.
+   Duas animações em elementos diferentes, não duas cópias do nome: a máscara
+   vive na linha interna, a escala e o deslocamento no .hero-name. */
+@keyframes revela-nome{
+  0%  {clip-path:inset(0 100% 0 0)}
+  100%{clip-path:inset(0 0 0 0)}
+}
+@keyframes acende-nome{
+  0%  {opacity:.10; filter:blur(8px)}
+  50% {opacity:.58; filter:blur(3px)}
+  100%{opacity:1;   filter:blur(0)}
+}
+.js body.intro-mode.name-in .hero-name .hn-line{
+  animation:revela-nome var(--intro-reveal,800ms) var(--ease-smooth) forwards}
+.js body.intro-mode.name-in .hero-name{
+  animation:acende-nome var(--intro-reveal,800ms) var(--ease-smooth) forwards,
+            assenta-nome var(--intro-move,1200ms) var(--ease-soft) var(--intro-reveal,800ms) forwards}
+
+/* ETAPA 2, 800 a 2000ms: escala e posição caminham juntas, num movimento só.
+   Sem novo fade, sem novo blur, sem parada entre as duas etapas: esta animação
+   começa exatamente quando a primeira termina, pelo delay. */
+@keyframes assenta-nome{
+  from{transform:translateY(var(--nome-dy,0px)) scale(1.12)}
+  to  {transform:translateY(0) scale(1)}
+}
+@media(min-width:1360px){
+  .js body.intro-mode .hero-name{transform:translateY(var(--nome-dy,0px)) scale(1.2)}
+  .js body.intro-mode.name-in .hero-name{animation-name:acende-nome,assenta-nome-amplo}
+}
+@keyframes assenta-nome-amplo{
+  from{transform:translateY(var(--nome-dy,0px)) scale(1.2)}
+  to  {transform:translateY(0) scale(1)}
+}
+/* estado de partida da linha: fechada, para não piscar inteira antes da animação */
+.js body.intro-mode .hero-name .hn-line{transform:none;clip-path:inset(0 100% 0 0)}
+/* a máscara do nome não pode recortar: o clip-path já cuida da revelação */
+.js body.intro-mode .hero-name .hn-mask{overflow:visible}
+
+/* O fundo ambiente entra discreto e ganha corpo conforme o nome assenta, para
+   a passagem para a capa não ter degrau de textura. */
+.hero-liquid{opacity:1;transition:opacity var(--dur-ambient) var(--ease-soft)}
+.js body.intro-mode:not(.hero-in) .hero-liquid{opacity:.5}
+
+@media(prefers-reduced-motion:reduce){
+  /* Nada de esperar 2s: fundido de 260ms, sem escala, sem blur, sem percurso.
+     A linha nasce aberta, senão o nome ficaria recortado para sempre. */
+  .js body.intro-mode .hero-name,
+  .js body.intro-mode.name-in .hero-name{filter:none;transform:none;
+    animation:nome-intro-simples 260ms linear forwards}
+  .js body.intro-mode .hero-name .hn-line,
+  .js body.intro-mode.name-in .hero-name .hn-line{animation:none;clip-path:none}
+  @keyframes nome-intro-simples{from{opacity:.35}to{opacity:1}}
+}
+
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;color:var(--accent);font-weight:var(--w-medium);
   display:inline-flex;align-items:center;gap:.6em}
 .eyebrow::before{content:"";width:1.6em;height:1px;background:var(--accent);opacity:.5}
-.wrap{max-width:1280px;margin:0 auto;padding-inline:var(--gutter)}
+/* Container fluido: ocupa quase toda a largura com gutters consistentes e só
+   trava em ultrawide. O limite estreito de leitura fica nos textos, não no
+   wrapper inteiro, que era o que deixava blocos pequenos perdidos no centro. */
+.wrap{width:calc(100% - var(--page-gutter) * 2);max-width:var(--content-max);
+  margin-inline:auto;padding-inline:0}
 
-header{position:fixed;top:0;left:0;right:0;z-index:50;transition:transform var(--dur-default) var(--ease-out-smooth)}
+header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
+  transition:transform var(--dur-default) var(--ease-out-smooth)}
 .nav{margin:1.1rem var(--gutter);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1.4rem}
-.nav .menu-btn{justify-self:center}
+/* ===== CAIXA COMPARTILHADA: MENU + DISPONIBILIDADE =====
+   Um contorno só, um raio só, um material só. O fundo e a borda vivem no
+   container; o botão e o status ficam sem contorno próprio, senão o conjunto
+   voltaria a ler como dois pills encostados. */
+.nav .ctrl-group{justify-self:center;display:flex;align-items:center;
+  padding:.22rem;border-radius:var(--radius-button,100px);
+  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);
+  backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
+  transition:border-color var(--dur-hover) var(--ease-hover)}
+@media(hover:hover) and (pointer:fine){
+  .nav .ctrl-group:hover{border-color:var(--line-strong)}
+}
+/* divisor interno discreto, altura parcial */
+.ctrl-div{width:1px;height:1.1rem;flex:none;margin-inline:.3rem;
+  background:rgba(var(--paper-rgb),.14)}
 .nav .nav-right{justify-self:end}
-.brand{font-weight:600;letter-spacing:-.01em;font-size:1rem}
+.brand{font-weight:var(--w-medium);letter-spacing:-.01em;font-size:1rem}
 .brand span{color:var(--cream)}
 .nav-right{display:flex;align-items:center;gap:1rem}
+/* Sem contorno nem material próprios: quem os carrega é o .ctrl-group. O Menu
+   é o elemento principal, então fica em Medium, com contraste cheio e 44px de
+   altura mínima para toque. */
 .menu-btn{display:inline-flex;align-items:center;gap:.6em;cursor:pointer;font-family:var(--font);
-  font-size:.88rem;font-weight:500;color:var(--paper);padding:.6rem 1.1rem;border-radius:100px;
-  background:rgba(var(--paper-rgb),.08);border:1px solid rgba(var(--paper-rgb),.16);
-  backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
-  transition:background-color var(--dur-micro) var(--ease-out-smooth),border-color var(--dur-micro) var(--ease-out-smooth)}
-.menu-btn:hover{background:rgba(var(--paper-rgb),.14);border-color:rgba(var(--paper-rgb),.3)}
+  font-size:.88rem;font-weight:var(--w-medium);color:var(--paper);
+  padding:.62rem 1.05rem;min-height:44px;border-radius:var(--radius-button,100px);
+  background:transparent;border:none;
+  transition:background-color var(--dur-hover) var(--ease-hover),color var(--dur-hover) var(--ease-hover)}
+@media(hover:hover) and (pointer:fine){
+  .menu-btn:hover{background:rgba(var(--paper-rgb),.09)}
+  .menu-btn:hover i{background-image:radial-gradient(circle,var(--paper) 1.4px,transparent 1.5px)}
+}
+.menu-btn i{transition:background-image var(--dur-hover) var(--ease-hover)}
 .menu-btn i{width:9px;height:9px;flex:none;
   background-image:radial-gradient(circle,var(--muted) 1.4px,transparent 1.5px);
   background-size:4.5px 4.5px}
 
 .nav-cta{position:relative;display:inline-flex;align-items:center;gap:.55em;cursor:pointer;
-  font-family:var(--font);font-size:.88rem;font-weight:500;color:var(--ink);
-  padding:.6rem 1.1rem;border-radius:100px;background:var(--paper);border:none;
+  font-family:var(--font);font-size:.88rem;font-weight:var(--w-medium);color:var(--ink);
+  padding:.6rem 1.1rem;border-radius:var(--radius-button,100px);background:var(--paper);border:none;
   transition:transform var(--dur-micro) var(--ease-soft),
              background-color var(--dur-micro) var(--ease-soft)}
 .nav-cta svg{width:14px;height:14px;flex:none;
@@ -123,85 +373,299 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;transition:transform var(-
 .hero{position:relative;min-height:100svh;display:grid;place-items:center;
   padding-block:0;text-align:center}
 
-.hero-tag{position:absolute;top:6.6rem;left:0;
-  font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;color:var(--accent)}
-.hero-when{position:absolute;bottom:2.4rem;left:0;
-  font-family:var(--mono);font-size:.72rem;letter-spacing:.015em;color:var(--muted-2)}
-.hero-when b{color:var(--muted);font-weight:400}
-.hero-when #stamp{margin-left:.7em}
-.hero-scroll{position:absolute;bottom:2.4rem;left:50%;translate:-50% 0;
-  font-family:var(--mono);font-size:.72rem;letter-spacing:.015em;color:var(--muted-2);
-  transition:color var(--dur-micro) var(--ease-soft)}
-.hero-scroll:hover{color:var(--paper)}
+/* Coluna única e centrada: carimbo, cargo, nome e chamada de rolagem ficam
+   juntos, em vez de espalhados pelos cantos da tela.
+   Os secundários seguem no fluxo mesmo durante a intro, só invisíveis: como
+   reservam espaço, o nome ocupa exatamente a mesma posição nas duas etapas e
+   a continuidade da intro não quebra. Se algum deles virar absoluto de novo,
+   o nome salta na passagem. */
+/* ===== FUNDO DE VIDRO LÍQUIDO (só CSS) =====
+   Quatro massas de cor em marrom escuro que derivam, giram e respiram em
+   ciclos longos e primos entre si, para o laço nunca bater no mesmo desenho.
+   Nada de filter:blur(): a maciez vem de stops muito largos, que é o que o
+   projeto já usa nas orbes. Só transform anima, então a GPU compõe e a thread
+   principal não repinta nada.
+   A vinheta central puxa o miolo de volta para o fundo do site: sem ela o
+   marrom sobe atrás do nome e os rótulos pequenos perdem contraste. */
+/* O vidro líquido é só da capa. Chegou a servir projetos e sobre também, mas
+   essas duas seções voltaram ao plano: a mesma cor lisa do rodapé e de
+   "o que eu faço", sem massa animada por baixo. A classe ficou genérica
+   (.liquid-bg) porque é reutilizável, não porque está em uso em mais de um
+   lugar agora. */
+.hero{isolation:isolate;position:relative}
+.liquid-bg{position:absolute;top:0;bottom:0;left:50%;z-index:0;
+  width:var(--vw,100vw);margin-left:calc(var(--vw,100vw) / -2);
+  overflow:hidden;pointer-events:none}
+.hero-stack{position:relative;z-index:1}
 
-/* Peso 600 é o teto. A presença vem da escala e do tracking, não do peso. */
-.hero-name{font-size:clamp(3.2rem,11vw,10rem);font-weight:600;
-  line-height:.9;letter-spacing:-.055em;margin:0}
+.lq{position:absolute;display:block;border-radius:50%}
+.lq1{width:76vw;height:76vw;top:-26vw;left:-16vw;
+  background:radial-gradient(circle,rgba(92,62,48,.50),rgba(74,50,40,.22) 38%,rgba(58,40,34,.07) 62%,transparent 78%);
+  animation:lq-a 34s ease-in-out infinite}
+.lq2{width:64vw;height:64vw;bottom:-24vw;right:-14vw;
+  background:radial-gradient(circle,rgba(78,52,42,.46),rgba(62,42,36,.20) 40%,rgba(48,34,30,.06) 64%,transparent 80%);
+  animation:lq-b 41s ease-in-out infinite}
+.lq3{width:52vw;height:52vw;top:22%;right:6%;
+  background:radial-gradient(circle,rgba(112,78,58,.30),rgba(84,58,46,.12) 42%,transparent 72%);
+  animation:lq-c 29s ease-in-out infinite}
+.lq4{width:58vw;height:58vw;bottom:4%;left:12%;
+  background:radial-gradient(circle,rgba(64,46,42,.34),rgba(48,34,32,.13) 44%,transparent 74%);
+  animation:lq-d 47s ease-in-out infinite}
+
+/* A vinheta protege o contraste do texto sobre a névoa, puxando o miolo de
+   volta para o fundo do site. */
+.lq-veil{position:absolute;inset:0;display:block;
+  background:radial-gradient(ellipse 62% 52% at 50% 50%,
+    rgba(var(--ink-rgb),.86) 0%,rgba(var(--ink-rgb),.62) 38%,
+    rgba(var(--ink-rgb),.22) 66%,transparent 88%)}
+
+@keyframes lq-a{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  33%{transform:translate3d(7vw,5vh,0) scale(1.13)}
+  66%{transform:translate3d(-4vw,9vh,0) scale(.95)}
+}
+@keyframes lq-b{
+  0%,100%{transform:translate3d(0,0,0) scale(1.04)}
+  40%{transform:translate3d(-8vw,-6vh,0) scale(.92)}
+  72%{transform:translate3d(5vw,-3vh,0) scale(1.12)}
+}
+@keyframes lq-c{
+  0%,100%{transform:translate3d(0,0,0) scale(.96)}
+  45%{transform:translate3d(-6vw,7vh,0) scale(1.16)}
+  75%{transform:translate3d(3vw,-5vh,0) scale(1.02)}
+}
+@keyframes lq-d{
+  0%,100%{transform:translate3d(0,0,0) scale(1.08)}
+  38%{transform:translate3d(9vw,-7vh,0) scale(.94)}
+  70%{transform:translate3d(-5vw,-2vh,0) scale(1.15)}
+}
+/* Fundo fora do campo de visão: o JS marca e a animação para. Não é
+   display:none nem visibility, para a seção não ter de repintar o fundo do zero
+   quando voltar; a camada continua composta, só deixa de se mover. */
+.liquid-bg.parado .lq{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){
+  .lq{animation:none!important}
+}
+
+.hero-stack{display:flex;flex-direction:column;align-items:center;text-align:center}
+
+/* fit-content: a largura do wrapper é a largura real do nome, e a linha de
+   metadados abaixo herda essa medida. É o que ancora profissão e carimbo às
+   bordas do texto em vez das bordas da página. */
+.hero-name-wrap{width:fit-content;max-width:100%;margin-inline:auto}
+/* Grid com minmax(0,1fr) e não flex: assim a contribuição da linha para a
+   largura do wrapper é a de min-content (a maior palavra), e não a soma dos
+   dois textos inteiros. Quem define a medida do wrapper continua sendo o nome,
+   que é a âncora do alinhamento. Com flex, uma localização mais longa alargava
+   o wrapper e o nome parava de tocar as bordas. */
+.hero-meta{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:start;gap:1.4rem;margin-top:clamp(.9rem,1.8vh,1.5rem)}
+.hero-tag{justify-self:start}
+.hero-when{justify-self:end;align-items:flex-end}
+.hero-tag{font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;color:var(--accent);
+  text-align:left}
+/* localização e carimbo formam um bloco de duas linhas, ancorado na borda
+   direita do nome */
+.hero-when{font-family:var(--mono);font-size:.72rem;letter-spacing:.015em;color:var(--muted-2);
+  text-align:right;display:flex;flex-direction:column;gap:.3rem}
+.hero-when b{color:var(--muted);font-weight:var(--w-regular)}
+.hero-when #stamp{margin-left:0}
+
+/* Segunda camada da capa: presença real, ainda claramente abaixo do nome. */
+/* O respiro entre o nome e a frase é o que separa as duas camadas da capa.
+   Como o .hero-stack é centrado, aumentar esta margem também empurra o nome
+   para cima, que é exatamente o efeito desejado: mais ar embaixo, nome mais
+   alto. O --nome-dy é remedido pelo JS, então a intro continua nascendo no
+   centro exato mesmo com a composição deslocada. */
+.hero-claim{max-width:min(40ch,900px);margin:clamp(3.2rem,7vh,5.6rem) auto 0;
+  font-size:clamp(1.3rem,2.1vw,2.3rem);font-weight:var(--w-medium);line-height:1.28;
+  letter-spacing:-.02em;color:var(--cream)}
+
+/* ===== TAG DE DISPONIBILIDADE =====
+   Vive ao lado do botão Menu, no bloco central do topo: assim não consome uma
+   faixa própria na hero. Só o ponto se move; o fundo da tag fica parado. */
+/* Status, não botão: peso Regular, corpo menor, contraste mais baixo e nenhum
+   cursor de clique. Não deve competir com o Menu nem parecer acionável. */
+.avail{display:inline-flex;align-items:center;gap:.55em;
+  font-size:.7rem;font-weight:var(--w-regular);letter-spacing:.02em;color:var(--muted-2);
+  padding:.3rem .85rem .3rem .2rem;white-space:nowrap;opacity:.82;
+  background:none;border:none}
+.avail-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#9EAD8B;
+  animation:pulso-disp 1600ms var(--ease-smooth) infinite}
+@keyframes pulso-disp{
+  0%,100%{opacity:.5;transform:scale(.9)}
+  50%{opacity:1;transform:scale(1.15)}
+}
+@media(prefers-reduced-motion:reduce){
+  .avail-dot{animation:none;opacity:1;transform:none}
+}
+/* A caixa compartilhada sobrevive ao estreito: em vez de sumir, o status
+   encurta para "Disponível" / "Available", que o JS troca pelo mesmo sistema de
+   idioma. Só abaixo de 560px, onde nem isso cabe, resta o ponto com rótulo
+   acessível, e o Menu nunca é escondido. */
+@media(max-width:900px){
+  .avail{font-size:.66rem;padding-right:.7rem}
+  .ctrl-div{margin-inline:.22rem}
+}
+/* Rede de segurança, não regra de rotina: com a variante curta ativa a caixa
+   inteira mede ~165px a 360px, então ela cabe em qualquer telefone real. Só
+   abaixo disso o rótulo sai da tela e fica apenas para leitor de tela. */
+@media(max-width:340px){
+  .avail span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .avail{padding:.3rem .55rem .3rem .2rem}
+}
+
+/* No estreito a linha de metadados não cabe lado a lado: vira duas linhas,
+   profissão acima e carimbo abaixo, cada um mantendo sua borda. */
+@media(max-width:640px){
+  .hero-meta{grid-template-columns:1fr;gap:.6rem}
+  .hero-tag{justify-self:start;text-align:left}
+  .hero-when{justify-self:end;text-align:right}
+}
+
+/* Peso 600 é o teto. A presença vem da escala e do tracking, não do peso.
+   Nome sempre em uma linha só: o tamanho é puramente proporcional à largura
+   da viewport, então a relação entre texto e tela nunca muda. O coeficiente
+   em vw foi calibrado medindo o texto real contra a área útil; mexer no
+   letter-spacing ou no peso exige recalibrar, senão volta a quebrar. */
+.hero-name{font-size:clamp(1.5rem,10.4vw,8.3rem);font-weight:var(--w-medium);
+  line-height:.9;letter-spacing:-.055em;margin:0;white-space:nowrap;
+  color:var(--color-hero-name)}
 .hn-mask{display:block;overflow:hidden;padding-bottom:.1em;margin-bottom:-.1em}
-.hn-line{display:block}
-.js .hero-name .hn-line,.js .hn-mask.reveal .hn-line{transform:translateY(105%)}
-.hn-line i{font-style:normal;color:var(--cream)}
-
-/* a escala assenta de 1.06 para 1: um acomodar, não um zoom */
-.js .hero-name{transform:scale(var(--nscale,1));transform-origin:50% 50%;
-  transition:transform var(--dur-slow) var(--ease-soft)}
-.js body.intro-mode:not(.hero-in) .hero-name{--nscale:1.06}
+/* O nome cresce até 1.2 na intro. Com overflow:hidden a máscara cortaria as
+   laterais e o topo durante a redução, então aqui ela não recorta: o nome não
+   sobe de dentro dela, nada precisa ser escondido. */
+.hero-name .hn-mask{overflow:visible}
+.hn-line{display:block;white-space:nowrap}
+.js .hn-mask.reveal .hn-line{transform:translateY(105%)}
+.hn-line i{font-style:normal;color:inherit;opacity:.62}
 
 @media(max-width:760px){
-  .js body.intro-mode:not(.hero-in) .hero-name{--nscale:1.03}
-  .hero-tag{top:6rem;left:50%;translate:-50% 0;white-space:nowrap}
-  .hero-when{left:50%;translate:-50% 0;bottom:4.4rem;white-space:nowrap}
-  .hero-scroll{bottom:2rem}
+  .hero-tag,.hero-when{white-space:nowrap}
 }
 
 section{padding-block:clamp(4rem,8vw,7rem)}
+
+/* ===== CAPÍTULO =====
+   Cada seção principal se comporta como um capítulo: entramos no espaço dela
+   antes de o conteúdo aparecer. A profundidade vem de padding e min-height, não
+   de divs vazias nem de espaçador. Seções que já são naturalmente maiores que a
+   viewport ignoram o min-height, porque o conteúdo manda.
+   No estreito o respiro cai bastante: a mesma medida do desktop viraria tela
+   vazia no celular. */
+/* O #about não entra aqui: ele é uma faixa sangrada e quem carrega o respiro
+   é o .about-break, senão o padding dobraria.
+   #work fica de fora do grupo reduzido abaixo de propósito: é a seção mais
+   longa da página e a mais fotografada nas revisões, então mantém o respiro
+   original enquanto as outras encolhem. */
+/* Espaçamento por seção, em duas camadas: o painel escreve
+   --section-pad-top/bottom (o padrão global) e, quando uma seção usa valor
+   próprio em vez do padrão, --work-pad-top etc. Cada var() cai para o número
+   que o site já usava se nada tiver sido configurado ainda, e a seção some do
+   grupo de min-height:100svh quando ganha um respiro maior que o de uma tela,
+   porque aí é o próprio conteúdo que deve mandar no tamanho.
+   #work usa valor próprio de propósito: é a seção mais longa da página e a
+   mais fotografada nas revisões, então não encolhe com as demais. */
+#work{padding-block:clamp(5.5rem,20vh,var(--work-pad-top,13rem)) clamp(5rem,17vh,var(--work-pad-bottom,11rem))}
+/* help, faq e contact têm conteúdo curto (uma lista, um accordion, um e-mail)
+   dentro de um min-height quase do tamanho da tela: era esse min-height, não
+   o padding, que sobrava como vazio. 112svh estourava a tela por 12%; 100svh
+   cabe nela exatamente, que é o pedido. O padding também caiu, para quando o
+   conteúdo cresce (accordion aberto, texto mais longo em inglês) e passa a
+   mandar mais do que o min-height. */
+#help{padding-block:clamp(3.5rem,9vh,var(--help-pad-top,var(--section-pad-top,6rem)))
+                    clamp(3rem,7vh,var(--help-pad-bottom,var(--section-pad-bottom,5rem)))}
+#faq{padding-block:clamp(3.5rem,9vh,var(--faq-pad-top,var(--section-pad-top,6rem)))
+                   clamp(3rem,7vh,var(--faq-pad-bottom,var(--section-pad-bottom,5rem)))}
+#contact{padding-block:clamp(3.5rem,9vh,var(--contact-pad-top,var(--section-pad-top,6rem)))
+                       clamp(3rem,7vh,var(--contact-pad-bottom,var(--section-pad-bottom,5rem)))}
+@media(min-width:900px){
+  #help,#faq,#contact{min-height:100svh;display:flex;flex-direction:column;
+    justify-content:center}
+}
+@media(max-width:899px){
+  #work{padding-block:clamp(6rem,11vh,8.75rem)}
+  #help,#faq,#contact{padding-block:clamp(4.5rem,9vh,6.5rem)}
+  .about-break{padding-block:clamp(5rem,10vh,7rem)}
+}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:2rem;
   border-top:1px solid var(--line);padding-top:1.4rem;margin-bottom:3rem}
-.sec-head h2{font-size:clamp(1.4rem,2.4vw,2rem);font-weight:500;letter-spacing:-.02em}
+.sec-head h2{font-size:clamp(1.4rem,2.4vw,2rem);font-weight:var(--w-medium);letter-spacing:-.02em}
 .sec-head .count{font-family:var(--mono);font-size:.78rem;color:var(--muted-2)}
 
 /* WORK CARDS */
-.cards{display:grid;grid-template-columns:1fr;gap:1.6rem}
-@media(min-width:860px){.cards{grid-template-columns:1fr 1fr;gap:1.6rem}}
-.card{position:relative;display:block;aspect-ratio:4/3.4;border-radius:22px;overflow:hidden;
+.cards{display:grid;grid-template-columns:1fr;gap:var(--grid-gap,1.6rem)}
+@media(min-width:860px){.cards{grid-template-columns:1fr 1fr;gap:var(--grid-gap,1.6rem)}}
+.card{position:relative;display:block;aspect-ratio:4/3.4;border-radius:var(--radius-card,22px);overflow:hidden;
   border:1px solid var(--line-strong);background:var(--ink-2);
-  transition:transform var(--dur-default) var(--ease-out-smooth),border-color var(--dur-micro) var(--ease-out-smooth)}
-/* o container fica estável e só a arte amplia, bem de leve */
-.card:hover{transform:translateY(-4px);border-color:rgba(var(--paper-rgb),.28)}
-/* preview art (troque a div .scene por <img src="assets/case-XX.jpg" class="scene"> no deploy) */
+  transition:border-color var(--dur-hover) var(--ease-hover),
+             box-shadow var(--dur-hover) var(--ease-hover)}
+/* Névoa interna só nas bordas: o miolo da imagem continua nítido. É gradiente
+   radial com centro transparente, não filtro sobre o card inteiro, que custaria
+   repaint caro. Só a opacidade anima, e nada bloqueia o clique. */
+.card::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  border-radius:inherit;opacity:0;
+  background:radial-gradient(118% 100% at 50% 50%,transparent 54%,rgba(89,79,79,.26) 84%,rgba(115,104,104,.36) 100%);
+  transition:opacity var(--dur-hover) var(--ease-hover)}
+@media(hover:hover) and (pointer:fine){
+  /* a caixa externa não muda de tamanho nem de posição: mover o card
+     deslocaria a grade inteira. O que muda é o interior. */
+  .card:hover{border-color:rgba(var(--paper-rgb),.26);
+    box-shadow:0 0 0 1px rgba(194,179,179,.13),0 0 36px -10px rgba(194,179,179,.20)}
+  .card:hover::before{opacity:1}
+  .card:hover .card-foot h3{color:var(--paper)}
+  .card:hover .card-foot .yr,.card:hover .card-foot .sub{color:var(--muted)}
+}
+/* no touch o glow e a névoa saem: custam pintura e ninguém os vê */
+@media(hover:none),(prefers-reduced-motion:reduce){
+  .card::before{display:none}
+}
+/* preview art. .scene é sempre o gradiente placeholder (p1-p4); a foto real
+   entra como <img> por dentro dele, com onerror removendo a própria tag se o
+   arquivo não existir ainda. Assim quem for colocar a foto só precisa salvar
+   o arquivo com o nome certo na pasta assets/projetos/case-0X/ — nada de
+   editar HTML ou CSS, e nada quebra enquanto a foto não chega. */
 .scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  transform:scale(1.01);transition:transform var(--dur-slow) var(--ease-out-smooth)}
-.card:hover .scene{transform:scale(1.035)}
+  transform:scale(1.01);transition:transform 820ms var(--ease-hover)}
+.scene>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+@media(hover:hover) and (pointer:fine){.card:hover .scene{transform:scale(1.035)}}
+@media(prefers-reduced-motion:reduce){.card:hover .scene{transform:scale(1.01)}}
+/* Sem grão aqui: por cima de uma foto real ele lia como sujeira na imagem, não
+   como textura do site. O degradê continua, é o que garante contraste do
+   texto do card sobre qualquer foto. */
 .card::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(var(--ink-rgb),.42) 0%,transparent 34%,transparent 52%,rgba(var(--ink-rgb),.82) 100%),var(--grain-url);
-  background-blend-mode:normal,soft-light}
-.thumb{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(var(--ink-rgb),.42) 0%,transparent 34%,transparent 52%,rgba(var(--ink-rgb),.82) 100%)}
+.thumb{position:relative;aspect-ratio:4/3;border-radius:var(--radius-image,16px);overflow:hidden;
   border:1px solid var(--line-strong);background:var(--ink-2)}
-.thumb::after{content:"";position:absolute;inset:0;background:var(--grain-url);opacity:.32;
-  mix-blend-mode:soft-light;pointer-events:none}
 .card-tags{position:absolute;z-index:2;top:1.1rem;right:1.1rem;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}
 .card-tags span{font-family:var(--mono);font-size:.66rem;letter-spacing:.02em;color:var(--paper);
   background:rgba(var(--paper-rgb),.10);border:1px solid rgba(var(--paper-rgb),.20);
   backdrop-filter:blur(12px) saturate(140%);-webkit-backdrop-filter:blur(12px) saturate(140%);
-  padding:.42rem .8rem;border-radius:100px;white-space:nowrap}
+  padding:.42rem .8rem;border-radius:var(--radius-button,100px);white-space:nowrap}
 .card-foot{position:absolute;z-index:2;left:1.6rem;right:1.6rem;bottom:1.5rem;
   display:flex;align-items:flex-end;justify-content:space-between;gap:1rem}
-.card-foot h3{font-size:clamp(1.3rem,2.1vw,1.75rem);font-weight:600;letter-spacing:-.02em;line-height:1.1}
-.card-foot .sub{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-top:.5rem;letter-spacing:.015em}
-.card-foot .yr{font-family:var(--mono);font-size:.74rem;color:var(--muted);white-space:nowrap}
+.card-foot h3{font-size:clamp(1.3rem,2.1vw,1.75rem);font-weight:var(--w-medium);letter-spacing:-.02em;
+  line-height:1.1;transition:color var(--dur-hover) var(--ease-hover)}
+.card-foot .sub{font-size:.72rem;color:var(--muted-2);margin-top:.5rem;letter-spacing:.015em;
+  transition:color var(--dur-hover) var(--ease-hover)}
+.card-foot .yr{font-size:.74rem;color:var(--muted-2);white-space:nowrap;
+  transition:color var(--dur-hover) var(--ease-hover)}
 .scene.p1{background:radial-gradient(circle at 50% 46%,rgba(201,189,189,.26),transparent 17%),radial-gradient(circle at 50% 46%,transparent 20%,rgba(115,104,104,.14) 30%,transparent 44%),radial-gradient(circle at 50% 46%,transparent 46%,rgba(89,79,79,.12) 58%,transparent 72%),radial-gradient(circle at 50% 46%,#2A1E20,#100C0D 78%)}
 .scene.p2{background:radial-gradient(circle at 40% 50%,rgba(226,220,220,.30),rgba(226,220,220,0) 40%),radial-gradient(circle at 59% 50%,rgba(201,189,189,.26),rgba(201,189,189,0) 40%),radial-gradient(circle at 49% 59%,rgba(242,238,238,.13),transparent 46%),linear-gradient(180deg,#403638,#1E1618)}
 .scene.p3{background:radial-gradient(circle at 64% 36%,rgba(201,189,189,.24),transparent 46%),radial-gradient(circle at 38% 70%,rgba(115,104,104,.18),transparent 50%),radial-gradient(circle at 50% 50%,#251A1C,#100C0D 80%)}
 .scene.p4{background:radial-gradient(circle at 43% 48%,transparent 19%,rgba(184,172,172,.18) 27%,transparent 40%),radial-gradient(circle at 57% 52%,rgba(160,148,148,.22),transparent 36%),radial-gradient(circle at 50% 50%,#251A1C,#100C0D 80%)}
 
+/* visibility:hidden, não só opacity:0. Camada fixa com backdrop-filter continua
+   sendo composta mesmo invisível; escondida de verdade, o navegador a ignora. */
 .card-cue{position:fixed;top:0;left:0;z-index:60;pointer-events:none;
-  transform:translate(-50%,-50%) scale(.7);opacity:0;
-  transition:opacity var(--dur-micro) var(--ease-out-smooth),transform var(--dur-micro) var(--ease-out-smooth);
+  transform:translate(-50%,-50%) scale(.7);opacity:0;visibility:hidden;
+  transition:opacity var(--dur-micro) var(--ease-out-smooth),transform var(--dur-micro) var(--ease-out-smooth),
+             visibility var(--dur-micro);
   font-family:var(--mono);font-size:.72rem;letter-spacing:.025em;color:var(--paper);
   background:rgba(var(--paper-rgb),.10);border:1px solid rgba(var(--paper-rgb),.22);
   backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);
-  white-space:nowrap;padding:.7rem 1.2rem;border-radius:100px;box-shadow:0 14px 34px rgba(0,0,0,.32)}
-.card-cue.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  white-space:nowrap;padding:.7rem 1.2rem;border-radius:var(--radius-button,100px);box-shadow:0 14px 34px rgba(0,0,0,.32)}
+.card-cue.show{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
 @media(pointer:coarse){.card-cue{display:none}}
 
 #about{padding-block:0}
@@ -211,35 +675,46 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    isso que empurrava 15px de overflow e deixava a faixa curta à direita */
 /* Sem fundo claro: a seção se separa por elevação mínima de tom e por duas
    hairlines, não por uma troca de cor. */
+/* Sem background aqui: a seção fica no --ink plano do body, a mesma cor de
+   projetos, do rodapé e de "o que eu faço". Já teve um gradiente próprio e já
+   teve o vidro líquido da capa; as duas vezes destoou do resto do site, e a
+   separação já é feita pelas hairlines acima e pelo ritmo vertical. */
 .about-break{overflow:hidden;isolation:isolate;
-  --bleed:calc(100vw - var(--sbw,0px));
+  --bleed:var(--vw,100vw);
   width:var(--bleed);position:relative;left:50%;
   margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2);
-  padding:clamp(6rem,10vw,8.5rem) var(--gutter);
-  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
-  background:linear-gradient(180deg,#150F11,#1C1416 52%,#140F10)}
-.about-break::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
-  background:var(--grain-url);opacity:.3;mix-blend-mode:soft-light}
-.about-inner{position:relative;z-index:1;max-width:1280px;margin-inline:auto}
+  padding:clamp(5rem,10vh,var(--about-pad-top,8rem)) var(--gutter) clamp(4.5rem,8vh,var(--about-pad-bottom,6.5rem));
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.about-inner{position:relative;z-index:1;max-width:var(--content-max);margin-inline:auto}
+/* grid editorial de 12 colunas: retrato em 5, conteúdo em 6, com uma coluna de
+   respiro entre eles, usando a largura toda do container */
 .about-grid{display:grid;grid-template-columns:1fr;gap:2.6rem}
-@media(min-width:900px){.about-grid{grid-template-columns:.82fr 1.18fr;gap:clamp(2.6rem,5vw,4.5rem);align-items:start}}
+@media(min-width:900px){
+  .about-grid{grid-template-columns:repeat(12,minmax(0,1fr));
+    column-gap:clamp(1.4rem,2.4vw,3rem);align-items:start}
+  .about-photo{grid-column:1 / span 5}
+  .about-copy{grid-column:7 / span 6}
+}
 .about-photo{margin:0}
 .portrait{position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;
   border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
   background:radial-gradient(circle at 50% 38%,#33262A,#150F10 78%)}
 .portrait::after{content:"";position:absolute;inset:0;background:var(--grain-url);opacity:.3;
   mix-blend-mode:soft-light;pointer-events:none}
-.portrait-img{position:relative;width:100%;height:100%;object-fit:cover}
+/* absoluto para cobrir o placeholder que fica por baixo como rede */
+.portrait-img{position:absolute;inset:0;z-index:1;width:100%;height:100%;
+  object-fit:cover;object-position:50% 22%}
 .portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted-2);
-  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:100px;padding:.5rem 1.1rem}
-/* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala */
-.js .mask-reveal{clip-path:inset(100% 0 0 0);transform:scale(1.03)}
+  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:var(--radius-button,100px);padding:.5rem 1.1rem}
+/* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala.
+   1250ms, o tempo de imagem: mais longo que texto, sem parecer preguiçoso. */
+.js .mask-reveal{clip-path:inset(100% 0 0 0);transform:scale(1.025)}
 .js .mask-reveal.in{clip-path:inset(0 0 0 0);transform:none;
-  transition:clip-path var(--dur-reveal) var(--ease-soft),transform var(--dur-reveal) var(--ease-soft)}
+  transition:clip-path 980ms var(--ease-soft),transform 980ms var(--ease-soft)}
 
 .about-k{display:block;font-family:var(--mono);font-size:.72rem;letter-spacing:.03em;
   color:var(--muted-2);margin-bottom:1.4rem}
-.about-lead{font-size:clamp(1rem,1.25vw,1.1rem);font-weight:300;
+.about-lead{font-size:clamp(1rem,1.25vw,1.1rem);font-weight:var(--w-light);
   color:var(--muted);max-width:58ch;letter-spacing:-.005em;line-height:1.68}
 
 .caps{margin-top:2.8rem}
@@ -247,63 +722,201 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   padding-bottom:.9rem;border-bottom:1px solid var(--line)}
 .caps-grid{list-style:none;display:grid;grid-template-columns:1fr;gap:0}
 @media(min-width:560px){.caps-grid{grid-template-columns:1fr 1fr;column-gap:2.4rem}}
-.caps-grid li{font-size:.95rem;font-weight:400;color:var(--paper);
+.caps-grid li{font-size:.95rem;font-weight:var(--w-regular);color:var(--paper);
   padding:.85rem 0;border-bottom:1px solid var(--line)}
 .js .caps-grid li{opacity:0;transform:translateY(12px);
   transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
 .js .caps-grid.in li{opacity:1;transform:none}
 
+/* LinkedIn e "Vamos conversar" lado a lado; quebram em coluna no estreito */
+.about-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem;margin-top:2.4rem}
+.about-actions .ghost-cta{margin-top:0}
+
 .ghost-cta{display:inline-flex;align-items:center;gap:.6em;margin-top:2.4rem;cursor:pointer;
-  font-family:var(--font);font-size:.92rem;font-weight:500;color:var(--paper);
-  background:transparent;border:1px solid var(--line-strong);border-radius:100px;padding:.85rem 1.6rem;
+  font-family:var(--font);font-size:.92rem;font-weight:var(--w-medium);color:var(--paper);
+  background:transparent;border:1px solid var(--line-strong);border-radius:var(--radius-button,100px);padding:.85rem 1.6rem;
   transition:transform var(--dur-micro) var(--ease-soft),border-color var(--dur-micro) var(--ease-soft),
              background-color var(--dur-micro) var(--ease-soft)}
 .ghost-cta::after{content:"→";transition:transform var(--dur-micro) var(--ease-soft)}
+/* o do LinkedIn troca a seta pelo ícone da marca, à esquerda do rótulo */
+.ghost-cta.linkedin::after{content:none}
+.ghost-cta.linkedin svg{width:16px;height:16px;flex:none;color:var(--muted);
+  transition:color var(--dur-micro) var(--ease-soft)}
+.ghost-cta.linkedin:hover svg{color:var(--cream)}
 .ghost-cta:hover{transform:translateY(-2px);border-color:var(--accent);background:rgba(var(--paper-rgb),.05)}
 .ghost-cta:hover::after{transform:translateX(4px)}
 
-/* ===== COMO EU CONSIGO TE AJUDAR ===== */
-.help-title{font-size:clamp(1.9rem,4.4vw,3.4rem);font-weight:500;letter-spacing:-.035em;
-  line-height:1.06;text-align:center;margin-bottom:clamp(3rem,6vw,5rem);text-wrap:balance}
-.help-grid{display:grid;grid-template-columns:1fr;gap:3rem}
-@media(min-width:820px){.help-grid{grid-template-columns:repeat(3,1fr);gap:clamp(2rem,3.5vw,3.4rem)}}
-.help-item .hi-num{display:block;font-family:var(--mono);font-size:.78rem;color:var(--muted-2);margin-bottom:1rem}
-/* a linha cresce da esquerda, é o gesto que abre cada coluna */
+/* ===== O QUE EU FAÇO =====
+   Linhas horizontais amplas, não cards: índice e título à esquerda, descrição
+   e entregáveis à direita, divisor crescendo da esquerda em cada frente.
+   Sem elevação, sem sombra, sem superfície fechada. */
+/* introdução em 4 colunas e accordion em 7, lado a lado no desktop grande:
+   aproveita a largura sem esticar o texto além do limite de leitura */
+@media(min-width:1100px){
+  #help .wrap-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+    column-gap:clamp(1.4rem,2.4vw,3rem);align-items:start}
+  .help-head{grid-column:1 / span 4;position:sticky;top:clamp(6rem,12vh,9rem);margin-bottom:0}
+  .help-list{grid-column:6 / span 7}
+}
+.help-head{max-width:44ch;margin-bottom:clamp(3rem,7vh,5.5rem)}
+.help-k{display:block;font-family:var(--mono);font-size:.72rem;letter-spacing:.03em;
+  color:var(--accent);margin-bottom:1.2rem}
+.help-title{font-size:clamp(1.9rem,4.4vw,3.4rem);font-weight:var(--w-medium);letter-spacing:-.035em;
+  line-height:1.06;text-wrap:balance}
+.help-lead{margin-top:1.6rem;font-size:clamp(.98rem,1.2vw,1.1rem);color:var(--muted);
+  line-height:1.6;max-width:52ch}
+
+.help-list{display:flex;flex-direction:column}
+.help-item{position:relative;
+  transition:background-color var(--dur-hover) var(--ease-hover)}
+.help-item h3{margin:0;font-size:inherit;font-weight:inherit}
+/* a linha inteira abre: o ícone é indicação, não o único alvo */
+.hi-q{width:100%;display:grid;grid-template-columns:2.6rem minmax(0,1fr) auto;
+  align-items:center;gap:clamp(1rem,2vw,1.8rem);
+  min-height:56px;padding:clamp(1.4rem,3vh,2.1rem) 0;cursor:pointer;
+  background:none;border:none;text-align:left;font-family:var(--font);color:var(--paper)}
+.help-item .hi-num{font-size:.76rem;letter-spacing:.04em;color:var(--muted-2);
+  transition:color var(--dur-hover) var(--ease-hover)}
+.hi-title{font-size:clamp(1.25rem,2.2vw,1.9rem);font-weight:var(--w-medium);
+  letter-spacing:-.028em;line-height:1.12;
+  transition:transform var(--dur-hover) var(--ease-hover)}
+/* o mais vira fechar por rotação, sem trocar de glifo */
+.hi-ico{position:relative;width:15px;height:15px;flex:none;
+  transition:transform 420ms var(--ease-soft)}
+.hi-ico::before,.hi-ico::after{content:"";position:absolute;inset:50% 0 auto 0;
+  height:1px;background:var(--muted);transition:background-color var(--dur-hover) var(--ease-hover)}
+.hi-ico::after{inset:0 auto 0 50%;width:1px;height:100%}
+.hi-q[aria-expanded="true"] .hi-ico{transform:rotate(45deg)}
+.hi-a{overflow:hidden}
+.hi-a>*{grid-column:2 / -1}
+@media(min-width:640px){
+  .hi-a{padding-left:calc(2.6rem + clamp(1rem,2vw,1.8rem))}
+}
+.hi-q:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+/* a linha cresce da esquerda, é o gesto que abre cada frente */
 .hi-line,.stat-line{display:block;height:1px;background:var(--line-strong);transform-origin:left}
+.help-item .hi-line{position:absolute;top:0;left:0;right:0}
 .js .hi-line,.js .stat-line{transform:scaleX(0)}
 .js .in .hi-line,.js .hi-line.in,.js .in .stat-line,.js .stat-line.in{transform:scaleX(1);
-  transition:transform var(--dur-reveal) var(--ease-soft)}
-.help-item h3{margin-top:1.6rem;font-size:clamp(1.3rem,2.1vw,1.7rem);font-weight:500;letter-spacing:-.025em}
-.help-item p{margin-top:1.3rem;font-size:.95rem;font-weight:300;color:var(--muted);
-  line-height:1.66;max-width:38ch;letter-spacing:-.005em}
+  transition:transform 820ms var(--ease-soft)}
+.help-item p{font-size:.98rem;font-weight:var(--w-light);color:var(--muted);
+  line-height:1.66;max-width:62ch;letter-spacing:-.005em;padding-bottom:1.1rem}
+/* tags discretas, sem pill grande e sem fundo claro */
+.hi-tags{list-style:none;display:flex;flex-wrap:wrap;gap:.5rem;
+  padding-bottom:clamp(1.4rem,3vh,2.2rem)}
+.hi-tags li{font-size:.7rem;letter-spacing:.02em;color:var(--muted-2);
+  padding:.32rem .7rem;border-radius:var(--radius-button,100px);border:1px solid var(--line)}
+/* hover só destaca; abrir é por clique, toque ou teclado */
+@media(hover:hover) and (pointer:fine){
+  .help-item:hover{background:rgba(var(--paper-rgb),.022)}
+  .help-item:hover .hi-title{transform:translateX(3px)}
+  .help-item:hover .hi-num{color:var(--muted)}
+  .help-item:hover .hi-ico::before,.help-item:hover .hi-ico::after{background:var(--paper)}
+  .help-item:hover .hi-line{background:rgba(var(--paper-rgb),.34)}
+}
+.help-item .hi-line{transition:background-color var(--dur-hover) var(--ease-hover),
+  transform 850ms var(--ease-soft)}
+/* item aberto mantém o destaque, sem depender do cursor continuar em cima */
+.help-item:has(.hi-q[aria-expanded="true"]){background:rgba(var(--paper-rgb),.028)}
+.help-item:has(.hi-q[aria-expanded="true"]) .hi-line{background:rgba(var(--paper-rgb),.34)}
 
-/* ===== NÚMEROS ===== */
-.num-head{margin-bottom:clamp(3rem,6vw,5rem);max-width:34ch}
-.num-head h2{margin-top:1.2rem;font-size:clamp(1.8rem,3.8vw,2.9rem);font-weight:500;
-  letter-spacing:-.035em;line-height:1.1}
+/* ===== FAQ =====
+   A única superfície clara do site. Sangra de ponta a ponta descontando a
+   barra de rolagem e reescreve os tokens de cor localmente, para os
+   componentes internos herdarem o contraste invertido sem precisar de regra
+   própria. A troca de escuro para claro é seca: sem gradiente, sem faixa
+   intermediária, sem blur. */
+.faq{--bleed:var(--vw,100vw);
+  width:var(--bleed);position:relative;left:50%;margin-left:calc(var(--bleed) / -2);
+  background:#F2EEEE;color:#0D0A0A;
+  padding-inline:var(--gutter)}
+/* título numa coluna lateral e as perguntas ocupando a maior parte da largura:
+   o accordion deixa de ser uma coluna estreita no meio da tela */
+.faq-inner{max-width:var(--content-max);margin-inline:auto}
+@media(min-width:1000px){
+  .faq-inner{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+    column-gap:clamp(1.4rem,2.4vw,3rem);align-items:start}
+  .faq-title{grid-column:1 / span 3;position:sticky;top:clamp(6rem,12vh,9rem);margin-bottom:0}
+  .faq-list{grid-column:5 / span 8}
+}
+.faq-title{font-size:clamp(2rem,5vw,3.6rem);font-weight:var(--w-medium);letter-spacing:-.04em;
+  line-height:1.02;margin-bottom:clamp(2.4rem,5vh,4rem)}
+.faq-list{display:flex;flex-direction:column}
+.faq-item{border-bottom:1px solid rgba(38,27,29,.22)}
+.faq-item:first-child{border-top:1px solid rgba(38,27,29,.22)}
+.faq-item h3{margin:0;font-size:inherit;font-weight:inherit}
+/* a linha inteira é o alvo: área de toque confortável, não só o ícone */
+.faq-q{width:100%;display:flex;align-items:flex-start;justify-content:space-between;
+  gap:1.6rem;min-height:56px;padding:clamp(1.1rem,2.4vh,1.6rem) 0;cursor:pointer;
+  background:none;border:none;text-align:left;font-family:var(--font);
+  font-size:clamp(1rem,1.55vw,1.22rem);font-weight:var(--w-regular);letter-spacing:-.012em;
+  line-height:1.35;color:#0D0A0A;
+  transition:opacity var(--dur-micro) var(--ease-soft)}
+@media(hover:hover){.faq-q:hover{opacity:.62}}
+/* o mais vira fechar por rotação, sem trocar de glifo */
+.faq-ico{position:relative;width:16px;height:16px;flex:none;margin-top:.28em;
+  transition:transform 420ms var(--ease-soft)}
+.faq-ico::before,.faq-ico::after{content:"";position:absolute;inset:50% 0 auto 0;
+  height:1px;background:#403638}
+.faq-ico::after{inset:0 auto 0 50%;width:1px;height:100%}
+.faq-q[aria-expanded="true"] .faq-ico{transform:rotate(45deg)}
+.faq-a{overflow:hidden}
+.faq-a p{padding-bottom:clamp(1.2rem,2.6vh,1.8rem);max-width:64ch;
+  font-size:clamp(.95rem,1.15vw,1.05rem);line-height:1.62;color:#403638}
+/* altura animada pelo JS a partir da medida real, sem max-height chutado */
+.js .faq-a,.js .hi-a{height:0;opacity:0;
+  transition:height 600ms var(--ease-soft),opacity 600ms var(--ease-soft)}
+.js .faq-a.open,.js .hi-a.open{opacity:1}
+.js .faq-a p,.js .hi-a p,.js .hi-a .hi-tags{transform:translateY(-6px);
+  transition:transform 600ms var(--ease-soft)}
+.js .faq-a.open p,.js .hi-a.open p{transform:none}
+.js .hi-a.open .hi-tags{transform:none;transition-delay:60ms}
+.faq-q:focus-visible{outline:2px solid #0D0A0A;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){
+  .js .faq-a,.js .faq-a p,.faq-ico{transition-duration:1ms}
+}
+
+/* ===== NÚMEROS =====
+   Sem cabeçalho: os números falam sozinhos e o título anterior repetia o que a
+   trajetória já diz. A seção abre direto na grade. */
 .stats{display:grid;grid-template-columns:1fr;gap:2.8rem}
 @media(min-width:640px){.stats{grid-template-columns:1fr 1fr;gap:2.6rem}}
 @media(min-width:1000px){.stats{grid-template-columns:repeat(3,1fr);gap:clamp(2rem,3.5vw,3.2rem)}}
-.stat-v{display:flex;align-items:baseline;font-size:clamp(3.4rem,7.4vw,5.6rem);font-weight:600;
+.stat-v{display:flex;align-items:baseline;font-size:clamp(3.4rem,7.4vw,5.6rem);font-weight:var(--w-medium);
   letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
 .stat-v em{font-style:normal;color:var(--muted-2);font-size:.62em;margin-left:.06em}
 .stat-line{margin-top:1.6rem}
-.stat h3{margin-top:1.4rem;font-size:1.02rem;font-weight:500;letter-spacing:-.015em}
-.stat p{margin-top:.7rem;font-size:.9rem;font-weight:300;color:var(--muted-2);line-height:1.6;max-width:32ch}
+.stat h3{margin-top:1.4rem;font-size:1.02rem;font-weight:var(--w-medium);letter-spacing:-.015em}
+.stat p{margin-top:.7rem;font-size:.9rem;font-weight:var(--w-light);color:var(--muted-2);line-height:1.6;max-width:32ch}
 
 /* ===== CTA FINAL ===== */
 .contact{text-align:center}
-.contact-big{font-size:clamp(2.8rem,10vw,8rem);font-weight:600;line-height:.94;
+/* Causa real do desalinhamento: as duas linhas viviam dentro de .hn-mask, que
+   tem overflow:hidden e um par padding-bottom/margin-bottom de .1em pensado
+   para o nome da hero. Nesse corpo (até 8rem) o recorte comia as descidas do
+   "j" de "juntos" e o par de margens negativas encavalava as linhas, o que
+   lia como uma delas fora do lugar. Aqui a máscara não precisa recortar: a
+   entrada é por opacidade e deslocamento, não por linha subindo de dentro. */
+.contact-big{font-size:clamp(2.8rem,10vw,8rem);font-weight:var(--w-medium);line-height:.94;
   letter-spacing:-.055em;margin-bottom:clamp(2.5rem,5vw,3.6rem)}
+.contact-big .hn-mask{overflow:visible;padding-bottom:0;margin-bottom:0}
+.contact-big .hn-line{display:block}
 .contact-big .em{color:var(--muted-2)}
 .mail-k{font-family:var(--mono);font-size:.76rem;letter-spacing:.02em;color:var(--muted-2)}
-.mail-row{margin-top:1rem;display:inline-flex;align-items:center;gap:.8rem;position:relative}
-.mail-link{font-size:clamp(1.05rem,2.4vw,1.7rem);font-weight:400;letter-spacing:-.02em;
+/* justify-content:center, não só o inline-flex: o #contact virou um flex
+   column para centralizar em telas curtas (min-height:100svh), e um flex item
+   com display:inline-flex é blocado para display:flex e esticado à largura
+   total do container. Sem isso o e-mail ficava colado à esquerda dentro dessa
+   largura, exatamente o mesmo problema que .contact .links já resolve com
+   justify-content:center. */
+.mail-row{margin-top:1rem;display:inline-flex;justify-content:center;align-items:center;
+  gap:.8rem;position:relative}
+.mail-link{font-size:clamp(1.05rem,2.4vw,1.7rem);font-weight:var(--w-regular);letter-spacing:-.02em;
   color:var(--paper);border-bottom:1px solid var(--line-strong);padding-bottom:.12em;
   transition:border-color var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft)}
 .mail-link:hover{border-color:var(--accent)}
 .copy-btn{position:relative;flex:none;width:2.6rem;height:2.6rem;display:grid;place-items:center;
-  cursor:pointer;border-radius:12px;color:var(--muted);
+  cursor:pointer;border-radius:var(--radius-field,12px);color:var(--muted);
   background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);
   transition:transform var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft),
              border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft)}
@@ -324,7 +937,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 
 
 .contact .links{margin-top:2.5rem;display:flex;flex-wrap:wrap;gap:1.4rem;font-family:var(--mono);font-size:.82rem}
-.contact .links a{padding:.7rem 1.1rem;border:1px solid var(--line-strong);border-radius:10px;color:var(--muted);
+.contact .links a{padding:.7rem 1.1rem;border:1px solid var(--line-strong);border-radius:var(--radius-field,10px);color:var(--muted);
   display:inline-flex;gap:.5em;align-items:center;
   transition:color var(--dur-micro) var(--ease-out-smooth),
              border-color var(--dur-micro) var(--ease-out-smooth),
@@ -335,29 +948,137 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .ico{width:15px;height:15px;flex:none}
 .overlay-foot a.soc{display:inline-flex;align-items:center;gap:.5em}
 
-footer{border-top:1px solid var(--line);padding-block:2.5rem;font-family:var(--mono);font-size:.74rem;color:var(--muted-2);
-  display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
+  font-size:.74rem;color:var(--muted-2);
+  display:flex;flex-direction:column;gap:1.15rem}
+/* Botão e disclaimer dividem uma linha, os dois centrados. O disclaimer vivia
+   sozinho depois do marquee, exatamente na faixa que .edge-blur (o desfoque
+   fixo do rodapé da janela) borra sem parar: texto pequeno perdendo nitidez
+   permanentemente é o pior lugar para uma informação de crédito. Subir para
+   esta linha tira o texto de debaixo do desfoque, e o marquee, decorativo e já
+   com baixa opacidade, vira o verdadeiro fim visual da página. */
+.foot-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+  gap:1.4rem 2rem}
+.foot-note{font-size:.72rem;font-weight:var(--w-light);line-height:1.5;
+  color:var(--muted-2);opacity:.78;text-align:center}
+.foot-yr{white-space:nowrap}
 
-/* Entrada padrão: 24px e 650ms. Sem blur, sem escala perceptível.
+/* ===== MARQUEE DE ENCERRAMENTO =====
+   Dois grupos idênticos lado a lado; a faixa anda -50% e volta ao início, que
+   é exatamente onde o segundo grupo começa. Por isso o laço não tem salto nem
+   pausa. Sangra de ponta a ponta descontando a barra de rolagem, e o overflow
+   fica contido aqui dentro, sem gerar rolagem horizontal na página.
+   Só transform anima: é composto na GPU e não repinta. */
+.marquee{--bleed:var(--vw,100vw);
+  width:var(--bleed);position:relative;left:50%;margin-left:calc(var(--bleed) / -2);
+  overflow:hidden;pointer-events:none;user-select:none;
+  padding-block:clamp(.4rem,1.4vh,1.2rem)}
+.marquee-track{display:flex;width:max-content;
+  animation:marquee 32s linear infinite}
+.mq-group{display:flex;align-items:center;gap:clamp(1.2rem,2.6vw,3rem);
+  padding-right:clamp(1.2rem,2.6vw,3rem)}
+.mq-group b{font-weight:var(--w-medium);font-size:clamp(3rem,9vw,9rem);line-height:1.06;
+  letter-spacing:-.045em;color:var(--color-hero-name);opacity:.16;white-space:nowrap}
+.mq-group i{font-style:normal;font-size:clamp(1.4rem,3.4vw,3rem);
+  color:var(--accent);opacity:.22}
+@keyframes marquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+@media(prefers-reduced-motion:reduce){
+  .marquee-track{animation:none}
+}
+
+/* ===== VOLTAR AO TOPO =====
+   Escala máxima de 1.015 e nada que mude a caixa: o botão não empurra o rodapé
+   ao passar o mouse. A seta sobe 4px, o texto ganha contraste e a borda clareia. */
+.to-top{display:inline-flex;align-items:center;gap:.7em;cursor:pointer;
+  font-family:var(--font);font-size:.9rem;font-weight:var(--w-medium);color:var(--muted);
+  background:transparent;border:1px solid var(--line-strong);border-radius:var(--radius-button,100px);
+  padding:.8rem 1.5rem;
+  transition:transform 520ms var(--ease-soft),color 520ms var(--ease-soft),
+             border-color 520ms var(--ease-soft),background-color 520ms var(--ease-soft)}
+.to-top svg{width:15px;height:15px;flex:none;
+  transition:transform 520ms var(--ease-soft)}
+.to-top:hover{transform:scale(1.015);color:var(--paper);
+  border-color:rgba(var(--paper-rgb),.3);background:rgba(var(--paper-rgb),.05)}
+.to-top:hover svg{transform:translateY(-4px)}
+@media(prefers-reduced-motion:reduce){
+  .to-top,.to-top svg{transition:none}
+  .to-top:hover{transform:none}
+}
+
+/* ===== INDICADOR DE PRÓXIMA SEÇÃO =====
+   Um componente só, injetado pelo JS no fim de cada seção a partir da tabela
+   PROXIMA. No desktop encosta à direita, sem sobrepor conteúdo; no estreito
+   volta ao fluxo, centrado no fim da seção. Editorial, nunca botão. */
+.next-hint{display:flex;flex-direction:column;gap:.3rem;width:max-content;
+  margin-top:clamp(3rem,6vw,5rem);
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;color:var(--muted-2);
+  transition:color var(--dur-micro) var(--ease-soft)}
+@media(min-width:900px){.next-hint{margin-left:auto;text-align:right;align-items:flex-end}}
+.next-hint:hover{color:var(--muted)}
+.nh-name{font-family:var(--font);font-size:1rem;font-weight:var(--w-medium);color:var(--paper);
+  letter-spacing:-.01em}
+.nh-arrow{font-size:.9rem;color:var(--accent);animation:nh-flutua 3.4s ease-in-out infinite}
+.next-hint:hover .nh-arrow{color:var(--cream)}
+@keyframes nh-flutua{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+/* entra deslizando da direita, no mesmo easing do resto */
+.js .next-hint.reveal{--rv-dur:950ms;opacity:0;transform:translateX(10px);
+  transition:opacity 950ms var(--ease-soft),transform 950ms var(--ease-soft);
+  transition-delay:var(--d,0ms)}
+.js .next-hint.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.nh-arrow{animation:none}}
+
+/* A hero centra o nome porque só o .hero-stack está no fluxo. O indicador dela
+   é absoluto de propósito: entrar no fluxo deslocaria o nome do centro e
+   quebraria a continuidade com a intro. Ele fica centrado com o próprio nome,
+   não preso a uma borda: left:50%+translateX(-50%) em vez do deslocamento
+   contra a largura da hero que ele usava antes. */
+.hero .next-hint{position:absolute;margin:0;left:50%;transform:translateX(-50%);
+  text-align:center;align-items:center;
+  bottom:clamp(1.4rem,4vh,3rem)}
+.js .hero .next-hint.reveal{transform:translateX(-50%) translateY(10px)}
+.js .hero .next-hint.reveal.in{transform:translateX(-50%)}
+@media(max-width:640px){
+  .hero .next-hint{bottom:clamp(1rem,3vh,2rem);font-size:.68rem}
+  .hero .nh-name{font-size:.9rem}
+}
+
+/* ===== ENTRADA DOS BLOCOS =====
+   Duração por natureza do elemento, não um número único: quanto maior a peça,
+   mais longo o movimento. Todas começam a responder de imediato, sem atraso
+   antes do movimento, e terminam com calma. O easing é sempre o --ease-soft
+   (.16,1,.3,1), que sai rápido e desacelera longamente.
+   Deslocamentos curtos de propósito: nada de 60px, nada de blur, nada elástico.
    Só esconde se o JS estiver vivo para revelar de volta. */
-.js .reveal{opacity:0;transform:translateY(24px);
-  transition:opacity var(--dur-default) var(--ease-out-smooth),
-             transform var(--dur-default) var(--ease-out-smooth);
+/* Meio-termo: as durações caíram cerca de 25% em relação à versão anterior, e
+   os deslocamentos subiram cerca de 20%. O conteúdo começa antes e conclui mais
+   rápido, sem voltar à brusquidão da primeira versão. */
+.js .reveal{opacity:0;transform:translateY(var(--rv-y,16px));
+  transition:opacity var(--rv-dur,750ms) var(--ease-soft),
+             transform var(--rv-dur,750ms) var(--ease-soft);
   transition-delay:var(--d,0ms)}
 .js .reveal.in{opacity:1;transform:none}
-/* rótulos entram de bem perto */
-.js .sec-head.reveal,.js .caps-k.reveal,.js .mail-k.reveal{transform:translateY(14px)}
-/* mídia: deslocamento contido e uma escala quase imperceptível */
-.js .card.reveal{transform:translateY(30px) scale(.988)}
-.js .sec-head.reveal.in,.js .caps-k.reveal.in,
-.js .mail-k.reveal.in,.js .card.reveal.in{transform:none}
+
+/* rótulos e elementos pequenos: 10px, 620ms (antes 12px, 800ms) */
+.js .sec-head.reveal,.js .caps-k.reveal,.js .mail-k.reveal,
+.js .about-k.reveal,.js .help-k.reveal,.js .eyebrow.reveal{--rv-y:10px;--rv-dur:620ms}
+/* parágrafos: 19px, 760ms (antes 16px, 1000ms) */
+.js .about-lead.reveal,.js .about-sub.reveal,.js .help-lead.reveal,
+.js .wi-context.reveal,.js .wi-aside.reveal{--rv-y:19px;--rv-dur:760ms}
+/* títulos: 22px, 860ms (antes 22px, 1180ms) */
+.js .help-title.reveal,.js .wi-title.reveal,.js .faq-title.reveal{--rv-y:22px;--rv-dur:860ms}
+/* previews grandes: 31px, 1050ms (antes 26px, 1320ms) */
+.js .card.reveal{--rv-y:31px;--rv-dur:1050ms;transform:translateY(31px) scale(.975)}
+.js .card.reveal.in{transform:none}
+/* imagens e blocos de mídia */
+.js .mask-reveal{--rv-dur:980ms}
+/* linhas e divisores dos itens de atuação */
+.js .help-item.reveal{--rv-y:14px;--rv-dur:700ms}
+
 /* máscara de linha: só o transform interno anima, o pai não some */
 .js .hn-mask.reveal{opacity:1;transform:none}
-.js .hn-mask.reveal .hn-line{transition:transform var(--dur-reveal) var(--ease-soft);
+.js .hn-mask.reveal .hn-line{transition:transform var(--rv-dur,1150ms) var(--ease-soft);
   transition-delay:var(--d,0ms)}
 .js .hn-mask.reveal.in .hn-line{transform:none}
-/* títulos editoriais entram inteiros, sem quebrar em palavra */
-.js .help-title.reveal,.js .num-head h2.reveal{transform:translateY(20px)}
 
 /* scrub: palavras clareiam conforme a leitura avança */
 .scrub{color:var(--muted-2)}
@@ -381,7 +1102,6 @@ footer{border-top:1px solid var(--line);padding-block:2.5rem;font-family:var(--m
   .js .h-step,.js .hn-line,.js .caps-grid li{opacity:1!important;transform:none!important}
   .js .mask-reveal{clip-path:none!important;transform:none!important}
   .hi-line,.stat-line{transform:scaleX(1)!important}
-  body.entering main,body.entering footer{animation:none!important}
   /* menu simplificado: aparece sem escalonar nem deslizar */
   .overlay.dropdown .menu-item,.overlay.dropdown .overlay-foot{
     opacity:1!important;transform:none!important;transition-delay:0ms!important}}
@@ -391,21 +1111,38 @@ footer{border-top:1px solid var(--line);padding-block:2.5rem;font-family:var(--m
    das máscaras; tag, carimbo e "role para explorar" vêm em sequência curta. */
 .js .h-step{opacity:0;transform:translateY(18px);
   transition:opacity var(--dur-slow) var(--ease-soft),transform var(--dur-slow) var(--ease-soft)}
+/* Entram em 82% da transformação do nome, não no fim dela: o overlap evita a
+   pausa entre intro e capa. Cedo demais e competem com a escala do nome. */
+.js body.hero-sec .h-step,
 .js body.hero-in .h-step,.js .hero-in .h-step{opacity:1;transform:none}
 /* o nome sobe assim que a intro comeca; os secundarios entram depois,
    por cima da cauda do movimento do nome */
 .js body.name-in .hero-name .hn-line,
 .js body.hero-in .hero-name .hn-line{transform:none;
-  transition:transform 820ms var(--ease-soft)}
-.js body.name-in .hero-name .hn-mask:nth-of-type(2) .hn-line,
-.js body.hero-in .hero-name .hn-mask:nth-of-type(2) .hn-line{transition-delay:90ms}
-.hero-in .hero-tag{transition-delay:120ms}
-.hero-in .hero-when{transition-delay:230ms}
-.hero-in .hero-scroll{transition-delay:310ms}
+  transition:transform 1230ms var(--ease-soft)}
+/* escalonamento dos secundários: 120ms entre eles. Entram sobre a cauda da
+   subida do nome, nunca desde o começo da intro.
+   Durações e atrasos escalados no mesmo fator 1,5 da intro: manter 820ms aqui
+   com uma intro de 3s faria os secundários entrarem rápido demais contra o
+   movimento lento do nome, e a sequência perderia a costura. */
+/* Com .js na frente: sem isso estas três perdiam para .js .h-step, que declara
+   a transição inteira com --dur-slow, e as durações escalonadas nunca chegavam
+   a valer. Os atrasos logo abaixo valiam, porque empatam em especificidade e
+   vêm depois; era só a duração que se perdia, e por isso passou despercebido. */
+.js .h-step.hero-tag{transition-duration:1230ms}
+.js .h-step.hero-when{transition-duration:1320ms}
+.js .h-step.hero-claim{transition-duration:1440ms}
+.hero-sec .hero-tag,.hero-in .hero-tag{transition-delay:0ms}
+.hero-sec .hero-when,.hero-in .hero-when{transition-delay:120ms}
+.hero-sec .hero-claim,.hero-in .hero-claim{transition-delay:240ms}
 
-/* a home sobe de leve enquanto a intro ainda está saindo */
-body.entering main,body.entering footer{animation:home-in var(--dur-slow) var(--ease-soft) both}
-@keyframes home-in{from{opacity:.55;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* O indicador da hero não pode depender do observador de rolagem: ele fica no
+   rodapé da primeira dobra e só entraria na conta depois de um scroll. Aqui ele
+   é comandado pela própria intro, junto com os outros secundários. */
+.js body.intro-mode:not(.hero-sec) .hero .next-hint{opacity:0;transform:translateX(10px)}
+.js body.hero-sec .hero .next-hint,
+.js body.hero-in .hero .next-hint{opacity:1;transform:none;
+  transition:opacity 1350ms var(--ease-soft) 360ms,transform 1350ms var(--ease-soft) 360ms}
 
 /* ===== ACCESSIBILITY: focus & skip link =====
    Sem border-radius aqui: era ele que quadrava o botão de idioma em foco.
@@ -413,8 +1150,8 @@ body.entering main,body.entering footer{animation:home-in var(--dur-slow) var(--
 a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   outline:2px solid var(--accent);outline-offset:3px}
 .skip-link{position:fixed;z-index:200;top:1rem;left:1rem;
-  background:var(--paper);color:var(--ink);font-family:var(--font);font-size:.9rem;font-weight:500;
-  padding:.8rem 1.4rem;border-radius:100px;
+  background:var(--paper);color:var(--ink);font-family:var(--font);font-size:.9rem;font-weight:var(--w-medium);
+  padding:.8rem 1.4rem;border-radius:var(--radius-button,100px);
   transform:translateY(-140%);transition:transform var(--dur-micro) var(--ease-out-smooth);pointer-events:none}
 .skip-link:focus-visible{transform:none;pointer-events:auto;outline:2px solid var(--ink);outline-offset:3px}
 
@@ -471,7 +1208,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .menu-list{display:flex;flex-direction:column}
 .menu-item{display:flex;align-items:center;justify-content:space-between;gap:1.4rem;
   padding:1.1rem 1.6rem;border-bottom:1px solid var(--line);
-  font-size:clamp(1.4rem,3vw,2rem);font-weight:500;letter-spacing:-.02em;
+  font-size:clamp(1.4rem,3vw,2rem);font-weight:var(--w-medium);letter-spacing:-.02em;
   transition:background-color var(--dur-micro) var(--ease-out-smooth),padding-left var(--dur-default) var(--ease-out-smooth)}
 .menu-item:hover{background:rgba(var(--paper-rgb),.05);padding-left:2.1rem}
 .menu-thumb{position:relative;width:104px;height:64px;border-radius:12px;overflow:hidden;flex:none;
@@ -485,17 +1222,17 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .overlay-foot a:hover{color:var(--paper)}
 
 .cform{padding:1.8rem 1.6rem 2rem}
-.cform h2{font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:600;letter-spacing:-.025em;line-height:1.1;
+.cform h2{font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:var(--w-medium);letter-spacing:-.025em;line-height:1.1;
   max-width:18ch;margin-bottom:1.8rem}
 .cform form{display:flex;flex-direction:column;gap:1.1rem}
 .cform label{display:flex;flex-direction:column;gap:.5rem}
 .cform .k{font-family:var(--mono);font-size:.7rem;color:var(--accent);letter-spacing:.02em}
 .cform input,.cform textarea{font-family:var(--font);font-size:.95rem;color:var(--paper);
-  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line-strong);border-radius:12px;
+  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line-strong);border-radius:var(--radius-field,12px);
   padding:.85rem 1rem;resize:vertical;transition:border-color var(--dur-micro) var(--ease-out-smooth),background-color var(--dur-micro) var(--ease-out-smooth)}
 .cform input:focus,.cform textarea:focus{outline:none;border-color:var(--accent);background:rgba(var(--paper-rgb),.08)}
-.cform-submit{font-family:var(--font);font-size:.95rem;font-weight:500;color:var(--ink);cursor:pointer;
-  background:var(--paper);border:none;border-radius:100px;padding:.95rem 1.5rem;margin-top:.4rem;
+.cform-submit{font-family:var(--font);font-size:.95rem;font-weight:var(--w-medium);color:var(--ink);cursor:pointer;
+  background:var(--paper);border:none;border-radius:var(--radius-button,100px);padding:.95rem 1.5rem;margin-top:.4rem;
   transition:transform var(--dur-micro) var(--ease-out-smooth),opacity var(--dur-micro) var(--ease-out-smooth)}
 .cform-submit:hover{transform:translateY(-2px);opacity:.9}
 .cform-alt{font-family:var(--mono);font-size:.74rem;color:var(--muted-2);text-align:center;margin-top:.2rem}
@@ -505,19 +1242,19 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 /* ===== CASE PAGE ===== */
 .case-hero{min-height:auto;padding-top:9rem;padding-bottom:1rem}
 .case-hero .eyebrow{margin-bottom:1.2rem}
-.case-hero h1{font-size:clamp(2rem,4.6vw,3.6rem);font-weight:500;line-height:1.08;letter-spacing:-.02em;max-width:20ch;margin-bottom:1.6rem}
-.case-hero .sub{max-width:56ch;font-size:clamp(1rem,1.3vw,1.1rem);color:var(--muted);font-weight:300}
-.hero-meta{display:flex;flex-wrap:wrap;gap:1.6rem 3rem;margin-top:2.2rem;
+.case-hero h1{font-size:clamp(2rem,4.6vw,3.6rem);font-weight:var(--w-medium);line-height:1.08;letter-spacing:-.02em;max-width:20ch;margin-bottom:1.6rem}
+.case-hero .sub{max-width:56ch;font-size:clamp(1rem,1.3vw,1.1rem);color:var(--muted);font-weight:var(--w-light)}
+/* .case-meta e não .hero-meta: o nome colidia com a linha de metadados da home,
+   e esta regra, por vir depois no arquivo, desmontava o grid de lá. */
+.case-meta{display:flex;flex-wrap:wrap;gap:1.6rem 3rem;margin-top:2.2rem;
   border-top:1px solid var(--line);padding-top:1.6rem;
   font-family:var(--mono);font-size:.76rem;color:var(--muted-2)}
-.hero-meta div span{display:block;color:var(--accent);margin-bottom:.35rem;letter-spacing:.035em}
-.hero-meta div p{color:var(--paper);font-family:var(--font);font-size:.92rem}
+.case-meta div span{display:block;color:var(--accent);margin-bottom:.35rem;letter-spacing:.035em}
+.case-meta div p{color:var(--paper);font-family:var(--font);font-size:.92rem}
 
-.case-cover{aspect-ratio:16/9;border-radius:18px;overflow:hidden;position:relative;
+.case-cover{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;position:relative;
   border:1px solid var(--line-strong);background:var(--ink-2);margin-top:1rem}
 .case-cover .scene{filter:none;transform:none}
-.case-cover::after{content:"";position:absolute;inset:0;background:var(--grain-url);opacity:.32;
-  mix-blend-mode:soft-light;pointer-events:none}
 
 .case-body{display:grid;gap:2.6rem}
 .case-section .k{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:.02em;
@@ -536,12 +1273,18 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .case-nav a.next{text-align:right;align-items:flex-end}
 .case-nav .lbl{font-size:.7rem;color:var(--muted-2);letter-spacing:.035em}
 
-/* ===== ENTRADAS POR BLOCO (coreografia via .in do observador) ===== */
-.js .help-item .hi-num,.js .help-item h3,.js .help-item p,
+/* ===== ENTRADAS POR BLOCO (coreografia via .in do observador) =====
+   Índice e título vêm de 18px em 1050ms; descrição e entregáveis de 14px em
+   900ms. Depois do divisor, que é quem abre cada frente. */
+.js .help-item .hi-num,.js .help-item h3,
 .js .stat .stat-v,.js .stat h3,.js .stat p{
-  opacity:0;transform:translateY(20px);
-  transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
-.js .help-item.in .hi-num,.js .help-item.in h3,.js .help-item.in p,
+  opacity:0;transform:translateY(18px);
+  transition:opacity 1050ms var(--ease-soft),transform 1050ms var(--ease-soft)}
+.js .help-item p,.js .help-item .hi-tags{
+  opacity:0;transform:translateY(14px);
+  transition:opacity 900ms var(--ease-soft),transform 900ms var(--ease-soft)}
+.js .help-item.in .hi-num,.js .help-item.in h3,
+.js .help-item.in p,.js .help-item.in .hi-tags,
 .js .stat.in .stat-v,.js .stat.in h3,.js .stat.in p{opacity:1;transform:none}
 
 /* ===== SELETOR DE IDIOMA =====
@@ -549,8 +1292,8 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    completos e um check discreto no idioma atual. */
 .lang-pick{position:relative}
 .lp-toggle{display:inline-flex;align-items:center;gap:.5em;cursor:pointer;
-  font-family:var(--font);font-size:.82rem;font-weight:500;color:var(--muted);
-  padding:.5rem .75rem;border-radius:100px;
+  font-family:var(--font);font-size:.82rem;font-weight:var(--w-medium);color:var(--muted);
+  padding:.5rem .75rem;border-radius:var(--radius-button,100px);
   background:transparent;border:1px solid var(--line);
   transition:color var(--dur-micro) var(--ease-soft),
              border-color var(--dur-micro) var(--ease-soft),
@@ -584,24 +1327,43 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .lp-menu button:hover{background:rgba(var(--paper-rgb),.06);color:var(--paper)}
 .lp-menu button[aria-selected="true"]{color:var(--paper)}
 .lp-txt{display:flex;flex-direction:column;line-height:1.2;flex:1}
-.lp-txt b{font-size:.9rem;font-weight:500}
+.lp-txt b{font-size:.9rem;font-weight:var(--w-medium)}
 .lp-txt small{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--muted-2);margin-top:.15rem}
 .lp-check{width:14px;height:14px;flex:none;opacity:0;color:var(--accent);
   transition:opacity var(--dur-micro) var(--ease-soft)}
 .lp-menu button[aria-selected="true"] .lp-check{opacity:1}
 
+/* ===== ABERTURA EDITORIAL DOS PROJETOS =====
+   Frase grande ocupando duas ou três linhas, e o contexto abaixo em duas
+   colunas: o de esquerda explica, o de direita convida. Sem card, sem moldura,
+   muito espaço negativo. O peso vai até 600, teto da fonte carregada. */
+.work-intro{margin-bottom:clamp(3.4rem,7vw,6rem)}
+.wi-title{font-size:clamp(1.85rem,4.4vw,3.5rem);font-weight:var(--w-medium);line-height:1.1;
+  letter-spacing:-.035em;max-width:19ch}
+.wi-foot{display:grid;grid-template-columns:1fr;gap:1.6rem;
+  margin-top:clamp(2.2rem,4.5vw,3.6rem)}
+@media(min-width:860px){
+  .wi-foot{grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:clamp(2rem,5vw,5rem);align-items:start}
+}
+.wi-context{font-size:clamp(.98rem,1.2vw,1.08rem);color:var(--muted);max-width:46ch}
+.wi-aside{font-size:.92rem;color:var(--muted-2);max-width:38ch}
+@media(min-width:860px){.wi-aside{justify-self:end;text-align:right}}
+
 /* ===== PREVIEWS GRANDES =====
    Duas colunas que juntas dominam a viewport, com gap curto. Sangra além do
    .wrap descontando a barra de rolagem, como a faixa do Sobre. */
-.work-bleed{--bleed:calc(100vw - var(--sbw,0px));
+.work-bleed{--bleed:var(--vw,100vw);
   width:var(--bleed);position:relative;left:50%;
   margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2);
   padding-inline:clamp(1rem,2vw,2rem);gap:clamp(1rem,1.4vw,1.5rem)}
 @media(min-width:900px){.work-bleed{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:900px){
-  .work-bleed .card{aspect-ratio:auto;height:clamp(30rem,72vh,46rem)}}
+  /* preenchem quase a viewport inteira, como no midu.design: a prévia é o
+     assunto da seção, não uma miniatura ao lado do texto */
+  .work-bleed .card{aspect-ratio:auto;height:clamp(38rem,88vh,58rem)}}
 @media(max-width:899px){
-  .work-bleed .card{aspect-ratio:4/3.2}}
+  .work-bleed .card{aspect-ratio:4/4.4}}
 .work-bleed .card-foot{left:clamp(1.4rem,2.2vw,2.4rem);right:clamp(1.4rem,2.2vw,2.4rem);
   bottom:clamp(1.4rem,2vw,2.2rem)}
 .work-bleed .card-foot h3{font-size:clamp(1.35rem,1.9vw,2rem)}
@@ -611,5 +1373,5 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
 .js .card.in .card-foot{opacity:1;transform:none;transition-delay:220ms}
 .js .card.in .card-tags{opacity:1;transform:none;transition-delay:300ms}
-.about-sub{margin-top:1.3rem;font-size:.98rem;font-weight:300;color:var(--muted-2);
+.about-sub{margin-top:1.3rem;font-size:.98rem;font-weight:var(--w-light);color:var(--muted-2);
   max-width:56ch;line-height:1.68;letter-spacing:-.005em}

@@ -1,0 +1,28 @@
+name = "portfolio-admin"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Painel administrativo (arquivos estáticos em worker/public) e API (/api/*)
+# na mesma origem: por isso não existe configuração de CORS neste projeto.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# ===== Variáveis (texto simples, não secretas) =====
+# Estas aparecem no painel do Cloudflare em texto puro. Nenhuma delas é uma
+# credencial: são só identificadores de configuração. O único segredo real
+# deste projeto é GITHUB_TOKEN, e ele NÃO aparece aqui — vai como Secret
+# (ver README do worker, seção "Cloudflare Worker").
+[vars]
+GITHUB_OWNER = "pedrodetrindade"
+GITHUB_REPO = "portfolio"
+GITHUB_BRANCH = "main"
+# Preenchidos depois de configurar o Cloudflare Access (ver README, seção F).
+# Deixar em branco DESLIGA a validação extra do Worker, mas não desliga o
+# Cloudflare Access em si (que continua sendo a primeira barreira). Ainda
+# assim, o Worker se recusa a aceitar escrita sem os três preenchidos em
+# produção — "falhar de forma fechada" (item 17 do pedido original).
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+ADMIN_EMAIL = ""

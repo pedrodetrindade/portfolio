@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Camada de conteúdo do CMS: ver js/content.js -->
+<script src="../js/content.js?v=1"></script>
 <title>Direção de arte e comunicação de marca · Pedro de Trindade</title>
 <meta name="description" content="Case: direção de arte e comunicação de marca. Identidade e campanha por Pedro de Trindade.">
 
@@ -28,10 +30,8 @@
 <meta name="twitter:description" content="Case: direção de arte e comunicação de marca. Identidade e campanha por Pedro de Trindade.">
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/style.css?v=31">
+<link rel="preload" href="../assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../css/style.css?v=78">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
@@ -39,11 +39,19 @@
 <div class="glow" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
 <div class="cursor-glow" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
+<div class="edge-blur" aria-hidden="true"></div>
 
 <header>
   <nav class="nav">
     <a class="brand" href="../index.html">Pedro de Trindade<span>.</span></a>
-    <button class="menu-btn" data-menu data-pt-label="Abrir menu" data-en-label="Open menu" aria-label="Abrir menu"><i></i><span data-pt="Menu" data-en="Menu">Menu</span></button>
+    <div class="ctrl-group">
+      <button class="menu-btn" data-menu data-pt-label="Abrir menu" data-en-label="Open menu" aria-label="Abrir menu"><i></i><span data-pt="Menu" data-en="Menu">Menu</span></button>
+      <span class="ctrl-div" aria-hidden="true"></span>
+      <p class="avail" role="status">
+        <i class="avail-dot" aria-hidden="true"></i>
+        <span data-pt="Disponível para projetos" data-en="Available for projects" data-pt-short="Disponível" data-en-short="Available">Disponível para projetos</span>
+      </p>
+    </div>
     <div class="nav-right">
       <div class="lang-pick">
         <button class="lp-toggle" aria-expanded="false" aria-haspopup="listbox"
@@ -78,7 +86,7 @@
     <span class="eyebrow reveal" data-pt="direção de arte" data-en="art direction">direção de arte</span>
     <h1 class="reveal" data-pt="Direção de arte e comunicação de marca" data-en="Art direction and brand communication">Direção de arte e comunicação de marca</h1>
     <p class="sub reveal" data-pt="Direção de arte contínua para sustentar uma identidade coerente através de campanhas, com uma linguagem visual que se adapta sem se diluir." data-en="Ongoing art direction to hold a coherent identity across campaigns, with a visual language that adapts without diluting.">Direção de arte contínua para sustentar uma identidade coerente através de campanhas, com uma linguagem visual que se adapta sem se diluir.</p>
-    <div class="hero-meta reveal">
+    <div class="case-meta reveal">
       <div><span data-pt="papel" data-en="role">papel</span><p data-pt="Direção de arte" data-en="Art direction">Direção de arte</p></div>
       <div><span data-pt="ano" data-en="year">ano</span><p>2025</p></div>
       <div><span data-pt="escopo" data-en="scope">escopo</span><p data-pt="Identidade, campanha, comunicação" data-en="Identity, campaign, communication">Identidade, campanha, comunicação</p></div>
@@ -87,7 +95,7 @@
 
   <section>
     <div class="case-cover reveal">
-      <div class="scene p2"></div>
+      <div class="scene p2"><img src="../assets/projetos/case-02/capa.jpg" alt="" onerror="this.remove()"></div>
     </div>
   </section>
 
@@ -110,8 +118,8 @@
 
   <section>
     <div class="case-gallery">
-      <div class="thumb reveal"><div class="scene p2"></div></div>
-      <div class="thumb reveal"><div class="scene p3"></div></div>
+      <div class="thumb reveal"><div class="scene p2"><img src="../assets/projetos/case-02/galeria-1.jpg" alt="" onerror="this.remove()"></div></div>
+      <div class="thumb reveal"><div class="scene p3"><img src="../assets/projetos/case-02/galeria-2.jpg" alt="" onerror="this.remove()"></div></div>
     </div>
   </section>
 
@@ -124,10 +132,27 @@
 </main>
 
 <footer class="wrap">
-  <span data-pt="Pedro de Trindade · Designer &amp; Diretor de Arte" data-en="Pedro de Trindade · Designer &amp; Art Director">Pedro de Trindade · Designer &amp; Diretor de Arte</span>
-  <span>© <span id="yr"></span> · Rio de Janeiro, BR</span>
+  <div class="foot-row">
+    <button class="to-top reveal" data-top
+            data-pt-label="Voltar ao topo da página" data-en-label="Back to the top of the page"
+            aria-label="Voltar ao topo da página">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5.6"/><path d="M5.8 11.8L12 5.6l6.2 6.2"/></svg>
+      <span data-pt="Voltar ao topo" data-en="Take me to the top">Voltar ao topo</span>
+    </button>
+    <p class="foot-note">
+      <span class="foot-yr">© <span data-yr></span> · </span><span data-pt="Site inteiramente planejado e desenvolvido por Pedro de Trindade." data-en="Website fully planned and developed by Pedro de Trindade.">Site inteiramente planejado e desenvolvido por Pedro de Trindade.</span>
+    </p>
+  </div>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span class="mq-group"><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i></span>
+      <span class="mq-group"><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i></span>
+    </div>
+  </div>
 </footer>
 
-<script src="../js/main.js?v=31"></script>
+<script src="../js/content-render.js?v=1"></script>
+<script src="../js/main.js?v=78"></script>
 </body>
 </html>

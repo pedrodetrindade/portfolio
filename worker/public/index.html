@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel · Pedro de Trindade</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="gate" class="gate" hidden>
+  <h1>Sem acesso</h1>
+  <p id="gateMsg">Não foi possível confirmar sua sessão do Cloudflare Access. Feche esta aba e entre novamente pelo link do painel.</p>
+</div>
+
+<div id="app" hidden>
+  <div class="topbar">
+    <span class="brand">Painel · Pedro de Trindade</span>
+    <span class="status">
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">verificando…</span>
+    </span>
+  </div>
+
+  <nav class="nav" id="navList">
+    <button data-panel="overview" class="active">Visão geral</button>
+    <button data-panel="appearance">Aparência global<span class="dirty-flag"></span></button>
+    <button data-panel="layout">Layout e espaçamentos<span class="dirty-flag"></span></button>
+    <button data-panel="headerfooter">Header e footer<span class="dirty-flag"></span></button>
+    <button data-panel="home">Home<span class="dirty-flag"></span></button>
+    <button data-panel="projects">Projetos<span class="dirty-flag"></span></button>
+    <button data-panel="publish">Publicação</button>
+  </nav>
+
+  <main id="main">
+
+    <section class="panel active" data-panel="overview">
+      <h1>Visão geral</h1>
+      <p class="lead">Estado atual do site, do repositório e da conexão com o GitHub.</p>
+      <div class="group" open>
+        <div class="group-body" id="overviewBody">Carregando…</div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="appearance">
+      <h1>Aparência global</h1>
+      <p class="lead">Cores, transparência, bordas e arredondamento. Vale para o site inteiro.</p>
+      <div id="previewSlotAppearance"></div>
+      <details class="group" open>
+        <summary>Cores</summary>
+        <div class="group-body" id="colorsBody"></div>
+      </details>
+      <details class="group">
+        <summary>Bordas e arredondamento</summary>
+        <div class="group-body" id="bordersBody"></div>
+      </details>
+    </section>
+
+    <section class="panel" data-panel="layout">
+      <h1>Layout e espaçamentos</h1>
+      <p class="lead">Largura do conteúdo, margens e o espaço entre seções — global e por seção.</p>
+      <div id="previewSlotLayout"></div>
+      <details class="group" open>
+        <summary>Configurações globais</summary>
+        <div class="group-body" id="layoutGlobalBody"></div>
+      </details>
+      <details class="group">
+        <summary>Espaçamento por seção da Home</summary>
+        <div class="group-body" id="layoutSectionsBody"></div>
+      </details>
+    </section>
+
+    <section class="panel" data-panel="headerfooter">
+      <h1>Header e footer</h1>
+      <p class="lead">Links de navegação, redes sociais e o texto do rodapé.</p>
+      <details class="group" open>
+        <summary>Header</summary>
+        <div class="group-body" id="headerBody"></div>
+      </details>
+      <details class="group" open>
+        <summary>Footer e redes sociais</summary>
+        <div class="group-body" id="footerBody"></div>
+      </details>
+    </section>
+
+    <section class="panel" data-panel="home">
+      <h1>Home</h1>
+      <p class="lead">Texto de cada seção da página inicial. Visibilidade só é segura para Sobre, O que eu faço e FAQ.</p>
+      <div id="previewSlotHome"></div>
+      <details class="group" open><summary>Capa (hero)</summary><div class="group-body" id="heroBody"></div></details>
+      <details class="group"><summary>Projetos (introdução)</summary><div class="group-body" id="workIntroBody"></div></details>
+      <details class="group"><summary>Sobre</summary><div class="group-body" id="aboutBody"></div></details>
+      <details class="group"><summary>O que eu faço</summary><div class="group-body" id="helpBody"></div></details>
+      <details class="group"><summary>Perguntas frequentes</summary><div class="group-body" id="faqBody"></div></details>
+      <details class="group"><summary>Contato</summary><div class="group-body" id="contactBody"></div></details>
+    </section>
+
+    <section class="panel" data-panel="projects">
+      <h1>Projetos</h1>
+      <p class="lead">Ordem, visibilidade, capa e conteúdo de cada projeto.</p>
+      <div class="toolbar">
+        <button class="btn primary small" id="btnNewProject">+ Novo projeto</button>
+      </div>
+      <div id="projectsList"></div>
+      <div id="projectEditor"></div>
+    </section>
+
+    <section class="panel" data-panel="publish">
+      <h1>Publicação</h1>
+      <p class="lead">Revise o que vai mudar no site público antes de confirmar.</p>
+      <div class="group" open>
+        <div class="group-body">
+          <div id="publishSummary">Nenhuma alteração pendente.</div>
+          <div style="display:flex;gap:.6rem;margin-top:1rem">
+            <button class="btn" id="btnDiscard">Descartar alterações</button>
+            <button class="btn primary" id="btnPublish" disabled>Publicar</button>
+          </div>
+          <div id="publishResult" style="margin-top:1rem"></div>
+        </div>
+      </div>
+      <div class="group">
+        <summary style="font-weight:600;margin-bottom:.6rem">Última publicação</summary>
+        <div id="lastPublishInfo" class="group-body">—</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

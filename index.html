@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Camada de conteúdo do CMS: busca content/global.json de forma síncrona e
+     aplica cor, borda, arredondamento e espaçamento antes de qualquer
+     pintura. Precisa vir antes do <link rel="stylesheet">, para o navegador
+     nunca chegar a pintar com o token antigo. Ver js/content.js. -->
+<script src="js/content.js?v=1"></script>
 <title>Pedro de Trindade · Designer &amp; Diretor de Arte</title>
 <meta name="description" content="Pedro de Trindade, diretor de arte e designer sênior. Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.">
 
@@ -28,10 +33,8 @@
 <meta name="twitter:description" content="Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.">
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=31">
+<link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css?v=78">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
@@ -44,11 +47,22 @@
 <div class="glow" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div></div>
 <div class="cursor-glow" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
+<div class="edge-blur" aria-hidden="true"></div>
 
 <header>
   <nav class="nav">
     <a class="brand" href="#top">Pedro de Trindade<span>.</span></a>
-    <button class="menu-btn" data-menu data-pt-label="Abrir menu" data-en-label="Open menu" aria-label="Abrir menu"><i></i><span data-pt="Menu" data-en="Menu">Menu</span></button>
+    <!-- Menu e disponibilidade dividem a mesma pílula central: economiza uma
+         faixa inteira de layout na hero e mantém a informação sempre à vista,
+         inclusive nas páginas de case. -->
+    <div class="ctrl-group">
+      <button class="menu-btn" data-menu data-pt-label="Abrir menu" data-en-label="Open menu" aria-label="Abrir menu"><i></i><span data-pt="Menu" data-en="Menu">Menu</span></button>
+      <span class="ctrl-div" aria-hidden="true"></span>
+      <p class="avail" role="status">
+        <i class="avail-dot" aria-hidden="true"></i>
+        <span data-pt="Disponível para projetos" data-en="Available for projects" data-pt-short="Disponível" data-en-short="Available">Disponível para projetos</span>
+      </p>
+    </div>
     <div class="nav-right">
       <div class="lang-pick">
         <button class="lp-toggle" aria-expanded="false" aria-haspopup="listbox"
@@ -84,30 +98,52 @@
        Os secundários são absolutos, então não deslocam o nome do centro:
        é isso que permite ele atravessar a intro sem se mover. -->
   <section class="hero">
-    <span class="hero-tag h-step" data-pt="diretor de arte &amp; designer sênior" data-en="art director &amp; senior designer">diretor de arte &amp; designer sênior</span>
+    <!-- Fundo de vidro líquido. Só CSS: massas de cor em marrom escuro que
+         derivam devagar por transform. A vinheta central existe para proteger
+         o contraste do nome e dos rótulos pequenos. -->
+    <div class="liquid-bg hero-liquid" aria-hidden="true">
+      <i class="lq lq1"></i><i class="lq lq2"></i><i class="lq lq3"></i><i class="lq lq4"></i>
+      <span class="lq-veil"></span>
+    </div>
 
-    <h1 class="hero-name">
-      <span class="hn-mask"><span class="hn-line">Pedro de</span></span>
-      <span class="hn-mask"><span class="hn-line">Trindade<i>.</i></span></span>
-    </h1>
+    <div class="hero-stack">
+      <!-- O wrapper tem largura do próprio nome (fit-content), e é isso que faz
+           profissão e localização se alinharem às bordas do bloco tipográfico,
+           e não às da página. Nada de position:absolute contra a viewport aqui. -->
+      <div class="hero-name-wrap">
+        <h1 class="hero-name">
+          <span class="hn-mask"><span class="hn-line">Pedro de Trindade<i>.</i></span></span>
+        </h1>
+        <div class="hero-meta">
+          <span class="hero-tag h-step" data-pt="Diretor de Arte &amp; Designer Sênior" data-en="Art Director &amp; Senior Designer">Diretor de Arte &amp; Designer Sênior</span>
+          <span class="hero-when h-step">
+            <b data-pt="Baseado no Rio de Janeiro, Brasil" data-en="Based in Rio de Janeiro, Brazil">Baseado no Rio de Janeiro, Brasil</b>
+            <span id="stamp">&nbsp;</span>
+          </span>
+        </div>
+      </div>
 
-    <span class="hero-when h-step">
-      <b data-pt="Brasil" data-en="Brazil">Brasil</b>
-      <span id="stamp">&nbsp;</span>
-    </span>
-    <a class="hero-scroll h-step" href="#work" data-pt="role para explorar ↓" data-en="scroll to explore ↓">role para explorar ↓</a>
+      <p class="hero-claim h-step" data-pt="Construindo e direcionando marcas no encontro entre criatividade, estratégia e negócio." data-en="Building and shaping brands at the intersection of creativity, strategy and business.">Construindo e direcionando marcas no encontro entre criatividade, estratégia e negócio.</p>
+    </div>
   </section>
 
   <!-- ===== PROJETOS: duas colunas grandes, quase de ponta a ponta ===== -->
   <section id="work">
-    <div class="sec-head reveal">
-      <h2 data-pt="Trabalhos selecionados" data-en="Selected work">Trabalhos selecionados</h2>
-      <span class="count" data-pt="índice / 04" data-en="index / 04">índice / 04</span>
+    <!-- Abertura editorial: frase grande, e o contexto abaixo em duas colunas.
+         A ordem de entrada é título, contexto à esquerda, texto à direita e só
+         então a primeira linha de projetos. -->
+    <div class="work-intro">
+      <h2 class="wi-title reveal" data-pt="Uma seleção de trabalhos construídos entre direção de arte, identidade e estratégia." data-en="A selection of work shaped across art direction, identity, and strategy.">Uma seleção de trabalhos construídos entre direção de arte, identidade e estratégia.</h2>
+      <div class="wi-foot">
+        <p class="wi-context reveal" data-pt="Projetos desenvolvidos para marcas, produtos e negócios em diferentes momentos, do posicionamento à execução." data-en="Projects developed for brands, products, and businesses at different stages, from positioning to execution.">Projetos desenvolvidos para marcas, produtos e negócios em diferentes momentos, do posicionamento à execução.</p>
+        <p class="wi-aside reveal" data-pt="Explore projetos de branding, campanhas, experiências digitais e comunicação." data-en="Explore branding, campaigns, digital experiences, and communication projects.">Explore projetos de branding, campanhas, experiências digitais e comunicação.</p>
+      </div>
     </div>
+
     <div class="cards work-bleed">
 
       <a class="card reveal" href="work/case-01.html">
-        <div class="scene p1"></div>
+        <div class="scene p1"><img src="assets/projetos/case-01/capa.jpg" alt="" onerror="this.remove()"></div>
         <div class="card-tags">
           <span data-pt="branding" data-en="branding">branding</span>
           <span data-pt="design system" data-en="design system">design system</span>
@@ -122,7 +158,7 @@
       </a>
 
       <a class="card reveal" href="work/case-02.html">
-        <div class="scene p2"></div>
+        <div class="scene p2"><img src="assets/projetos/case-02/capa.jpg" alt="" onerror="this.remove()"></div>
         <div class="card-tags">
           <span data-pt="direção de arte" data-en="art direction">direção de arte</span>
           <span data-pt="campanha" data-en="campaign">campanha</span>
@@ -137,7 +173,7 @@
       </a>
 
       <a class="card reveal" href="work/case-03.html">
-        <div class="scene p3"></div>
+        <div class="scene p3"><img src="assets/projetos/case-03/capa.jpg" alt="" onerror="this.remove()"></div>
         <div class="card-tags">
           <span data-pt="direção criativa" data-en="creative direction">direção criativa</span>
           <span data-pt="storytelling" data-en="storytelling">storytelling</span>
@@ -152,7 +188,7 @@
       </a>
 
       <a class="card reveal" href="work/case-04.html">
-        <div class="scene p4"></div>
+        <div class="scene p4"><img src="assets/projetos/case-04/capa.jpg" alt="" onerror="this.remove()"></div>
         <div class="card-tags">
           <span data-pt="identidade" data-en="identity">identidade</span>
           <span data-pt="sistema visual" data-en="visual system">sistema visual</span>
@@ -176,9 +212,18 @@
         <div class="about-grid">
 
           <figure class="about-photo">
+            <!-- O placeholder fica por baixo de propósito: se assets/pedro.png
+                 faltar, a moldura continua legível em vez de mostrar ícone de
+                 imagem quebrada. Quando a foto carrega, ela cobre tudo. -->
             <div class="portrait mask-reveal">
-              <!-- Trocar por: <img src="assets/pedro.jpg" class="portrait-img" width="900" height="1125" alt="Pedro de Trindade"> -->
               <span class="portrait-hint" data-pt="foto" data-en="photo">foto</span>
+              <!-- Sem loading="lazy": o carregamento preguiçoso usa as mesmas
+                   heurísticas de viewport do IntersectionObserver, que não
+                   enxergam a rolagem por transform. A foto simplesmente nunca
+                   carregava. Vale para qualquer imagem que entrar no site. -->
+              <img src="assets/pedro.png" class="portrait-img" alt="Pedro de Trindade"
+                   width="1498" height="1873" decoding="async"
+                   onerror="this.remove()">
             </div>
           </figure>
 
@@ -203,7 +248,14 @@
               </ul>
             </div>
 
-            <button class="ghost-cta reveal" data-contact data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</button>
+            <div class="about-actions reveal">
+              <a class="ghost-cta linkedin" href="https://www.linkedin.com/in/pedrodetrindade"
+                 target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.65h.05c.53-.95 1.83-1.95 3.76-1.95C21.4 8.7 22 11 22 14.1V21h-4v-6.1c0-1.45-.03-3.32-2.05-3.32-2.05 0-2.37 1.58-2.37 3.21V21h-4z"/></svg>
+                LinkedIn
+              </a>
+              <button class="ghost-cta" data-contact data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</button>
+            </div>
           </div>
 
         </div>
@@ -211,68 +263,184 @@
     </div>
   </section>
 
-  <!-- ===== COMO EU CONSIGO TE AJUDAR ===== -->
+  <!-- ===== O QUE EU FAÇO =====
+       Quatro frentes em accordion: fechado mostra só número, título e o mais;
+       aberto revela descrição e capacidades. Evita a poluição de quatro
+       descrições abertas ao mesmo tempo. Um item aberto por vez. -->
   <section id="help">
-    <h2 class="help-title reveal" data-pt="Como eu consigo te ajudar" data-en="How I can help you">Como eu consigo te ajudar</h2>
-    <div class="help-grid">
-
-      <div class="help-item">
-        <span class="hi-num">01</span>
-        <span class="hi-line" aria-hidden="true"></span>
-        <h3 data-pt="Direção de arte" data-en="Art direction">Direção de arte</h3>
-        <p data-pt="Conduzo a linguagem visual da marca em todos os pontos onde ela aparece: key visuals, redes, peças institucionais e materiais impressos." data-en="I lead a brand's visual language everywhere it shows up: key visuals, social, institutional pieces and print.">Conduzo a linguagem visual da marca em todos os pontos onde ela aparece: key visuals, redes, peças institucionais e materiais impressos.</p>
+    <div class="wrap-grid">
+      <div class="help-head">
+        <span class="help-k reveal" data-pt="atuação" data-en="expertise">atuação</span>
+        <h2 class="help-title reveal" data-pt="O que eu faço" data-en="What I do">O que eu faço</h2>
+        <p class="help-lead reveal" data-pt="Quatro frentes que funcionam como um sistema: a estratégia define o rumo, a direção criativa transforma esse rumo em linguagem, a comunicação coloca a marca em circulação e a tecnologia amplia sua capacidade de evoluir e ganhar escala." data-en="Four areas working as a system: strategy sets the direction, creative direction turns that direction into language, communication puts the brand into circulation, and technology expands its ability to evolve and scale.">Quatro frentes que funcionam como um sistema: a estratégia define o rumo, a direção criativa transforma esse rumo em linguagem, a comunicação coloca a marca em circulação e a tecnologia amplia sua capacidade de evoluir e ganhar escala.</p>
       </div>
 
-      <div class="help-item">
-        <span class="hi-num">02</span>
-        <span class="hi-line" aria-hidden="true"></span>
-        <h3 data-pt="Marca e identidade" data-en="Brand and identity">Marca e identidade</h3>
-        <p data-pt="Crio e reposiciono marcas desde a concepção, envolvendo naming, estratégia de posicionamento, identidade visual e as diretrizes que mantêm tudo consistente." data-en="I create and reposition brands from the ground up: naming, positioning strategy, visual identity and the guidelines that keep it all consistent.">Crio e reposiciono marcas desde a concepção, envolvendo naming, estratégia de posicionamento, identidade visual e as diretrizes que mantêm tudo consistente.</p>
-      </div>
+      <div class="help-list">
 
-      <div class="help-item">
-        <span class="hi-num">03</span>
-        <span class="hi-line" aria-hidden="true"></span>
-        <h3 data-pt="Campanhas e digital" data-en="Campaigns and digital">Campanhas e digital</h3>
-        <p data-pt="Campanhas, apresentações estratégicas, web e audiovisual, com criativos testados em tráfego pago e fluxos de IA para ganhar escala sem perder a marca de vista." data-en="Campaigns, strategic decks, web and audiovisual, with creative tested in paid media and AI workflows for scale without losing sight of the brand.">Campanhas, apresentações estratégicas, web e audiovisual, com criativos testados em tráfego pago e fluxos de IA para ganhar escala sem perder a marca de vista.</p>
-      </div>
+        <div class="help-item reveal">
+          <span class="hi-line" aria-hidden="true"></span>
+          <h3>
+            <button class="hi-q" aria-expanded="false" aria-controls="hi-r1" id="hi-b1">
+              <span class="hi-num">01</span>
+              <span class="hi-title" data-pt="Direção Criativa &amp; Direção de Arte" data-en="Creative Direction &amp; Art Direction">Direção Criativa &amp; Direção de Arte</span>
+              <i class="hi-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="hi-a" id="hi-r1" role="region" aria-labelledby="hi-b1" hidden>
+            <p data-pt="Traduzo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca entre campanhas, conteúdos, produtos e experiências." data-en="I translate strategy into concepts, narratives, and visual systems, guiding brand expression across campaigns, content, products, and experiences.">Traduzo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca entre campanhas, conteúdos, produtos e experiências.</p>
+            <ul class="hi-tags">
+              <li data-pt="conceitos criativos" data-en="creative concepts">conceitos criativos</li>
+              <li data-pt="direção de arte" data-en="art direction">direção de arte</li>
+              <li data-pt="motion &amp; audiovisual" data-en="motion &amp; audiovisual">motion &amp; audiovisual</li>
+            </ul>
+          </div>
+        </div>
 
+        <div class="help-item reveal">
+          <span class="hi-line" aria-hidden="true"></span>
+          <h3>
+            <button class="hi-q" aria-expanded="false" aria-controls="hi-r2" id="hi-b2">
+              <span class="hi-num">02</span>
+              <span class="hi-title" data-pt="Estratégia &amp; Gestão de Marca" data-en="Strategy &amp; Brand Management">Estratégia &amp; Gestão de Marca</span>
+              <i class="hi-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="hi-a" id="hi-r2" role="region" aria-labelledby="hi-b2" hidden>
+            <p data-pt="Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, mantêm consistência e evoluem ao longo do tempo." data-en="I connect positioning, communication, and business objectives to guide how brands present themselves, maintain consistency, and evolve over time.">Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, mantêm consistência e evoluem ao longo do tempo.</p>
+            <ul class="hi-tags">
+              <li data-pt="posicionamento" data-en="positioning">posicionamento</li>
+              <li data-pt="diretrizes de marca" data-en="brand guidelines">diretrizes de marca</li>
+              <li data-pt="governança criativa" data-en="creative governance">governança criativa</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="help-item reveal">
+          <span class="hi-line" aria-hidden="true"></span>
+          <h3>
+            <button class="hi-q" aria-expanded="false" aria-controls="hi-r3" id="hi-b3">
+              <span class="hi-num">03</span>
+              <span class="hi-title" data-pt="Campanhas &amp; Comunicação de Negócio" data-en="Campaigns &amp; Business Communication">Campanhas &amp; Comunicação de Negócio</span>
+              <i class="hi-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="hi-a" id="hi-r3" role="region" aria-labelledby="hi-b3" hidden>
+            <p data-pt="Transformo desafios de comunicação em campanhas, apresentações estratégicas e experiências digitais que fortalecem a marca, organizam narrativas complexas e apoiam marketing, produto e comercial." data-en="I turn communication challenges into campaigns, strategic presentations, and digital experiences that strengthen the brand, organize complex narratives, and support marketing, product, and sales.">Transformo desafios de comunicação em campanhas, apresentações estratégicas e experiências digitais que fortalecem a marca, organizam narrativas complexas e apoiam marketing, produto e comercial.</p>
+            <ul class="hi-tags">
+              <li data-pt="campanhas integradas" data-en="integrated campaigns">campanhas integradas</li>
+              <li data-pt="apresentações estratégicas" data-en="strategic presentations">apresentações estratégicas</li>
+              <li data-pt="experiências digitais" data-en="digital experiences">experiências digitais</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="help-item reveal">
+          <span class="hi-line" aria-hidden="true"></span>
+          <h3>
+            <button class="hi-q" aria-expanded="false" aria-controls="hi-r4" id="hi-b4">
+              <span class="hi-num">04</span>
+              <span class="hi-title" data-pt="Operações Criativas &amp; Inteligência Artificial" data-en="Creative Operations &amp; Artificial Intelligence">Operações Criativas &amp; Inteligência Artificial</span>
+              <i class="hi-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="hi-a" id="hi-r4" role="region" aria-labelledby="hi-b4" hidden>
+            <p data-pt="Estruturo processos, critérios e fluxos que conectam estratégia, criação e execução, integrando inteligência artificial para ampliar eficiência, repertório e escala sem comprometer a consistência da marca." data-en="I structure processes, criteria, and workflows that connect strategy, creation, and execution, integrating artificial intelligence to expand efficiency, repertoire, and scale without compromising brand consistency.">Estruturo processos, critérios e fluxos que conectam estratégia, criação e execução, integrando inteligência artificial para ampliar eficiência, repertório e escala sem comprometer a consistência da marca.</p>
+            <ul class="hi-tags">
+              <li data-pt="sistemas criativos" data-en="creative systems">sistemas criativos</li>
+              <li data-pt="IA aplicada" data-en="applied AI">IA aplicada</li>
+              <li data-pt="processos &amp; automação" data-en="processes &amp; automation">processos &amp; automação</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
     </div>
   </section>
 
-  <!-- ===== NÚMEROS =====
-       Só dados verificáveis no próprio conteúdo do site. Para acrescentar,
-       copie um bloco .stat: data-count é o alvo do count-up.
-       PENDENTES de confirmação, deixados de fora de propósito para não
-       publicar número inventado: marcas atendidas, lançamentos, mercados. -->
-  <section id="numbers">
-    <div class="num-head">
-      <span class="eyebrow reveal" data-pt="trajetória" data-en="trajectory">trajetória</span>
-      <h2 class="reveal" data-pt="O que sustenta o trabalho" data-en="What the work is built on">O que sustenta o trabalho</h2>
-    </div>
-    <div class="stats">
+  <!-- ===== FAQ =====
+       Única seção clara do site, de propósito: é a pausa antes do
+       encerramento escuro. Sangra de ponta a ponta e não vive dentro de card.
+       O conteúdo mora aqui, em data-pt/data-en, uma vez só; o comportamento
+       do accordion é genérico e fica no js/main.js. -->
+  <section id="faq" class="faq">
+    <div class="faq-inner">
+      <h2 class="faq-title reveal" data-pt="Perguntas frequentes" data-en="FAQs">Perguntas frequentes</h2>
 
-      <div class="stat">
-        <div class="stat-v"><span data-count="6" data-pad="2">06</span></div>
-        <span class="stat-line" aria-hidden="true"></span>
-        <h3 data-pt="Anos de prática" data-en="Years of practice">Anos de prática</h3>
-        <p data-pt="Em design, branding e estratégia de marketing, desde 2020." data-en="Across design, branding and marketing strategy, since 2020.">Em design, branding e estratégia de marketing, desde 2020.</p>
+      <div class="faq-list">
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r1" id="faq-b1">
+              <span data-pt="Com que tipo de clientes você normalmente trabalha?" data-en="What types of clients do you usually work with?">Com que tipo de clientes você normalmente trabalha?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r1" role="region" aria-labelledby="faq-b1" hidden>
+            <p data-pt="Trabalho com startups, empresas em crescimento e marcas consolidadas que buscam construir, reposicionar ou fortalecer sua presença visual e estratégica." data-en="I work with startups, growing companies, and established brands looking to build, reposition, or strengthen their visual and strategic presence.">Trabalho com startups, empresas em crescimento e marcas consolidadas que buscam construir, reposicionar ou fortalecer sua presença visual e estratégica.</p>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r2" id="faq-b2">
+              <span data-pt="Quais serviços você oferece?" data-en="What services do you offer?">Quais serviços você oferece?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r2" role="region" aria-labelledby="faq-b2" hidden>
+            <p data-pt="Atuo com direção criativa, direção de arte, branding, identidade visual, campanhas, design digital e sistemas de comunicação adaptados às necessidades de cada projeto." data-en="I work across creative direction, art direction, branding, visual identity, campaigns, digital design, and communication systems shaped around each project's needs.">Atuo com direção criativa, direção de arte, branding, identidade visual, campanhas, design digital e sistemas de comunicação adaptados às necessidades de cada projeto.</p>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r3" id="faq-b3">
+              <span data-pt="Como funciona o início de um projeto?" data-en="How does a project begin?">Como funciona o início de um projeto?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r3" role="region" aria-labelledby="faq-b3" hidden>
+            <p data-pt="O trabalho começa com uma conversa de alinhamento para entender contexto, objetivos, desafios, escopo e prioridades. A partir disso, estruturo uma proposta e um caminho de execução." data-en="The process starts with an alignment conversation to understand the context, goals, challenges, scope, and priorities. From there, I structure a proposal and execution path.">O trabalho começa com uma conversa de alinhamento para entender contexto, objetivos, desafios, escopo e prioridades. A partir disso, estruturo uma proposta e um caminho de execução.</p>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r4" id="faq-b4">
+              <span data-pt="Quanto tempo leva um projeto típico?" data-en="How long does a typical project take?">Quanto tempo leva um projeto típico?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r4" role="region" aria-labelledby="faq-b4" hidden>
+            <p data-pt="O prazo varia conforme o escopo, a complexidade e as entregas envolvidas. O cronograma é definido com clareza antes do início do projeto." data-en="Timing depends on the scope, complexity, and deliverables involved. A clear schedule is defined before the project begins.">O prazo varia conforme o escopo, a complexidade e as entregas envolvidas. O cronograma é definido com clareza antes do início do projeto.</p>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r5" id="faq-b5">
+              <span data-pt="Como você estrutura propostas e valores?" data-en="How do you structure proposals and pricing?">Como você estrutura propostas e valores?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r5" role="region" aria-labelledby="faq-b5" hidden>
+            <p data-pt="Cada proposta é desenvolvida de acordo com o escopo, a complexidade, o prazo e o formato de colaboração, seja por projeto ou acompanhamento contínuo." data-en="Each proposal is shaped around the scope, complexity, timeline, and collaboration format, whether it is project-based or an ongoing partnership.">Cada proposta é desenvolvida de acordo com o escopo, a complexidade, o prazo e o formato de colaboração, seja por projeto ou acompanhamento contínuo.</p>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r6" id="faq-b6">
+              <span data-pt="Você oferece suporte após a entrega?" data-en="Do you offer support after delivery?">Você oferece suporte após a entrega?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r6" role="region" aria-labelledby="faq-b6" hidden>
+            <p data-pt="Sim. Quando o projeto exige continuidade, podemos estruturar uma etapa de acompanhamento, evolução de materiais ou novas entregas após o lançamento." data-en="Yes. When a project requires continuity, we can structure ongoing support, material evolution, or additional deliverables after launch.">Sim. Quando o projeto exige continuidade, podemos estruturar uma etapa de acompanhamento, evolução de materiais ou novas entregas após o lançamento.</p>
+          </div>
+        </div>
+
       </div>
-
-      <div class="stat">
-        <div class="stat-v"><span data-count="4" data-pad="2">04</span></div>
-        <span class="stat-line" aria-hidden="true"></span>
-        <h3 data-pt="Casos selecionados" data-en="Selected cases">Casos selecionados</h3>
-        <p data-pt="O recorte que representa a prática hoje, reunido neste portfólio." data-en="The cut that represents the practice today, gathered in this portfolio.">O recorte que representa a prática hoje, reunido neste portfólio.</p>
-      </div>
-
-      <div class="stat">
-        <div class="stat-v"><span data-count="120">120</span><em>+</em></div>
-        <span class="stat-line" aria-hidden="true"></span>
-        <h3 data-pt="Países alcançados" data-en="Countries reached">Países alcançados</h3>
-        <p data-pt="Presença da marca cujo rebranding liderei, unificando frentes de negócio distintas." data-en="Reach of the brand whose rebrand I led, unifying separate business fronts.">Presença da marca cujo rebranding liderei, unificando frentes de negócio distintas.</p>
-      </div>
-
     </div>
   </section>
 
@@ -298,18 +466,48 @@
 
     <div class="links reveal">
       <a href="https://www.linkedin.com/in/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>LinkedIn</a>
-      <a href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="17" fill="currentColor">Bē</text></svg>Behance</a>
+      <a href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="500" font-size="17" fill="currentColor">Bē</text></svg>Behance</a>
     </div>
   </section>
 </main>
 
 <footer class="wrap">
-  <span data-pt="Pedro de Trindade · Designer &amp; Diretor de Arte" data-en="Pedro de Trindade · Designer &amp; Art Director">Pedro de Trindade · Designer &amp; Diretor de Arte</span>
-  <span>© <span id="yr"></span> · Rio de Janeiro, BR</span>
+  <!-- Botão e disclaimer na mesma linha, os dois centrados: o disclaimer
+       morava sozinho depois do marquee, na faixa que .edge-blur borra
+       permanentemente, e ficava difícil de ler. Aqui ele sobe para cima do
+       marquee, fora dessa faixa. -->
+  <div class="foot-row">
+    <button class="to-top reveal" data-top
+            data-pt-label="Voltar ao topo da página" data-en-label="Back to the top of the page"
+            aria-label="Voltar ao topo da página">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5.6"/><path d="M5.8 11.8L12 5.6l6.2 6.2"/></svg>
+      <span data-pt="Voltar ao topo" data-en="Take me to the top">Voltar ao topo</span>
+    </button>
+    <p class="foot-note">
+      <span class="foot-yr">© <span data-yr></span> · </span><span data-pt="Site inteiramente planejado e desenvolvido por Pedro de Trindade." data-en="Website fully planned and developed by Pedro de Trindade.">Site inteiramente planejado e desenvolvido por Pedro de Trindade.</span>
+    </p>
+  </div>
+
+  <!-- Faixa de encerramento. Decorativa: o nome já existe semanticamente na
+       hero, então aqui tudo é aria-hidden e sem foco. -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span class="mq-group">
+        <b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i>
+      </span>
+      <span class="mq-group">
+        <b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i>
+      </span>
+    </div>
+  </div>
 </footer>
 
 <div class="card-cue" aria-hidden="true"><span data-pt="ver caso" data-en="view case">ver caso</span></div>
 
-<script src="js/main.js?v=31"></script>
+<!-- Fase B do CMS: reconstrói texto e listas a partir do JSON, agora que o
+     HTML da página já existe. Precisa vir antes de main.js, que é quem lê
+     data-pt/data-en para decidir o idioma exibido. -->
+<script src="js/content-render.js?v=1"></script>
+<script src="js/main.js?v=78"></script>
 </body>
 </html>

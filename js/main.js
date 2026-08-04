@@ -3,22 +3,96 @@
      continua legível caso este arquivo falhe ao carregar */
   document.documentElement.classList.add('js');
 
-  /* largura real da barra de rolagem: 100vw a inclui, então elementos que
-     sangram de ponta a ponta precisam descontá-la para não gerar overflow */
-  const setScrollbarWidth = () => document.documentElement.style
-    .setProperty('--sbw', (window.innerWidth - document.documentElement.clientWidth) + 'px');
-  setScrollbarWidth();
-  window.addEventListener('resize', setScrollbarWidth, { passive: true });
+  /* Largura útil da página, medida em vez de deduzida. Antes o sangramento era
+     calc(100vw - --sbw), o que assumia que 100vw inclui a barra de rolagem. Isso
+     era verdade, e deixou de ser quando o html ganhou scrollbar-gutter:stable:
+     o Chrome passou a resolver 100vw já sem a calha, e o desconto virou desconto
+     em dobro. O sintoma era discreto e por isso durou: 7,5px de folga de cada
+     lado em tudo que deveria ir de ponta a ponta.
+     clientWidth é a medida direta do que existe, sem depender de como o
+     navegador interpreta a unidade. --sbw continua publicada porque outras
+     regras a usam. */
+  const medirLargura = () => {
+    const raizEstilo = document.documentElement.style;
+    raizEstilo.setProperty('--sbw', (window.innerWidth - document.documentElement.clientWidth) + 'px');
+    raizEstilo.setProperty('--vw', document.documentElement.clientWidth + 'px');
+  };
+  medirLargura();
+  window.addEventListener('resize', medirLargura, { passive: true });
+  /* A largura útil também muda sem evento de resize: numa página curta, abrir um
+     item do FAQ faz a barra de rolagem nascer e tira 15px do conteúdo. O
+     observador cobre esse caso, que o listener de resize não vê. */
+  if (window.ResizeObserver) new ResizeObserver(medirLargura).observe(document.documentElement);
 
   const base = location.pathname.includes('/work/') ? '../' : '';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = window.matchMedia('(pointer: fine)').matches;
+  /* limiar das variantes curtas de rótulo; reavaliado ao redimensionar */
+  const estreitoParaRotulo = window.matchMedia('(max-width: 900px)');
+
+  /* ================== CHAVES DE DIAGNÓSTICO DE FLUIDEZ ==================
+     O painel de preview do Claude Code não reproduz custo de pintura: mediu
+     o mesmo 4,2ms por quadro com e sem backdrop-filter, com e sem blend. Logo,
+     investigar engasgo exige o navegador real, e estas chaves existem para
+     isolar o culpado em vez de deduzir. Combináveis:
+       ?nosmooth=1  desliga a inércia (rolagem nativa, conduzida pela GPU)
+       ?nograin=1   remove o grão de todas as superfícies
+       ?noblend=1   remove mix-blend-mode de tudo
+       ?noorbs=1    remove as duas orbes de fundo (88vw e 76vw)
+       ?noscrub=1   desliga o clareamento palavra a palavra
+     Nenhuma altera o site em uso normal: sem parâmetro, nada muda. */
+  const flag = nome => new URLSearchParams(location.search).has(nome);
+  const diag = [];
+  if (flag('nograin')) {
+    document.documentElement.style.setProperty('--grain-url', 'none');
+    diag.push('nograin');
+  }
+  if (flag('noblend')) {
+    diag.push('noblend');
+  }
+  if (flag('noorbs')) {
+    diag.push('noorbs');
+  }
+  if (diag.length) {
+    const s = document.createElement('style');
+    s.textContent = [
+      flag('noblend') ? '*,*::before,*::after{mix-blend-mode:normal!important}' : '',
+      flag('noorbs') ? '.glow{display:none!important}' : ''
+    ].join('');
+    document.head.appendChild(s);
+  }
+  if (flag('noscrub')) diag.push('noscrub');
+  if (flag('nosmooth')) diag.push('nosmooth');
+  if (diag.length) console.info('[diagnóstico] desligado:', diag.join(', '));
 
   const MENU = [
     { pt:'Início',      en:'Home',       href: base + 'index.html',           scene:'p2' },
-    { pt:'Trabalhos',   en:'Work',       href: base + 'index.html#work',      scene:'p1' },
-    { pt:'Sobre',       en:'About',      href: base + 'index.html#about',     scene:'p3' }
+    { pt:'Sobre',       en:'About',      href: base + 'index.html#about',     scene:'p3' },
+    { pt:'Trabalhos',   en:'Work',       href: base + 'index.html#work',      scene:'p1' }
   ];
+
+  /* ---- indicador de próxima seção ----
+     Um só componente, montado a partir desta tabela e injetado no fim de cada
+     seção de origem. Nada de marcação repetida por seção no HTML: mudar a
+     ordem das seções é mudar esta lista. A de contato não tem próxima. */
+  /* Só o da hero permanece. Os quatro que apareciam no fim de cada seção foram
+     removidos: repetiam uma informação que a própria rolagem já dá e criavam
+     um degrau vazio no fim de cada bloco. */
+  const PROXIMA = [
+    { de:'.hero', alvo:'#work', rotuloPt:'Continue para ver os projetos', rotuloEn:'Continue to see my work',
+      nomePt:'Projetos',        nomeEn:'Projects' }
+  ];
+
+  PROXIMA.forEach(p => {
+    const secao = document.querySelector(p.de);
+    if (!secao || !document.querySelector(p.alvo)) return;
+    secao.insertAdjacentHTML('beforeend', `
+      <a class="next-hint reveal" href="${p.alvo}">
+        <span class="nh-label" data-pt="${p.rotuloPt}" data-en="${p.rotuloEn}">${p.rotuloPt}</span>
+        <span class="nh-name" data-pt="${p.nomePt}" data-en="${p.nomeEn}">${p.nomePt}</span>
+        <span class="nh-arrow" aria-hidden="true">↓</span>
+      </a>`);
+  });
 
   document.body.insertAdjacentHTML('beforeend', `
     <div class="veil" aria-hidden="true"></div>
@@ -40,7 +114,7 @@
         <div class="overlay-foot">
           <div class="k" data-pt="redes" data-en="social">redes</div>
           <a class="soc" href="https://www.linkedin.com/in/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>LinkedIn</a>
-          <a class="soc" href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="17" fill="currentColor">Bē</text></svg>Behance</a>
+          <a class="soc" href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="500" font-size="17" fill="currentColor">Bē</text></svg>Behance</a>
         </div>
       </div>
     </div>
@@ -74,8 +148,8 @@
     </div>
   `);
 
-  const yr = document.getElementById('yr');
-  if (yr) yr.textContent = new Date().getFullYear();
+  /* ano do copyright: dinâmico, nunca escrito à mão */
+  document.querySelectorAll('[data-yr]').forEach(el => { el.textContent = new Date().getFullYear(); });
 
   /* ---- carimbo de data e hora do Brasil ----
      Sempre America/Sao_Paulo, nunca o fuso do aparelho. Sem segundos na
@@ -84,17 +158,22 @@
   let stampTimer = null;
   function paintStamp(){
     if (!stamp) return;
-    const loc = document.documentElement.lang === 'en' ? 'en-GB' : 'pt-BR';
+    const en = document.documentElement.lang === 'en';
     const now = new Date();
-    /* por partes: o formato pronto do pt-BR vem com "de" no meio
-       ("02 de ago. de 2026") e fica verboso para um carimbo */
+    /* Sempre America/Sao_Paulo: o carimbo é a hora do Brasil, não a do
+       dispositivo de quem visita. Montado por partes porque o formato pronto do
+       pt-BR vem com "de" no meio ("02 de ago. de 2026") e fica verboso.
+       PT: 03 ago 2026 · 17:36 BRT      EN: Aug 3, 2026 · 5:36 PM BRT */
     const p = {};
-    new Intl.DateTimeFormat(loc, {
-      timeZone:'America/Sao_Paulo', day:'2-digit', month:'short', year:'numeric',
-      hour:'2-digit', minute:'2-digit', hour12:false
-    }).formatToParts(now).forEach(x => { p[x.type] = x.value; });
+    new Intl.DateTimeFormat(en ? 'en-US' : 'pt-BR', {
+      timeZone:'America/Sao_Paulo', day:'numeric', month:'short', year:'numeric',
+      hour:'numeric', minute:'2-digit', hour12: en
+    }).formatToParts(now).forEach(x => { p[x.type] = (p[x.type] || '') + x.value; });
     const mes = (p.month || '').replace(/\.$/, '');
-    stamp.textContent = `${p.day} ${mes} ${p.year} · ${p.hour}:${p.minute} BRT`;
+    const hora = `${p.hour}:${p.minute}${p.dayPeriod ? ' ' + p.dayPeriod.toUpperCase() : ''}`;
+    stamp.textContent = en
+      ? `${mes} ${p.day}, ${p.year} · ${hora} BRT`
+      : `${String(p.day).padStart(2,'0')} ${mes} ${p.year} · ${hora} BRT`;
   }
   if (stamp) {
     paintStamp();
@@ -172,7 +251,11 @@
   function setLang(lang, explicit){
     document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
     document.querySelectorAll('[data-pt]').forEach(el => {
-      const v = lang === 'pt' ? el.dataset.pt : el.dataset.en;
+      /* variante curta onde ela existe e a tela é estreita: encurtar pelo
+         sistema de idioma, e não cortar com reticências, preserva o sentido */
+      const curto = estreitoParaRotulo.matches &&
+        (lang === 'pt' ? el.dataset.ptShort : el.dataset.enShort);
+      const v = curto || (lang === 'pt' ? el.dataset.pt : el.dataset.en);
       if (v !== undefined) el.innerHTML = v;
     });
     document.querySelectorAll('[data-pt-label]').forEach(el => {
@@ -193,6 +276,28 @@
     if (buildScrub) buildScrub();
     measureCta();
     paintStamp();          // o formato de data muda com o idioma
+    medirDeslocamentoNome();
+  }
+
+  /* Distância entre o centro do nome na composição final e o centro exato da
+     viewport. A animação da intro parte desse valor e termina em zero, então o
+     nome nasce centrado na tela e sobe até o lugar dele na capa.
+     Precisa ser medido: depende da altura dos metadados e da frase abaixo, que
+     mudam com a largura da tela e com o idioma. */
+  function medirDeslocamentoNome(){
+    const n = document.querySelector('.hero-name');
+    const wrap = n && n.closest('.hero-name-wrap');
+    if (!n || !wrap) return;
+    /* Mede pelo wrapper, não pelo próprio nome: durante a intro o nome está sob
+       transform, e o rect dele devolveria a posição animada em vez da final.
+       O wrapper não é transformado, e offsetHeight é altura de layout, imune à
+       escala. Assim dá para remedir a qualquer momento, inclusive depois que a
+       fonte carrega e muda a altura do bloco.
+       É function e não const de propósito, para ser içada e poder ser chamada
+       de dentro de setLang, que roda cedo no IIFE. */
+    const centroNome = wrap.getBoundingClientRect().top + n.offsetHeight / 2;
+    const dy = Math.round((window.innerHeight / 2 - centroNome) * 10) / 10;
+    document.documentElement.style.setProperty('--nome-dy', dy + 'px');
   }
 
   const headEl = document.querySelector('header');
@@ -204,28 +309,91 @@
 
   setLang(detectLang());
 
+  /* O limiar das variantes curtas é uma media query, então precisa ser ouvido:
+     sem isto o rótulo escolhido na carga ficava congelado, e quem abrisse largo
+     e estreitasse a janela (ou girasse o telefone) continuava com o texto longo
+     numa caixa que já não o comporta. Reaplica o idioma corrente sem gravar,
+     porque isto não é uma escolha da pessoa. */
+  estreitoParaRotulo.addEventListener('change', () =>
+    setLang(document.documentElement.lang.startsWith('pt') ? 'pt' : 'en'));
+
   /* ================== INTRO ==================
      Não há dois nomes. O véu cobre a página, o próprio .hero-name sobe acima
      dele, e o que muda entre as etapas é só a escala: 1.06 -> 1. É o mesmo
      elemento, no mesmo lugar, então não existe crossfade nem salto.
-     Roda uma vez por sessão (sessionStorage, não localStorage). */
+     Roda em toda abertura da home, de propósito: é a assinatura de entrada e
+     Pedro quer que ela seja vista sempre, não só na primeira visita. */
+  /* ===== TIMELINE DA INTRO, EM UM LUGAR SÓ =====
+     Duas etapas somando exatamente 3000ms. Os números saem daqui para o CSS
+     via variáveis, então não existe duração escrita duas vezes nem timeout
+     solto que possa divergir da animação.
+       0 a 1200ms   revelação: máscara da esquerda para a direita, opacidade e
+                    blur. O nome fica parado, centrado, em escala maior.
+       1200 a 3000  transformação: escala e posição até o lugar da capa.
+       ~2325ms      secundários começam a entrar, sobre a cauda do movimento.
+     A passagem de 2s para 3s foi proporcional: tudo multiplicado por 1,5, de
+     modo que a proporção entre revelação (40%) e movimento (60%) e o ponto de
+     entrada dos secundários (77,5% da linha) continuam idênticos. Escalar só o
+     total mudaria o ritmo interno, não a duração. */
+  const INTRO = { revelacao: 1200, movimento: 1800 };
+  const INTRO_MS = INTRO.revelacao + INTRO.movimento;   // 3000ms
+  const SECUNDARIOS_MS = 2325;
+  const VEU_MS = 2700;                                  // saída do véu, mesma escala
+  const raiz = document.documentElement.style;
+  raiz.setProperty('--intro-dur', INTRO_MS + 'ms');
+  raiz.setProperty('--intro-reveal', INTRO.revelacao + 'ms');
+  raiz.setProperty('--intro-move', INTRO.movimento + 'ms');
+  raiz.setProperty('--intro-veil', VEU_MS + 'ms');
   const heroName = document.querySelector('.hero-name');
   const heroOn = () => document.body.classList.add('hero-in');
 
   if (!heroName) {
     heroOn();                                   // páginas de case
-  } else if (reduced || sessionStorage.getItem('introSeen')) {
-    heroOn();
+  } else if (reduced) {
+    heroOn();                                   // movimento reduzido: direto ao conteúdo
   } else {
-    sessionStorage.setItem('introSeen', '1');
     document.body.classList.add('intro-mode');
-    /* as linhas do nome sobem por dentro das máscaras (820ms) */
-    requestAnimationFrame(() => document.body.classList.add('name-in'));
-    /* ~320ms de pausa e a composição assenta: véu sai, escala volta a 1 e
-       os secundários entram por cima da cauda desse movimento */
-    setTimeout(heroOn, 1160);
-    /* só então o nome volta ao empilhamento normal e a página destrava */
-    setTimeout(() => document.body.classList.remove('intro-mode'), 2200);
+
+    const rodarIntro = () => {
+      /* Última medição antes de a animação existir. O deslocamento vertical do
+         nome depende da altura real do bloco, e a fonte própria tem métrica
+         diferente da de sistema: medir antes dela chegar deixava o nome uns
+         10px fora do centro no primeiro quadro da intro. */
+      medirDeslocamentoNome();
+      requestAnimationFrame(() => document.body.classList.add('name-in'));
+      /* secundários só na parte final da etapa 2: nada aparece durante a
+         revelação, e eles entram sobre a cauda do movimento do nome */
+      setTimeout(() => document.body.classList.add('hero-sec'), SECUNDARIOS_MS);
+      /* o nome usa a intro inteira; ao chegar aqui já está em escala 1 e
+         opacidade 1, e o véu começa a sair sobre um quadro idêntico ao da capa */
+      setTimeout(heroOn, INTRO_MS);
+      /* e o nome volta ao empilhamento normal depois que o véu terminou de sair.
+         A folga acompanha a saída mais longa do véu, senão o empilhamento muda
+         no meio do fundido e a troca aparece como um corte */
+      setTimeout(() => document.body.classList.remove('intro-mode'), INTRO_MS + VEU_MS + 100);
+    };
+
+    /* A intro só começa quando a fonte chega. O véu já cobre tudo, então essa
+       espera é invisível, e ela evita duas coisas: o nome trocar de métrica no
+       meio da animação e o deslocamento vertical ser calculado com a fonte de
+       sistema. O teto de 900ms existe para a intro nunca ficar refém do
+       carregamento da fonte. */
+    const comFonte = (document.fonts && document.fonts.ready)
+      ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 900))])
+      : Promise.resolve();
+
+    /* Aba em segundo plano não desenha quadros: o rAF que levanta o nome não
+       dispararia, mas os setTimeout sim, e a intro terminaria sem ninguém ver,
+       deixando só um véu preto. Só começa a contar quando a página aparece. */
+    const quandoVisivel = document.visibilityState === 'visible'
+      ? Promise.resolve()
+      : new Promise(res => document.addEventListener('visibilitychange', function aoAparecer(){
+          if (document.visibilityState !== 'visible') return;
+          document.removeEventListener('visibilitychange', aoAparecer);
+          res();
+        }));
+
+    Promise.all([comFonte, quandoVisivel]).then(rodarIntro);
   }
   /* ---- seletor de idioma ----
      Clique, teclado e toque. Fecha ao clicar fora e com Escape, devolvendo
@@ -291,6 +459,16 @@
     const openMenu = e.target.closest('[data-menu]');
     const openContact = e.target.closest('[data-contact]');
     const close = e.target.closest('[data-close]');
+    /* Voltar ao topo pelo mesmo sistema de rolagem do site: a rolagem nativa vai
+       a zero de imediato e o laço do transform faz o deslize, com o mesmo lerp
+       do resto da página. Não navega, não recarrega, não repete a intro e não
+       mexe na URL. Sob movimento reduzido não existe holder, então o salto é
+       direto, que é o comportamento desejado nesse modo. */
+    if (e.target.closest('[data-top]')) {
+      e.preventDefault();
+      window.scrollTo(0, 0);
+      return;
+    }
     if (openMenu) {
       e.preventDefault();
       /* clique alterna, para quem prefere clicar e para o teclado */
@@ -365,55 +543,117 @@
     window.addEventListener('pageshow', ev => { if (ev.persisted) veil.classList.remove('on'); });
   }
 
-  /* Entrada: dispara assim que o elemento encosta na viewport, escalonando
-     em 70ms. O teto de 6 passos evita que o último item de uma leva grande
-     fique meio segundo esperando. */
-  const io = new IntersectionObserver(es => {
-    let i = 0;
-    es.forEach(e => {
-      if (!e.isIntersecting) return;
-      e.target.style.setProperty('--d', Math.min(i++, 6) * 70 + 'ms');
-      e.target.classList.add('in');
-      io.unobserve(e.target);
-    });
-  }, { threshold: .15, rootMargin: '0px 0px -8% 0px' });
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  /* ================== ENTRADA DOS BLOCOS ==================
+     Sem IntersectionObserver, de propósito. Com a rolagem suave o conteúdo é
+     deslocado por transform num container fixo, e o IO não reavalia nesse caso:
+     ele acompanha rolagem e layout, não transform de ancestral. O resultado era
+     todo o conteúdo abaixo da primeira dobra ficar escondido para sempre, e foi
+     o que fez o retrato do Sobre sumir.
 
-  /* ---- coreografias por bloco ----
-     Cada seção tem gesto próprio, mas todas compartilham os mesmos tokens.
-     Um observador só, com o alvo decidido pelo tipo do elemento. */
-  const choreo = new IntersectionObserver(es => {
-    es.forEach(e => {
-      if (!e.isIntersecting) return;
-      const el = e.target;
-      choreo.unobserve(el);
+     Aqui a posição de cada alvo é medida uma vez e comparada com a posição
+     visual dentro do mesmo laço que já move o transform. Mais barato que o IO
+     e, principalmente, correto nos dois modos de rolagem.
 
-      if (el.classList.contains('caps-grid')) {
-        [...el.children].forEach((li, i) => { li.style.transitionDelay = (i * 55) + 'ms'; });
-        el.classList.add('in');
-        return;
-      }
-      if (el.classList.contains('help-item') || el.classList.contains('stat')) {
-        const col = +el.dataset.col || 0;
-        const base = col * 110;
-        const line = el.querySelector('.hi-line,.stat-line');
-        if (line) line.style.transitionDelay = base + 'ms';
-        el.querySelectorAll('.hi-num,h3,p,.stat-v').forEach((n, i) => {
-          n.style.transitionDelay = (base + 120 + i * 70) + 'ms';
-        });
-        el.classList.add('in');
-        if (el.classList.contains('stat')) countUp(el);
-        return;
-      }
+     Cada tipo de bloco mantém sua coreografia própria. */
+  let alvos = [];
+
+  const entrar = el => {
+    if (el.classList.contains('caps-grid')) {
+      [...el.children].forEach((li, i) => { li.style.transitionDelay = (i * 55) + 'ms'; });
       el.classList.add('in');
-    });
-  }, { threshold: .18, rootMargin: '0px 0px -6% 0px' });
+      return;
+    }
+    if (el.classList.contains('help-item') || el.classList.contains('stat')) {
+      const base = (+el.dataset.col || 0) * 110;
+      const line = el.querySelector('.hi-line,.stat-line');
+      if (line) line.style.transitionDelay = base + 'ms';
+      el.querySelectorAll('.hi-num,h3,p,.stat-v').forEach((n, i) => {
+        n.style.transitionDelay = (base + 120 + i * 70) + 'ms';
+      });
+      el.classList.add('in');
+      if (el.classList.contains('stat')) countUp(el);
+      return;
+    }
+    el.classList.add('in');
+  };
 
-  document.querySelectorAll('.mask-reveal,.caps-grid').forEach(el => choreo.observe(el));
-  document.querySelectorAll('.help-item,.stat').forEach((el, i) => {
-    el.dataset.col = i % 3;
-    choreo.observe(el);
-  });
+  const medirAlvos = () => {
+    alvos = [...document.querySelectorAll('.reveal,.mask-reveal,.caps-grid,.help-item,.stat')]
+      .filter(el => !el.classList.contains('in'))
+      .map(el => ({ el, topo: el.getBoundingClientRect().top + posVisual }))
+      .sort((a, b) => a.topo - b.topo);
+  };
+
+  /* escalonamento em 110ms dentro da mesma leva, com teto de 5 passos para o
+     último item de um bloco grande não ficar esperando */
+  const pintarEntradas = limite => {
+    if (!alvos.length) return;
+    let n = 0, i = 0;
+    while (n < alvos.length && alvos[n].topo < limite) {
+      const el = alvos[n].el;
+      el.style.setProperty('--d', Math.min(i++, 5) * 70 + 'ms');
+      entrar(el);
+      n++;
+    }
+    if (n) alvos = alvos.slice(n);
+  };
+
+  document.querySelectorAll('.help-item,.stat').forEach((el, i) => { el.dataset.col = i % 3; });
+
+  /* ---- FAQ ----
+     Um item aberto por vez. A altura é animada de 0 até a altura real medida e,
+     ao terminar, vai para auto: assim a resposta acompanha troca de idioma e
+     redimensionamento sem max-height chutado. O hidden só sai na abertura,
+     senão o conteúdo fechado continuaria acessível ao leitor de tela. */
+  /* Serve FAQ e "O que eu faço": os dois têm a mesma mecânica, muda só a
+     classe do gatilho. Um item aberto por vez dentro de cada grupo. */
+  const perguntas = [...document.querySelectorAll('.faq-q, .hi-q')];
+  if (perguntas.length) {
+    const grupoDe = btn => btn.classList.contains('hi-q') ? 'hi' : 'faq';
+    const DUR = reduced ? 20 : 620;
+    const timers = new WeakMap();
+
+    /* O fim do movimento é resolvido por temporizador, não por transitionend:
+       aquele evento não dispara se a transição for interrompida no meio, e o
+       painel ficaria preso em height fixo ou sem o hidden de volta. */
+    const agendar = (painel, fn) => {
+      clearTimeout(timers.get(painel));
+      timers.set(painel, setTimeout(fn, DUR));
+    };
+
+    const fechar = btn => {
+      const painel = document.getElementById(btn.getAttribute('aria-controls'));
+      btn.setAttribute('aria-expanded', 'false');
+      painel.style.height = painel.scrollHeight + 'px';
+      void painel.offsetHeight;                 // fixa a altura antes de zerar
+      painel.classList.remove('open');
+      painel.style.height = '0px';
+      agendar(painel, () => { painel.hidden = true; });
+    };
+
+    const abrir = btn => {
+      const painel = document.getElementById(btn.getAttribute('aria-controls'));
+      painel.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      painel.style.height = '0px';
+      void painel.offsetHeight;
+      painel.classList.add('open');
+      painel.style.height = painel.scrollHeight + 'px';
+      /* auto no fim: a resposta acompanha troca de idioma e redimensionamento
+         sem depender de um número gravado */
+      agendar(painel, () => { painel.style.height = 'auto'; });
+    };
+
+    perguntas.forEach(btn => btn.addEventListener('click', () => {
+      const aberto = btn.getAttribute('aria-expanded') === 'true';
+      /* fecha só os irmãos do mesmo grupo: abrir uma pergunta do FAQ não pode
+         fechar um item de "O que eu faço" na outra ponta da página */
+      perguntas.forEach(o => {
+        if (o !== btn && grupoDe(o) === grupoDe(btn) && o.getAttribute('aria-expanded') === 'true') fechar(o);
+      });
+      aberto ? fechar(btn) : abrir(btn);
+    }));
+  }
 
   /* ---- count-up ----
      Só uma vez por número, só quando visível, e desacelerando no fim.
@@ -481,13 +721,20 @@
      Header, inversão sobre a faixa clara e scrub dividem o mesmo frame.
      Listeners separados brigavam pelo mesmo tick e liam layout três vezes. */
   let scrubWords = [], wordTops = [], litCount = 0;
-  let lastY = window.scrollY, queued = false;
+  let lastY = window.scrollY, queued = false, headHidden = false;
+
+  /* Com a rolagem suave por transform, a posição real (window.scrollY) e a
+     posição que está na tela deixam de coincidir enquanto o conteúdo alcança.
+     Header e scrub precisam seguir o que se vê, não o número do sistema, senão
+     acendem palavra e escondem topo antes da hora. Sem suavização as duas são
+     a mesma coisa e nada muda. */
+  let posVisual = window.scrollY, suavizando = false;
+  const estreito = window.matchMedia('(max-width: 899px)');
 
   /* mede uma vez e guarda a posição absoluta: ler rect de 120 palavras por
      frame era o caminho curto para perder quadros */
   const measureWords = () => {
-    const sy = window.scrollY;
-    wordTops = scrubWords.map(w => w.getBoundingClientRect().top + sy);
+    wordTops = scrubWords.map(w => w.getBoundingClientRect().top + posVisual);
     litCount = 0;
     scrubWords.forEach(w => w.classList.remove('lit'));
   };
@@ -500,21 +747,76 @@
     litCount = n;
   };
 
+  /* ===== FUNDOS DE VIDRO LÍQUIDO FORA DA TELA =====
+     São três seções com quatro massas animadas cada uma. Doze camadas em
+     movimento permanente é exatamente o tipo de custo que este projeto já pagou
+     caro uma vez, e nenhuma delas precisa animar enquanto está fora do campo de
+     visão: ninguém vê a diferença, e o compositor deixa de recompor a camada.
+     A margem de uma tela para cada lado garante que a seção já chegue em
+     movimento, sem o salto de uma animação que começa do zero na borda.
+     Mede uma vez e reaproveita: getBoundingClientRect por quadro anularia a
+     economia. As posições são recalculadas junto com os alvos de entrada. */
+  let fundos = [];
+  const medirFundos = () => {
+    fundos = [...document.querySelectorAll('.liquid-bg')].map(el => {
+      const r = el.getBoundingClientRect();
+      return { el, topo: r.top + posVisual, base: r.bottom + posVisual, ativo: null };
+    });
+  };
+  const pintarFundos = y => {
+    if (!fundos.length) return;
+    const folga = window.innerHeight;
+    for (const f of fundos) {
+      const perto = f.base > y - folga && f.topo < y + window.innerHeight + folga;
+      if (perto === f.ativo) continue;
+      f.ativo = perto;
+      f.el.classList.toggle('parado', !perto);
+    }
+  };
+
   const readScroll = () => {
     queued = false;
-    const y = window.scrollY;
+    const y = posVisual;
 
-    headEl.style.transform = (y > lastY && y > 200) ? 'translateY(-130%)' : 'translateY(0)';
+    /* Só escreve o transform quando o estado vira. Reescrever a cada quadro
+       invalidava o backdrop-filter do .menu-btn, que é filho do header: o
+       navegador recalculava o desfoque em todo quadro da rolagem, na página
+       inteira. Era a causa do engasgo constante. */
+    const esconder = y > lastY && y > 200;
+    if (esconder !== headHidden) {
+      headHidden = esconder;
+      headEl.style.transform = esconder ? 'translateY(-130%)' : 'translateY(0)';
+    }
     lastY = y;
 
     if (scrubWords.length) paintScrub(y + window.innerHeight * .72);
+    /* 0.6 e não 0.88: o conteúdo só começa a se revelar quando a seção já
+       entrou fundo na tela, e não assim que encosta na borda de baixo. É o que
+       dá a sensação de capítulo. No estreito antecipa para 0.82, senão o
+       celular mostra tela vazia por tempo demais. */
+    pintarEntradas(y + window.innerHeight * (estreito.matches ? .86 : .74));
+    pintarFundos(y);
   };
 
-  const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(readScroll); } };
+  /* sem suavização a posição visual é a própria rolagem; com ela, quem manda
+     em posVisual é o laço do transform, e este listener não deve interferir */
+  const onScroll = () => {
+    if (suavizando) return;
+    posVisual = window.scrollY;
+    if (!queued) { queued = true; requestAnimationFrame(readScroll); }
+  };
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', () => { if (scrubWords.length) measureWords(); onScroll(); }, { passive: true });
+  window.addEventListener('resize', () => {
+    if (scrubWords.length) measureWords();
+    medirAlvos();
+    medirFundos();
+    medirDeslocamentoNome();
+    onScroll();
+  }, { passive: true });
+  /* a fonte chega depois do primeiro layout e muda a altura do bloco */
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirDeslocamentoNome);
 
-  if (!reduced) {
+  if (!reduced && !flag('noscrub')) {
     buildScrub = () => {
       document.querySelectorAll('.about-lead, .case-section p').forEach(p => {
         p.classList.add('scrub');
@@ -528,47 +830,106 @@
     buildScrub();
     /* a fonte chega depois do primeiro layout e desloca tudo */
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => { if (scrubWords.length) { measureWords(); readScroll(); } });
+      document.fonts.ready.then(() => {
+        if (scrubWords.length) measureWords();
+        medirAlvos();
+        medirFundos();
+        readScroll();
+      });
     }
   }
+  medirAlvos();
+  medirFundos();
   readScroll();
 
-  /* ---- scroll suave por inércia ----
-     Só a roda do mouse é interceptada. Toque, teclado, âncoras e barra de
-     rolagem seguem nativos, e o alvo resincroniza quando a rolagem vem de
-     outra origem. Decaimento por tempo, para não acelerar em telas de 120Hz. */
-  if (!reduced && fine) {
-    const LERP = .115;   // um pouco mais macio, ainda sem atraso perceptível
-    const WHEEL = .9;    // multiplicador da roda
-    let target = window.scrollY, curr = target, raf = 0, driving = false, prev = 0;
-    const maxY = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  /* ================== ROLAGEM SUAVE POR TRANSFORM ==================
+     A versão anterior capturava a roda com {passive:false} + preventDefault e
+     dirigia a página com window.scrollTo() a cada quadro. Duas coisas erradas:
+     o listener não-passivo obriga o Chrome a esperar o JS antes de rolar um
+     pixel sequer, e o scrollTo provoca rolagem real, com repintura do conteúdo
+     exposto, na thread principal. Em tela de alta taxa de atualização isso
+     estoura o orçamento do quadro e engasga. Foi o que Pedro sentiu, e o teste
+     confirmou: só ?nosmooth=1 (rolagem nativa) corria liso, e nenhuma camada
+     visual era culpada.
 
-    const release = () => { if (raf) cancelAnimationFrame(raf); raf = 0; driving = false; prev = 0; };
+     Modelo atual, o mesmo do GSAP ScrollSmoother e do Locomotive: a roda nunca
+     é interceptada, então a rolagem nativa acontece no compositor, como sempre.
+     O conteúdo vive num container fixo que segue a posição real com atraso
+     suave, via translate3d. Transform é composto na GPU e não repinta nada, o
+     que reduz o trabalho por quadro a praticamente zero.
 
-    const step = now => {
-      const dt = prev ? Math.min(now - prev, 50) : 16.7;
-      prev = now;
-      curr += (target - curr) * (1 - Math.pow(1 - LERP, dt / 16.7));
-      if (Math.abs(target - curr) < .4) { curr = target; window.scrollTo(0, curr); release(); return; }
-      window.scrollTo(0, curr);
-      raf = requestAnimationFrame(step);
+     Os elementos fixos (véu, orbes, grão, header e os overlays injetados) ficam
+     fora do container de propósito: transform cria bloco de contenção e
+     quebraria position:fixed dentro dele. */
+  const podeSuavizar = !reduced && fine && !flag('nosmooth')
+                       && document.querySelector('main');
+
+  if (podeSuavizar) {
+    /* Quanto menor o lerp, mais longa a cauda em que a imagem ainda desliza
+       depois que a roda para, que é a continuidade do midu.design. .1 é o
+       padrão do Lenis. Ajustável sem editar arquivo: ?lerp=0.08 na URL. */
+    const LERP = Math.min(.4, Math.max(.02,
+      parseFloat(new URLSearchParams(location.search).get('lerp')) || .04));
+
+    suavizando = true;
+    const holder = document.createElement('div');
+    holder.className = 'smooth-holder';
+    const mainEl = document.querySelector('main');
+    const footEl = document.querySelector('footer');
+    mainEl.parentNode.insertBefore(holder, mainEl);
+    holder.appendChild(mainEl);
+    if (footEl) holder.appendChild(footEl);
+    document.documentElement.classList.add('smooth');
+
+    let curr = window.scrollY, raf = 0, altura = 0;
+
+    /* o corpo precisa ter a altura do conteúdo para a barra de rolagem nativa
+       existir e o scroll do sistema funcionar como sempre */
+    const medir = () => {
+      altura = holder.getBoundingClientRect().height;
+      document.body.style.height = altura + 'px';
+      if (scrubWords.length) measureWords();
+      medirAlvos();
+      medirFundos();
     };
 
-    window.addEventListener('wheel', e => {
-      if (e.ctrlKey) return;                                   // pinça de zoom
-      if (document.body.classList.contains('locked')) return;  // portal ou overlay aberto
-      if (e.target.closest && e.target.closest('.overlay')) return;
-      e.preventDefault();
-      if (!driving) { curr = target = window.scrollY; driving = true; prev = 0; }
-      const delta = (e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * WHEEL;
-      target = Math.min(maxY(), Math.max(0, target + delta));
-      if (!raf) raf = requestAnimationFrame(step);
-    }, { passive: false });
+    const aplicar = () => {
+      const alvo = window.scrollY;
+      curr += (alvo - curr) * LERP;
+      if (Math.abs(alvo - curr) < .08) curr = alvo;
+      /* arredonda para pixel inteiro: posição fracionária obriga o navegador a
+         rasterizar o texto de novo a cada quadro e produz tremor */
+      holder.style.transform = 'translate3d(0,' + (-Math.round(curr * 100) / 100) + 'px,0)';
+      posVisual = curr;
+      readScroll();
+      raf = (curr === alvo) ? 0 : requestAnimationFrame(aplicar);
+    };
 
-    window.addEventListener('scroll', () => { if (!driving) target = curr = window.scrollY; }, { passive: true });
-    /* âncoras e skip link rolam nativo: devolve o controle antes de brigarem */
-    document.addEventListener('click', e => { if (e.target.closest('a[href^="#"]')) release(); }, true);
-    window.addEventListener('pagehide', release);
+    const acordar = () => { if (!raf) raf = requestAnimationFrame(aplicar); };
+    window.addEventListener('scroll', acordar, { passive: true });
+
+    /* Âncoras e skip link: a posição do alvo na tela vem do transform, que está
+       atrasado em relação à rolagem real. Sem traduzir para coordenada de
+       conteúdo, o "role para explorar" e o menu param no lugar errado.
+       Rola instantâneo de propósito: quem faz o movimento suave é o lerp. */
+    document.addEventListener('click', e => {
+      const link = e.target.closest('a[href^="#"]');
+      if (!link) return;
+      const id = link.getAttribute('href').slice(1);
+      if (!id) return;
+      const alvo = document.getElementById(id);
+      if (!alvo || !holder.contains(alvo)) return;
+      e.preventDefault();
+      const pos = alvo.getBoundingClientRect().top + curr;
+      const limite = Math.max(0, altura - window.innerHeight);
+      window.scrollTo(0, Math.max(0, Math.min(pos, limite)));
+    });
+
+    medir();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(medir);
+    window.addEventListener('resize', medir, { passive: true });
+    if (window.ResizeObserver) new ResizeObserver(medir).observe(holder);
+    acordar();
   }
 
   const glow = document.querySelector('.cursor-glow');

@@ -68,8 +68,73 @@ header e scrub. Não adicione outro: some no
 laço existente em `js/main.js`.
 
 O scroll por inércia é próprio, sem biblioteca, com decaimento por tempo
-(lerp .115, roda a .9). Intercepta só a roda do mouse. Toque, teclado, âncoras
+(lerp .18, roda a 1). Intercepta só a roda do mouse. Toque, teclado, âncoras
 e barra de rolagem seguem nativos.
+
+**Abrir com `?nosmooth=1` desliga a inércia** e devolve a rolagem nativa. É a
+chave de comparação para separar custo de pintura de custo de dirigir o scroll
+por JS. O painel de preview do Claude Code não reproduz nenhum dos dois: ele
+roda sem sincronia vertical e mediu 4,2ms por quadro com ou sem
+`backdrop-filter` e com ou sem `mix-blend-mode`. Qualquer investigação de
+fluidez precisa acontecer no navegador real.
+
+**A rolagem suave é por transform, não por `window.scrollTo`.** O conteúdo
+(`main` + `footer`) é envolvido pelo `.smooth-holder`, que é `position:fixed` e
+persegue `window.scrollY` com `translate3d`. A roda nunca é interceptada, então
+a rolagem nativa segue no compositor. A versão anterior usava
+`{passive:false}` + `preventDefault` + `scrollTo` por quadro e engasgava.
+
+**Isso quebra tudo que depende de interseção com a viewport.** O navegador não
+reavalia interseção quando o deslocamento vem de transform de ancestral. Duas
+consequências já custaram caro e não podem voltar:
+- `IntersectionObserver` não dispara. Por isso a entrada dos blocos é feita por
+  comparação de posição dentro do laço de scroll (`medirAlvos`/`pintarEntradas`),
+  não por observador. Sem isso, tudo abaixo da primeira dobra fica invisível.
+- `loading="lazy"` nunca carrega. Nenhuma imagem do site pode usá-lo.
+
+Âncoras também precisam de tradução: a posição do alvo na tela vem do transform
+atrasado, então o clique em `a[href^="#"]` é interceptado e convertido para
+coordenada de conteúdo antes de rolar.
+
+**As camadas fixas de fundo levam `will-change:transform`** (`.glow`, `.grain`
+e `header`). Rolagem dirigida por JS repinta todo `position:fixed` a cada
+quadro; promovidas ao compositor, elas viram textura pronta na GPU. É disso
+que o Lenis do midu.design depende para parecer fluido. Não espalhe
+`will-change` além dessas três: em excesso ele consome memória de vídeo e
+piora o que deveria melhorar.
+
+**`mix-blend-mode` em tela cheia custa tanto quanto `filter:blur()`.** Uma
+camada fixa cobrindo o viewport com blend obriga o navegador a remisturar tudo
+a cada quadro. O `.grain` global usa opacidade simples por isso. Blend segue
+permitido em elemento pequeno, onde a área é limitada.
+
+**O fundo de vidro líquido é um componente só, `.liquid-bg`,** usado por capa,
+projetos e sobre. Quatro massas animadas por transform (`.lq1` a `.lq4`), uma
+base quente e uma vinheta, ambas com `background-size:100% 100vh` e
+`repeat-y`: as massas se ancoram nas bordas do bloco, então numa seção de três
+telas o miolo ficaria vazio se a cor viesse só delas. `.hero-liquid` é apenas
+o acréscimo da capa, o esmaecimento durante a intro. Mudou a composição, mudou
+nas três seções.
+
+**Fundo fora da tela não anima.** São doze camadas em movimento se todas
+rodarem juntas. O laço de scroll marca `.parado` no que está a mais de uma tela
+de distância e o CSS aplica `animation-play-state:paused`. Nada de
+`display:none` ali: a camada precisa continuar composta para não repintar do
+zero ao voltar. `medirFundos()` acompanha `medirAlvos()` em toda remedição.
+
+## Sangramento de ponta a ponta
+
+**Use `var(--vw)`, medido pelo JS, e não `calc(100vw - var(--sbw))`.** A regra
+antiga assumia que `100vw` inclui a barra de rolagem. Isso era verdade e deixou
+de ser quando `html` ganhou `scrollbar-gutter:stable`: o Chrome passou a
+resolver `100vw` já sem a calha, e o desconto virou desconto em dobro. O
+sintoma era discreto, 7,5px de folga de cada lado, e por isso sobreviveu muito
+tempo em capa, sobre, FAQ, marquee e faixa de projetos.
+
+`--vw` é `document.documentElement.clientWidth`, medido em `resize` e também
+por um `ResizeObserver` no `documentElement`. O observador não é redundante:
+abrir um item do FAQ numa página curta faz a barra de rolagem nascer e encolhe
+a largura útil sem disparar `resize`.
 
 ## Escrita
 
@@ -99,10 +164,10 @@ preview) reportam essa preferência por padrão, e no Windows também acontece c
 "Efeitos de animação" desligado. Antes de investigar o código, confirme a
 preferência.
 
-**`100vw` inclui a barra de rolagem.** Elementos que sangram de ponta a ponta
-precisam de `calc(100vw - var(--sbw))`, com `--sbw` medido pelo JS. Ignorar isso
-gera overflow horizontal e deixa a faixa curta à direita. `html` e `body` usam
-`overflow-x:clip` como rede.
+**Sangramento de ponta a ponta: veja a seção própria acima.** `html` e `body`
+usam `overflow-x:clip` como rede, e é justamente por isso que um sangramento
+errado não gera overflow visível e pode passar batido: confira a largura
+medida, não a ausência de barra horizontal.
 
 **O CSS só esconde os `.reveal` se `<html>` tiver a classe `js`,** que o próprio
 `js/main.js` adiciona. Sem isso a página continua legível caso o JS falhe. Não
@@ -127,7 +192,39 @@ com `measureCta`. Declare helpers usados por `setLang` acima dele.
 `.hero` sobe acima dele (`body.intro-mode`), então o `.hero-name` é literalmente
 o mesmo elemento nas duas etapas: nenhum crossfade entre cópias, nenhum salto.
 O que muda é só a escala, via `--nscale` 1.06 -> 1 com `transform-origin:50% 50%`,
-que mantém o centro fixo. Roda uma vez por sessão via `sessionStorage`.
+que mantém o centro fixo.
+
+**A intro roda em toda abertura da home**, com `INTRO_MS` de 3000ms de exibição
+mínima. Não há `sessionStorage`: é assinatura de entrada e Pedro quer que ela
+seja vista sempre. Só `prefers-reduced-motion` pula.
+
+**A linha do tempo da intro mora só no `js/main.js`** e desce para o CSS por
+variável: `--intro-reveal` 1200ms, `--intro-move` 1800ms, `--intro-dur` 3000ms
+e `--intro-veil` 2700ms. Nenhuma duração de intro pode ser escrita direto no
+CSS. Ao mudar o total, escale tudo pelo mesmo fator, inclusive
+`SECUNDARIOS_MS`, a saída do véu e as durações de `.hero-tag`, `.hero-when`,
+`.hero-claim` e do indicador: mexer só no total muda o ritmo interno, não a
+duração.
+
+**As durações dos secundários precisam do prefixo `.js`** (`.js .h-step.hero-tag`).
+Sem ele perdem para `.js .h-step`, que declara a transição inteira com
+`--dur-slow`, e o escalonamento simplesmente não acontece. Os atrasos valem
+porque empatam em especificidade e vêm depois, então o sintoma é sutil: a
+sequência escalona, mas todas as peças duram o mesmo.
+
+**A intro espera a página ficar visível para começar.** O `name-in`, que levanta
+o nome, depende de `requestAnimationFrame`, que não dispara em aba de segundo
+plano; os `setTimeout` disparam. Sem a guarda de `visibilityState`, quem abre o
+site numa aba de fundo e volta depois de 2s encontra a intro já terminada, ou
+pior, um véu preto parado. Se mexer na intro, mantenha essa guarda.
+
+**O nome da hero é uma linha só, sempre.** `white-space:nowrap` e tamanho
+proporcional à viewport. O texto ocupa exatamente 8,0x o `font-size` (medido,
+estável depois de `document.fonts.ready`), e o `clamp(1.5rem,10.4vw,8.3rem)`
+sai dessa razão com folga de ~5%. O teto existe porque `.wrap` trava em 1280px,
+então acima disso a largura útil para de crescer e fica fixa em 1120px.
+Mexer em `letter-spacing`, no peso ou na fonte muda a razão e exige recalibrar,
+senão o nome volta a quebrar ou a estourar a lateral.
 
 **A hero centra o nome porque só ele está no fluxo.** Tag, carimbo e "role para
 explorar" são absolutos. Se algum deles voltar ao fluxo, o nome sai do centro do

@@ -1,0 +1,84 @@
+{
+  "$schema": "Este arquivo é lido em tempo real pelo site (js/content.js) e editado pelo painel administrativo. Os valores abaixo são exatamente os que o site já usava antes do CMS existir: instalar o sistema não muda a aparência.",
+
+  "colors": {
+    "background": { "hex": "#0D0A0A", "opacity": 100 },
+    "backgroundSecondary": { "hex": "#261B1D", "opacity": 100 },
+    "surface": { "hex": "#403638", "opacity": 100 },
+    "textPrimary": { "hex": "#F2EEEE", "opacity": 100 },
+    "textSecondary": { "hex": "#B7ACAC", "opacity": 100 },
+    "textMuted": { "hex": "#8A7E7E", "opacity": 100 },
+    "accent": { "hex": "#A29595", "opacity": 100 },
+    "highlight": { "hex": "#C9BDBD", "opacity": 100 },
+    "heroName": { "hex": "#C2B3B3", "opacity": 100 },
+    "borderColor": { "hex": "#736868", "opacity": 20 },
+    "borderColorStrong": { "hex": "#736868", "opacity": 36 }
+  },
+
+  "typography": {
+    "fontFamily": "Switzer",
+    "availableFonts": ["Switzer"],
+    "weightMedium": 500,
+    "weightRegular": 400,
+    "weightLight": 300,
+    "maxWeight": 500
+  },
+
+  "borders": {
+    "radiusCard": 22,
+    "radiusImage": 18,
+    "radiusButton": 100,
+    "radiusField": 12,
+    "borderWidth": 1,
+    "borderStyle": "solid"
+  },
+
+  "layout": {
+    "$note": "Os valores de espaçamento aqui controlam o teto em telas grandes (o site continua fluido entre esse teto e o mínimo já programado em CSS). O celular tem seu próprio ajuste fixo no CSS e não é controlado por este arquivo na v1.",
+    "contentMaxWidth": 1680,
+    "pageGutterDesktop": 56,
+    "pageGutterMobile": 20,
+    "sectionSpacingTop": 96,
+    "sectionSpacingBottom": 80,
+    "gridGap": 25.6,
+    "breakpoints": { "tablet": 899, "desktop": 900 }
+  },
+
+  "motion": {
+    "durationHover": 420,
+    "durationMicro": 350,
+    "durationFast": 500,
+    "durationDefault": 700,
+    "durationSlow": 1000
+  },
+
+  "header": {
+    "showLanguageSwitch": true,
+    "showContactButton": true,
+    "menu": [
+      { "pt": "Início",    "en": "Home",  "hrefHome": "index.html",       "hrefWork": "index.html" },
+      { "pt": "Sobre",     "en": "About", "hrefHome": "index.html#about", "hrefWork": "index.html#about" },
+      { "pt": "Trabalhos", "en": "Work",  "hrefHome": "index.html#work",  "hrefWork": "index.html#work" }
+    ]
+  },
+
+  "footer": {
+    "disclaimerPt": "Site inteiramente planejado e desenvolvido por Pedro de Trindade.",
+    "disclaimerEn": "Website fully planned and developed by Pedro de Trindade.",
+    "marqueeText": "Pedro de Trindade."
+  },
+
+  "social": {
+    "linkedin": "https://www.linkedin.com/in/pedrodetrindade",
+    "behance": "https://www.behance.net/pedrodetrindade",
+    "email": "contact@pedrodetrindade.com"
+  },
+
+  "seo": {
+    "siteName": "Pedro de Trindade",
+    "titleSuffix": " · Pedro de Trindade",
+    "defaultDescriptionPt": "Pedro de Trindade, diretor de arte e designer sênior. Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.",
+    "ogImage": "assets/og-image.png",
+    "themeColor": "#0D0A0A"
+  }
+}
