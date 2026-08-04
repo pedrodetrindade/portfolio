@@ -18,23 +18,23 @@
       "opacity": 100
     },
     "textSecondary": {
-      "hex": "#B7ACAC",
+      "hex": "#b7acac",
       "opacity": 100
     },
     "textMuted": {
-      "hex": "#8A7E7E",
+      "hex": "#8a7e7e",
       "opacity": 100
     },
     "accent": {
-      "hex": "#A29595",
+      "hex": "#a29595",
       "opacity": 100
     },
     "highlight": {
-      "hex": "#C9BDBD",
+      "hex": "#ffffff",
       "opacity": 100
     },
     "heroName": {
-      "hex": "#C2B3B3",
+      "hex": "#eae8e6",
       "opacity": 100
     },
     "borderColor": {
