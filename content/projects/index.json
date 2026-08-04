@@ -103,30 +103,6 @@
       "cover": "assets/projetos/case-04/capa.jpg",
       "coverMobile": "",
       "coverLight": true
-    },
-    {
-      "slug": "case-04-copia",
-      "visible": false,
-      "featured": false,
-      "cardSize": "normal",
-      "order": 5,
-      "titlePt": "Identidade visual e campanha integrada (cópia)",
-      "titleEn": "Visual identity and integrated campaign (copy)",
-      "subtitlePt": "Lançamento, marca",
-      "subtitleEn": "Launch, brand",
-      "category": "identidade",
-      "tagsPt": [
-        "identidade",
-        "sistema visual"
-      ],
-      "tagsEn": [
-        "identity",
-        "visual system"
-      ],
-      "year": 2024,
-      "cover": "assets/projetos/case-04/capa.jpg",
-      "coverMobile": "",
-      "coverLight": true
     }
   ]
 }
