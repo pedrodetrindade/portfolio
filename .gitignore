@@ -2,6 +2,12 @@
 Thumbs.db
 .claude/
 
+# Pacote completo da fonte Switzer (OTF/TTF/EOT + pesos que o site não usa).
+# O site só carrega assets/fonts/Switzer-Variable.woff2 (43KB); mantenha o
+# pacote no disco para consulta, mas fora do repositório.
+Switzer_Complete/
+Switzer_Complete.zip
+
 # CMS / Cloudflare Worker — nunca versionar segredos ou dependências locais
 worker/node_modules/
 worker/.wrangler/
