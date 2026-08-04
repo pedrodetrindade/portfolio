@@ -151,28 +151,25 @@ e ainda "desliza" de lado ao entrar. Já aconteceu: a transição de
 `translateX(10px)` → `none`, produzindo um botão torto com uma animação
 lateral indesejada em vez de só opacidade e um leve movimento vertical.
 
-**O header não tem fundo próprio, só uma vinheta fixa (`header::before`) que
-escurece o topo da tela, igual à `.lq-veil` da capa.** Marca, status de
-disponibilidade e seletor de idioma não têm contraste garantido contra o que
-rola por baixo do header fixo (uma capa de projeto clara, o retrato do
-Sobre); sem essa vinheta o contraste virava loteria dependendo da seção.
-É gradiente puro (`rgba(var(--ink-rgb),...)`), sem `backdrop-filter`: a
-vinheta do rodapé (`.edge-blur`) continua sendo o único blur em área larga do
-site.
-
-**A vinheta do header precisa continuar opaca (~.86) até depois da altura real
-do conteúdo, não só até a metade da própria caixa.** A primeira versão
-esmaecia a partir de 55% de uma caixa de `clamp(6rem,15vh,10rem)` e, no pior
-caso (6rem = 96px), a pílula de Menu/Disponibilidade (~85px de fundo do
-header) já caía numa faixa a ~0.34 de opacidade, contraste insuficiente sobre
-um fundo bem claro. Agora o trecho forte vai até 80% de uma caixa com piso de
-`7rem`, cobrindo o conteúdo real do header com margem antes de começar a
-esmaecer. `.avail` ("Disponível para projetos") também perdeu o
-`color:var(--muted-2)` com `opacity:.82`: mesmo com a vinheta mais forte,
-combinar uma cor já baixa com uma opacidade extra por cima não sobrava
-contraste sobre fundo muito claro. Passou para `--muted` sem opacity extra,
-que ainda lê mais quieto que o Menu (esse em `--paper`, peso Medium) sem
-depender só da vinheta para ficar legível.
+**O header não tem fundo próprio.** Marca, pílula de Menu/Disponibilidade e
+seletor de idioma não têm contraste garantido contra o que rola por baixo do
+header fixo (uma capa de projeto clara, o retrato do Sobre): sem alguma
+proteção o contraste virava loteria dependendo da seção. A primeira tentativa
+foi uma vinheta de largura cheia (`header::before`, gradiente escuro fixo no
+topo, sem blur). Funcionava, mas pintava uma faixa visível mesmo sobre o
+fundo escuro padrão do site, lendo como uma sombra que não deveria estar ali.
+Foi trocada por `filter:drop-shadow(...)` direto em `.brand`, `.menu-btn`,
+`.avail` e `.lp-toggle`: dois drop-shadow empilhados (um justo, para nitidez
+da borda do glifo; um mais largo, para segurar contraste até sobre fundo bem
+claro). `filter` e não `text-shadow` porque também precisa cobrir os ícones
+SVG (seta do idioma, ponto do Menu), e `text-shadow` não pinta forma
+vetorial. Sem retângulo pintado: invisível sobre o próprio fundo escuro do
+site, só aparece (como halo escuro em volta da letra) quando o fundo por trás
+realmente precisa. `.avail` ("Disponível para projetos") também perdeu o
+`color:var(--muted-2)` com `opacity:.82`: combinar uma cor já baixa com uma
+opacidade extra por cima não sobrava contraste sobre fundo muito claro, nem
+com o drop-shadow. Passou para `--muted` sem opacity extra, que ainda lê mais
+quieto que o Menu (esse em `--paper`, peso Medium).
 
 ## Sangramento de ponta a ponta
 

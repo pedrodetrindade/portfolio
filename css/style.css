@@ -311,22 +311,22 @@ body.intro-mode{overflow:hidden}
 
 header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
   transition:transform var(--dur-default) var(--ease-out-smooth)}
-/* Vinheta fixa do topo: mesma lógica da .lq-veil, protege o contraste do texto
-   do header puxando o miolo de volta para o fundo do site. Sem ela, marca,
-   status e o seletor de idioma liam a cor de qualquer coisa que rolasse por
-   baixo (capa de projeto clara, retrato claro) e o contraste virava loteria.
-   Gradiente puro, sem blur: a regra de "backdrop-filter só no rodapé" continua
-   valendo, isso aqui é só tinta.
-   A primeira versão começava a esmaecer a 55% da própria altura e chegava ao
-   conteúdo real do header (~85px, margem + pílula) já em ~0.34 de opacidade,
-   contraste insuficiente sobre um fundo claro. Agora o trecho forte (.86) vai
-   até 80% de uma caixa com piso de 7rem (112px): o conteúdo do header sempre
-   cai dentro da parte forte, e só o excedente decorativo, abaixo dele, esmaece. */
-header::before{content:"";position:absolute;left:0;right:0;top:0;
-  height:clamp(7rem,15vh,10rem);z-index:-1;pointer-events:none;
-  background:linear-gradient(to bottom,rgba(var(--ink-rgb),.86) 0%,
-    rgba(var(--ink-rgb),.86) 80%,transparent 100%)}
 .nav{margin:1.1rem var(--gutter);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1.4rem}
+/* ===== CONTRASTE DO HEADER SOBRE QUALQUER FUNDO =====
+   Uma vinheta de largura cheia (header::before) chegou a existir aqui, mas
+   pintava uma faixa escura visível mesmo sobre o fundo escuro padrão do site,
+   lendo como uma sombra indevida. drop-shadow resolve o mesmo problema (marca,
+   pílula de Menu/Disponibilidade e seletor de idioma sem contraste garantido
+   contra o que rola por baixo) sem pintar retângulo nenhum: escurece só o
+   contorno de cada glifo e ícone, then invisível sobre o próprio fundo escuro
+   do site e só aparece quando o fundo por baixo realmente precisa dele. Dois
+   drop-shadow empilhados: um justo, para nitidez da borda, e um mais largo,
+   para segurar contraste até sobre fundo bem claro (testado com uma imagem
+   quase branca atrás do header). filter, não text-shadow, porque também
+   precisa cobrir os ícones SVG (seta do idioma, ponto do Menu). */
+.brand,.menu-btn,.avail,.lp-toggle{
+  filter:drop-shadow(0 1px 2px rgba(var(--ink-rgb),.7))
+         drop-shadow(0 0 7px rgba(var(--ink-rgb),.55))}
 /* ===== CAIXA COMPARTILHADA: MENU + DISPONIBILIDADE =====
    Um contorno só, um raio só, um material só. O fundo e a borda vivem no
    container; o botão e o status ficam sem contorno próprio, senão o conjunto
