@@ -105,30 +105,6 @@
       "coverLight": true
     },
     {
-      "slug": "case-02-copia",
-      "visible": false,
-      "featured": false,
-      "cardSize": "normal",
-      "order": 5,
-      "titlePt": "Direção de arte e comunicação de marca (cópia)",
-      "titleEn": "Art direction and brand communication (copy)",
-      "subtitlePt": "Campanha, comunicação",
-      "subtitleEn": "Campaign, communication",
-      "category": "direcao-de-arte",
-      "tagsPt": [
-        "direção de arte",
-        "campanha"
-      ],
-      "tagsEn": [
-        "art direction",
-        "campaign"
-      ],
-      "year": 2025,
-      "cover": "assets/projetos/case-02/capa.jpg",
-      "coverMobile": "",
-      "coverLight": false
-    },
-    {
       "slug": "case-02-copia-copia",
       "visible": false,
       "featured": false,
