@@ -1,29 +1,61 @@
 {
   "$schema": "Este arquivo é lido em tempo real pelo site (js/content.js) e editado pelo painel administrativo. Os valores abaixo são exatamente os que o site já usava antes do CMS existir: instalar o sistema não muda a aparência.",
-
   "colors": {
-    "background": { "hex": "#0D0A0A", "opacity": 100 },
-    "backgroundSecondary": { "hex": "#261B1D", "opacity": 100 },
-    "surface": { "hex": "#403638", "opacity": 100 },
-    "textPrimary": { "hex": "#F2EEEE", "opacity": 100 },
-    "textSecondary": { "hex": "#B7ACAC", "opacity": 100 },
-    "textMuted": { "hex": "#8A7E7E", "opacity": 100 },
-    "accent": { "hex": "#A29595", "opacity": 100 },
-    "highlight": { "hex": "#C9BDBD", "opacity": 100 },
-    "heroName": { "hex": "#C2B3B3", "opacity": 100 },
-    "borderColor": { "hex": "#736868", "opacity": 20 },
-    "borderColorStrong": { "hex": "#736868", "opacity": 36 }
+    "background": {
+      "hex": "#0D0A0A",
+      "opacity": 100
+    },
+    "backgroundSecondary": {
+      "hex": "#261B1D",
+      "opacity": 100
+    },
+    "surface": {
+      "hex": "#403638",
+      "opacity": 100
+    },
+    "textPrimary": {
+      "hex": "#F2EEEE",
+      "opacity": 100
+    },
+    "textSecondary": {
+      "hex": "#B7ACAC",
+      "opacity": 100
+    },
+    "textMuted": {
+      "hex": "#8A7E7E",
+      "opacity": 100
+    },
+    "accent": {
+      "hex": "#A29595",
+      "opacity": 100
+    },
+    "highlight": {
+      "hex": "#C9BDBD",
+      "opacity": 100
+    },
+    "heroName": {
+      "hex": "#C2B3B3",
+      "opacity": 100
+    },
+    "borderColor": {
+      "hex": "#736868",
+      "opacity": 20
+    },
+    "borderColorStrong": {
+      "hex": "#736868",
+      "opacity": 36
+    }
   },
-
   "typography": {
     "fontFamily": "Switzer",
-    "availableFonts": ["Switzer"],
+    "availableFonts": [
+      "Switzer"
+    ],
     "weightMedium": 500,
     "weightRegular": 400,
     "weightLight": 300,
     "maxWeight": 500
   },
-
   "borders": {
     "radiusCard": 22,
     "radiusImage": 18,
@@ -32,18 +64,32 @@
     "borderWidth": 1,
     "borderStyle": "solid"
   },
-
   "layout": {
     "$note": "Cada valor de espaçamento é {desktop, tablet, mobile}. tablet:null herda o número de desktop; mobile:null herda o número resolvido de tablet. Os números aqui são exatamente os que o site já usava em cada faixa (desktop >=900px, tablet 640-899px, celular <640px, os mesmos dois pontos de corte que o CSS já usava para outras coisas). Cada um controla o teto em pixels; o site continua fluido entre esse teto e o mínimo já programado no CSS.",
     "contentMaxWidth": 1680,
     "pageGutterDesktop": 56,
     "pageGutterMobile": 20,
-    "sectionSpacingTop": { "desktop": 96, "tablet": 104, "mobile": null },
-    "sectionSpacingBottom": { "desktop": 80, "tablet": 104, "mobile": null },
-    "gridGap": { "desktop": 25.6, "tablet": null, "mobile": null },
-    "breakpoints": { "mobile": 639, "tablet": 899, "desktop": 900 }
+    "sectionSpacingTop": {
+      "desktop": 96,
+      "tablet": 104,
+      "mobile": null
+    },
+    "sectionSpacingBottom": {
+      "desktop": 80,
+      "tablet": 104,
+      "mobile": null
+    },
+    "gridGap": {
+      "desktop": 25.6,
+      "tablet": null,
+      "mobile": null
+    },
+    "breakpoints": {
+      "mobile": 639,
+      "tablet": 899,
+      "desktop": 900
+    }
   },
-
   "motion": {
     "durationHover": 420,
     "durationMicro": 350,
@@ -51,29 +97,40 @@
     "durationDefault": 700,
     "durationSlow": 1000
   },
-
   "header": {
     "showLanguageSwitch": true,
     "showContactButton": true,
     "menu": [
-      { "pt": "Início",    "en": "Home",  "hrefHome": "index.html",       "hrefWork": "index.html" },
-      { "pt": "Sobre",     "en": "About", "hrefHome": "index.html#about", "hrefWork": "index.html#about" },
-      { "pt": "Trabalhos", "en": "Work",  "hrefHome": "index.html#work",  "hrefWork": "index.html#work" }
+      {
+        "pt": "Início",
+        "en": "Home",
+        "hrefHome": "index.html",
+        "hrefWork": "index.html"
+      },
+      {
+        "pt": "Sobre",
+        "en": "About",
+        "hrefHome": "index.html#about",
+        "hrefWork": "index.html#about"
+      },
+      {
+        "pt": "Trabalhos",
+        "en": "Work",
+        "hrefHome": "index.html#work",
+        "hrefWork": "index.html#work"
+      }
     ]
   },
-
   "footer": {
     "disclaimerPt": "Site inteiramente planejado e desenvolvido por Pedro de Trindade.",
     "disclaimerEn": "Website fully planned and developed by Pedro de Trindade.",
     "marqueeText": "Pedro de Trindade."
   },
-
   "social": {
     "linkedin": "https://www.linkedin.com/in/pedrodetrindade",
     "behance": "https://www.behance.net/pedrodetrindade",
     "email": "contact@pedrodetrindade.com"
   },
-
   "seo": {
     "siteName": "Pedro de Trindade",
     "titleSuffix": " · Pedro de Trindade",
