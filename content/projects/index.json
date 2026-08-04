@@ -1,6 +1,12 @@
 {
   "$schema": "Lista e ordem dos projetos exibidos na grade da Home. O conteúdo completo de cada projeto mora em content/projects/<slug>.json. coverLight marca capas predominantemente claras (ex.: o amarelo do case-04): com isso o header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima desse card, em vez de depender de sombra.",
-  "cardSizes": ["normal", "largo", "alto", "grande", "largura-completa"],
+  "cardSizes": [
+    "normal",
+    "largo",
+    "alto",
+    "grande",
+    "largura-completa"
+  ],
   "projects": [
     {
       "slug": "case-01",
@@ -13,8 +19,14 @@
       "subtitlePt": "Marca, sistema",
       "subtitleEn": "Brand, system",
       "category": "branding",
-      "tagsPt": ["branding", "design system"],
-      "tagsEn": ["branding", "design system"],
+      "tagsPt": [
+        "branding",
+        "design system"
+      ],
+      "tagsEn": [
+        "branding",
+        "design system"
+      ],
       "year": 2026,
       "cover": "assets/projetos/case-01/capa.jpg",
       "coverMobile": "",
@@ -31,8 +43,14 @@
       "subtitlePt": "Campanha, comunicação",
       "subtitleEn": "Campaign, communication",
       "category": "direcao-de-arte",
-      "tagsPt": ["direção de arte", "campanha"],
-      "tagsEn": ["art direction", "campaign"],
+      "tagsPt": [
+        "direção de arte",
+        "campanha"
+      ],
+      "tagsEn": [
+        "art direction",
+        "campaign"
+      ],
       "year": 2025,
       "cover": "assets/projetos/case-02/capa.jpg",
       "coverMobile": "",
@@ -49,8 +67,14 @@
       "subtitlePt": "Fintech, ativos digitais",
       "subtitleEn": "Fintech, digital assets",
       "category": "direcao-criativa",
-      "tagsPt": ["direção criativa", "storytelling"],
-      "tagsEn": ["creative direction", "storytelling"],
+      "tagsPt": [
+        "direção criativa",
+        "storytelling"
+      ],
+      "tagsEn": [
+        "creative direction",
+        "storytelling"
+      ],
       "year": 2025,
       "cover": "assets/projetos/case-03/capa.jpg",
       "coverMobile": "",
@@ -67,12 +91,42 @@
       "subtitlePt": "Lançamento, marca",
       "subtitleEn": "Launch, brand",
       "category": "identidade",
-      "tagsPt": ["identidade", "sistema visual"],
-      "tagsEn": ["identity", "visual system"],
+      "tagsPt": [
+        "identidade",
+        "sistema visual"
+      ],
+      "tagsEn": [
+        "identity",
+        "visual system"
+      ],
       "year": 2024,
       "cover": "assets/projetos/case-04/capa.jpg",
       "coverMobile": "",
       "coverLight": true
+    },
+    {
+      "slug": "case-02-copia",
+      "visible": false,
+      "featured": false,
+      "cardSize": "normal",
+      "order": 5,
+      "titlePt": "Direção de arte e comunicação de marca (cópia)",
+      "titleEn": "Art direction and brand communication (copy)",
+      "subtitlePt": "Campanha, comunicação",
+      "subtitleEn": "Campaign, communication",
+      "category": "direcao-de-arte",
+      "tagsPt": [
+        "direção de arte",
+        "campanha"
+      ],
+      "tagsEn": [
+        "art direction",
+        "campaign"
+      ],
+      "year": 2025,
+      "cover": "assets/projetos/case-02/capa.jpg",
+      "coverMobile": "",
+      "coverLight": false
     }
   ]
 }
