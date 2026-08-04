@@ -617,16 +617,16 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    #work fica de fora do grupo de min-height:100svh de propósito: é a seção
    mais longa da página e a mais fotografada nas revisões, então não encolhe
    com as demais. */
-#work{padding-block:clamp(5.5rem,20vh,var(--work-pad-top-desktop,13rem)) clamp(5rem,17vh,var(--work-pad-bottom-desktop,11rem))}
+#work{padding-block:var(--work-pad-top-desktop,clamp(5.5rem,20vh,13rem)) var(--work-pad-bottom-desktop,clamp(5rem,17vh,11rem))}
 /* help, faq e contact têm conteúdo curto (uma lista, um accordion, um e-mail)
    dentro de um min-height quase do tamanho da tela: era esse min-height, não
    o padding, que sobrava como vazio. 112svh estourava a tela por 12%; 100svh
    cabe nela exatamente, que é o pedido. O padding também caiu, para quando o
    conteúdo cresce (accordion aberto, texto mais longo em inglês) e passa a
    mandar mais do que o min-height. */
-#help{padding-block:clamp(3.5rem,9vh,var(--help-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--help-pad-bottom-desktop,5rem))}
-#faq{padding-block:clamp(3.5rem,9vh,var(--faq-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--faq-pad-bottom-desktop,5rem))}
-#contact{padding-block:clamp(3.5rem,9vh,var(--contact-pad-top-desktop,6rem)) clamp(3rem,7vh,var(--contact-pad-bottom-desktop,5rem))}
+#help{padding-block:var(--help-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--help-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
+#faq{padding-block:var(--faq-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--faq-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
+#contact{padding-block:var(--contact-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--contact-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
 /* #contact saiu do grupo min-height:100svh: centralizado numa caixa quase do
    tamanho da tela, o vazio entre o fim do conteúdo (redes sociais) e a linha
    do rodapé ficava grande demais em telas largas. Sem min-height, a seção
@@ -749,7 +749,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   --bleed:var(--vw,100vw);
   width:var(--bleed);position:relative;left:50%;
   margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2);
-  padding:clamp(5rem,10vh,var(--about-pad-top-desktop,8rem)) var(--gutter) clamp(4.5rem,8vh,var(--about-pad-bottom-desktop,6.5rem));
+  padding:var(--about-pad-top-desktop,clamp(5rem,10vh,8rem)) var(--gutter) var(--about-pad-bottom-desktop,clamp(4.5rem,8vh,6.5rem));
   border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 /* Precisa vir depois da regra base acima: mesma especificidade (uma classe
    só), então quem vier depois no arquivo é quem manda. As duas faixas
