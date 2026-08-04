@@ -127,6 +127,30 @@
       "cover": "assets/projetos/case-03/capa.jpg",
       "coverMobile": "",
       "coverLight": true
+    },
+    {
+      "slug": "case-03-copia-copia",
+      "visible": false,
+      "featured": false,
+      "cardSize": "normal",
+      "order": 6,
+      "titlePt": "Ativos digitais: narrativa institucional (cópia) (cópia)",
+      "titleEn": "Digital assets: institutional narrative (copy) (copy)",
+      "subtitlePt": "Fintech, ativos digitais",
+      "subtitleEn": "Fintech, digital assets",
+      "category": "direcao-criativa",
+      "tagsPt": [
+        "direção criativa",
+        "storytelling"
+      ],
+      "tagsEn": [
+        "creative direction",
+        "storytelling"
+      ],
+      "year": 2025,
+      "cover": "assets/projetos/case-03/capa.jpg",
+      "coverMobile": "",
+      "coverLight": true
     }
   ]
 }
