@@ -2,8 +2,8 @@
   "$schema": "Este arquivo é lido em tempo real pelo site (js/content.js) e editado pelo painel administrativo. Os valores abaixo são exatamente os que o site já usava antes do CMS existir: instalar o sistema não muda a aparência.",
   "colors": {
     "background": {
-      "hex": "#0d0a0a",
-      "opacity": 100
+      "hex": "#ab1c1c",
+      "opacity": 13
     },
     "backgroundSecondary": {
       "hex": "#261B1D",
