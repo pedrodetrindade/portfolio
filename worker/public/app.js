@@ -183,6 +183,8 @@
       document.getElementById('overviewBody').innerHTML =
         fieldRow('Repositório', '', esc(s.repo)) +
         fieldRow('Branch', '', esc(s.branch)) +
+        fieldRow('Autenticação', '', s.authMode === 'local-bypass' ?
+          '<span class="badge custom">bypass local (DEV_AUTH_BYPASS)</span>' : '<span class="badge default">Cloudflare Access</span>') +
         fieldRow('Cloudflare Access', '', s.accessConfigured ?
           '<span class="badge default">configurado</span>' : '<span class="badge custom">variáveis pendentes — ver README</span>');
       setStatus(true);

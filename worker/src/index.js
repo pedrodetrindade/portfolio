@@ -86,8 +86,16 @@ async function route(request, env) {
   var method = request.method;
 
   if (url.pathname === '/api/status' && method === 'GET') {
+    /* Chegar até aqui já significa que verifyAccessJWT aprovou a requisição
+       (checagem em fetch(), antes de route() ser chamado) — logo authenticated
+       é sempre true neste ponto. authMode só troca o rótulo: accessConfigured
+       distingue "Access não configurado" (o caso normal aqui, em dev) de
+       "Access configurado" (produção), sem que o frontend precise inferir
+       autenticação a partir dessa flag, como acontecia antes. */
     return json({
       ok: true,
+      authenticated: true,
+      authMode: env.DEV_AUTH_BYPASS === 'true' ? 'local-bypass' : 'cloudflare-access',
       repo: env.GITHUB_OWNER + '/' + env.GITHUB_REPO,
       branch: env.GITHUB_BRANCH,
       accessConfigured: !!(env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD && env.ADMIN_EMAIL)
