@@ -1183,9 +1183,9 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
    borrado em repouso e nada disso está no caminho da rolagem. */
 .js [data-reveal="words"] .rv-w{display:inline-block;opacity:0;
   filter:blur(10px);transform:translateY(16px);
-  transition:opacity var(--rv-w-dur,780ms) var(--ease-soft),
-             filter var(--rv-w-dur,780ms) var(--ease-soft),
-             transform var(--rv-w-dur,780ms) var(--ease-soft)}
+  transition:opacity var(--rv-w-dur,1248ms) var(--ease-soft),
+             filter var(--rv-w-dur,1248ms) var(--ease-soft),
+             transform var(--rv-w-dur,1248ms) var(--ease-soft)}
 .js [data-reveal="words"].in .rv-w{opacity:1;filter:blur(0);transform:none}
 /* Duas animações concorrentes seriam o bloco e as palavras entrando juntos.
    Quem tem palavra por palavra abre mão da entrada de bloco: o container fica
@@ -1193,9 +1193,9 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
 .js .reveal[data-reveal="words"]{opacity:1;transform:none;transition:none}
 
 /* Blur no bloco, para o texto principal que NÃO é palavra por palavra. Entra
-   um pouco mais devagar que o padrão (980ms contra 750ms), que é o "um pouco
-   mais lento que os secundários" pedido. */
-.js .reveal[data-reveal="soft"]{--rv-y:18px;--rv-dur:980ms;filter:blur(8px);
+   bem mais devagar que o padrão (1568ms contra 750ms), que é o "um pouco mais
+   lento que os secundários" pedido, já na escala 1,6x. */
+.js .reveal[data-reveal="soft"]{--rv-y:18px;--rv-dur:1568ms;filter:blur(8px);
   transition:opacity var(--rv-dur) var(--ease-soft),
              transform var(--rv-dur) var(--ease-soft),
              filter var(--rv-dur) var(--ease-soft);

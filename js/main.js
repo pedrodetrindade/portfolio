@@ -563,9 +563,12 @@
      Cada tipo de bloco mantém sua coreografia própria. */
   let alvos = [];
 
-  /* 55ms entre palavras, com teto de 14 passos: um título de 20 palavras não
-     pode fazer a última esperar mais de um segundo depois da primeira. */
-  const PALAVRA_PASSO = 55, PALAVRA_TETO = 14;
+  /* 88ms entre palavras, com teto de 14 passos: acima disso um título longo
+     faria a última palavra esperar demais pela primeira. O teto é contagem de
+     passos, não tempo — ele não escala junto com a duração, senão a cauda do
+     título cresceria duas vezes. Na escala atual o pior caso é 14 x 88ms de
+     espera mais os 1248ms da própria palavra. */
+  const PALAVRA_PASSO = 88, PALAVRA_TETO = 14;
   const aplicarAtrasoPalavras = el => {
     el.querySelectorAll('.rv-w').forEach((w, i) => {
       w.style.transitionDelay = Math.min(i, PALAVRA_TETO) * PALAVRA_PASSO + 'ms';
