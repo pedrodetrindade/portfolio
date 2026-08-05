@@ -566,6 +566,10 @@
       fieldRow('Texto complementar (EN)', '', ta('ab_suben', a.subEn)) +
       fieldRow('Retrato', 'caminho do arquivo, ou envie um novo aqui', inp('ab_photo', a.photo) + '<input type="file" id="ab_photo_upload" accept="image/*">') +
       fieldRow('Botão de contato (PT / EN)', '"Vamos conversar"', inp('ab_ctapt', a.ctaTalkPt, half) + inp('ab_ctaen', a.ctaTalkEn, half)) +
+      fieldRow('Mostrar botão de currículo', 'Desligar esconde o botão no site sem apagar o arquivo.', switchControl('ab_showcv', a.showResume !== false)) +
+      fieldRow('Arquivo do currículo (PDF)', a.resumeFile ? 'atual: ' + a.resumeFile : 'nenhum arquivo enviado ainda — o botão fica escondido até você enviar um',
+        inp('ab_cvfile', a.resumeFile, ' placeholder="assets/uploads/curriculo/..."') + '<input type="file" id="ab_cv_upload" accept="application/pdf,.pdf">') +
+      fieldRow('Rótulo do currículo (PT / EN)', '"Baixar currículo"', inp('ab_cvlpt', a.resumeLabelPt, half) + inp('ab_cvlen', a.resumeLabelEn, half)) +
       fieldRow('Rótulo das capacidades (PT / EN)', '"Capacidades"', inp('ab_caplpt', a.capabilitiesLabelPt, half) + inp('ab_caplen', a.capabilitiesLabelEn, half)) +
       listBlock('abcap', a.capabilities, 'Capacidade', function (c, i) {
         return fieldRow('Texto (PT / EN)', '', inp('ab_cap' + i + '_pt', c.pt, half) + inp('ab_cap' + i + '_en', c.en, half));
@@ -576,6 +580,8 @@
       ['ab_subpt', function (v) { a.subPt = v; }], ['ab_suben', function (v) { a.subEn = v; }],
       ['ab_photo', function (v) { a.photo = v; }],
       ['ab_ctapt', function (v) { a.ctaTalkPt = v; }], ['ab_ctaen', function (v) { a.ctaTalkEn = v; }],
+      ['ab_cvfile', function (v) { a.resumeFile = v; }],
+      ['ab_cvlpt', function (v) { a.resumeLabelPt = v; }], ['ab_cvlen', function (v) { a.resumeLabelEn = v; }],
       ['ab_caplpt', function (v) { a.capabilitiesLabelPt = v; }], ['ab_caplen', function (v) { a.capabilitiesLabelEn = v; }]
     ];
     a.capabilities.forEach(function (c, i) {
@@ -587,6 +593,11 @@
     var abPhoto = document.getElementById('ab_photo_upload');
     if (abPhoto) abPhoto.addEventListener('change', function () {
       uploadFile(abPhoto.files[0], 'sobre', function (path) { a.photo = path; touch(); renderHome(); });
+    });
+    bindSwitch('ab_showcv', function (v) { a.showResume = v; touch(); });
+    var abCv = document.getElementById('ab_cv_upload');
+    if (abCv) abCv.addEventListener('change', function () {
+      uploadFile(abCv.files[0], 'curriculo', function (path) { a.resumeFile = path; touch(); renderHome(); });
     });
 
     var hp = H.help;
@@ -843,10 +854,10 @@
     var form = new FormData();
     form.append('file', file);
     form.append('slug', slug);
-    toast('Enviando imagem…');
+    toast('Enviando arquivo…');
     fetch('/api/uploads', { method: 'POST', body: form }).then(function (r) { return r.json(); }).then(function (res) {
       if (res.error) { toast(res.message || res.error, 'err'); return; }
-      toast('Imagem enviada.', 'ok');
+      toast('Arquivo enviado.', 'ok');
       onDone(res.path);
     }).catch(function () { toast('Falha no upload.', 'err'); });
   }

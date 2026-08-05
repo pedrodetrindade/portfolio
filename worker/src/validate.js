@@ -18,11 +18,15 @@ var LIMITS = {
 };
 
 var MAX_JSON_BYTES = 200 * 1024; /* 200KB por arquivo de conteúdo */
-var MAX_UPLOAD_BYTES = 5 * 1024 * 1024; /* 5MB por imagem */
-var ALLOWED_UPLOAD_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
+var MAX_UPLOAD_BYTES = 5 * 1024 * 1024; /* 5MB por arquivo */
+/* .pdf entrou por causa do currículo da seção Sobre, que o painel troca sem
+   passar por código. A lista continua fechada: qualquer extensão fora dela é
+   recusada antes de o arquivo chegar ao GitHub. */
+var ALLOWED_UPLOAD_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.pdf'];
 var ALLOWED_UPLOAD_MIME = {
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-  '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml'
+  '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf'
 };
 
 /* Whitelist fixa de caminhos que o Worker aceita escrever. Nunca aceita um

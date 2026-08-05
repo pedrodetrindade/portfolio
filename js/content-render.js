@@ -81,6 +81,22 @@
       setText(document.querySelector('.caps-k'), A.capabilitiesLabelPt, A.capabilitiesLabelEn);
       var talkBtn = document.querySelector('.about-actions .ghost-cta[data-contact]');
       setText(talkBtn, A.ctaTalkPt, A.ctaTalkEn);
+      /* Currículo: só aparece quando existe arquivo enviado pelo painel E o
+         botão está ligado. Os dois são condição, não um ou outro — desligar
+         mantém o PDF no repositório sem expor o link, e apagar o caminho
+         esconde o botão mesmo com ele ligado, em vez de publicar um link
+         quebrado. */
+      var resumeBtn = document.querySelector('.about-actions [data-resume]');
+      if (resumeBtn) {
+        var file = typeof A.resumeFile === 'string' ? A.resumeFile.trim() : '';
+        if (file && A.showResume !== false) {
+          resumeBtn.setAttribute('href', base + file);
+          setText(resumeBtn, A.resumeLabelPt, A.resumeLabelEn);
+          resumeBtn.hidden = false;
+        } else {
+          resumeBtn.hidden = true;
+        }
+      }
       var photo = document.querySelector('.portrait-img');
       if (photo && A.photo) photo.setAttribute('src', base + A.photo);
       var capsGrid = document.querySelector('.caps-grid');

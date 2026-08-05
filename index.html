@@ -34,7 +34,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=88">
+<link rel="stylesheet" href="css/style.css?v=89">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
@@ -237,31 +237,40 @@
           <div class="about-copy">
             <span class="about-k reveal" data-pt="Sobre" data-en="About">Sobre</span>
 
-            <p class="about-lead reveal" data-pt="Designer com experiência em direção criativa e de arte, atuando há seis anos em design, branding e estratégia de marketing desde 2020, na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio." data-en="A designer working in creative and art direction, with six years across design, branding and marketing strategy since 2020, building brands, campaigns and communication ecosystems that connect creative vision, positioning and business objectives.">Designer com experiência em direção criativa e de arte, atuando há seis anos em design, branding e estratégia de marketing desde 2020, na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio.</p>
+            <p class="about-lead reveal" data-pt="Designer com sete anos de experiência em direção criativa, direção de arte, branding e estratégia de marketing, atuando na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio." data-en="Designer with seven years of experience in creative direction, art direction, branding and marketing strategy, building brands, campaigns and communication ecosystems that connect creative vision, positioning and business objectives.">Designer com sete anos de experiência em direção criativa, direção de arte, branding e estratégia de marketing, atuando na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio.</p>
 
-            <p class="about-sub reveal" data-pt="Ao longo da trajetória, desenvolvi soluções visuais e estratégicas para marcas que buscavam fortalecer presença, gerar valor e ampliar relevância em seus mercados, em contextos B2B e B2C. Também estive envolvido em projetos de fintechs e ativos digitais, incorporando inteligência artificial ao fluxo criativo." data-en="Along the way I've built visual and strategic solutions for brands looking to strengthen presence, generate value and expand relevance in their markets, across B2B and B2C. I've also worked on fintech and digital asset projects, bringing AI into the creative workflow.">Ao longo da trajetória, desenvolvi soluções visuais e estratégicas para marcas que buscavam fortalecer presença, gerar valor e ampliar relevância em seus mercados, em contextos B2B e B2C. Também estive envolvido em projetos de fintechs e ativos digitais, incorporando inteligência artificial ao fluxo criativo.</p>
+            <p class="about-sub reveal" data-pt="Ao longo da minha trajetória, desenvolvi soluções visuais e estratégicas para projetos nacionais e internacionais, em contextos B2B e B2C. Também atuei em projetos ligados a serviços financeiros, produtos digitais e ativos digitais, incorporando inteligência artificial, automação e novas tecnologias ao processo criativo." data-en="Throughout my career I have developed visual and strategic solutions for national and international projects, across B2B and B2C contexts. I have also worked on projects involving financial services, digital products and digital assets, bringing artificial intelligence, automation and new technologies into the creative process.">Ao longo da minha trajetória, desenvolvi soluções visuais e estratégicas para projetos nacionais e internacionais, em contextos B2B e B2C. Também atuei em projetos ligados a serviços financeiros, produtos digitais e ativos digitais, incorporando inteligência artificial, automação e novas tecnologias ao processo criativo.</p>
 
             <div class="caps">
               <span class="caps-k reveal" data-pt="Capacidades" data-en="Capabilities">Capacidades</span>
               <ul class="caps-grid">
-                <li data-pt="Direção de arte" data-en="Art direction">Direção de arte</li>
-                <li data-pt="Identidade visual" data-en="Visual identity">Identidade visual</li>
-                <li data-pt="Direção criativa" data-en="Creative direction">Direção criativa</li>
-                <li data-pt="Naming e posicionamento" data-en="Naming and positioning">Naming e posicionamento</li>
+                <li data-pt="Direção criativa e de arte" data-en="Creative and art direction">Direção criativa e de arte</li>
+                <li data-pt="Estratégia e gestão de marca" data-en="Brand strategy and management">Estratégia e gestão de marca</li>
                 <li data-pt="Campanhas e key visuals" data-en="Campaigns and key visuals">Campanhas e key visuals</li>
+                <li data-pt="Identidade e sistemas visuais" data-en="Identity and visual systems">Identidade e sistemas visuais</li>
                 <li data-pt="Apresentações estratégicas" data-en="Strategic presentations">Apresentações estratégicas</li>
-                <li data-pt="Motion e audiovisual" data-en="Motion and audiovisual">Motion e audiovisual</li>
-                <li data-pt="IA no fluxo criativo" data-en="AI in the creative workflow">IA no fluxo criativo</li>
+                <li data-pt="Experiências e produtos digitais" data-en="Digital experiences and products">Experiências e produtos digitais</li>
+                <li data-pt="Motion, audiovisual e eventos" data-en="Motion, audiovisual and events">Motion, audiovisual e eventos</li>
+                <li data-pt="IA, automação e operações criativas" data-en="AI, automation and creative operations">IA, automação e operações criativas</li>
               </ul>
             </div>
 
+            <!-- Hierarquia das três ações: conversar é a principal, currículo é
+                 secundária e o LinkedIn fica mais discreto. A diferença é só de
+                 peso e contraste, sem cor nova nem preenchimento chapado.
+                 O currículo nasce oculto: js/content-render.js só o mostra
+                 quando existe um arquivo enviado pelo painel e o botão está
+                 ligado (about.showResume). Sem isso ele apontaria para um PDF
+                 que ainda não existe. -->
             <div class="about-actions reveal">
-              <a class="ghost-cta linkedin" href="https://www.linkedin.com/in/pedrodetrindade"
+              <button class="ghost-cta cta-primary" data-contact data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</button>
+              <a class="ghost-cta cta-resume" data-resume href="#" download hidden
+                 data-pt="Baixar currículo" data-en="Download résumé">Baixar currículo</a>
+              <a class="ghost-cta linkedin cta-quiet" href="https://www.linkedin.com/in/pedrodetrindade"
                  target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.65h.05c.53-.95 1.83-1.95 3.76-1.95C21.4 8.7 22 11 22 14.1V21h-4v-6.1c0-1.45-.03-3.32-2.05-3.32-2.05 0-2.37 1.58-2.37 3.21V21h-4z"/></svg>
                 LinkedIn
               </a>
-              <button class="ghost-cta" data-contact data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</button>
             </div>
           </div>
 
@@ -289,16 +298,16 @@
           <h3>
             <button class="hi-q" aria-expanded="false" aria-controls="hi-r1" id="hi-b1">
               <span class="hi-num">01</span>
-              <span class="hi-title" data-pt="Direção Criativa &amp; Direção de Arte" data-en="Creative Direction &amp; Art Direction">Direção Criativa &amp; Direção de Arte</span>
+              <span class="hi-title" data-pt="Estratégia &amp; Gestão de Marca" data-en="Brand Strategy &amp; Management">Estratégia &amp; Gestão de Marca</span>
               <i class="hi-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="hi-a" id="hi-r1" role="region" aria-labelledby="hi-b1" hidden>
-            <p data-pt="Traduzo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca entre campanhas, conteúdos, produtos e experiências." data-en="I translate strategy into concepts, narratives, and visual systems, guiding brand expression across campaigns, content, products, and experiences.">Traduzo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca entre campanhas, conteúdos, produtos e experiências.</p>
+            <p data-pt="Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, organizam suas mensagens, mantêm consistência e evoluem ao longo do tempo." data-en="I connect positioning, communication and business objectives to guide how brands present themselves, organize their messages, stay consistent and evolve over time.">Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, organizam suas mensagens, mantêm consistência e evoluem ao longo do tempo.</p>
             <ul class="hi-tags">
-              <li data-pt="conceitos criativos" data-en="creative concepts">conceitos criativos</li>
-              <li data-pt="direção de arte" data-en="art direction">direção de arte</li>
-              <li data-pt="motion &amp; audiovisual" data-en="motion &amp; audiovisual">motion &amp; audiovisual</li>
+              <li data-pt="posicionamento" data-en="positioning">posicionamento</li>
+              <li data-pt="diretrizes de marca" data-en="brand guidelines">diretrizes de marca</li>
+              <li data-pt="governança criativa" data-en="creative governance">governança criativa</li>
             </ul>
           </div>
         </div>
@@ -308,16 +317,16 @@
           <h3>
             <button class="hi-q" aria-expanded="false" aria-controls="hi-r2" id="hi-b2">
               <span class="hi-num">02</span>
-              <span class="hi-title" data-pt="Estratégia &amp; Gestão de Marca" data-en="Strategy &amp; Brand Management">Estratégia &amp; Gestão de Marca</span>
+              <span class="hi-title" data-pt="Direção Criativa &amp; Direção de Arte" data-en="Creative Direction &amp; Art Direction">Direção Criativa &amp; Direção de Arte</span>
               <i class="hi-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="hi-a" id="hi-r2" role="region" aria-labelledby="hi-b2" hidden>
-            <p data-pt="Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, mantêm consistência e evoluem ao longo do tempo." data-en="I connect positioning, communication, and business objectives to guide how brands present themselves, maintain consistency, and evolve over time.">Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, mantêm consistência e evoluem ao longo do tempo.</p>
+            <p data-pt="Transformo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca em campanhas, conteúdos, produtos, projetos audiovisuais e experiências presenciais." data-en="I turn strategy into concepts, narratives and visual systems, guiding brand expression across campaigns, content, products, audiovisual projects and in-person experiences.">Transformo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca em campanhas, conteúdos, produtos, projetos audiovisuais e experiências presenciais.</p>
             <ul class="hi-tags">
-              <li data-pt="posicionamento" data-en="positioning">posicionamento</li>
-              <li data-pt="diretrizes de marca" data-en="brand guidelines">diretrizes de marca</li>
-              <li data-pt="governança criativa" data-en="creative governance">governança criativa</li>
+              <li data-pt="conceitos criativos" data-en="creative concepts">conceitos criativos</li>
+              <li data-pt="direção de arte" data-en="art direction">direção de arte</li>
+              <li data-pt="audiovisual" data-en="audiovisual">audiovisual</li>
             </ul>
           </div>
         </div>
@@ -332,11 +341,11 @@
             </button>
           </h3>
           <div class="hi-a" id="hi-r3" role="region" aria-labelledby="hi-b3" hidden>
-            <p data-pt="Transformo desafios de comunicação em campanhas, apresentações estratégicas e experiências digitais que fortalecem a marca, organizam narrativas complexas e apoiam marketing, produto e comercial." data-en="I turn communication challenges into campaigns, strategic presentations, and digital experiences that strengthen the brand, organize complex narratives, and support marketing, product, and sales.">Transformo desafios de comunicação em campanhas, apresentações estratégicas e experiências digitais que fortalecem a marca, organizam narrativas complexas e apoiam marketing, produto e comercial.</p>
+            <p data-pt="Desenvolvo campanhas e materiais que fortalecem a marca, tornam temas complexos mais claros e apoiam objetivos de marketing, produto e comercial, incluindo apresentações estratégicas, lançamentos e ativações em eventos." data-en="I develop campaigns and materials that strengthen the brand, make complex subjects clearer and support marketing, product and sales objectives, including strategic presentations, launches and event activations.">Desenvolvo campanhas e materiais que fortalecem a marca, tornam temas complexos mais claros e apoiam objetivos de marketing, produto e comercial, incluindo apresentações estratégicas, lançamentos e ativações em eventos.</p>
             <ul class="hi-tags">
               <li data-pt="campanhas integradas" data-en="integrated campaigns">campanhas integradas</li>
               <li data-pt="apresentações estratégicas" data-en="strategic presentations">apresentações estratégicas</li>
-              <li data-pt="experiências digitais" data-en="digital experiences">experiências digitais</li>
+              <li data-pt="eventos &amp; ativações" data-en="events &amp; activations">eventos &amp; ativações</li>
             </ul>
           </div>
         </div>
@@ -346,12 +355,31 @@
           <h3>
             <button class="hi-q" aria-expanded="false" aria-controls="hi-r4" id="hi-b4">
               <span class="hi-num">04</span>
-              <span class="hi-title" data-pt="Operações Criativas &amp; Inteligência Artificial" data-en="Creative Operations &amp; Artificial Intelligence">Operações Criativas &amp; Inteligência Artificial</span>
+              <span class="hi-title" data-pt="Experiências Digitais &amp; Produtos" data-en="Digital Experiences &amp; Products">Experiências Digitais &amp; Produtos</span>
               <i class="hi-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="hi-a" id="hi-r4" role="region" aria-labelledby="hi-b4" hidden>
-            <p data-pt="Estruturo processos, critérios e fluxos que conectam estratégia, criação e execução, integrando inteligência artificial para ampliar eficiência, repertório e escala sem comprometer a consistência da marca." data-en="I structure processes, criteria, and workflows that connect strategy, creation, and execution, integrating artificial intelligence to expand efficiency, repertoire, and scale without compromising brand consistency.">Estruturo processos, critérios e fluxos que conectam estratégia, criação e execução, integrando inteligência artificial para ampliar eficiência, repertório e escala sem comprometer a consistência da marca.</p>
+            <p data-pt="Transformo objetivos de marca e negócio em experiências digitais claras, consistentes e funcionais, participando da criação de sites, landing pages, interfaces e produtos digitais." data-en="I turn brand and business objectives into clear, consistent and functional digital experiences, taking part in the creation of websites, landing pages, interfaces and digital products.">Transformo objetivos de marca e negócio em experiências digitais claras, consistentes e funcionais, participando da criação de sites, landing pages, interfaces e produtos digitais.</p>
+            <ul class="hi-tags">
+              <li data-pt="sites &amp; landing pages" data-en="websites &amp; landing pages">sites &amp; landing pages</li>
+              <li data-pt="interfaces digitais" data-en="digital interfaces">interfaces digitais</li>
+              <li data-pt="produtos &amp; experiências" data-en="products &amp; experiences">produtos &amp; experiências</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="help-item reveal">
+          <span class="hi-line" aria-hidden="true"></span>
+          <h3>
+            <button class="hi-q" aria-expanded="false" aria-controls="hi-r5" id="hi-b5">
+              <span class="hi-num">05</span>
+              <span class="hi-title" data-pt="Operações Criativas &amp; Inteligência Artificial" data-en="Creative Operations &amp; Artificial Intelligence">Operações Criativas &amp; Inteligência Artificial</span>
+              <i class="hi-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="hi-a" id="hi-r5" role="region" aria-labelledby="hi-b5" hidden>
+            <p data-pt="Estruturo processos e fluxos que conectam estratégia, criação e execução, utilizando inteligência artificial e automação para ampliar eficiência, repertório e escala sem perder consistência e qualidade." data-en="I structure processes and workflows that connect strategy, creation and execution, using artificial intelligence and automation to expand efficiency, repertoire and scale without losing consistency and quality.">Estruturo processos e fluxos que conectam estratégia, criação e execução, utilizando inteligência artificial e automação para ampliar eficiência, repertório e escala sem perder consistência e qualidade.</p>
             <ul class="hi-tags">
               <li data-pt="sistemas criativos" data-en="creative systems">sistemas criativos</li>
               <li data-pt="IA aplicada" data-en="applied AI">IA aplicada</li>
@@ -378,72 +406,96 @@
         <div class="faq-item reveal">
           <h3>
             <button class="faq-q" aria-expanded="false" aria-controls="faq-r1" id="faq-b1">
-              <span data-pt="Com que tipo de clientes você normalmente trabalha?" data-en="What types of clients do you usually work with?">Com que tipo de clientes você normalmente trabalha?</span>
+              <span data-pt="Com que tipo de clientes e projetos você trabalha?" data-en="What kinds of clients and projects do you work with?">Com que tipo de clientes e projetos você trabalha?</span>
               <i class="faq-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="faq-a" id="faq-r1" role="region" aria-labelledby="faq-b1" hidden>
-            <p data-pt="Trabalho com startups, empresas em crescimento e marcas consolidadas que buscam construir, reposicionar ou fortalecer sua presença visual e estratégica." data-en="I work with startups, growing companies, and established brands looking to build, reposition, or strengthen their visual and strategic presence.">Trabalho com startups, empresas em crescimento e marcas consolidadas que buscam construir, reposicionar ou fortalecer sua presença visual e estratégica.</p>
+            <p data-pt="Trabalho com empresas em crescimento, marcas consolidadas e negócios que precisam construir, reposicionar ou organizar sua comunicação. Tenho experiência em contextos B2B e B2C, incluindo projetos ligados a serviços financeiros, tecnologia, produtos digitais, educação e outros mercados." data-en="I work with growing companies, established brands and businesses that need to build, reposition or organize their communication. I have experience across B2B and B2C contexts, including projects in financial services, technology, digital products, education and other markets.">Trabalho com empresas em crescimento, marcas consolidadas e negócios que precisam construir, reposicionar ou organizar sua comunicação. Tenho experiência em contextos B2B e B2C, incluindo projetos ligados a serviços financeiros, tecnologia, produtos digitais, educação e outros mercados.</p>
           </div>
         </div>
 
         <div class="faq-item reveal">
           <h3>
             <button class="faq-q" aria-expanded="false" aria-controls="faq-r2" id="faq-b2">
-              <span data-pt="Quais serviços você oferece?" data-en="What services do you offer?">Quais serviços você oferece?</span>
+              <span data-pt="Em quais desafios você pode ajudar?" data-en="What challenges can you help with?">Em quais desafios você pode ajudar?</span>
               <i class="faq-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="faq-a" id="faq-r2" role="region" aria-labelledby="faq-b2" hidden>
-            <p data-pt="Atuo com direção criativa, direção de arte, branding, identidade visual, campanhas, design digital e sistemas de comunicação adaptados às necessidades de cada projeto." data-en="I work across creative direction, art direction, branding, visual identity, campaigns, digital design, and communication systems shaped around each project's needs.">Atuo com direção criativa, direção de arte, branding, identidade visual, campanhas, design digital e sistemas de comunicação adaptados às necessidades de cada projeto.</p>
+            <p data-pt="Atuo principalmente em desafios de posicionamento, consistência de marca, campanhas, organização de narrativas e transformação de temas complexos em comunicações mais claras, relevantes e visualmente consistentes." data-en="I work mainly on challenges of positioning, brand consistency, campaigns, narrative organization and turning complex subjects into clearer, more relevant and visually consistent communication.">Atuo principalmente em desafios de posicionamento, consistência de marca, campanhas, organização de narrativas e transformação de temas complexos em comunicações mais claras, relevantes e visualmente consistentes.</p>
           </div>
         </div>
 
         <div class="faq-item reveal">
           <h3>
             <button class="faq-q" aria-expanded="false" aria-controls="faq-r3" id="faq-b3">
-              <span data-pt="Como funciona o início de um projeto?" data-en="How does a project begin?">Como funciona o início de um projeto?</span>
+              <span data-pt="Quais serviços você oferece?" data-en="What services do you offer?">Quais serviços você oferece?</span>
               <i class="faq-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="faq-a" id="faq-r3" role="region" aria-labelledby="faq-b3" hidden>
-            <p data-pt="O trabalho começa com uma conversa de alinhamento para entender contexto, objetivos, desafios, escopo e prioridades. A partir disso, estruturo uma proposta e um caminho de execução." data-en="The process starts with an alignment conversation to understand the context, goals, challenges, scope, and priorities. From there, I structure a proposal and execution path.">O trabalho começa com uma conversa de alinhamento para entender contexto, objetivos, desafios, escopo e prioridades. A partir disso, estruturo uma proposta e um caminho de execução.</p>
+            <p data-pt="Minha atuação reúne estratégia e gestão de marca, direção criativa e de arte, campanhas, identidades visuais, apresentações estratégicas, experiências digitais e estruturação de sistemas e processos criativos com apoio de inteligência artificial." data-en="My work brings together brand strategy and management, creative and art direction, campaigns, visual identities, strategic presentations, digital experiences and the structuring of creative systems and processes supported by artificial intelligence.">Minha atuação reúne estratégia e gestão de marca, direção criativa e de arte, campanhas, identidades visuais, apresentações estratégicas, experiências digitais e estruturação de sistemas e processos criativos com apoio de inteligência artificial.</p>
           </div>
         </div>
 
         <div class="faq-item reveal">
           <h3>
             <button class="faq-q" aria-expanded="false" aria-controls="faq-r4" id="faq-b4">
-              <span data-pt="Quanto tempo leva um projeto típico?" data-en="How long does a typical project take?">Quanto tempo leva um projeto típico?</span>
+              <span data-pt="Como funciona o início de um projeto?" data-en="How does a project begin?">Como funciona o início de um projeto?</span>
               <i class="faq-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="faq-a" id="faq-r4" role="region" aria-labelledby="faq-b4" hidden>
-            <p data-pt="O prazo varia conforme o escopo, a complexidade e as entregas envolvidas. O cronograma é definido com clareza antes do início do projeto." data-en="Timing depends on the scope, complexity, and deliverables involved. A clear schedule is defined before the project begins.">O prazo varia conforme o escopo, a complexidade e as entregas envolvidas. O cronograma é definido com clareza antes do início do projeto.</p>
+            <p data-pt="O processo começa com uma conversa para entender o contexto, os objetivos do negócio, o público, os desafios e as prioridades. A partir desse diagnóstico, defino o escopo, a abordagem e as etapas necessárias para o desenvolvimento do projeto." data-en="The process starts with a conversation to understand the context, the business objectives, the audience, the challenges and the priorities. From that diagnosis, I define the scope, the approach and the steps needed to develop the project.">O processo começa com uma conversa para entender o contexto, os objetivos do negócio, o público, os desafios e as prioridades. A partir desse diagnóstico, defino o escopo, a abordagem e as etapas necessárias para o desenvolvimento do projeto.</p>
           </div>
         </div>
 
         <div class="faq-item reveal">
           <h3>
             <button class="faq-q" aria-expanded="false" aria-controls="faq-r5" id="faq-b5">
-              <span data-pt="Como você estrutura propostas e valores?" data-en="How do you structure proposals and pricing?">Como você estrutura propostas e valores?</span>
+              <span data-pt="Como você trabalha com equipes e outros profissionais?" data-en="How do you work with teams and other professionals?">Como você trabalha com equipes e outros profissionais?</span>
               <i class="faq-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="faq-a" id="faq-r5" role="region" aria-labelledby="faq-b5" hidden>
-            <p data-pt="Cada proposta é desenvolvida de acordo com o escopo, a complexidade, o prazo e o formato de colaboração, seja por projeto ou acompanhamento contínuo." data-en="Each proposal is shaped around the scope, complexity, timeline, and collaboration format, whether it is project-based or an ongoing partnership.">Cada proposta é desenvolvida de acordo com o escopo, a complexidade, o prazo e o formato de colaboração, seja por projeto ou acompanhamento contínuo.</p>
+            <p data-pt="Posso atuar de forma independente ou em colaboração com times de marketing, conteúdo, produto, comercial e tecnologia. Gosto de construir processos próximos, com alinhamentos claros e espaço para troca ao longo do projeto." data-en="I can work independently or in collaboration with marketing, content, product, sales and technology teams. I like building close processes, with clear alignment and room for exchange throughout the project.">Posso atuar de forma independente ou em colaboração com times de marketing, conteúdo, produto, comercial e tecnologia. Gosto de construir processos próximos, com alinhamentos claros e espaço para troca ao longo do projeto.</p>
           </div>
         </div>
 
         <div class="faq-item reveal">
           <h3>
             <button class="faq-q" aria-expanded="false" aria-controls="faq-r6" id="faq-b6">
-              <span data-pt="Você oferece suporte após a entrega?" data-en="Do you offer support after delivery?">Você oferece suporte após a entrega?</span>
+              <span data-pt="Você utiliza inteligência artificial nos projetos?" data-en="Do you use artificial intelligence in your projects?">Você utiliza inteligência artificial nos projetos?</span>
               <i class="faq-ico" aria-hidden="true"></i>
             </button>
           </h3>
           <div class="faq-a" id="faq-r6" role="region" aria-labelledby="faq-b6" hidden>
-            <p data-pt="Sim. Quando o projeto exige continuidade, podemos estruturar uma etapa de acompanhamento, evolução de materiais ou novas entregas após o lançamento." data-en="Yes. When a project requires continuity, we can structure ongoing support, material evolution, or additional deliverables after launch.">Sim. Quando o projeto exige continuidade, podemos estruturar uma etapa de acompanhamento, evolução de materiais ou novas entregas após o lançamento.</p>
+            <p data-pt="Sim. Integro IA em etapas de pesquisa, exploração criativa, produção, automação e organização de fluxos. Essas ferramentas ampliam velocidade e repertório, mas todo resultado passa por direção, curadoria e refinamento antes de ser utilizado." data-en="Yes. I bring AI into research, creative exploration, production, automation and workflow organization. These tools expand speed and repertoire, but every result goes through direction, curation and refinement before being used.">Sim. Integro IA em etapas de pesquisa, exploração criativa, produção, automação e organização de fluxos. Essas ferramentas ampliam velocidade e repertório, mas todo resultado passa por direção, curadoria e refinamento antes de ser utilizado.</p>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r7" id="faq-b7">
+              <span data-pt="Quanto tempo leva um projeto?" data-en="How long does a project take?">Quanto tempo leva um projeto?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r7" role="region" aria-labelledby="faq-b7" hidden>
+            <p data-pt="O prazo depende do escopo, da complexidade e do número de entregas. Antes do início, organizo um cronograma com etapas, pontos de validação e datas de entrega bem definidas." data-en="Timing depends on the scope, the complexity and the number of deliverables. Before we start, I put together a schedule with stages, validation points and clearly defined delivery dates.">O prazo depende do escopo, da complexidade e do número de entregas. Antes do início, organizo um cronograma com etapas, pontos de validação e datas de entrega bem definidas.</p>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3>
+            <button class="faq-q" aria-expanded="false" aria-controls="faq-r8" id="faq-b8">
+              <span data-pt="Você oferece acompanhamento após a entrega?" data-en="Do you offer support after delivery?">Você oferece acompanhamento após a entrega?</span>
+              <i class="faq-ico" aria-hidden="true"></i>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-r8" role="region" aria-labelledby="faq-b8" hidden>
+            <p data-pt="Sim. Dependendo da necessidade, o trabalho pode continuar com novas implementações, evolução dos materiais, desdobramentos de campanha ou acompanhamento recorrente da comunicação." data-en="Yes. Depending on what is needed, the work can continue with new implementations, evolving materials, campaign extensions or ongoing communication support.">Sim. Dependendo da necessidade, o trabalho pode continuar com novas implementações, evolução dos materiais, desdobramentos de campanha ou acompanhamento recorrente da comunicação.</p>
           </div>
         </div>
 
@@ -514,7 +566,7 @@
 <!-- Fase B do CMS: reconstrói texto e listas a partir do JSON, agora que o
      HTML da página já existe. Precisa vir antes de main.js, que é quem lê
      data-pt/data-en para decidir o idioma exibido. -->
-<script src="js/content-render.js?v=6"></script>
+<script src="js/content-render.js?v=7"></script>
 <script src="js/main.js?v=80"></script>
 </body>
 </html>

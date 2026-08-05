@@ -822,6 +822,22 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .ghost-cta:hover{transform:translateY(-2px);border-color:var(--accent);background:rgba(var(--paper-rgb),.05)}
 .ghost-cta:hover::after{transform:translateX(4px)}
 
+/* Três ações no Sobre, três pesos. Nenhuma cor nova e nenhum botão chapado:
+   a hierarquia sai só de contraste de borda e de texto, como no resto do
+   site. .cta-primary é "Vamos conversar", .cta-resume é o currículo e
+   .cta-quiet é o LinkedIn. */
+.ghost-cta.cta-primary{border-color:var(--accent);background:rgba(var(--paper-rgb),.06)}
+.ghost-cta.cta-primary:hover{background:rgba(var(--paper-rgb),.1)}
+.ghost-cta.cta-quiet{color:var(--muted);border-color:var(--line)}
+.ghost-cta.cta-quiet:hover{color:var(--paper)}
+/* seta para baixo: é download, não navegação para frente */
+.ghost-cta.cta-resume::after{content:"↓"}
+.ghost-cta.cta-resume:hover::after{transform:translateY(3px)}
+/* display:inline-flex ganha do [hidden] da folha do navegador, então o botão
+   do currículo continuaria visível mesmo oculto. Mesmo detalhe que já tinha
+   escondido o painel do CMS atrás da tela de "Sem acesso". */
+.ghost-cta[hidden]{display:none}
+
 /* ===== O QUE EU FAÇO =====
    Linhas horizontais amplas, não cards: índice e título à esquerda, descrição
    e entregáveis à direita, divisor crescendo da esquerda em cada frente.
@@ -1486,5 +1502,9 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
 .js .card.in .card-foot{opacity:1;transform:none;transition-delay:220ms}
 .js .card.in .card-tags{opacity:1;transform:none;transition-delay:300ms}
-.about-sub{margin-top:1.3rem;font-size:.98rem;font-weight:var(--w-light);color:var(--muted-2);
+/* --muted-2 deixava este parágrafo perto do limite de leitura confortável:
+   ele é texto corrido longo, não um rótulo de apoio. Subiu para --muted, um
+   degrau acima, que ainda o mantém abaixo do parágrafo principal (--paper) e
+   preserva a hierarquia entre os dois. */
+.about-sub{margin-top:1.3rem;font-size:.98rem;font-weight:var(--w-light);color:var(--muted);
   max-width:56ch;line-height:1.68;letter-spacing:-.005em}
