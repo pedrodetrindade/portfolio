@@ -1,43 +1,66 @@
 {
-  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, na ordem, o que aparece na página depois da capa: sempre 3 blocos de texto (contexto/processo/resultado) e 1 galeria com 2 imagens, hoje. Novos tipos de bloco pedem ajuste no template, não só no JSON. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe mais campo prevProject/nextProject aqui.",
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
   "slug": "case-04",
   "status": "published",
   "client": "",
   "year": 2024,
   "category": "identidade",
-  "services": ["Design", "Direção de arte"],
-
+  "services": [
+    "Design",
+    "Direção de arte"
+  ],
   "seo": {
     "title": "Identidade visual e campanha integrada · Pedro de Trindade",
     "description": "Case: identidade visual e campanha integrada. Design e sistema visual por Pedro de Trindade."
   },
-
   "hero": {
-    "eyebrowPt": "identidade", "eyebrowEn": "identity",
+    "eyebrowPt": "identidade",
+    "eyebrowEn": "identity",
     "titlePt": "Identidade visual e campanha integrada",
     "titleEn": "Visual identity and integrated campaign",
     "subtitlePt": "Criação de identidade visual do zero e lançamento de uma campanha integrada, unindo marca e produto num único momento de mercado.",
     "subtitleEn": "Ground-up visual identity creation and the launch of an integrated campaign, uniting brand and product in a single market moment.",
-    "rolePt": "Design, direção de arte", "roleEn": "Design, art direction",
-    "scopePt": "Identidade, sistema visual", "scopeEn": "Identity, visual system"
+    "rolePt": "Design, direção de arte",
+    "roleEn": "Design, art direction",
+    "scopePt": "Identidade, sistema visual",
+    "scopeEn": "Identity, visual system"
   },
-
   "cover": "assets/projetos/case-04/capa.jpg",
   "coverMobile": "",
-
   "blocks": [
-    { "type": "text", "labelPt": "contexto", "labelEn": "context",
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
       "textPt": "Um lançamento de mercado sem identidade prévia, exigindo uma marca construída sob prazo apertado e ainda assim consistente.",
-      "textEn": "A market launch with no prior identity, requiring a brand built under a tight deadline while still holding together." },
-    { "type": "text", "labelPt": "processo", "labelEn": "process",
+      "textEn": "A market launch with no prior identity, requiring a brand built under a tight deadline while still holding together."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
       "textPt": "Definição de identidade e sistema visual em paralelo à construção da campanha de lançamento, com decisões de marca e mídia andando juntas.",
-      "textEn": "Identity and visual system defined in parallel with the launch campaign, with brand and media decisions moving together." },
-    { "type": "text", "labelPt": "resultado", "labelEn": "result",
+      "textEn": "Identity and visual system defined in parallel with the launch campaign, with brand and media decisions moving together."
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
       "textPt": "Lançamento coeso, com identidade reconhecível desde o primeiro dia e um sistema visual pronto para sustentar as campanhas seguintes.",
-      "textEn": "A cohesive launch, with a recognizable identity from day one and a visual system ready to sustain the campaigns that followed." },
-    { "type": "gallery", "images": [
-        { "src": "assets/projetos/case-04/galeria-1.jpg", "alt": "" },
-        { "src": "assets/projetos/case-04/galeria-2.jpg", "alt": "" }
-    ] }
+      "textEn": "A cohesive launch, with a recognizable identity from day one and a visual system ready to sustain the campaigns that followed."
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/projetos/case-04/galeria-1.jpg",
+          "alt": ""
+        },
+        {
+          "src": "assets/projetos/case-04/galeria-2.jpg",
+          "alt": ""
+        }
+      ]
+    }
   ]
 }

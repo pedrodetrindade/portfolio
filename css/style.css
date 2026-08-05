@@ -1703,6 +1703,61 @@ body.ready main,body.ready footer{opacity:1;transform:none}
     gap:var(--block-gap-mobile,var(--block-gap-tablet,var(--block-gap-desktop,1.4rem)))}
 }
 
+/* ===== BLOCOS LIVRES DA PÁGINA DE PROJETO =====
+   Além de texto e galeria, um case pode intercalar imagem, citação e vídeo na
+   ordem que quiser. Todos herdam o mesmo esquema de espaçamento acima, com os
+   mesmos três níveis, então nenhum tipo novo traz régua própria.
+   .case-blocks só existe como âncora para o JS: quem empilha e afasta continua
+   sendo a margem de cada bloco. É grid pelo mesmo motivo que .case-body: em
+   fluxo normal as margens de blocos vizinhos colapsariam, e o espaço entre
+   dois blocos deixaria de ser o que foi configurado. */
+.case-blocks{display:grid}
+
+.case-figure{margin:var(--block-mt-desktop,1rem) 0 var(--block-mb-desktop,0px)}
+.case-figure .scene{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;
+  position:relative;border:1px solid var(--line-strong);background:var(--ink-2)}
+.case-figure img{display:block;width:100%;height:100%;object-fit:cover}
+/* Proporção livre: a imagem manda na altura, em vez de ser recortada em 16/9.
+   É o que serve peça vertical, captura de tela e GIF, que raramente cabem
+   num quadro fixo sem perder o assunto. */
+.case-figure.is-auto .scene{aspect-ratio:auto}
+.case-figure.is-auto img{height:auto}
+/* Sangramento de ponta a ponta pela mesma régua do resto do site: --vw medido
+   pelo JS, nunca calc(100vw - barra). Ver a seção própria no CLAUDE.md. */
+.case-figure.is-full{--bleed:var(--vw,100vw);
+  width:var(--bleed);position:relative;left:50%;
+  margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2)}
+.case-figure.is-full .scene{border-radius:0;border-left:none;border-right:none}
+.case-figure figcaption{margin-top:.9rem;font-family:var(--mono);font-size:.72rem;
+  letter-spacing:.02em;color:var(--muted-2);max-width:64ch}
+.case-figure.is-full figcaption{padding-inline:var(--gutter)}
+
+/* Sem aspas decorativas nem barra lateral: o que separa a citação do corpo é
+   a escala e a cor, como no resto do site. */
+.case-quote{margin:var(--block-mt-desktop,1rem) 0 var(--block-mb-desktop,0px);max-width:44ch}
+.case-quote p{font-size:clamp(1.25rem,2vw,1.75rem);font-weight:var(--w-light);
+  line-height:1.36;letter-spacing:-.02em;color:var(--cream)}
+.case-quote cite{display:block;margin-top:1.1rem;font-style:normal;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;color:var(--muted-2)}
+
+.case-video{margin:var(--block-mt-desktop,1rem) 0 var(--block-mb-desktop,0px)}
+.case-video .scene{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;
+  position:relative;border:1px solid var(--line-strong);background:var(--ink-2)}
+.case-video video,.case-video iframe{display:block;width:100%;height:100%;border:0;object-fit:cover}
+.case-video figcaption{margin-top:.9rem;font-family:var(--mono);font-size:.72rem;
+  letter-spacing:.02em;color:var(--muted-2);max-width:64ch}
+
+@media(max-width:899px) and (min-width:640px){
+  .case-figure,.case-quote,.case-video{
+    margin-top:var(--block-mt-tablet,var(--block-mt-desktop,1rem));
+    margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px))}
+}
+@media(max-width:639px){
+  .case-figure,.case-quote,.case-video{
+    margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,1rem)));
+    margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)))}
+}
+
 .case-nav{display:flex;justify-content:space-between;gap:1.6rem;border-top:1px solid var(--line);
   padding-top:2rem;font-family:var(--mono);font-size:.8rem}
 .case-nav a{color:var(--muted);transition:color var(--dur-micro) var(--ease-out-smooth);display:flex;flex-direction:column;gap:.4em}

@@ -11,7 +11,7 @@ import {
   isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
   MODOS_VIDEO, VIMEO_HOSTS, isVimeoConfigValido, isPosterValido,
-  isSlugValid, bytesOf
+  isSlugValid, bytesOf, erroNosBlocos
 } from './validate.js';
 
 /* Cabeçalhos de segurança em toda resposta do Worker — painel (HTML/JS/CSS
@@ -371,6 +371,20 @@ async function handlePublish(request, env) {
          porque o painel é conveniência: quem decide é o Worker. Um payload
          montado à mão não pode enfiar iframe, script ou domínio de terceiro
          no JSON e esperar que o site renderize. */
+      /* Blocos do projeto. Mesma razão da validação acima: o painel é
+         conveniência, o Worker é quem decide. Um bloco com tipo inventado ou
+         com src apontando para fora do repositório não pode ser gravado só
+         porque alguém montou o JSON à mão. */
+      if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) {
+        var erroBloco = erroNosBlocos(op.data.blocks);
+        if (erroBloco) {
+          return json({
+            error: 'invalid_block',
+            message: 'Em ' + caminho + ', ' + erroBloco + ' Nada foi publicado.',
+            path: caminho
+          }, 422);
+        }
+      }
       if (caminho === 'content/home.json') {
         var erroVideo = validarVideoDaCapa(op.data.hero);
         if (erroVideo) return json(erroVideo.corpo, erroVideo.status);

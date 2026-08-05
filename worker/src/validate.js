@@ -197,7 +197,83 @@ function isPosterValido(valor) {
   return false;
 }
 
+/* ===== BLOCOS DA PÁGINA DE PROJETO =====
+   Cada tipo declara as chaves que aceita. Chave fora da lista derruba a
+   publicação com 422, pela mesma razão que vale para as chaves de topo: um
+   campo descartado em silêncio some sem ninguém ficar sabendo.
+   Toda referência a arquivo passa por caminhoDeMidiaValido, que é o que
+   impede um payload montado à mão de apontar src para um domínio de
+   terceiro, um javascript: ou um caminho fora do repositório. */
+var CHAVES_DE_BLOCO = {
+  text:    ['type', 'labelPt', 'labelEn', 'textPt', 'textEn', 'spacing'],
+  gallery: ['type', 'images', 'spacing'],
+  image:   ['type', 'src', 'alt', 'fit', 'width', 'captionPt', 'captionEn', 'spacing'],
+  quote:   ['type', 'quotePt', 'quoteEn', 'authorPt', 'authorEn', 'spacing'],
+  video:   ['type', 'mode', 'src', 'poster', 'vimeo', 'captionPt', 'captionEn', 'spacing']
+};
+var AJUSTES_DE_IMAGEM = ['cover', 'auto'];
+var LARGURAS_DE_BLOCO = ['content', 'full'];
+var MODOS_DE_VIDEO_DE_BLOCO = ['file', 'vimeo'];
+var EXT_DE_VIDEO = ['.mp4', '.webm'];
+
+/* Caminho de mídia do próprio repositório. Sem URL externa de propósito: o
+   site não deve depender de arquivo hospedado em lugar que não controlamos, e
+   é justamente por aí que entraria conteúdo de terceiro. */
+function caminhoDeMidiaValido(valor, extensoes) {
+  if (typeof valor !== 'string') return false;
+  var t = valor.trim();
+  if (!t) return false;
+  if (t.indexOf('..') !== -1 || t.indexOf('\0') !== -1) return false;
+  if (/[<>"'`\\]/.test(t)) return false;
+  if (!/^assets\//.test(t)) return false;
+  var ext = t.toLowerCase().split('?')[0];
+  ext = ext.slice(ext.lastIndexOf('.'));
+  return extensoes.indexOf(ext) !== -1;
+}
+
+var EXT_DE_IMAGEM = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.svg'];
+
+/* Devolve null quando está tudo bem, ou uma mensagem dizendo qual bloco e o
+   quê. A posição entra na mensagem porque "bloco inválido" sozinho não ajuda
+   ninguém a achar o problema num projeto com dez blocos. */
+function erroNosBlocos(blocks) {
+  if (blocks === undefined) return null;                     /* projeto sem blocos é válido */
+  if (!Array.isArray(blocks)) return 'O campo blocks precisa ser uma lista.';
+  for (var i = 0; i < blocks.length; i++) {
+    var b = blocks[i], onde = 'bloco ' + (i + 1);
+    if (!b || typeof b !== 'object' || Array.isArray(b)) return onde + ': não é um objeto.';
+    var permitidas = CHAVES_DE_BLOCO[b.type];
+    if (!permitidas) return onde + ': tipo desconhecido (' + String(b.type) + ').';
+    var extra = Object.keys(b).filter(function (k) { return permitidas.indexOf(k) === -1; });
+    if (extra.length) return onde + ' (' + b.type + '): campo desconhecido: ' + extra.join(', ') + '.';
+
+    if (b.type === 'gallery') {
+      if (!Array.isArray(b.images)) return onde + ': images precisa ser uma lista.';
+      for (var g = 0; g < b.images.length; g++) {
+        var im = b.images[g];
+        if (!im || typeof im !== 'object') return onde + ': imagem ' + (g + 1) + ' inválida.';
+        var sobra = Object.keys(im).filter(function (k) { return ['src', 'alt'].indexOf(k) === -1; });
+        if (sobra.length) return onde + ': imagem ' + (g + 1) + ' tem campo desconhecido: ' + sobra.join(', ') + '.';
+        if (!caminhoDeMidiaValido(im.src, EXT_DE_IMAGEM)) return onde + ': imagem ' + (g + 1) + ' com caminho inválido.';
+      }
+    }
+    if (b.type === 'image') {
+      if (!caminhoDeMidiaValido(b.src, EXT_DE_IMAGEM)) return onde + ': caminho de imagem inválido.';
+      if (b.fit != null && AJUSTES_DE_IMAGEM.indexOf(b.fit) === -1) return onde + ': fit precisa ser cover ou auto.';
+      if (b.width != null && LARGURAS_DE_BLOCO.indexOf(b.width) === -1) return onde + ': width precisa ser content ou full.';
+    }
+    if (b.type === 'video') {
+      if (MODOS_DE_VIDEO_DE_BLOCO.indexOf(b.mode) === -1) return onde + ': mode precisa ser file ou vimeo.';
+      if (b.mode === 'file' && !caminhoDeMidiaValido(b.src, EXT_DE_VIDEO)) return onde + ': caminho de vídeo inválido.';
+      if (b.mode === 'vimeo' && !isVimeoConfigValido(b.vimeo)) return onde + ': configuração do Vimeo inválida.';
+      if (b.poster != null && b.poster !== '' && !isPosterValido(b.poster)) return onde + ': poster inválido.';
+    }
+  }
+  return null;
+}
+
 export {
+  CHAVES_DE_BLOCO, erroNosBlocos, caminhoDeMidiaValido,
   LIMITS, MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
   UPLOAD_DIR, isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,

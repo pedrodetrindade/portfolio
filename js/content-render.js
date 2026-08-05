@@ -24,6 +24,14 @@
   function isCase() { return location.pathname.indexOf('/work/') !== -1; }
   var base = isCase() ? '../' : '';
 
+  /* Declarada AQUI, acima das duas chamadas abaixo, e não junto do resto do
+     código de blocos. `var` é hasteada como undefined, não como o valor: lá
+     embaixo, esta lista ainda não existiria quando renderProject() rodasse, e
+     o .indexOf estouraria dentro do try, que engole o erro em silêncio — a
+     página cairia para o HTML estático sem nada indicar por quê. É a mesma
+     armadilha que já custou caro com measureCta em js/main.js. */
+  var TIPOS_DE_BLOCO = ['text', 'gallery', 'image', 'quote', 'video'];
+
   try { renderHome(); } catch (e) { /* mantém o HTML estático */ }
   try { renderProject(); } catch (e) { /* mantém o HTML estático */ }
 
@@ -321,6 +329,127 @@
     } catch (e) { /* grade estática do HTML continua valendo */ }
   }
 
+  /* ===== BLOCOS DA PÁGINA DE PROJETO =====
+     Antes existiam dois destinos fixos: todo bloco de texto caía em
+     .case-body e o primeiro (e único) de galeria caía em .case-gallery. A
+     ordem gravada no JSON não era lida, então intercalar uma imagem entre
+     dois textos era impossível — e um segundo bloco de galeria sumia sem
+     aviso. Agora os blocos são desenhados na ordem em que estão, dentro de
+     .case-blocks.
+
+     Blocos de TEXTO consecutivos são agrupados numa <section> só, e cada
+     bloco de outro tipo ganha a sua. Não é enfeite: o padding vertical de
+     <section> é o que separa um assunto do outro, enquanto os três textos de
+     contexto/processo/resultado sempre foram um assunto só, com 41,6px entre
+     eles. Sem o agrupamento, ou os textos se afastariam demais, ou a galeria
+     encostaria no texto. Com ele, um projeto que já existe é desenhado
+     exatamente como antes.
+
+     Tipo desconhecido é ignorado no site (a página continua legível) e
+     recusado na publicação pelo Worker, que é quem decide.
+     TIPOS_DE_BLOCO fica lá em cima, junto das chamadas, pelo motivo explicado
+     ali. */
+  function urlDoVimeoDeBloco(cfg) {
+    var u = 'https://player.vimeo.com/video/' + encodeURIComponent(cfg.videoId) +
+      '?autopause=0&dnt=1';
+    if (cfg.hash) u += '&h=' + encodeURIComponent(cfg.hash);
+    return u;
+  }
+
+  function htmlDoBloco(b, css) {
+    if (b.type === 'gallery') {
+      var imgs = Array.isArray(b.images) ? b.images : [];
+      return '<div class="case-gallery" style="' + css + '">' + imgs.map(function (img) {
+        return '<div class="thumb reveal"><div class="scene"><img src="' + esc(base + img.src) +
+          '" alt="' + esc(img.alt || '') + '" onerror="this.remove()"></div></div>';
+      }).join('') + '</div>';
+    }
+    if (b.type === 'image') {
+      /* is-auto e is-full são as duas únicas variações de enquadramento. Mais
+         que isso já seria construtor de página, que não é o que este CMS é. */
+      var cls = 'case-figure reveal' + (b.fit === 'auto' ? ' is-auto' : '') + (b.width === 'full' ? ' is-full' : '');
+      var cap = (b.captionPt || b.captionEn)
+        ? '<figcaption data-pt="' + esc(b.captionPt || '') + '" data-en="' + esc(b.captionEn || '') + '">' + esc(b.captionPt || '') + '</figcaption>'
+        : '';
+      return '<figure class="' + cls + '" style="' + css + '">' +
+        '<div class="scene"><img src="' + esc(base + (b.src || '')) + '" alt="' + esc(b.alt || '') +
+        '" onerror="this.remove()"></div>' + cap + '</figure>';
+    }
+    if (b.type === 'quote') {
+      var autor = (b.authorPt || b.authorEn)
+        ? '<cite data-pt="' + esc(b.authorPt || '') + '" data-en="' + esc(b.authorEn || '') + '">' + esc(b.authorPt || '') + '</cite>'
+        : '';
+      return '<blockquote class="case-quote reveal" style="' + css + '">' +
+        '<p data-pt="' + esc(b.quotePt || '') + '" data-en="' + esc(b.quoteEn || '') + '">' + esc(b.quotePt || '') + '</p>' +
+        autor + '</blockquote>';
+    }
+    if (b.type === 'video') {
+      var capV = (b.captionPt || b.captionEn)
+        ? '<figcaption data-pt="' + esc(b.captionPt || '') + '" data-en="' + esc(b.captionEn || '') + '">' + esc(b.captionPt || '') + '</figcaption>'
+        : '';
+      /* O iframe do Vimeo NÃO é montado aqui: fica um marcador, e o elemento é
+         criado com createElement logo abaixo, com a URL remontada a partir de
+         id e hash. É a mesma regra do vídeo de fundo da capa — nada do
+         endereço colado pela pessoa entra numa string de HTML. */
+      var miolo = (b.mode === 'vimeo' && b.vimeo && b.vimeo.videoId)
+        ? '<div class="scene" data-vimeo="1"></div>'
+        : '<div class="scene"><video src="' + esc(base + (b.src || '')) + '"' +
+          (b.poster ? ' poster="' + esc(base + b.poster) + '"' : '') +
+          ' controls playsinline preload="metadata"></video></div>';
+      return '<figure class="case-video reveal" style="' + css + '">' + miolo + capV + '</figure>';
+    }
+    return '';
+  }
+
+  function renderBlocks(blocks, blockStyleCss) {
+    var host = document.querySelector('.case-blocks');
+    if (!host) return;
+    var validos = blocks.filter(function (b) { return b && TIPOS_DE_BLOCO.indexOf(b.type) !== -1; });
+    if (!validos.length) return;
+
+    /* Agrupa em fatias: uma sequência de textos vira um grupo, cada bloco de
+       outro tipo vira um grupo de um. */
+    var grupos = [];
+    validos.forEach(function (b) {
+      var ultimo = grupos[grupos.length - 1];
+      if (b.type === 'text' && ultimo && ultimo[0].type === 'text') ultimo.push(b);
+      else grupos.push([b]);
+    });
+
+    var vimeos = [];
+    host.innerHTML = grupos.map(function (g) {
+      if (g[0].type === 'text') {
+        var corpo = g.map(function (b, i) {
+          /* reproduz o antigo gap:2.6rem (41,6px) entre textos do mesmo
+             grupo; o último não leva espaço depois, porque o vão até o
+             próximo assunto já vem do padding da <section> */
+          var cssT = blockStyleCss(b.spacing, 0, i === g.length - 1 ? 0 : 41.6);
+          return '<div class="case-section" style="' + cssT + '">' +
+            '<div class="k reveal" data-pt="' + esc(b.labelPt) + '" data-en="' + esc(b.labelEn) + '">' + esc(b.labelPt) + '</div>' +
+            '<p class="reveal" data-pt="' + esc(b.textPt) + '" data-en="' + esc(b.textEn) + '">' + esc(b.textPt) + '</p>' +
+            '</div>';
+        }).join('');
+        return '<section><div class="case-body">' + corpo + '</div></section>';
+      }
+      var b = g[0];
+      var gap = b.type === 'gallery' ? 22.4 : null;
+      var css = blockStyleCss(b.spacing, 16, 0, gap);
+      if (b.type === 'video' && b.mode === 'vimeo' && b.vimeo && b.vimeo.videoId) vimeos.push(b.vimeo);
+      return '<section>' + htmlDoBloco(b, css) + '</section>';
+    }).join('');
+
+    host.querySelectorAll('.case-video .scene[data-vimeo]').forEach(function (slot, i) {
+      var cfg = vimeos[i];
+      if (!cfg) return;
+      var frame = document.createElement('iframe');
+      frame.setAttribute('src', urlDoVimeoDeBloco(cfg));
+      frame.setAttribute('title', '');
+      frame.setAttribute('allow', 'fullscreen; picture-in-picture');
+      frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+      slot.appendChild(frame);
+    });
+  }
+
   function renderProject(overrideProject, overrideIndex) {
     if (!isCase()) return;
     var P = overrideProject || window.__CMS_PROJECT__;
@@ -370,34 +499,7 @@
     if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 16, 0));
 
     var blocks = Array.isArray(P.blocks) ? P.blocks : [];
-    var bodyEl = document.querySelector('.case-body');
-    if (bodyEl) {
-      var textBlocks = blocks.filter(function (b) { return b.type === 'text'; });
-      if (textBlocks.length) {
-        bodyEl.innerHTML = textBlocks.map(function (b, i) {
-          /* espaço depois reproduz o antigo gap:2.6rem entre blocos de
-             texto (41,6px), exceto no último, que não tinha espaço extra
-             depois dele (o vão para a galeria já vinha da seção externa) */
-          var isLast = i === textBlocks.length - 1;
-          var css = blockStyleCss(b.spacing, 0, isLast ? 0 : 41.6);
-          return '<div class="case-section" style="' + css + '">' +
-            '<div class="k reveal" data-pt="' + esc(b.labelPt) + '" data-en="' + esc(b.labelEn) + '">' + esc(b.labelPt) + '</div>' +
-            '<p class="reveal" data-pt="' + esc(b.textPt) + '" data-en="' + esc(b.textEn) + '">' + esc(b.textPt) + '</p>' +
-            '</div>';
-        }).join('');
-      }
-    }
-
-    var galleryEl = document.querySelector('.case-gallery');
-    if (galleryEl) {
-      var galleryBlock = blocks.filter(function (b) { return b.type === 'gallery'; })[0];
-      if (galleryBlock && Array.isArray(galleryBlock.images)) {
-        galleryEl.setAttribute('style', blockStyleCss(galleryBlock.spacing, 16, 0, 22.4));
-        galleryEl.innerHTML = galleryBlock.images.map(function (img) {
-          return '<div class="thumb reveal"><div class="scene"><img src="' + esc(base + img.src) + '" alt="' + esc(img.alt || '') + '" onerror="this.remove()"></div></div>';
-        }).join('');
-      }
-    }
+    renderBlocks(blocks, blockStyleCss);
 
     /* navegação para o próximo projeto: calculada pela posição do projeto
        atual na lista visível e ordenada, nunca por um campo prevProject/

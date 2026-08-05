@@ -1,43 +1,65 @@
 {
-  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, na ordem, o que aparece na página depois da capa: sempre 3 blocos de texto (contexto/processo/resultado) e 1 galeria com 2 imagens, hoje. Novos tipos de bloco pedem ajuste no template, não só no JSON. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe mais campo prevProject/nextProject aqui.",
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
   "slug": "case-02",
   "status": "published",
   "client": "",
   "year": 2025,
   "category": "direcao-de-arte",
-  "services": ["Direção de arte"],
-
+  "services": [
+    "Direção de arte"
+  ],
   "seo": {
     "title": "Direção de arte e comunicação de marca · Pedro de Trindade",
     "description": "Case: direção de arte e comunicação de marca. Identidade e campanha por Pedro de Trindade."
   },
-
   "hero": {
-    "eyebrowPt": "direção de arte", "eyebrowEn": "art direction",
+    "eyebrowPt": "direção de arte",
+    "eyebrowEn": "art direction",
     "titlePt": "Direção de arte e comunicação de marca",
     "titleEn": "Art direction and brand communication",
     "subtitlePt": "Direção de arte contínua para sustentar uma identidade coerente através de campanhas, com uma linguagem visual que se adapta sem se diluir.",
     "subtitleEn": "Ongoing art direction to hold a coherent identity across campaigns, with a visual language that adapts without diluting.",
-    "rolePt": "Direção de arte", "roleEn": "Art direction",
-    "scopePt": "Identidade, campanha, comunicação", "scopeEn": "Identity, campaign, communication"
+    "rolePt": "Direção de arte",
+    "roleEn": "Art direction",
+    "scopePt": "Identidade, campanha, comunicação",
+    "scopeEn": "Identity, campaign, communication"
   },
-
   "cover": "assets/projetos/case-02/capa.jpg",
   "coverMobile": "",
-
   "blocks": [
-    { "type": "text", "labelPt": "contexto", "labelEn": "context",
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
       "textPt": "Cada campanha vinha sendo tratada como um projeto isolado, sem um fio condutor visual que reforçasse a marca ao longo do tempo.",
-      "textEn": "Each campaign was being treated as an isolated project, with no visual through-line reinforcing the brand over time." },
-    { "type": "text", "labelPt": "processo", "labelEn": "process",
+      "textEn": "Each campaign was being treated as an isolated project, with no visual through-line reinforcing the brand over time."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
       "textPt": "Definição de uma direção de arte modular, com princípios fixos e variações controladas por peça, canal e formato.",
-      "textEn": "Definition of a modular art direction, with fixed principles and variations controlled by piece, channel and format." },
-    { "type": "text", "labelPt": "resultado", "labelEn": "result",
+      "textEn": "Definition of a modular art direction, with fixed principles and variations controlled by piece, channel and format."
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
       "textPt": "Presença de marca reconhecível em qualquer ponto de contato, sem perder a flexibilidade necessária para cada campanha.",
-      "textEn": "A recognizable brand presence at every touchpoint, without losing the flexibility each campaign needs." },
-    { "type": "gallery", "images": [
-        { "src": "assets/projetos/case-02/galeria-1.jpg", "alt": "" },
-        { "src": "assets/projetos/case-02/galeria-2.jpg", "alt": "" }
-    ] }
+      "textEn": "A recognizable brand presence at every touchpoint, without losing the flexibility each campaign needs."
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/projetos/case-02/galeria-1.jpg",
+          "alt": ""
+        },
+        {
+          "src": "assets/projetos/case-02/galeria-2.jpg",
+          "alt": ""
+        }
+      ]
+    }
   ]
 }

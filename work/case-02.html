@@ -31,7 +31,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="../assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../css/style.css?v=100">
+<link rel="stylesheet" href="../css/style.css?v=101">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteÃºdo" data-en="Skip to content">Pular para o conteÃºdo</a>
@@ -99,29 +99,33 @@
     </div>
   </section>
 
-  <section>
-    <div class="case-body">
-      <div class="case-section">
-        <div class="k reveal" data-pt="contexto" data-en="context">contexto</div>
-        <p class="reveal" data-pt="Cada campanha vinha sendo tratada como um projeto isolado, sem um fio condutor visual que reforÃ§asse a marca ao longo do tempo." data-en="Each campaign was being treated as an isolated project, with no visual through-line reinforcing the brand over time.">Cada campanha vinha sendo tratada como um projeto isolado, sem um fio condutor visual que reforÃ§asse a marca ao longo do tempo.</p>
+  <!-- Reserva sem JS: js/content-render.js redesenha este bloco na ordem
+       gravada em content/projects/<slug>.json. Sem JS, fica o que esta aqui. -->
+  <div class="case-blocks">
+    <section>
+      <div class="case-body">
+        <div class="case-section">
+          <div class="k reveal" data-pt="contexto" data-en="context">contexto</div>
+          <p class="reveal" data-pt="Cada campanha vinha sendo tratada como um projeto isolado, sem um fio condutor visual que reforÃ§asse a marca ao longo do tempo." data-en="Each campaign was being treated as an isolated project, with no visual through-line reinforcing the brand over time.">Cada campanha vinha sendo tratada como um projeto isolado, sem um fio condutor visual que reforÃ§asse a marca ao longo do tempo.</p>
+        </div>
+        <div class="case-section">
+          <div class="k reveal" data-pt="processo" data-en="process">processo</div>
+          <p class="reveal" data-pt="DefiniÃ§Ã£o de uma direÃ§Ã£o de arte modular, com princÃ­pios fixos e variaÃ§Ãµes controladas por peÃ§a, canal e formato." data-en="Definition of a modular art direction, with fixed principles and variations controlled by piece, channel and format.">DefiniÃ§Ã£o de uma direÃ§Ã£o de arte modular, com princÃ­pios fixos e variaÃ§Ãµes controladas por peÃ§a, canal e formato.</p>
+        </div>
+        <div class="case-section">
+          <div class="k reveal" data-pt="resultado" data-en="result">resultado</div>
+          <p class="reveal" data-pt="PresenÃ§a de marca reconhecÃ­vel em qualquer ponto de contato, sem perder a flexibilidade necessÃ¡ria para cada campanha." data-en="A recognizable brand presence at every touchpoint, without losing the flexibility each campaign needs.">PresenÃ§a de marca reconhecÃ­vel em qualquer ponto de contato, sem perder a flexibilidade necessÃ¡ria para cada campanha.</p>
+        </div>
       </div>
-      <div class="case-section">
-        <div class="k reveal" data-pt="processo" data-en="process">processo</div>
-        <p class="reveal" data-pt="DefiniÃ§Ã£o de uma direÃ§Ã£o de arte modular, com princÃ­pios fixos e variaÃ§Ãµes controladas por peÃ§a, canal e formato." data-en="Definition of a modular art direction, with fixed principles and variations controlled by piece, channel and format.">DefiniÃ§Ã£o de uma direÃ§Ã£o de arte modular, com princÃ­pios fixos e variaÃ§Ãµes controladas por peÃ§a, canal e formato.</p>
-      </div>
-      <div class="case-section">
-        <div class="k reveal" data-pt="resultado" data-en="result">resultado</div>
-        <p class="reveal" data-pt="PresenÃ§a de marca reconhecÃ­vel em qualquer ponto de contato, sem perder a flexibilidade necessÃ¡ria para cada campanha." data-en="A recognizable brand presence at every touchpoint, without losing the flexibility each campaign needs.">PresenÃ§a de marca reconhecÃ­vel em qualquer ponto de contato, sem perder a flexibilidade necessÃ¡ria para cada campanha.</p>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section>
-    <div class="case-gallery">
-      <div class="thumb reveal"><div class="scene p2"><img src="../assets/projetos/case-02/galeria-1.jpg" alt="" onerror="this.remove()"></div></div>
-      <div class="thumb reveal"><div class="scene p3"><img src="../assets/projetos/case-02/galeria-2.jpg" alt="" onerror="this.remove()"></div></div>
-    </div>
-  </section>
+    <section>
+      <div class="case-gallery">
+        <div class="thumb reveal"><div class="scene p2"><img src="../assets/projetos/case-02/galeria-1.jpg" alt="" onerror="this.remove()"></div></div>
+        <div class="thumb reveal"><div class="scene p3"><img src="../assets/projetos/case-02/galeria-2.jpg" alt="" onerror="this.remove()"></div></div>
+      </div>
+    </section>
+  </div>
 
   <section>
     <div class="case-nav reveal">
@@ -152,7 +156,7 @@
   </div>
 </footer>
 
-<script src="../js/content-render.js?v=11"></script>
+<script src="../js/content-render.js?v=13"></script>
 <script src="../js/main.js?v=89"></script>
 </body>
 </html>
