@@ -122,8 +122,8 @@
     ]
   },
   "footer": {
-    "copyrightPt": "© {year} Pedro de Trindade. Pensado, dirigido e desenvolvido por mim. Movido a playlists e só mais um ajuste.",
-    "copyrightEn": "© {year} Pedro de Trindade. Designed, directed and built by me. Powered by playlists and one last adjustment.",
+    "copyrightPt": "© {year} Pedro de Trindade.\nPensado, dirigido e desenvolvido por mim. Movido a playlists e só mais um ajuste.",
+    "copyrightEn": "© {year} Pedro de Trindade.\nDesigned, directed and built by me. Powered by playlists and one last adjustment.",
     "disclaimerPt": "",
     "disclaimerEn": "",
     "marqueeText": "Pedro de Trindade."
