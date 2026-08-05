@@ -406,7 +406,15 @@ body.intro-mode{overflow:hidden}
   margin-inline:auto;padding-inline:0}
 
 header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
-  transition:transform var(--dur-default) var(--ease-out-smooth)}
+  transition:transform var(--dur-default) var(--ease-out-smooth),
+             opacity var(--intro-reveal,1200ms) var(--ease-soft)}
+/* Durante a assinatura inicial só o nome fica acima do véu. Quando os
+   elementos secundários da hero começam a entrar (`hero-sec`), o cabeçalho
+   entra no mesmo instante e também sobe acima do véu. Antes ele permanecia
+   em z-index:50, atrás do véu (90), e só aparecia bem depois durante o fundido
+   final. O valor 91 o mantém abaixo dos overlays (95). */
+.js body.intro-mode header{opacity:0}
+.js body.intro-mode.hero-sec header{z-index:91;opacity:1}
 .nav{margin:1.1rem var(--gutter);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1.4rem}
 /* ===== CONTRASTE DO HEADER SOBRE QUALQUER FUNDO =====
    Uma vinheta de largura cheia (header::before) chegou a existir aqui, mas
