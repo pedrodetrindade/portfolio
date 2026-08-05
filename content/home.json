@@ -144,7 +144,7 @@
     ],
     "ctaTalkPt": "Vamos conversar",
     "ctaTalkEn": "Let's talk",
-    "showResume": true,
+    "showResume": false,
     "resumeFile": "assets/uploads/curriculo/pedro_trindade_cv_2026.pdf",
     "resumeLabelPt": "Baixar currículo",
     "resumeLabelEn": "Download CV"
