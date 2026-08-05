@@ -1254,13 +1254,28 @@
       h.menu.map(function (item, i) {
         return fieldRow('Item de menu ' + (i + 1) + ' (PT / EN)', '',
           '<input type="text" id="menu_' + i + '_pt" value="' + esc(item.pt) + '" style="max-width:160px">' +
-          '<input type="text" id="menu_' + i + '_en" value="' + esc(item.en) + '" style="max-width:160px">');
+          '<input type="text" id="menu_' + i + '_en" value="' + esc(item.en) + '" style="max-width:160px">') +
+          fieldRow('Leva para', 'seções da Home',
+            '<select id="menu_' + i + '_sec">' + SECOES_PAINEL.map(function (s) {
+              return '<option value="' + s[0] + '"' + (secaoDoItemPainel(item) === s[0] ? ' selected' : '') +
+                '>' + esc(s[1]) + '</option>';
+            }).join('') + '</select>');
       }).join('');
     bindSwitch('hdr_lang', function (v) { state.global.header.showLanguageSwitch = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('hdr_contact', function (v) { state.global.header.showContactButton = v; markDirty('content/global.json', state.global, state.globalSha); });
     h.menu.forEach(function (item, i) {
       bindText('menu_' + i + '_pt', function (v) { state.global.header.menu[i].pt = v; markDirty('content/global.json', state.global, state.globalSha); });
       bindText('menu_' + i + '_en', function (v) { state.global.header.menu[i].en = v; markDirty('content/global.json', state.global, state.globalSha); });
+      document.getElementById('menu_' + i + '_sec').addEventListener('change', function (e) {
+        var alvo = state.global.header.menu[i];
+        alvo.section = e.target.value;
+        /* Os hrefHome/hrefWork antigos continuam gravados porque o site ainda
+           os aceita como reserva, mas quem manda passa a ser section: deixar os
+           dois apontando para lugares diferentes seria a origem óbvia de um bug
+           silencioso mais adiante. */
+        alvo.hrefHome = alvo.hrefWork = hrefDaSecaoPainel(e.target.value);
+        markDirty('content/global.json', state.global, state.globalSha);
+      });
     });
 
     var f = state.global.footer, s = state.global.social;
@@ -1784,6 +1799,28 @@
     }).catch(function () {
       toast('Não foi possível guardar a mídia neste navegador.', 'err');
     });
+  }
+
+  /* ================== SEÇÕES DA HOME ==================
+     Espelha a lista SECOES de js/main.js, pela mesma razão que MODOS_CAPA
+     espelha validate.js: o painel não importa módulos do site. Se uma seção
+     nova entrar lá, precisa entrar aqui também, senão ela existe na página mas
+     não pode ser escolhida como destino de menu. */
+  var SECOES_PAINEL = [
+    ['top', 'Início'], ['work', 'Trabalhos'], ['about', 'Sobre'],
+    ['help', 'O que eu faço'], ['faq', 'FAQ'], ['contact', 'Contato']
+  ];
+  function secaoDoItemPainel(item) {
+    var ids = SECOES_PAINEL.map(function (s) { return s[0]; });
+    if (item.section && ids.indexOf(item.section) !== -1) return item.section;
+    var href = String(item.hrefHome || item.href || '');
+    var i = href.indexOf('#');
+    var hash = i !== -1 ? href.slice(i + 1) : '';
+    if (hash && ids.indexOf(hash) !== -1) return hash;
+    return 'top';
+  }
+  function hrefDaSecaoPainel(id) {
+    return 'index.html' + (id === 'top' ? '' : '#' + id);
   }
 
   /* ================== FUNDO DA CAPA ==================

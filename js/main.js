@@ -72,53 +72,113 @@
      mudava nada no site. O array abaixo é só rede de segurança para quando o
      JSON não carregar (mesma regra do resto do site: sem CMS, o conteúdo
      estático continua valendo). */
-  const MENU_PADRAO = [
-    { pt:'Início',    en:'Home',  hrefHome:'index.html' },
-    { pt:'Sobre',     en:'About', hrefHome:'index.html#about' },
-    { pt:'Trabalhos', en:'Work',  hrefHome:'index.html#work' }
+  /* ===== REGISTRO CANÔNICO DAS SEÇÕES DA HOME =====
+     Fonte única de verdade da navegação. Cada seção tem um id ESTÁVEL, que é o
+     que ancora o link; o rótulo pode mudar (pelo CMS, por tradução) sem
+     quebrar o destino. Antes, o destino era deduzido do href gravado no JSON,
+     e o ícone era escolhido pelo TEXTO do item — então renomear "Trabalhos"
+     para "Projetos" trocava o ícone silenciosamente.
+
+     `estrutural` reflete o que o site realmente faz, não o que seria desejável:
+     hero, work e contact sustentam layout e navegação (o indicador da capa
+     aponta para work, o rodapé depende do fluxo terminar em contact), e o site
+     ignora `visible` nelas — por isso o CMS não deve oferecer um controle de
+     visibilidade ali. about, help e faq são de fato opcionais.
+
+     A hero não tem id próprio no HTML: o topo navegável é o <main id="top">.
+     Por isso o id canônico dela é 'top' — é o elemento que existe de verdade,
+     não um id paralelo inventado. */
+  const SECOES = [
+    { id: 'top',     pt: 'Início',         en: 'Home',      icone: 'inicio',    estrutural: true  },
+    { id: 'work',    pt: 'Trabalhos',      en: 'Work',      icone: 'trabalhos', estrutural: true  },
+    { id: 'about',   pt: 'Sobre',          en: 'About',     icone: 'sobre',     estrutural: false },
+    { id: 'help',    pt: 'O que eu faço',  en: 'What I do', icone: 'servicos',  estrutural: false },
+    { id: 'faq',     pt: 'FAQ',            en: 'FAQ',       icone: 'faq',       estrutural: false },
+    { id: 'contact', pt: 'Contato',        en: 'Contact',   icone: 'contato',   estrutural: true  }
   ];
+  const secaoPorId = id => SECOES.filter(s => s.id === id)[0] || null;
+
+  /* Descobre a qual seção canônica um item do CMS aponta. Aceita o campo novo
+     `section` e, para arquivos antigos que só têm href, deduz do hash — sem
+     regravar nada: a dedução é em memória, a cada carregamento. */
+  function secaoDoItem(item) {
+    if (item.section && secaoPorId(item.section)) return item.section;
+    const href = String(item.hrefHome || item.href || '');
+    const hash = href.indexOf('#') !== -1 ? href.slice(href.indexOf('#') + 1) : '';
+    if (hash && secaoPorId(hash)) return hash;
+    /* "index.html" sem hash é o topo */
+    if (href && href.indexOf('#') === -1) return 'top';
+    return null;
+  }
+
   const cfgMenu = (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.header && Array.isArray(window.__CMS_GLOBAL__.header.menu) && window.__CMS_GLOBAL__.header.menu.length)
-    ? window.__CMS_GLOBAL__.header.menu : MENU_PADRAO;
+    ? window.__CMS_GLOBAL__.header.menu : [];
 
   /* Ícones temáticos, SVG inline (sem biblioteca, sem requisição). São
      decorativos: quem carrega o significado é o texto ao lado, então todos
      levam aria-hidden. A escolha é por rótulo normalizado, com um genérico
      de reserva para item novo criado no painel. */
+  /* Ícones por ID CANÔNICO, nunca pelo texto: renomear "Trabalhos" para
+     "Projetos" no CMS, ou trocar para inglês, não pode mudar o ícone. */
   const ICONES_MENU = {
     inicio: '<path d="M3 10.2 12 3.5l9 6.7V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
-    sobre:  '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>',
     trabalhos: '<rect x="3.2" y="3.2" width="7" height="7" rx="1.6"/><rect x="13.8" y="3.2" width="7" height="7" rx="1.6"/><rect x="3.2" y="13.8" width="7" height="7" rx="1.6"/><rect x="13.8" y="13.8" width="7" height="7" rx="1.6"/>',
+    sobre:  '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>',
+    /* O que eu faço: camadas sobrepostas, ideia de repertório/composição */
+    servicos: '<path d="M12 3.4 21 8l-9 4.6L3 8z"/><path d="M3.4 12.4 12 16.8l8.6-4.4"/><path d="M3.4 16.4 12 20.8l8.6-4.4"/>',
+    /* FAQ: balão de diálogo com interrogação */
+    faq: '<path d="M20.4 15.2a2.4 2.4 0 0 1-2.4 2.4H8.4L4 21V6a2.4 2.4 0 0 1 2.4-2.4H18A2.4 2.4 0 0 1 20.4 6z"/><path d="M9.9 9.1a2.2 2.2 0 0 1 4.2.8c0 1.5-2.1 2.1-2.1 2.1"/><path d="M12 14.6h.01"/>',
     contato: '<rect x="2.8" y="5" width="18.4" height="14" rx="2.6"/><path d="M3.6 7.4l7.2 5a2.1 2.1 0 0 0 2.4 0l7.2-5"/>',
     generico: '<circle cx="12" cy="12" r="7.6"/>'
   };
-  const semAcento = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  function iconeDoItem(item) {
-    const k = semAcento(item.pt);
-    if (k.indexOf('inicio') === 0 || k === 'home') return ICONES_MENU.inicio;
-    if (k.indexOf('sobre') === 0 || k === 'about') return ICONES_MENU.sobre;
-    if (k.indexOf('trabalho') === 0 || k === 'work' || k.indexOf('projeto') === 0) return ICONES_MENU.trabalhos;
-    if (k.indexOf('contato') === 0 || k === 'contact') return ICONES_MENU.contato;
-    return ICONES_MENU.generico;
+  function iconeDaSecao(id) {
+    const s = secaoPorId(id);
+    return (s && ICONES_MENU[s.icone]) || ICONES_MENU.generico;
   }
 
-  /* Seção opcional escondida pelo painel não pode aparecer no menu apontando
-     para uma âncora que não existe mais. Só vale para as opcionais: hero,
-     work e contact sustentam layout e navegação e são ignoradas por visible. */
-  const OPCIONAIS = { '#about': 'about', '#help': 'help', '#faq': 'faq' };
-  function itemVisivel(item) {
-    const href = String(item.hrefHome || item.href || '');
-    const hash = href.indexOf('#') !== -1 ? href.slice(href.indexOf('#')) : '';
-    const chave = OPCIONAIS[hash];
-    if (!chave) return true;
+  /* Seção opcional escondida pelo CMS sai do menu: um item apontando para uma
+     âncora que não existe mais é um link quebrado. Estrutural nunca sai. */
+  function secaoDisponivel(id) {
+    const s = secaoPorId(id);
+    if (!s) return false;
+    if (s.estrutural) return true;
     const secoes = window.__CMS_HOME__ && window.__CMS_HOME__.sections;
-    if (secoes && secoes[chave] && secoes[chave].visible === false) return false;
+    if (secoes && secoes[id] && secoes[id].visible === false) return false;
     return true;
   }
 
-  const MENU = cfgMenu.filter(itemVisivel).map(i => ({
-    pt: i.pt, en: i.en,
-    href: base + ((base && i.hrefWork) ? i.hrefWork : (i.hrefHome || i.href || 'index.html'))
-  }));
+  /* Destino relativo e seguro, sem domínio fixo:
+     - na Home, âncora pura (#work) para o clique ser rolagem, não navegação.
+       Era exatamente aqui que a navegação quebrava: o href gravado era
+       "index.html#about" mesmo estando na Home, então o clique recarregava a
+       página inteira, voltava ao topo e repetia a intro. O handler de âncora
+       do smooth scroll só captura a[href^="#"] e nunca via esses links.
+     - em work/, caminho relativo com ../ para voltar à Home com o hash. */
+  function hrefDaSecao(id) {
+    if (base) return base + 'index.html' + (id === 'top' ? '' : '#' + id);
+    return '#' + id;
+  }
+
+  /* Mescla o que o CMS guarda (rótulos e ordem) com o registro canônico
+     (id, ícone, estrutural). Seções ausentes na configuração são anexadas em
+     memória, na ordem canônica — arquivo antigo com três itens continua
+     funcionando e ganha os que faltam, sem regravar nada e sem perder rótulo
+     personalizado. */
+  const MENU = (function () {
+    const vistos = {};
+    const itens = [];
+    cfgMenu.forEach(i => {
+      const id = secaoDoItem(i);
+      if (!id || vistos[id]) return;            /* item sem destino ou repetido */
+      vistos[id] = true;
+      const canon = secaoPorId(id);
+      itens.push({ id, pt: i.pt || canon.pt, en: i.en || canon.en });
+    });
+    SECOES.forEach(s => { if (!vistos[s.id]) itens.push({ id: s.id, pt: s.pt, en: s.en }); });
+    return itens
+      .filter(i => secaoDisponivel(i.id))
+      .map(i => ({ id: i.id, pt: i.pt, en: i.en, href: hrefDaSecao(i.id) }));
+  })();
 
   /* ---- indicador de próxima seção ----
      Um só componente, montado a partir desta tabela e injetado no fim de cada
@@ -157,8 +217,8 @@
         </div>
         <nav class="menu-list">
           ${MENU.map(i => `
-            <a class="menu-item" href="${i.href}">
-              <span class="menu-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconeDoItem(i)}</svg></span>
+            <a class="menu-item" href="${i.href}" data-secao="${i.id}">
+              <span class="menu-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconeDaSecao(i.id)}</svg></span>
               <span data-pt="${i.pt}" data-en="${i.en}">${i.pt}</span>
             </a>`).join('')}
         </nav>
@@ -902,6 +962,53 @@
   };
   aplicarTemaHeader();
 
+  /* ===== SCROLLSPY =====
+     Um observador só, alimentado pelo laço de scroll que já existe — não
+     IntersectionObserver, que não reavalia quando o deslocamento vem do
+     transform do .smooth-holder (ver CLAUDE.md).
+     Marca a seção cujo topo já passou da linha de leitura, e escreve
+     aria-current no item correspondente. Só toca o DOM quando a seção MUDA:
+     reescrever o atributo a cada quadro seria trabalho puro para o navegador.
+     Nas páginas de projeto não há seção nenhuma da Home, então a lista nasce
+     vazia e a função sai na primeira linha. */
+  let alvosSpy = [], secaoAtiva = null;
+  const medirSpy = () => {
+    /* Só na Home. Nas páginas de projeto o <main id="top"> existe, então sem
+       esta guarda o spy marcaria "Início" como local atual — e ali esse item
+       leva para outra página, não para onde o leitor está. */
+    if (base) { alvosSpy = []; return; }
+    alvosSpy = SECOES
+      .map(s => {
+        const el = document.getElementById(s.id);
+        if (!el) return null;
+        return { id: s.id, topo: el.getBoundingClientRect().top + posVisual };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.topo - b.topo);
+  };
+  const pintarSpy = y => {
+    if (!alvosSpy.length) return;
+    /* a linha de leitura fica um pouco abaixo do header: é o ponto em que a
+       seção "assumiu" a tela, e não o instante em que encosta na borda */
+    const linha = y + headAltura + 40;
+    let atual = alvosSpy[0].id;
+    for (let i = 0; i < alvosSpy.length; i++) {
+      if (alvosSpy[i].topo <= linha) atual = alvosSpy[i].id; else break;
+    }
+    /* A última seção é curta e o rodapé vem logo depois, então a rolagem chega
+       ao fim antes de o topo dela cruzar a linha de leitura: sem esta guarda,
+       "Contato" nunca acenderia, por mais que o usuário rolasse. Chegou ao fim
+       do documento, a última seção é a que está sendo lida. */
+    const fim = document.documentElement.scrollHeight - window.innerHeight;
+    if (fim > 0 && y >= fim - 2) atual = alvosSpy[alvosSpy.length - 1].id;
+    if (atual === secaoAtiva) return;
+    secaoAtiva = atual;
+    document.querySelectorAll('.menu-item[data-secao]').forEach(a => {
+      if (a.getAttribute('data-secao') === atual) a.setAttribute('aria-current', 'location');
+      else a.removeAttribute('aria-current');
+    });
+  };
+
   const readScroll = () => {
     queued = false;
     const y = posVisual;
@@ -917,6 +1024,7 @@
     }
     lastY = y;
     pintarClaros(y);
+    pintarSpy(y);
 
     if (scrubWords.length) paintScrub(y + window.innerHeight * .72);
     /* 0.6 e não 0.88: o conteúdo só começa a se revelar quando a seção já
@@ -946,6 +1054,7 @@
     medirAlvos();
     medirFundos();
     medirClaros();
+    medirSpy();
     medirDeslocamentoNome();
     onScroll();
   }, { passive: true });
@@ -971,6 +1080,7 @@
         medirAlvos();
         medirFundos();
         medirClaros();
+        medirSpy();
         readScroll();
       });
     }
@@ -1017,6 +1127,7 @@
   medirAlvos();
   medirFundos();
   medirClaros();
+  medirSpy();
   readScroll();
 
   /* ================== ROLAGEM SUAVE POR TRANSFORM ==================
@@ -1069,6 +1180,7 @@
       medirAlvos();
       medirFundos();
       medirClaros();
+      medirSpy();
     };
 
     const aplicar = () => {
@@ -1098,7 +1210,17 @@
       const alvo = document.getElementById(id);
       if (!alvo || !holder.contains(alvo)) return;
       e.preventDefault();
-      const pos = alvo.getBoundingClientRect().top + curr;
+      /* Desconta a altura do header. scroll-margin-top sozinho não resolve
+         aqui: ele só vale para rolagem NATIVA (hash na URL, scrollIntoView),
+         e este caminho usa window.scrollTo, que a ignora.
+         O valor vem do scroll-margin-top JÁ RESOLVIDO da própria seção, e não
+         da variável --anchor-offset: getComputedStyle devolve custom property
+         como foi escrita ("clamp(5rem,11vh,7.5rem)"), sem resolver, e o
+         parseFloat disso dá NaN. Lendo a propriedade real, o navegador entrega
+         px e os dois caminhos param exatamente no mesmo lugar. */
+      const recuo = id === 'top' ? 0 :
+        (parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0);
+      const pos = alvo.getBoundingClientRect().top + curr - recuo;
       const limite = Math.max(0, altura - window.innerHeight);
       window.scrollTo(0, Math.max(0, Math.min(pos, limite)));
     });

@@ -151,7 +151,11 @@ body.locked{overflow:hidden;height:100dvh}
   --cursor-glow-soft:rgba(var(--paper-rgb),.16);
   --cursor-border:rgba(var(--paper-rgb),.34);
 }
-.cur-layer{position:fixed;inset:0;z-index:70;pointer-events:none;
+/* z-index 100: ACIMA do overlay do menu (95) e do véu (90). Em 70 o cursor
+   ficava atrás do menu aberto e sumia — e como html.has-custom-cursor já
+   esconde o ponteiro do sistema, não sobrava cursor nenhum sobre o menu.
+   Continua pointer-events:none, então estar por cima não bloqueia clique. */
+.cur-layer{position:fixed;inset:0;z-index:100;pointer-events:none;
   contain:layout style size}
 .cur-dot,.cur-trail,.cur-label{position:absolute;top:0;left:0;pointer-events:none;
   will-change:transform}
@@ -1500,6 +1504,45 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    botão de fechar: alinha à direita e dispensa a borda, que separava dois
    blocos que não existem mais. */
 .overlay-top--bare{justify-content:flex-end;border-bottom:none;padding-bottom:.6rem}
+
+/* ===== OFFSET DAS ÂNCORAS =====
+   Um número só, num lugar só, em vez de espalhar cálculo de offset por
+   handler. O header é fixo e cobriria o título da seção logo após a
+   navegação; scroll-margin-top resolve isso tanto para a rolagem por JS
+   quanto para o salto nativo (movimento reduzido, ?nosmooth=1, ou hash
+   carregado direto na URL).
+   #top fica de fora: o topo da página não pode ter recuo, senão o link
+   "Início" pararia acima do início real do documento. */
+:root{--anchor-offset:clamp(5rem,11vh,7.5rem)}
+#work,#about,#help,#faq,#contact{scroll-margin-top:var(--anchor-offset)}
+
+/* ===== MENU COM SEIS ITENS =====
+   A lista cresceu de 3 para 6. No desktop o painel continua com a altura do
+   conteúdo; no estreito ele precisa poder rolar por dentro, senão o último
+   item (Contato) fica fora da viewport e inalcançável.
+   O .overlay já tem overflow-y:auto; o que faltava era o teto de altura no
+   sheet e o respiro do safe-area em celular com barra de gestos. */
+.overlay-sheet{max-height:calc(100svh - 2.8rem);display:flex;flex-direction:column}
+.overlay-sheet .menu-list{overflow-y:auto;overscroll-behavior:contain;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+/* o topo com o botão fechar nunca rola junto: continua alcançável */
+.overlay-sheet .overlay-top{flex:none}
+@media(max-width:640px){
+  /* itens um pouco mais compactos para caberem seis sem virar rolagem já de
+     cara, mas ainda com altura confortável para toque */
+  .menu-item{font-size:clamp(1.25rem,6vw,1.6rem);padding:.95rem 1.3rem}
+  .menu-ico{width:36px;height:36px}
+}
+
+/* Item da seção em que o visitante está. Não comunica só por cor: ganha um
+   traço à esquerda e peso, e carrega aria-current no HTML. */
+.menu-item[aria-current="location"]{background:rgba(var(--paper-rgb),.05)}
+.menu-item[aria-current="location"] .menu-ico{
+  color:var(--paper);border-color:var(--line-strong);background:rgba(var(--paper-rgb),.1)}
+.menu-item[aria-current="location"]::before{content:"";position:absolute;left:0;top:50%;
+  width:3px;height:1.5em;border-radius:0 3px 3px 0;background:var(--accent);
+  transform:translateY(-50%)}
+.menu-item{position:relative}
 
 .menu-list{display:flex;flex-direction:column}
 /* Ícone à esquerda e texto em seguida: o olho encontra o mesmo ponto de
