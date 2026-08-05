@@ -24,7 +24,15 @@
     draftSavedAt: null,
     /* linha de base para a revisão (Fase 3): path -> conteúdo publicado no
        momento em que foi carregado, antes de qualquer edição */
-    published: {}
+    published: {},
+    /* ---- operações pendentes (Fase 4) ----
+       Nada aqui vira commit antes do Publicar. Os bytes das mídias NÃO moram
+       neste objeto: ficam no IndexedDB (ver bancoMidia), porque localStorage
+       é texto e um JPEG viraria base64 inchado dentro do rascunho. Aqui fica
+       só o registro do que existe. */
+    pendingUploads: {},   /* path -> {mime, size, nome} */
+    pendingPages: {},     /* path da página -> {slug, fromSlug} */
+    pendingDeletes: {}    /* path -> motivo, para a revisão explicar */
   };
 
   var LIMITS = {
@@ -105,6 +113,103 @@
   var DRAFT_VERSION = 1;
   var draftDebounce = null;
 
+  /* ================== MÍDIA PENDENTE (IndexedDB) ==================
+     Os bytes de uma imagem ou PDF não cabem no localStorage: ele guarda texto,
+     e um JPEG de 2MB viraria ~2,7MB de base64 dentro do rascunho, estourando
+     a cota e deixando o autosave lento. IndexedDB guarda o Blob como binário
+     de verdade, sem conversão.
+     A chave é o caminho final do arquivo no repositório, então reenviar o
+     mesmo caminho substitui em vez de acumular. Nada aqui é enviado ao GitHub
+     antes do Publicar, e nada é apagado se a publicação falhar. */
+  var IDB_NOME = 'cms-midia', IDB_STORE = 'pendentes', idbPromise = null;
+
+  function abrirBanco() {
+    if (idbPromise) return idbPromise;
+    idbPromise = new Promise(function (resolve, reject) {
+      if (!window.indexedDB) { reject(new Error('IndexedDB indisponível')); return; }
+      var req = indexedDB.open(IDB_NOME, 1);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+    return idbPromise;
+  }
+
+  /* chave composta por destino: mídia pendente de um repositório/branch nunca
+     aparece em outro, mesma regra do rascunho de texto */
+  function chaveMidia(path) { return (state.repo || '?') + '@' + (state.branch || '?') + '::' + path; }
+
+  function guardarMidia(path, blob) {
+    return abrirBanco().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(blob, chaveMidia(path));
+        tx.oncomplete = resolve; tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
+  function lerMidia(path) {
+    return abrirBanco().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(IDB_STORE, 'readonly');
+        var r = tx.objectStore(IDB_STORE).get(chaveMidia(path));
+        r.onsuccess = function () { resolve(r.result || null); };
+        r.onerror = function () { reject(r.error); };
+      });
+    });
+  }
+
+  function apagarMidia(path) {
+    return abrirBanco().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).delete(chaveMidia(path));
+        tx.oncomplete = resolve; tx.onerror = resolve;
+      });
+    }).catch(function () { });
+  }
+
+  /* base64 sem prefixo data:, que é o formato que o Worker espera em `binary`.
+     FileReader em vez de laço sobre bytes: um arquivo de MBs travaria a aba
+     por segundos num String.fromCharCode caractere a caractere. */
+  function midiaParaBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var s = String(fr.result);
+        var virg = s.indexOf(',');
+        resolve(virg === -1 ? s : s.slice(virg + 1));
+      };
+      fr.onerror = function () { reject(fr.error); };
+      fr.readAsDataURL(blob);
+    });
+  }
+
+  function limparTodaMidiaPendente() {
+    var caminhos = Object.keys(state.pendingUploads);
+    state.pendingUploads = {};
+    return Promise.all(caminhos.map(apagarMidia));
+  }
+
+  /* mesma régua do Worker, reaplicada aqui só para avisar cedo — quem decide
+     continua sendo o Worker */
+  var EXT_MIDIA = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.pdf'];
+  var MAX_MIDIA_BYTES = 5 * 1024 * 1024;
+  function sanitizarNome(nome) {
+    var baixo = String(nome || '').toLowerCase().trim();
+    var ponto = baixo.lastIndexOf('.');
+    if (ponto === -1) return null;
+    var ext = baixo.slice(ponto);
+    if (EXT_MIDIA.indexOf(ext) === -1) return null;
+    var base = baixo.slice(0, ponto).normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9._-]/g, '-').replace(/^\.+/, '').replace(/-+/g, '-');
+    return base ? base + ext : null;
+  }
+
   function draftKey() {
     if (!state.repo || !state.branch) return null;
     return DRAFT_PREFIX + state.repo + '@' + state.branch;
@@ -113,13 +218,17 @@
   function saveDraftNow() {
     var k = draftKey();
     if (!k) return;
-    var paths = Object.keys(state.dirty);
-    if (!paths.length) { clearDraft(); return; }
+    if (!haPendencias()) { clearDraft(); return; }
     try {
       var agora = new Date().toISOString();
       localStorage.setItem(k, JSON.stringify({
         v: DRAFT_VERSION, repo: state.repo, branch: state.branch,
-        savedAt: agora, files: state.dirty
+        savedAt: agora, files: state.dirty,
+        /* só o registro das mídias: os bytes já estão no IndexedDB, que
+           sobrevive ao fechamento da aba por conta própria */
+        uploads: state.pendingUploads,
+        pages: state.pendingPages,
+        deletes: state.pendingDeletes
       }));
       state.draftSavedAt = agora;
       setDraftState('rascunho');
@@ -147,15 +256,28 @@
          formato antigo é ignorado, nunca aplicado por engano */
       if (!d || d.v !== DRAFT_VERSION) return null;
       if (d.repo !== state.repo || d.branch !== state.branch) return null;
-      if (!d.files || !Object.keys(d.files).length) return null;
+      var temAlgo = (d.files && Object.keys(d.files).length) ||
+        (d.uploads && Object.keys(d.uploads).length) ||
+        (d.pages && Object.keys(d.pages).length) ||
+        (d.deletes && Object.keys(d.deletes).length);
+      if (!temAlgo) return null;
       return d;
     } catch (e) { return null; }
   }
 
+  /* Descartar apaga o registro E os bytes: deixar as mídias no IndexedDB
+     depois de descartar encheria o navegador com arquivos que nenhuma
+     publicação vai usar. */
   function clearDraft() {
     var k = draftKey();
     if (k) { try { localStorage.removeItem(k); } catch (e) { } }
     state.draftSavedAt = null;
+  }
+  function descartarTudoPendente() {
+    return limparTodaMidiaPendente().then(function () {
+      state.pendingPages = {}; state.pendingDeletes = {}; state.dirty = {};
+      clearDraft();
+    });
   }
 
   /* Reencaixa o rascunho no estado carregado do GitHub. Os SHAs vêm do
@@ -174,6 +296,22 @@
         var m = path.match(/^content\/projects\/([a-z0-9-]+)\.json$/);
         if (m) state.projects[m[1]] = { data: entry.data, sha: entry.sha };
       }
+    });
+    /* pendências não-JSON: os bytes das mídias continuam no IndexedDB, então
+       basta reencaixar o registro. Uma mídia cujo blob sumiu (navegador
+       limpou o IndexedDB) é descartada aqui em vez de quebrar na publicação. */
+    state.pendingPages = d.pages || {};
+    state.pendingDeletes = d.deletes || {};
+    var uploads = d.uploads || {};
+    state.pendingUploads = {};
+    Object.keys(uploads).forEach(function (p) { state.pendingUploads[p] = uploads[p]; });
+    Object.keys(uploads).forEach(function (p) {
+      lerMidia(p).then(function (blob) {
+        if (blob) return;
+        delete state.pendingUploads[p];
+        marcarPendenteMudou();
+        toast('A mídia ' + p + ' não está mais neste navegador e saiu da lista.', 'err');
+      }).catch(function () { });
     });
     state.draftSavedAt = d.savedAt;
   }
@@ -210,7 +348,7 @@
   /* Volta para o estado que corresponde ao que existe agora, sem inventar:
      é chamado depois de publicar, descartar ou restaurar. */
   function refreshDraftState() {
-    if (!Object.keys(state.dirty).length) { setDraftState('publicado'); return; }
+    if (!haPendencias()) { setDraftState('publicado'); return; }
     setDraftState(state.draftSavedAt ? 'rascunho' : 'pendente');
   }
 
@@ -240,7 +378,11 @@
      state.projects, sem passar pelo fetch que normalmente tira o retrato
      "antes"). Nunca sobrescreve uma linha de base que já existe. */
   function ensurePublishedBaseline(paths) {
-    var faltando = paths.filter(function (p) { return !state.published[p]; });
+    /* `p in state.published` e não `!state.published[p]`: um projeto criado
+       agora tem a linha de base gravada como null de propósito ("nunca existiu
+       publicado"), e o teste por valor a trataria como ausente, disparando um
+       fetch que só pode dar 404. */
+    var faltando = paths.filter(function (p) { return !(p in state.published); });
     if (!faltando.length) return Promise.resolve();
     return Promise.all(faltando.map(function (p) {
       var apiPath = apiPathFor(p);
@@ -435,13 +577,35 @@
      área — é isto que vira a tela de revisão. */
   function calcularRevisao() {
     var porArea = {};
+    function empilhar(area, entrada) {
+      if (!porArea[area]) porArea[area] = [];
+      porArea[area].push(entrada);
+    }
     Object.keys(state.dirty).forEach(function (path) {
       var novo = state.dirty[path].data;
       var antigo = state.published[path] === undefined ? null : state.published[path];
+      /* arquivo que nunca existiu publicado é criação, não um diff campo a
+         campo — listar 40 campos "alterados" de um projeto novo não ajudaria */
+      if (antigo === null) {
+        var mNovo = path.match(/^content\/projects\/([a-z0-9-]+)\.json$/);
+        var titulo = (novo && novo.hero && novo.hero.titlePt) || (mNovo ? mNovo[1] : path);
+        empilhar('Projetos', { tipo: 'adicionado', texto: 'Projeto criado: "' + esc(titulo) + '"', caminho: path });
+        return;
+      }
       diffArquivo(path, antigo, novo).forEach(function (g) {
         if (!porArea[g.area]) porArea[g.area] = [];
         porArea[g.area] = porArea[g.area].concat(g.entradas);
       });
+    });
+    Object.keys(state.pendingPages).forEach(function (p) {
+      empilhar('Projetos', { tipo: 'adicionado', texto: 'Página criada a partir do modelo: ' + esc(p), caminho: p });
+    });
+    Object.keys(state.pendingUploads).forEach(function (p) {
+      var kb = Math.round((state.pendingUploads[p].size || 0) / 1024);
+      empilhar('Mídia', { tipo: 'imagem', texto: 'Arquivo enviado: ' + esc(p) + ' (' + kb + ' KB)', caminho: p });
+    });
+    Object.keys(state.pendingDeletes).forEach(function (p) {
+      empilhar('Projetos', { tipo: 'removido', texto: 'Removido: ' + esc(state.pendingDeletes[p]), caminho: p });
     });
     return Object.keys(porArea).map(function (area) { return { area: area, entradas: porArea[area] }; });
   }
@@ -696,7 +860,8 @@
      que o botão Publicar realmente vai enviar. Não depende só de cor: traz o
      número e o texto por extenso. */
   function atualizarSeloPrevia() {
-    var n = Object.keys(state.dirty).length;
+    var n = Object.keys(state.dirty).length + Object.keys(state.pendingUploads).length +
+      Object.keys(state.pendingPages).length + Object.keys(state.pendingDeletes).length;
     document.querySelectorAll('[data-pv-badge]').forEach(function (el) {
       el.hidden = n === 0;
       el.textContent = n === 0 ? '' :
@@ -1309,39 +1474,89 @@
     });
   }
 
+  /* Devolve os dados de um projeto: da memória se já estiverem lá (inclusive
+     um projeto ainda pendente, que não existe no GitHub), senão busca. */
+  function carregarProjeto(slug) {
+    if (state.projects[slug]) return Promise.resolve(state.projects[slug].data);
+    return api('/api/projects/' + slug).then(function (res) {
+      state.projects[slug] = { data: res.data, sha: res.sha };
+      snapshotPublished('content/projects/' + slug + '.json', res.data);
+      return res.data;
+    });
+  }
+
   function handleProjectAction(slug, action) {
     var list = state.projectsIndex.projects;
     var p = list.filter(function (x) { return x.slug === slug; })[0];
     if (!p) return;
 
+    /* Duplicar deixou de chamar o Worker. Antes eram três commits imediatos
+       (JSON do projeto, índice e página) antes de qualquer revisão. Agora o
+       clone é montado aqui, entra como pendente e sobe no commit do Publicar. */
     if (action === 'duplicate') {
-      var suggestion = slug + '-copia';
-      var newSlug = prompt('Slug do projeto duplicado:', suggestion);
+      var newSlug = prompt('Slug do projeto duplicado:', slug + '-copia');
       if (!newSlug) return;
-      toast('Duplicando "' + slug + '"…');
-      api('/api/projects/' + slug + '/duplicate', { method: 'POST', body: { slug: newSlug } }).then(function () {
-        toast('Duplicado como "' + newSlug + '" (rascunho oculto).', 'ok');
-        return api('/api/projects');
-      }).then(function (res) {
-        state.projectsIndex = res.data; state.projectsIndexSha = res.sha;
+      newSlug = String(newSlug).trim().toLowerCase();
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(newSlug)) { toast('Slug inválido. Use letras minúsculas, números e hífen.', 'err'); return; }
+      if (list.some(function (x) { return x.slug === newSlug; })) { toast('Já existe um projeto com esse slug.', 'err'); return; }
+
+      carregarProjeto(slug).then(function (origem) {
+        var copia = JSON.parse(JSON.stringify(origem));
+        copia.slug = newSlug;
+        copia.status = 'draft';
+        if (copia.hero) {
+          copia.hero.titlePt = (copia.hero.titlePt || slug) + ' (cópia)';
+          copia.hero.titleEn = (copia.hero.titleEn || slug) + ' (copy)';
+        }
+        var caminho = 'content/projects/' + newSlug + '.json';
+        state.projects[newSlug] = { data: copia, sha: null };
+        state.published[caminho] = null;              /* arquivo novo: nunca existiu publicado */
+        markDirty(caminho, copia, null, 'cms: duplica ' + slug + ' em ' + newSlug);
+
+        var entrada = JSON.parse(JSON.stringify(p));
+        entrada.slug = newSlug; entrada.visible = false;
+        entrada.titlePt = copia.hero ? copia.hero.titlePt : newSlug;
+        entrada.titleEn = copia.hero ? copia.hero.titleEn : newSlug;
+        entrada.order = list.reduce(function (m, x) { return Math.max(m, x.order || 0); }, 0) + 1;
+        list.push(entrada);
+        markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
+
+        /* a página HTML é clonada pelo Worker a partir do modelo já
+           versionado; o painel só diz qual slug e de onde copiar */
+        state.pendingPages['work/' + newSlug + '.html'] = { slug: newSlug, fromSlug: slug };
+        marcarPendenteMudou();
         renderProjectsList();
+        toast('Duplicado como "' + newSlug + '". Sobe no próximo Publicar.', 'ok');
       }).catch(function (e) { toast(e.message, 'err'); });
       return;
     }
 
+    /* Excluir também virou pendente: dá para cancelar antes de publicar, e a
+       remoção do índice, do JSON e da página entra num commit só. Imagens
+       continuam sem ser apagadas de propósito. */
     if (action === 'delete') {
-      var sure = confirm('Excluir "' + (p.titlePt || slug) + '" definitivamente?\n\nIsso remove a página e o conteúdo do projeto do GitHub (as imagens em assets/ não são apagadas). Esta ação não pode ser desfeita pelo painel.');
+      var sure = confirm('Excluir "' + (p.titlePt || slug) + '"?\n\nA entrada do índice, o conteúdo e a página serão removidos no próximo Publicar. As imagens em assets/ não são apagadas. Nada acontece no GitHub até você publicar.');
       if (!sure) return;
-      toast('Excluindo "' + slug + '"…');
-      api('/api/projects/' + slug, { method: 'DELETE' }).then(function () {
-        toast('Projeto excluído.', 'ok');
-        if (state.editingSlug === slug) { state.editingSlug = null; document.getElementById('projectEditor').innerHTML = ''; }
-        delete state.projects[slug];
-        return api('/api/projects');
-      }).then(function (res) {
-        state.projectsIndex = res.data; state.projectsIndexSha = res.sha;
-        renderProjectsList();
-      }).catch(function (e) { toast(e.message, 'err'); });
+      if (state.editingSlug === slug) { state.editingSlug = null; document.getElementById('projectEditor').innerHTML = ''; }
+
+      var i = list.indexOf(p);
+      if (i !== -1) list.splice(i, 1);
+      markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
+
+      var pathJson = 'content/projects/' + slug + '.json';
+      var pathPagina = 'work/' + slug + '.html';
+      /* projeto que só existia como pendente some sem virar exclusão remota */
+      if (state.pendingPages[pathPagina]) {
+        delete state.pendingPages[pathPagina];
+        delete state.dirty[pathJson];
+      } else {
+        state.pendingDeletes[pathJson] = 'conteúdo do projeto ' + slug;
+        state.pendingDeletes[pathPagina] = 'página do projeto ' + slug;
+      }
+      delete state.projects[slug];
+      marcarPendenteMudou();
+      renderProjectsList();
+      toast('Exclusão pendente. Confirme em Publicação.', 'ok');
       return;
     }
 
@@ -1464,51 +1679,135 @@
     });
   }
 
+  /* O arquivo NÃO vai mais para o GitHub aqui. Antes, escolher uma imagem
+     criava um commit na hora: se você desistisse da edição, a imagem ficava
+     órfã no repositório, e ela podia existir sem o JSON que a referencia.
+     Agora fica pendente, entra na revisão e sobe no mesmo commit do resto. */
   function uploadFile(file, slug, onDone) {
     if (!file) return;
-    var form = new FormData();
-    form.append('file', file);
-    form.append('slug', slug);
-    toast('Enviando arquivo…');
-    fetch('/api/uploads', { method: 'POST', body: form }).then(function (r) { return r.json(); }).then(function (res) {
-      if (res.error) { toast(res.message || res.error, 'err'); return; }
-      toast('Arquivo enviado.', 'ok');
-      onDone(res.path);
-    }).catch(function () { toast('Falha no upload.', 'err'); });
+    var nome = sanitizarNome(file.name);
+    if (!nome) { toast('Extensão não permitida. Use jpg, png, webp, svg ou pdf.', 'err'); return; }
+    if (file.size > MAX_MIDIA_BYTES) {
+      toast('Arquivo maior que ' + Math.round(MAX_MIDIA_BYTES / 1024 / 1024) + 'MB.', 'err'); return;
+    }
+    var pasta = (typeof slug === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) ? slug + '/' : '';
+    var path = 'assets/uploads/' + pasta + nome;
+
+    guardarMidia(path, file).then(function () {
+      state.pendingUploads[path] = { mime: file.type || '', size: file.size, nome: nome };
+      marcarPendenteMudou();
+      toast('Mídia pendente. Sobe no próximo Publicar.', 'ok');
+      onDone(path);
+    }).catch(function () {
+      toast('Não foi possível guardar a mídia neste navegador.', 'err');
+    });
+  }
+
+  /* Um lugar só para "algo pendente mudou": mantém rascunho, selo da prévia,
+     painel de publicação e indicadores de aba em sincronia. */
+  function marcarPendenteMudou() {
+    updateDirtyIndicators();
+    renderPublishPanel();
+    atualizarSeloPrevia();
+    scheduleDraftSave();
+  }
+
+  /* Existe pendência de qualquer tipo, não só JSON alterado? */
+  function haPendencias() {
+    return Object.keys(state.dirty).length > 0 ||
+      Object.keys(state.pendingUploads).length > 0 ||
+      Object.keys(state.pendingPages).length > 0 ||
+      Object.keys(state.pendingDeletes).length > 0;
   }
 
   function renderProjects() {
     renderProjectsList();
     renderProjectEditor();
+    /* Criar também virou pendente. Antes eram três commits imediatos antes de
+       qualquer revisão; agora o projeto nasce só na memória, aparece no painel
+       e na prévia, e o índice, o conteúdo e a página sobem juntos no Publicar.
+       O molde vem de um projeto existente e é limpo, para o Worker não
+       precisar aceitar estrutura arbitrária do cliente. */
     document.getElementById('btnNewProject').addEventListener('click', function () {
       var titlePt = prompt('Título do novo projeto (português):');
       if (!titlePt) return;
-      var slug = prompt('Slug (ex: campanha-2027):', titlePt.toLowerCase().normalize('NFD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-'));
+      var sugestao = titlePt.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
+      var slug = prompt('Slug (ex: campanha-2027):', sugestao);
       if (!slug) return;
-      api('/api/projects', { method: 'POST', body: { slug: slug, titlePt: titlePt, titleEn: '' } }).then(function (res) {
-        toast('Projeto "' + slug + '" criado como rascunho.', 'ok');
-        return api('/api/projects');
-      }).then(function (res) {
-        state.projectsIndex = res.data; state.projectsIndexSha = res.sha;
+      slug = String(slug).trim().toLowerCase();
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) { toast('Slug inválido. Use letras minúsculas, números e hífen.', 'err'); return; }
+      var lista = state.projectsIndex.projects;
+      if (lista.some(function (x) { return x.slug === slug; })) { toast('Já existe um projeto com esse slug.', 'err'); return; }
+
+      var modeloSlug = lista.length ? lista[0].slug : null;
+      if (!modeloSlug) { toast('É preciso ter ao menos um projeto para servir de modelo.', 'err'); return; }
+
+      carregarProjeto(modeloSlug).then(function (modelo) {
+        var novo = JSON.parse(JSON.stringify(modelo));
+        novo.slug = slug;
+        novo.status = 'draft';
+        novo.year = new Date().getFullYear();
+        if (novo.hero) {
+          novo.hero.titlePt = titlePt; novo.hero.titleEn = '';
+          novo.hero.subtitlePt = ''; novo.hero.subtitleEn = '';
+        }
+        /* zera o conteúdo herdado do modelo: fica a estrutura, não o texto */
+        if (Array.isArray(novo.blocks)) novo.blocks.forEach(function (b) {
+          if (b.type === 'text') { b.textPt = ''; b.textEn = ''; }
+          if (b.type === 'gallery') b.images = [];
+        });
+        novo.cover = '';
+
+        var caminho = 'content/projects/' + slug + '.json';
+        state.projects[slug] = { data: novo, sha: null };
+        state.published[caminho] = null;
+        markDirty(caminho, novo, null, 'cms: cria projeto ' + slug);
+
+        lista.push({
+          slug: slug, titlePt: titlePt, titleEn: '', subtitlePt: '', subtitleEn: '',
+          year: novo.year, cover: '', coverLight: false, visible: false,
+          order: lista.reduce(function (m, x) { return Math.max(m, x.order || 0); }, 0) + 1,
+          tagsPt: [], tagsEn: []
+        });
+        markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
+        state.pendingPages['work/' + slug + '.html'] = { slug: slug, fromSlug: modeloSlug };
+
         state.editingSlug = slug;
+        marcarPendenteMudou();
         renderProjectsList(); renderProjectEditor();
+        toast('Projeto "' + slug + '" criado como pendente. Sobe no próximo Publicar.', 'ok');
       }).catch(function (e) { toast(e.message, 'err'); });
     });
   }
 
   /* ---------- Publicação ---------- */
   function renderPublishPanel() {
-    var paths = Object.keys(state.dirty);
     var el = document.getElementById('publishSummary');
     var btn = document.getElementById('btnPublish');
-    if (!paths.length) {
+    if (!haPendencias()) {
       el.innerHTML = 'Nenhuma alteração pendente.';
       btn.disabled = true;
       return;
     }
-    el.innerHTML = '<ul class="summary-list">' + paths.map(function (p) {
-      return '<li><span>' + esc(p) + '</span><span class="badge custom">alterado</span></li>';
-    }).join('') + '</ul>';
+    var linhas = [];
+    Object.keys(state.dirty).forEach(function (p) {
+      linhas.push({ path: p, rotulo: state.published[p] === null ? 'novo' : 'alterado', classe: 'custom' });
+    });
+    Object.keys(state.pendingPages).forEach(function (p) {
+      linhas.push({ path: p, rotulo: 'página nova', classe: 'custom' });
+    });
+    Object.keys(state.pendingUploads).forEach(function (p) {
+      var kb = Math.round((state.pendingUploads[p].size || 0) / 1024);
+      linhas.push({ path: p, rotulo: 'mídia · ' + kb + ' KB', classe: 'custom' });
+    });
+    Object.keys(state.pendingDeletes).forEach(function (p) {
+      linhas.push({ path: p, rotulo: 'remover', classe: 'danger' });
+    });
+    el.innerHTML = '<ul class="summary-list">' + linhas.map(function (l) {
+      return '<li><span>' + esc(l.path) + '</span><span class="badge ' + l.classe + '">' + esc(l.rotulo) + '</span></li>';
+    }).join('') + '</ul>' +
+      '<p class="hint" style="margin-top:.6rem">Tudo isso entra em um único commit.</p>';
     btn.disabled = false;
   }
 
@@ -1517,58 +1816,87 @@
      mensagem em todos — um commit só, uma frase só. Vazio mantém o padrão
      'cms: atualiza <arquivo>' de cada um, como sempre foi. */
   function doPublish(mensagemCustom) {
-    var paths = Object.keys(state.dirty);
-    if (!paths.length) return;
-    var files = paths.map(function (p) {
-      return { path: p, data: state.dirty[p].data, sha: state.dirty[p].sha, message: mensagemCustom || state.dirty[p].message };
-    });
+    if (!haPendencias()) return;
     document.getElementById('btnPublish').disabled = true;
     document.getElementById('publishResult').innerHTML = 'Publicando…';
     setDraftState('publicando');
-    api('/api/publish', { method: 'POST', body: { files: files } }).then(function (res) {
-      var okAll = res.ok;
-      document.getElementById('publishResult').innerHTML =
-        '<div class="badge ' + (okAll ? 'default' : 'custom') + '">' + (okAll ? 'Publicado com sucesso' : 'Publicação parcial — veja abaixo') + '</div>' +
-        '<ul class="summary-list" style="margin-top:.6rem">' + res.results.map(function (r) {
-          return '<li><span>' + esc(r.path) + '</span><span>' + (r.ok ? 'ok · ' + r.commit.slice(0, 7) : 'falhou: ' + esc(r.message || r.error)) + '</span></li>';
-        }).join('') + '</ul>';
-      if (okAll) {
-        res.results.forEach(function (r) {
-          /* a linha de base avança para o que acabou de ser publicado —
-             senão a próxima revisão compararia com um estado que já não
-             existe mais no repositório */
-          if (state.dirty[r.path]) snapshotPublished(r.path, state.dirty[r.path].data);
-          delete state.dirty[r.path];
-          if (r.path === 'content/global.json') state.globalSha = r.sha;
-          if (r.path === 'content/home.json') state.homeSha = r.sha;
-          if (r.path === 'content/projects/index.json') state.projectsIndexSha = r.sha;
-          var m = r.path.match(/^content\/projects\/([a-z0-9-]+)\.json$/);
-          if (m && state.projects[m[1]]) state.projects[m[1]].sha = r.sha;
+
+    /* Monta as operações na ordem em que o Worker as espera. Os bytes das
+       mídias só saem do IndexedDB agora, na hora de publicar — não ficam em
+       memória durante a edição. */
+    var ops = Object.keys(state.dirty).map(function (p) {
+      return { type: 'json', path: p, data: state.dirty[p].data, sha: state.dirty[p].sha || null };
+    });
+    Object.keys(state.pendingPages).forEach(function (p) {
+      ops.push({ type: 'page', slug: state.pendingPages[p].slug, fromSlug: state.pendingPages[p].fromSlug });
+    });
+    Object.keys(state.pendingDeletes).forEach(function (p) {
+      ops.push({ type: 'delete', path: p });
+    });
+
+    var caminhosMidia = Object.keys(state.pendingUploads);
+    Promise.all(caminhosMidia.map(function (p) {
+      return lerMidia(p).then(function (blob) {
+        if (!blob) throw new Error('A mídia pendente ' + p + ' não está mais neste navegador.');
+        return midiaParaBase64(blob).then(function (b64) {
+          return { type: 'binary', path: p, contentBase64: b64, mime: state.pendingUploads[p].mime || '' };
         });
-        localStorage.setItem('cms_last_publish', JSON.stringify({ at: res.publishedAt, files: res.results.length }));
+      });
+    })).then(function (opsMidia) {
+      return api('/api/publish', {
+        method: 'POST',
+        body: { message: mensagemCustom || null, ops: ops.concat(opsMidia) }
+      });
+    }).then(function (res) {
+      /* Chegou aqui: o Worker moveu a branch. Não existe publicação parcial —
+         ou o commit único foi criado, ou caímos no catch. */
+      var curto = String(res.commit || '').slice(0, 7);
+      document.getElementById('publishResult').innerHTML =
+        '<div class="badge default">Publicado em um commit · ' + esc(curto) + '</div>' +
+        '<ul class="summary-list" style="margin-top:.6rem">' + (res.paths || []).map(function (p) {
+          return '<li><span>' + esc(p) + '</span><span>ok</span></li>';
+        }).join('') + '</ul>';
+
+      /* linha de base avança para o que acabou de ser publicado, com os SHAs
+         novos, senão a próxima publicação acusaria conflito contra si mesma */
+      var shas = res.shas || {};
+      Object.keys(state.dirty).forEach(function (p) {
+        snapshotPublished(p, state.dirty[p].data);
+        if (p === 'content/global.json') state.globalSha = shas[p] || null;
+        if (p === 'content/home.json') state.homeSha = shas[p] || null;
+        if (p === 'content/projects/index.json') state.projectsIndexSha = shas[p] || null;
+        var m = p.match(/^content\/projects\/([a-z0-9-]+)\.json$/);
+        if (m && state.projects[m[1]]) state.projects[m[1]].sha = shas[p] || null;
+      });
+      Object.keys(state.pendingDeletes).forEach(function (p) { delete state.published[p]; });
+
+      state.dirty = {};
+      state.pendingPages = {};
+      state.pendingDeletes = {};
+      return limparTodaMidiaPendente().then(function () {
+        localStorage.setItem('cms_last_publish', JSON.stringify({ at: res.publishedAt, commit: res.commit, files: (res.paths || []).length }));
         renderLastPublish();
-        /* só aqui o rascunho morre: publicação inteira, sem nenhuma falha.
-           Parcial ou com erro mantém tudo salvo. */
-        clearDraft();
+        clearDraft();                /* só aqui o rascunho morre */
         setDraftState('concluido');
-      } else {
-        /* segurou no meio: o que sobrou continua pendente e volta para o
-           armazenamento local, agora com o horário desta tentativa */
-        saveDraftNow();
-        setDraftState('falha');
-      }
-      updateDirtyIndicators();
-      renderPublishPanel();
-      atualizarSeloPrevia();
-      toast(okAll ? 'Publicado.' : 'Publicação parcial — revise os erros.', okAll ? 'ok' : 'err');
+        marcarPendenteMudou();
+        toast('Publicado em um commit.', 'ok');
+      });
     }).catch(function (e) {
-      document.getElementById('publishResult').innerHTML = '<span style="color:var(--err)">' + esc(e.message) + '</span>';
-      /* falha de rede ou recusa do Worker: nada foi publicado e o rascunho
-         precisa sobreviver — é o caso em que ele mais importa */
+      /* Falha em qualquer etapa: a branch não se moveu, então nada precisa ser
+         desfeito. O rascunho e as mídias pendentes ficam intactos para a
+         pessoa tentar de novo sem perder trabalho. */
+      var msg = e && e.message ? e.message : 'Falha ao publicar.';
+      var conflito = e && e.body && e.body.error === 'conflict';
+      document.getElementById('publishResult').innerHTML =
+        '<div class="badge custom">' + (conflito ? 'Conflito — nada foi publicado' : 'Falha — nada foi publicado') + '</div>' +
+        '<p style="color:var(--err);margin-top:.5rem">' + esc(msg) + '</p>' +
+        (conflito ? '<p class="hint">Recarregue o painel para trazer a versão publicada. Seu rascunho e suas mídias continuam salvos neste navegador.</p>' : '');
       saveDraftNow();
       setDraftState('falha');
-      toast(e.message, 'err');
-    }).finally(function () { document.getElementById('btnPublish').disabled = Object.keys(state.dirty).length === 0; });
+      toast(msg, 'err');
+    }).finally(function () {
+      document.getElementById('btnPublish').disabled = !haPendencias();
+    });
   }
 
   function renderLastPublish() {
@@ -1600,7 +1928,7 @@
        revisão primeiro. abrirRevisao() só resolve quando a pessoa confirma
        (mensagem) ou cancela (null) — nada é publicado antes disso. */
     document.getElementById('btnPublish').addEventListener('click', function () {
-      if (!Object.keys(state.dirty).length) return;
+      if (!haPendencias()) return;
       revisaoResolver = null;
       abrirRevisao().then(function () {
         return new Promise(function (resolve) { revisaoResolver = resolve; });
@@ -1611,14 +1939,14 @@
     document.getElementById('btnReviewCancel').addEventListener('click', function () { fecharRevisao(false); });
     document.getElementById('btnReviewConfirm').addEventListener('click', function () { fecharRevisao(true); });
     document.getElementById('btnDiscard').addEventListener('click', function () {
-      if (!confirm('Descartar todas as alterações não publicadas?\n\nIsso também apaga o rascunho salvo neste navegador e volta ao conteúdo publicado.')) return;
-      /* apaga o rascunho ANTES de recarregar: sem isso o painel voltaria
-         oferecendo justamente aquilo que a pessoa acabou de descartar */
-      clearDraft();
-      location.reload();
+      if (!confirm('Descartar todas as alterações não publicadas?\n\nIsso também apaga o rascunho e as mídias pendentes neste navegador, e volta ao conteúdo publicado.')) return;
+      /* apaga rascunho E mídias ANTES de recarregar: sem isso o painel voltaria
+         oferecendo justamente aquilo que a pessoa acabou de descartar, e os
+         bytes ficariam ocupando o IndexedDB sem dono */
+      descartarTudoPendente().then(function () { location.reload(); });
     });
     window.addEventListener('beforeunload', function (e) {
-      if (Object.keys(state.dirty).length) { e.preventDefault(); e.returnValue = ''; }
+      if (haPendencias()) { e.preventDefault(); e.returnValue = ''; }
     });
   }
 
