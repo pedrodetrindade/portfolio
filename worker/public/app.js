@@ -194,11 +194,56 @@
      mesmo tempo — só a classe .active decide qual aparece. Antes isto buscava
      por id e o id se repetia nos três, então só o primeiro iframe do
      documento recebia as mudanças: a prévia da aba Home nunca reagia. */
-  function sendPreview() {
+  var PREVIEW_PROTOCOL = 1;
+
+  /* Origem exata do destino, nunca '*'. Com '*' o navegador entregaria o
+     conteúdo não publicado para qualquer origem que estivesse no iframe
+     naquele momento — inclusive uma para onde ele tivesse navegado sozinho.
+     Devolve null quando a URL da prévia não é utilizável, e nesse caso nada
+     é enviado. */
+  function origemDaPrevia() {
+    try {
+      var u = new URL(state.previewUrl, location.href);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+      return u.origin;
+    } catch (e) { return null; }
+  }
+
+  /* Monta a URL do iframe declarando a origem do painel, para o site poder
+     validar event.origin sem ter nenhum endereço fixo no código. */
+  function urlDaPrevia(extra) {
+    var u = new URL(state.previewUrl, location.href);
+    u.searchParams.set('cmsOrigin', location.origin);
+    if (extra) Object.keys(extra).forEach(function (k) { u.searchParams.set(k, extra[k]); });
+    return u.toString();
+  }
+
+  function postToPreviews(msg) {
+    var alvo = origemDaPrevia();
+    if (!alvo) return;
     document.querySelectorAll('iframe.preview-frame').forEach(function (frame) {
       if (!frame.contentWindow) return;
-      frame.contentWindow.postMessage({ __cmsPreview__: true, global: state.global, home: state.home }, '*');
+      frame.contentWindow.postMessage(msg, alvo);
     });
+  }
+
+  /* Envia só dado estruturado — nenhuma função, nenhum HTML, nenhum seletor.
+     O site lê campo a campo e escapa tudo antes de escrever na tela. */
+  function sendPreview() {
+    postToPreviews({
+      __cms__: 'preview', v: PREVIEW_PROTOCOL, type: 'content',
+      data: {
+        global: state.global,
+        home: state.home,
+        projectsIndex: state.projectsIndex,
+        project: state.editingSlug && state.projects[state.editingSlug]
+          ? state.projects[state.editingSlug].data : null
+      }
+    });
+  }
+
+  function sendPreviewLang(lang) {
+    postToPreviews({ __cms__: 'preview', v: PREVIEW_PROTOCOL, type: 'lang', lang: lang === 'en' ? 'en' : 'pt' });
   }
   function previewBlock() {
     if (!state.previewUrl) {
@@ -211,7 +256,7 @@
     return '<div class="preview-wrap">' +
       '<div class="preview-head"><span>Prévia ao vivo</span>' +
       '<button class="btn small" data-change-preview="1">trocar URL</button></div>' +
-      '<iframe class="preview-frame" src="' + esc(state.previewUrl) + '"></iframe></div>';
+      '<iframe class="preview-frame" src="' + esc(urlDaPrevia()) + '"></iframe></div>';
   }
   function wirePreviewBlock(slotId) {
     var slot = document.getElementById(slotId);
@@ -220,7 +265,7 @@
        <iframe> recarrega o site inteiro e perde a rolagem, e os painéis
        re-renderizam a cada item adicionado ou removido de uma lista. */
     var current = slot.querySelector('.preview-frame');
-    if (current && state.previewUrl && current.getAttribute('src') === state.previewUrl) return;
+    if (current && state.previewUrl && current.getAttribute('src') === urlDaPrevia()) return;
     slot.innerHTML = previewBlock();
     var setBtn = slot.querySelector('#btnSetPreview');
     if (setBtn) setBtn.addEventListener('click', function () {
@@ -823,7 +868,9 @@
       blockSpacingFields(galleryBlock, 'spacing', function () { save(); }, true) +
       '</div></details>';
 
-    function save() { markDirty('content/projects/' + slug + '.json', P, cached.sha); }
+    /* schedulePreview aqui também: sem isso o editor de projeto era o único
+       lugar do painel que alterava conteúdo sem avisar a prévia. */
+    function save() { markDirty('content/projects/' + slug + '.json', P, cached.sha); schedulePreview(); }
     bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); });
     bindText('pe_titleen', function (v) { P.hero.titleEn = v; indexEntry.titleEn = v; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); });
     bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; save(); });

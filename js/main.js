@@ -630,53 +630,66 @@
      senão o conteúdo fechado continuaria acessível ao leitor de tela. */
   /* Serve FAQ e "O que eu faço": os dois têm a mesma mecânica, muda só a
      classe do gatilho. Um item aberto por vez dentro de cada grupo. */
-  const perguntas = [...document.querySelectorAll('.faq-q, .hi-q')];
-  if (perguntas.length) {
-    const grupoDe = btn => btn.classList.contains('hi-q') ? 'hi' : 'faq';
-    const DUR = reduced ? 20 : 620;
-    const timers = new WeakMap();
+  const grupoDe = btn => btn.classList.contains('hi-q') ? 'hi' : 'faq';
+  const DUR_Q = reduced ? 20 : 620;
+  const timersQ = new WeakMap();
 
-    /* O fim do movimento é resolvido por temporizador, não por transitionend:
-       aquele evento não dispara se a transição for interrompida no meio, e o
-       painel ficaria preso em height fixo ou sem o hidden de volta. */
-    const agendar = (painel, fn) => {
-      clearTimeout(timers.get(painel));
-      timers.set(painel, setTimeout(fn, DUR));
-    };
+  /* O fim do movimento é resolvido por temporizador, não por transitionend:
+     aquele evento não dispara se a transição for interrompida no meio, e o
+     painel ficaria preso em height fixo ou sem o hidden de volta. */
+  const agendarQ = (painel, fn) => {
+    clearTimeout(timersQ.get(painel));
+    timersQ.set(painel, setTimeout(fn, DUR_Q));
+  };
 
-    const fechar = btn => {
-      const painel = document.getElementById(btn.getAttribute('aria-controls'));
-      btn.setAttribute('aria-expanded', 'false');
-      painel.style.height = painel.scrollHeight + 'px';
-      void painel.offsetHeight;                 // fixa a altura antes de zerar
-      painel.classList.remove('open');
-      painel.style.height = '0px';
-      agendar(painel, () => { painel.hidden = true; });
-    };
+  const fecharQ = btn => {
+    const painel = document.getElementById(btn.getAttribute('aria-controls'));
+    btn.setAttribute('aria-expanded', 'false');
+    painel.style.height = painel.scrollHeight + 'px';
+    void painel.offsetHeight;                 // fixa a altura antes de zerar
+    painel.classList.remove('open');
+    painel.style.height = '0px';
+    agendarQ(painel, () => { painel.hidden = true; });
+  };
 
-    const abrir = btn => {
-      const painel = document.getElementById(btn.getAttribute('aria-controls'));
-      painel.hidden = false;
-      btn.setAttribute('aria-expanded', 'true');
-      painel.style.height = '0px';
-      void painel.offsetHeight;
-      painel.classList.add('open');
-      painel.style.height = painel.scrollHeight + 'px';
-      /* auto no fim: a resposta acompanha troca de idioma e redimensionamento
-         sem depender de um número gravado */
-      agendar(painel, () => { painel.style.height = 'auto'; });
-    };
+  const abrirQ = btn => {
+    const painel = document.getElementById(btn.getAttribute('aria-controls'));
+    painel.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    painel.style.height = '0px';
+    void painel.offsetHeight;
+    painel.classList.add('open');
+    painel.style.height = painel.scrollHeight + 'px';
+    /* auto no fim: a resposta acompanha troca de idioma e redimensionamento
+       sem depender de um número gravado */
+    agendarQ(painel, () => { painel.style.height = 'auto'; });
+  };
 
-    perguntas.forEach(btn => btn.addEventListener('click', () => {
-      const aberto = btn.getAttribute('aria-expanded') === 'true';
-      /* fecha só os irmãos do mesmo grupo: abrir uma pergunta do FAQ não pode
-         fechar um item de "O que eu faço" na outra ponta da página */
-      perguntas.forEach(o => {
-        if (o !== btn && grupoDe(o) === grupoDe(btn) && o.getAttribute('aria-expanded') === 'true') fechar(o);
+  /* Religável e idempotente. Duas diferenças em relação à versão anterior, as
+     duas por causa da prévia do CMS, que reconstrói FAQ e "O que eu faço"
+     inteiros a cada alteração:
+     - o botão já ligado carrega data-q-bound, então rodar de novo não duplica
+       handler nos que sobreviveram à reconstrução;
+     - a busca dos irmãos acontece ao vivo, e não sobre um array capturado no
+       carregamento. Aquele array passaria a apontar para nós já removidos do
+       documento depois de uma reconstrução, e fechar o irmão certo pararia de
+       funcionar em silêncio. */
+  const ligarPerguntas = () => {
+    document.querySelectorAll('.faq-q, .hi-q').forEach(btn => {
+      if (btn.dataset.qBound) return;
+      btn.dataset.qBound = '1';
+      btn.addEventListener('click', () => {
+        const aberto = btn.getAttribute('aria-expanded') === 'true';
+        /* fecha só os irmãos do mesmo grupo: abrir uma pergunta do FAQ não pode
+           fechar um item de "O que eu faço" na outra ponta da página */
+        document.querySelectorAll('.faq-q, .hi-q').forEach(o => {
+          if (o !== btn && grupoDe(o) === grupoDe(btn) && o.getAttribute('aria-expanded') === 'true') fecharQ(o);
+        });
+        aberto ? fecharQ(btn) : abrirQ(btn);
       });
-      aberto ? fechar(btn) : abrir(btn);
-    }));
-  }
+    });
+  };
+  ligarPerguntas();
 
   /* ---- count-up ----
      Só uma vez por número, só quando visível, e desacelerando no fim.
@@ -1051,4 +1064,26 @@
       card.addEventListener('mouseleave', () => cue.classList.remove('show'));
     });
   }
+
+  /* ---- ponte para a prévia do painel ----
+     Chamado por js/content.js depois de reescrever texto e reconstruir listas
+     com dados que ainda não foram publicados. Só reexecuta o que é idempotente:
+     idioma (que por sua vez refaz o scrub e a divisão em palavras), ligação dos
+     acordeões, e a remedição das entradas.
+
+     medirAlvos + readScroll no fim, e não pintarEntradas(Infinity): assim o que
+     está abaixo da dobra continua entrando por rolagem, e a prévia mostra a
+     animação de verdade em vez de revelar a página inteira de uma vez.
+
+     Nada aqui é usado pelo site fora do CMS. Ficam em window porque content.js
+     é outro arquivo, mas não recebem dado nenhum: quem valida a origem e o
+     formato da mensagem é o content.js, antes de chegar aqui. */
+  window.__CMS_REINIT__ = () => {
+    const atual = (document.documentElement.lang || 'pt').indexOf('pt') === 0 ? 'pt' : 'en';
+    setLang(atual);
+    ligarPerguntas();
+    medirAlvos();
+    readScroll();
+  };
+  window.__CMS_SETLANG__ = lang => setLang(lang === 'en' ? 'en' : 'pt');
 })();

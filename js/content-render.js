@@ -27,7 +27,7 @@
   try { renderHome(); } catch (e) { /* mantém o HTML estático */ }
   try { renderProject(); } catch (e) { /* mantém o HTML estático */ }
 
-  function renderHome(overrideHome) {
+  function renderHome(overrideHome, overrideIndex) {
     if (isCase()) return;
     var H = overrideHome || window.__CMS_HOME__;
     if (!H || !H.hero) return;
@@ -209,11 +209,16 @@
        porque ordem, visibilidade e contagem podem mudar — um "substituir no
        lugar" não cobre adicionar, remover ou reordenar cards. */
     try {
-      var xf = new XMLHttpRequest();
-      xf.open('GET', 'content/projects/index.json?v=1', false);
-      xf.send(null);
-      if (xf.status === 200 || xf.status === 0) {
-        var idx = JSON.parse(xf.responseText);
+      /* overrideIndex chega da prévia do painel, com a lista ainda não
+         publicada. Sem ele, o índice vem do repositório como sempre. */
+      var idx = overrideIndex || null;
+      if (!idx) {
+        var xf = new XMLHttpRequest();
+        xf.open('GET', 'content/projects/index.json?v=1', false);
+        xf.send(null);
+        if (xf.status === 200 || xf.status === 0) idx = JSON.parse(xf.responseText);
+      }
+      if (idx) {
         var list = (idx.projects || []).filter(function (p) { return p.visible !== false; })
           .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
         var cardsEl = document.querySelector('.cards');
@@ -241,7 +246,7 @@
     } catch (e) { /* grade estática do HTML continua valendo */ }
   }
 
-  function renderProject(overrideProject) {
+  function renderProject(overrideProject, overrideIndex) {
     if (!isCase()) return;
     var P = overrideProject || window.__CMS_PROJECT__;
     if (!P || !P.hero) return;
@@ -328,7 +333,7 @@
        na hora, inserir um projeto em qualquer posição já encaixa ele na
        sequência dos vizinhos automaticamente, sem editar mais nada. */
     try {
-      var idx = window.__CMS_PROJECTS_INDEX__;
+      var idx = overrideIndex || window.__CMS_PROJECTS_INDEX__;
       var navEl = document.querySelector('.case-nav');
       if (navEl && idx && Array.isArray(idx.projects)) {
         var visible = idx.projects.filter(function (p) { return p.visible !== false; })
@@ -350,26 +355,16 @@
     if (P.seo && P.seo.title) document.title = P.seo.title;
   }
 
-  /* prévia ao vivo: re-renderiza texto quando o painel manda dados de
-     rascunho por postMessage (ver js/content.js para a mesma ideia aplicada
-     às variáveis de CSS). Depois de atualizar data-pt/data-en, repete a
-     mesma leitura simples que main.js faz para decidir o texto exibido —
-     sem isso, os atributos mudariam mas a tela continuaria mostrando o
-     texto antigo até a próxima troca manual de idioma. */
-  function reapplyLanguage() {
-    var lang = document.documentElement.lang && document.documentElement.lang.indexOf('en') === 0 ? 'en' : 'pt';
-    document.querySelectorAll('[data-pt]').forEach(function (el) {
-      var v = lang === 'pt' ? el.getAttribute('data-pt') : el.getAttribute('data-en');
-      if (v != null) el.innerHTML = v;
-    });
-  }
-  if (window.parent !== window) {
-    window.addEventListener('message', function (event) {
-      var msg = event.data;
-      if (!msg || msg.__cmsPreview__ !== true) return;
-      if (msg.home) renderHome(msg.home);
-      if (msg.project) renderProject(msg.project);
-      if (msg.home || msg.project) reapplyLanguage();
-    });
-  }
+  /* Ponte da prévia. O listener de postMessage NÃO mora aqui: ele é único e
+     fica em js/content.js, que é quem valida origem e formato antes de
+     qualquer coisa. Este arquivo só expõe o que sabe fazer.
+
+     A versão anterior tinha um segundo listener aqui, com um reapplyLanguage
+     próprio que repetia à mão o laço de data-pt/data-en do main.js. Isso
+     deixava três coisas para trás a cada atualização de texto: os spans da
+     divisão por palavra eram apagados e não voltavam, os acordeões
+     reconstruídos de FAQ e "O que eu faço" perdiam o clique, e as entradas
+     não eram remedidas. Quem cuida disso agora é window.__CMS_REINIT__, em
+     js/main.js, que reaproveita o setLang de verdade em vez de imitá-lo. */
+  window.__CMS_RENDER__ = { home: renderHome, project: renderProject };
 })();

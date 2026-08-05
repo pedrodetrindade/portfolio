@@ -255,20 +255,76 @@
   }
   if (!isCase) applySectionSpacing(window.__CMS_HOME__);
 
-  /* ---------- prévia ao vivo do painel administrativo ---------- */
-  /* Só faz algo quando a página está dentro de um <iframe> (o painel embute
-     o site assim para mostrar a prévia) e alguém manda uma mensagem no
-     formato certo. Fora desse caso — toda visita normal do site público —
-     isto nunca dispara. Os valores recebidos por postMessage não tocam o
-     GitHub nem o localStorage: são só aplicados na página desta aba, que
-     está rodando dentro do iframe do painel, e desaparecem ao recarregar. */
+  /* ---------- prévia ao vivo do painel administrativo ----------
+     Listener ÚNICO da prévia. Ele é a única porta de entrada de dados vindos
+     do painel, e por isso concentra toda a validação.
+
+     Só existe quando três coisas são verdade ao mesmo tempo:
+       1. a página está dentro de um <iframe> (visita normal nunca entra aqui);
+       2. a URL declara a origem do painel em ?cmsOrigin=... — é o painel que
+          monta esse endereço ao criar o iframe. Fica na URL, e não fixo no
+          código, justamente para não existir endereço de ambiente nenhum
+          escrito aqui dentro;
+       3. a mensagem vem de window.parent E de uma origem igual à declarada.
+
+     O que entra é dado, nunca código: postMessage usa clone estruturado, que
+     não transporta função, e o payload é lido campo a campo — nada é avaliado
+     e nada vira seletor ou HTML sem passar pelo esc() do content-render.
+     Nada disso toca o GitHub ou o localStorage: os valores vivem só nesta aba
+     e somem ao recarregar. */
   window.__CMS_APPLY__ = { global: applyGlobalTokens, sections: applySectionSpacing };
+
+  var PREVIEW_PROTOCOL = 1;
+
+  function origemDoPainel() {
+    try {
+      var declarada = new URLSearchParams(location.search).get('cmsOrigin');
+      if (!declarada) return null;
+      /* normaliza e recusa qualquer coisa que não seja uma origem http(s)
+         limpa — sem caminho, sem credencial, sem query */
+      var u = new URL(declarada);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+      return u.origin;
+    } catch (e) { return null; }
+  }
+
   if (window.parent !== window) {
-    window.addEventListener('message', function (event) {
-      var msg = event.data;
-      if (!msg || msg.__cmsPreview__ !== true) return;
-      if (msg.global) applyGlobalTokens(msg.global);
-      if (msg.home) applySectionSpacing(msg.home);
-    });
+    var ORIGEM_PAINEL = origemDoPainel();
+    if (ORIGEM_PAINEL) {
+      window.addEventListener('message', function (event) {
+        if (event.source !== window.parent) return;
+        if (event.origin !== ORIGEM_PAINEL) return;
+        var msg = event.data;
+        if (!msg || msg.__cms__ !== 'preview' || msg.v !== PREVIEW_PROTOCOL) return;
+
+        if (msg.type === 'lang') {
+          if (window.__CMS_SETLANG__) window.__CMS_SETLANG__(msg.lang === 'en' ? 'en' : 'pt');
+          return;
+        }
+        if (msg.type !== 'content') return;
+
+        var d = msg.data || {};
+        /* tokens visuais primeiro: eles são só variáveis de CSS e não dependem
+           do HTML, então aplicam mesmo se a re-renderização de texto falhar */
+        if (d.global && typeof d.global === 'object') applyGlobalTokens(d.global);
+        if (d.home && typeof d.home === 'object') applySectionSpacing(d.home);
+
+        var R = window.__CMS_RENDER__;
+        var mexeuNoTexto = false;
+        if (R) {
+          try {
+            if (d.home && typeof d.home === 'object') { R.home(d.home, d.projectsIndex || null); mexeuNoTexto = true; }
+            if (d.project && typeof d.project === 'object') { R.project(d.project, d.projectsIndex || null); mexeuNoTexto = true; }
+            /* índice sozinho (reordenar, ocultar, renomear projeto) também
+               reconstrói a grade da home */
+            if (!d.home && d.projectsIndex && typeof d.projectsIndex === 'object') {
+              R.home(window.__CMS_HOME__, d.projectsIndex); mexeuNoTexto = true;
+            }
+          } catch (e) { /* HTML já renderizado continua valendo */ }
+        }
+        /* religa acordeão, refaz scrub e divisão por palavra, remede entradas */
+        if (mexeuNoTexto && window.__CMS_REINIT__) window.__CMS_REINIT__();
+      });
+    }
   }
 })();
