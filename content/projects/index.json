@@ -103,30 +103,6 @@
       "cover": "assets/projetos/case-04/capa.jpg",
       "coverMobile": "",
       "coverLight": true
-    },
-    {
-      "slug": "case-01-copia",
-      "visible": false,
-      "featured": false,
-      "cardSize": "normal",
-      "order": 5,
-      "titlePt": "Sistema de marca e diretrizes 2026 (cópia)",
-      "titleEn": "Brand system and guidelines 2026 (copy)",
-      "subtitlePt": "Marca, sistema",
-      "subtitleEn": "Brand, system",
-      "category": "branding",
-      "tagsPt": [
-        "branding",
-        "design system"
-      ],
-      "tagsEn": [
-        "branding",
-        "design system"
-      ],
-      "year": 2026,
-      "cover": "assets/projetos/case-01/capa.jpg",
-      "coverMobile": "",
-      "coverLight": false
     }
   ]
 }
