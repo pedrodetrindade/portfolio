@@ -18,7 +18,13 @@
     "nextHintNamePt": "Projetos",
     "nextHintNameEn": "Projects",
     "backgroundVideo": "",
-    "backgroundVideoPoster": ""
+    "backgroundVideoPoster": "",
+    "videoMode": "vimeo",
+    "vimeo": {
+      "url": "https://vimeo.com/1215686904",
+      "videoId": "1215686904",
+      "hash": null
+    }
   },
   "sections": {
     "$note": "spacingTop/spacingBottom agora têm três níveis: {desktop, tablet, mobile}. desktop:null herda o padrão global (content/global.json > layout); tablet:null herda o desktop resolvido desta mesma seção; mobile:null herda o tablet resolvido. work e about já tinham um espaçamento maior que o padrão global antes do CMS existir — por isso, mesmo com os três níveis em null aqui, eles continuam diferentes: o número property deles mora direto no CSS como o valor de quando não há nenhuma configuração, e o JSON só entra em ação quando alguém troca esse número pelo painel. visible controla mostrar/esconder — na v1 isso só é seguro para about, help e faq: hero, work e contact sustentam partes do layout e da navegação (o indicador da capa aponta pra work, o rodapé depende do fluxo terminar em contact), então visible nelas é ignorado pelo site por enquanto.",
