@@ -16,7 +16,12 @@
     projects: {}, /* slug -> {data, sha} */
     dirty: {}, /* path -> {data, sha, message} */
     editingSlug: null,
-    previewUrl: localStorage.getItem('cms_preview_url') || ''
+    previewUrl: localStorage.getItem('cms_preview_url') || '',
+    /* identidade do destino, lida de /api/status no boot. Serve para separar
+       rascunhos: o mesmo navegador pode editar repositórios ou branches
+       diferentes, e um rascunho nunca deve vazar de um para o outro. */
+    repo: null, branch: null,
+    draftSavedAt: null
   };
 
   var LIMITS = {
@@ -60,6 +65,7 @@
     updateDirtyIndicators();
     renderPublishPanel();
     atualizarSeloPrevia();
+    scheduleDraftSave();
   }
 
   function updateDirtyIndicators() {
@@ -76,6 +82,133 @@
         if (btn) btn.classList.add('dirty');
       });
     });
+  }
+
+  /* ================== RASCUNHO LOCAL ==================
+     Guarda o que ainda não foi publicado, para fechar a aba deixar de ser
+     perda de trabalho. Regras que valem para tudo aqui:
+
+     - NUNCA sai daqui para o GitHub sozinho. Isto é só localStorage; quem
+       escreve no repositório continua sendo o botão Publicar.
+     - NUNCA guarda token, JWT, cookie ou qualquer dado de autenticação. O que
+       é gravado é exatamente o conteúdo dos arquivos que o Publicar enviaria,
+       mais o SHA de cada um. O SHA é o hash do blob que o Git já expõe
+       publicamente, não credencial — e é ele que faz a detecção de conflito
+       continuar valendo depois de restaurar.
+     - A chave separa por repositório E branch, porque o mesmo navegador pode
+       editar destinos diferentes e um rascunho não pode vazar entre eles.
+     - Só é apagado depois de uma publicação inteira dar certo. */
+  var DRAFT_PREFIX = 'cms_draft:';
+  var DRAFT_VERSION = 1;
+  var draftDebounce = null;
+
+  function draftKey() {
+    if (!state.repo || !state.branch) return null;
+    return DRAFT_PREFIX + state.repo + '@' + state.branch;
+  }
+
+  function saveDraftNow() {
+    var k = draftKey();
+    if (!k) return;
+    var paths = Object.keys(state.dirty);
+    if (!paths.length) { clearDraft(); return; }
+    try {
+      var agora = new Date().toISOString();
+      localStorage.setItem(k, JSON.stringify({
+        v: DRAFT_VERSION, repo: state.repo, branch: state.branch,
+        savedAt: agora, files: state.dirty
+      }));
+      state.draftSavedAt = agora;
+      setDraftState('rascunho');
+    } catch (e) {
+      /* cota estourada ou modo privado: o painel continua funcionando, só sem
+         rede de segurança — e diz isso em vez de fingir que salvou */
+      setDraftState('semRascunho');
+      toast('Não foi possível salvar o rascunho neste navegador.', 'err');
+    }
+  }
+
+  function scheduleDraftSave() {
+    clearTimeout(draftDebounce);
+    draftDebounce = setTimeout(saveDraftNow, 400);
+  }
+
+  function readDraft() {
+    var k = draftKey();
+    if (!k) return null;
+    try {
+      var raw = localStorage.getItem(k);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      /* confere identidade e versão: um rascunho de outro destino ou de um
+         formato antigo é ignorado, nunca aplicado por engano */
+      if (!d || d.v !== DRAFT_VERSION) return null;
+      if (d.repo !== state.repo || d.branch !== state.branch) return null;
+      if (!d.files || !Object.keys(d.files).length) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function clearDraft() {
+    var k = draftKey();
+    if (k) { try { localStorage.removeItem(k); } catch (e) { } }
+    state.draftSavedAt = null;
+  }
+
+  /* Reencaixa o rascunho no estado carregado do GitHub. Os SHAs vêm do
+     rascunho, e não da leitura de agora: assim, se o arquivo mudou no
+     repositório enquanto a aba estava fechada, a publicação bate de frente
+     com o conflito em vez de sobrescrever em silêncio. */
+  function applyDraft(d) {
+    Object.keys(d.files).forEach(function (path) {
+      var entry = d.files[path];
+      if (!entry || !entry.data) return;
+      state.dirty[path] = entry;
+      if (path === 'content/global.json') { state.global = entry.data; state.globalSha = entry.sha; }
+      else if (path === 'content/home.json') { state.home = entry.data; state.homeSha = entry.sha; }
+      else if (path === 'content/projects/index.json') { state.projectsIndex = entry.data; state.projectsIndexSha = entry.sha; }
+      else {
+        var m = path.match(/^content\/projects\/([a-z0-9-]+)\.json$/);
+        if (m) state.projects[m[1]] = { data: entry.data, sha: entry.sha };
+      }
+    });
+    state.draftSavedAt = d.savedAt;
+  }
+
+  function quando(iso) {
+    if (!iso) return '';
+    try {
+      var dt = new Date(iso);
+      var hoje = new Date().toDateString() === dt.toDateString();
+      return (hoje ? 'hoje às ' : dt.toLocaleDateString('pt-BR') + ' às ') +
+        dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ''; }
+  }
+
+  /* Estados visíveis do trabalho. Texto por extenso, nunca só a cor. */
+  var DRAFT_LABELS = {
+    publicado: 'Tudo publicado',
+    pendente: 'Alterações não publicadas',
+    rascunho: 'Rascunho salvo localmente',
+    publicando: 'Publicando…',
+    concluido: 'Publicação concluída',
+    falha: 'Falha na publicação',
+    semRascunho: 'Alterações não publicadas (sem rascunho local)'
+  };
+  function setDraftState(estado) {
+    var el = document.getElementById('draftState');
+    if (!el) return;
+    el.hidden = false;
+    el.className = 'draft-state is-' + estado;
+    var txt = DRAFT_LABELS[estado] || '';
+    if (estado === 'rascunho' && state.draftSavedAt) txt += ' · ' + quando(state.draftSavedAt);
+    el.textContent = txt;
+  }
+  /* Volta para o estado que corresponde ao que existe agora, sem inventar:
+     é chamado depois de publicar, descartar ou restaurar. */
+  function refreshDraftState() {
+    if (!Object.keys(state.dirty).length) { setDraftState('publicado'); return; }
+    setDraftState(state.draftSavedAt ? 'rascunho' : 'pendente');
   }
 
   /* ---------- construtores de campo ---------- */
@@ -415,17 +548,20 @@
   }
 
   /* ---------- Visão geral ---------- */
+  /* Lê o status já carregado no boot em vez de pedir de novo: ele passou a ser
+     buscado junto com o conteúdo, porque repositório e branch são o que
+     separa um rascunho local do outro. */
   function renderOverview() {
-    api('/api/status').then(function (s) {
-      document.getElementById('overviewBody').innerHTML =
-        fieldRow('Repositório', '', esc(s.repo)) +
-        fieldRow('Branch', '', esc(s.branch)) +
-        fieldRow('Autenticação', '', s.authMode === 'local-bypass' ?
-          '<span class="badge custom">bypass local (DEV_AUTH_BYPASS)</span>' : '<span class="badge default">Cloudflare Access</span>') +
-        fieldRow('Cloudflare Access', '', s.accessConfigured ?
-          '<span class="badge default">configurado</span>' : '<span class="badge custom">variáveis pendentes — ver README</span>');
-      setStatus(true);
-    }).catch(function (e) { setStatus(false, e.message); });
+    var s = state.status;
+    if (!s) { setStatus(false, 'status indisponível'); return; }
+    document.getElementById('overviewBody').innerHTML =
+      fieldRow('Repositório', '', esc(s.repo)) +
+      fieldRow('Branch', '', esc(s.branch)) +
+      fieldRow('Autenticação', '', s.authMode === 'local-bypass' ?
+        '<span class="badge custom">bypass local (DEV_AUTH_BYPASS)</span>' : '<span class="badge default">Cloudflare Access</span>') +
+      fieldRow('Cloudflare Access', '', s.accessConfigured ?
+        '<span class="badge default">configurado</span>' : '<span class="badge custom">variáveis pendentes — ver README</span>');
+    setStatus(true);
   }
   function setStatus(ok, msg) {
     document.getElementById('statusDot').className = 'dot ' + (ok ? 'ok' : 'err');
@@ -1087,6 +1223,7 @@
     var files = paths.map(function (p) { return { path: p, data: state.dirty[p].data, sha: state.dirty[p].sha, message: state.dirty[p].message }; });
     document.getElementById('btnPublish').disabled = true;
     document.getElementById('publishResult').innerHTML = 'Publicando…';
+    setDraftState('publicando');
     api('/api/publish', { method: 'POST', body: { files: files } }).then(function (res) {
       var okAll = res.ok;
       document.getElementById('publishResult').innerHTML =
@@ -1105,6 +1242,15 @@
         });
         localStorage.setItem('cms_last_publish', JSON.stringify({ at: res.publishedAt, files: res.results.length }));
         renderLastPublish();
+        /* só aqui o rascunho morre: publicação inteira, sem nenhuma falha.
+           Parcial ou com erro mantém tudo salvo. */
+        clearDraft();
+        setDraftState('concluido');
+      } else {
+        /* segurou no meio: o que sobrou continua pendente e volta para o
+           armazenamento local, agora com o horário desta tentativa */
+        saveDraftNow();
+        setDraftState('falha');
       }
       updateDirtyIndicators();
       renderPublishPanel();
@@ -1112,6 +1258,10 @@
       toast(okAll ? 'Publicado.' : 'Publicação parcial — revise os erros.', okAll ? 'ok' : 'err');
     }).catch(function (e) {
       document.getElementById('publishResult').innerHTML = '<span style="color:var(--err)">' + esc(e.message) + '</span>';
+      /* falha de rede ou recusa do Worker: nada foi publicado e o rascunho
+         precisa sobreviver — é o caso em que ele mais importa */
+      saveDraftNow();
+      setDraftState('falha');
       toast(e.message, 'err');
     }).finally(function () { document.getElementById('btnPublish').disabled = Object.keys(state.dirty).length === 0; });
   }
@@ -1130,28 +1280,81 @@
     document.querySelectorAll('#navList button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-panel') === name); });
   }
 
+  function montarPaineis() {
+    renderOverview(); renderAppearance(); renderLayout(); renderHeaderFooter();
+    renderHome(); renderProjects(); renderLastPublish(); renderPublishPanel();
+    updateDirtyIndicators(); atualizarSeloPrevia();
+  }
+
+  function ligarAcoesGerais() {
+    document.getElementById('navList').addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-panel]');
+      if (btn) showPanel(btn.getAttribute('data-panel'));
+    });
+    document.getElementById('btnPublish').addEventListener('click', doPublish);
+    document.getElementById('btnDiscard').addEventListener('click', function () {
+      if (!confirm('Descartar todas as alterações não publicadas?\n\nIsso também apaga o rascunho salvo neste navegador e volta ao conteúdo publicado.')) return;
+      /* apaga o rascunho ANTES de recarregar: sem isso o painel voltaria
+         oferecendo justamente aquilo que a pessoa acabou de descartar */
+      clearDraft();
+      location.reload();
+    });
+    window.addEventListener('beforeunload', function (e) {
+      if (Object.keys(state.dirty).length) { e.preventDefault(); e.returnValue = ''; }
+    });
+  }
+
+  /* Faixa de restauração. Banner em vez de confirm() por dois motivos: dá para
+     mostrar o horário e quantos arquivos existem, e não trava a montagem do
+     painel enquanto a pessoa decide. */
+  function oferecerRestauracao(d) {
+    var n = Object.keys(d.files).length;
+    var banner = document.getElementById('draftBanner');
+    if (!banner) return;
+    document.getElementById('draftBannerInfo').textContent =
+      n + (n === 1 ? ' arquivo com alteração não publicada, salvo ' : ' arquivos com alterações não publicadas, salvos ') + quando(d.savedAt) + '.';
+    banner.hidden = false;
+    setDraftState('rascunho');
+    state.draftSavedAt = d.savedAt;
+
+    document.getElementById('btnDraftRestore').addEventListener('click', function () {
+      applyDraft(d);
+      banner.hidden = true;
+      montarPaineis();
+      refreshDraftState();
+      schedulePreview();
+      toast('Rascunho restaurado.', 'ok');
+    });
+    document.getElementById('btnDraftDiscard').addEventListener('click', function () {
+      if (!confirm('Descartar o rascunho salvo neste navegador?')) return;
+      clearDraft();
+      banner.hidden = true;
+      refreshDraftState();
+      toast('Rascunho descartado.');
+    });
+  }
+
   /* ---------- boot ---------- */
   function boot() {
-    Promise.all([api('/api/global'), api('/api/home'), api('/api/projects')]).then(function (results) {
-      state.global = results[0].data; state.globalSha = results[0].sha;
-      state.home = results[1].data; state.homeSha = results[1].sha;
-      state.projectsIndex = results[2].data; state.projectsIndexSha = results[2].sha;
+    /* /api/status entra no mesmo lote: é dele que saem repositório e branch,
+       e sem os dois não há como escolher a chave do rascunho. Antes ele era
+       pedido só pela Visão geral, depois da montagem. */
+    Promise.all([api('/api/status'), api('/api/global'), api('/api/home'), api('/api/projects')]).then(function (results) {
+      state.status = results[0];
+      state.repo = results[0].repo; state.branch = results[0].branch;
+      state.global = results[1].data; state.globalSha = results[1].sha;
+      state.home = results[2].data; state.homeSha = results[2].sha;
+      state.projectsIndex = results[3].data; state.projectsIndexSha = results[3].sha;
 
       document.getElementById('app').hidden = false;
-      renderOverview(); renderAppearance(); renderLayout(); renderHeaderFooter(); renderHome(); renderProjects(); renderLastPublish(); renderPublishPanel();
 
-      document.getElementById('navList').addEventListener('click', function (e) {
-        var btn = e.target.closest('button[data-panel]');
-        if (btn) showPanel(btn.getAttribute('data-panel'));
-      });
-      document.getElementById('btnPublish').addEventListener('click', doPublish);
-      document.getElementById('btnDiscard').addEventListener('click', function () {
-        if (!confirm('Descartar todas as alterações não publicadas?')) return;
-        location.reload();
-      });
-      window.addEventListener('beforeunload', function (e) {
-        if (Object.keys(state.dirty).length) { e.preventDefault(); e.returnValue = ''; }
-      });
+      /* O rascunho nunca é aplicado sozinho. O painel monta com o que está
+         publicado e oferece a restauração — assim, abrir o painel para
+         conferir o site no ar não faz voltar uma edição esquecida. */
+      var rascunho = readDraft();
+      montarPaineis();
+      ligarAcoesGerais();
+      if (rascunho) oferecerRestauracao(rascunho); else refreshDraftState();
     }).catch(function (e) {
       document.getElementById('gate').hidden = false;
       document.getElementById('gateMsg').textContent = 'Erro ao carregar o painel: ' + e.message;

@@ -22,6 +22,27 @@ a{color:var(--accent)}
 .topbar{grid-area:topbar;display:flex;align-items:center;justify-content:space-between;
   padding:0 1.2rem;border-bottom:1px solid var(--line);background:var(--ink-2)}
 .topbar .brand{font-weight:600;letter-spacing:-.01em}
+.topbar-right{display:flex;align-items:center;gap:.9rem}
+
+/* Estado do trabalho. Cada estado tem cor E texto próprio: quem não distingue
+   as cores continua lendo o que está acontecendo. */
+.draft-state{display:inline-flex;align-items:center;gap:.45em;font-size:.78rem;color:var(--muted)}
+.draft-state[hidden]{display:none}
+.draft-state::before{content:"●";font-size:.7em;color:currentColor}
+.draft-state.is-publicado{color:var(--ok)}
+.draft-state.is-pendente,.draft-state.is-semRascunho{color:var(--warn)}
+.draft-state.is-rascunho{color:var(--accent)}
+.draft-state.is-publicando{color:var(--muted)}
+.draft-state.is-concluido{color:var(--ok)}
+.draft-state.is-falha{color:var(--err)}
+
+.draft-banner{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  margin-bottom:1.4rem;padding:.9rem 1.1rem;border:1px solid var(--accent);border-radius:12px;
+  background:rgba(162,149,149,.09)}
+.draft-banner[hidden]{display:none}
+.draft-banner-txt{display:flex;flex-direction:column;gap:.15rem;font-size:.86rem}
+.draft-banner-txt span{color:var(--muted);font-size:.8rem}
+.draft-banner-acts{display:flex;gap:.5rem;flex-shrink:0}
 .topbar .status{display:flex;align-items:center;gap:.8rem;font-size:.82rem;color:var(--muted)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted-2);display:inline-block}
 .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.err{background:var(--err)}

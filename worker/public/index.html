@@ -16,9 +16,14 @@
 <div id="app" hidden>
   <div class="topbar">
     <span class="brand">Painel · Pedro de Trindade</span>
-    <span class="status">
-      <span id="statusDot" class="dot"></span>
-      <span id="statusText">verificando…</span>
+    <span class="topbar-right">
+      <!-- Estado do trabalho: publicado, pendente, rascunho salvo, publicando,
+           concluído ou falha. Sempre por extenso, nunca só por cor. -->
+      <span id="draftState" class="draft-state" hidden></span>
+      <span class="status">
+        <span id="statusDot" class="dot"></span>
+        <span id="statusText">verificando…</span>
+      </span>
     </span>
   </div>
 
@@ -33,6 +38,20 @@
   </nav>
 
   <main id="main">
+
+    <!-- Faixa de restauração de rascunho. Nasce oculta e só aparece quando
+         existe trabalho não publicado salvo neste navegador para ESTE
+         repositório e branch. Nada é restaurado sem o clique. -->
+    <div id="draftBanner" class="draft-banner" hidden>
+      <div class="draft-banner-txt">
+        <b>Rascunho encontrado neste navegador</b>
+        <span id="draftBannerInfo"></span>
+      </div>
+      <div class="draft-banner-acts">
+        <button class="btn small" id="btnDraftDiscard">Descartar rascunho</button>
+        <button class="btn small primary" id="btnDraftRestore">Restaurar</button>
+      </div>
+    </div>
 
     <section class="panel active" data-panel="overview">
       <h1>Visão geral</h1>
