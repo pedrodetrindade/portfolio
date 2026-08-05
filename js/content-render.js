@@ -150,6 +150,7 @@
     if (H.about) {
       var A = H.about;
       setText(document.querySelector('.about-k'), A.kickerPt, A.kickerEn);
+      setText(document.querySelector('.about-title'), A.titlePt, A.titleEn);
       setText(document.querySelector('.about-lead'), A.leadPt, A.leadEn);
       setText(document.querySelector('.about-sub'), A.subPt, A.subEn);
       setText(document.querySelector('.caps-k'), A.capabilitiesLabelPt, A.capabilitiesLabelEn);

@@ -1435,6 +1435,7 @@
     if (!Array.isArray(a.capabilities)) a.capabilities = [];
     document.getElementById('aboutBody').innerHTML =
       fieldRow('Rótulo da seção (PT / EN)', '"Sobre"', inp('ab_kpt', a.kickerPt, half) + inp('ab_ken', a.kickerEn, half)) +
+      fieldRow('Título (PT / EN)', '"Sobre mim"', inp('ab_tpt', a.titlePt, half) + inp('ab_ten', a.titleEn, half)) +
       fieldRow('Texto principal (PT)', '', ta('ab_leadpt', a.leadPt)) +
       fieldRow('Texto principal (EN)', '', ta('ab_leaden', a.leadEn)) +
       fieldRow('Texto complementar (PT)', '', ta('ab_subpt', a.subPt)) +
@@ -1451,6 +1452,7 @@
       });
     var aboutPairs = [
       ['ab_kpt', function (v) { a.kickerPt = v; }], ['ab_ken', function (v) { a.kickerEn = v; }],
+      ['ab_tpt', function (v) { a.titlePt = v; }], ['ab_ten', function (v) { a.titleEn = v; }],
       ['ab_leadpt', function (v) { a.leadPt = v; }], ['ab_leaden', function (v) { a.leadEn = v; }],
       ['ab_subpt', function (v) { a.subPt = v; }], ['ab_suben', function (v) { a.subEn = v; }],
       ['ab_photo', function (v) { a.photo = v; }],

@@ -410,6 +410,12 @@
     const centroNome = wrap.getBoundingClientRect().top + n.offsetHeight / 2;
     const dy = Math.round((window.innerHeight / 2 - centroNome) * 10) / 10;
     document.documentElement.style.setProperty('--nome-dy', dy + 'px');
+    /* A medida do nome também sai daqui, pelo mesmo motivo e com a mesma
+       ressalva: offsetWidth é largura de layout, então não muda com a escala da
+       intro. No celular a frase da capa usa esta largura para não ficar mais
+       larga que o nome — sem isso ela ultrapassava o nome em 40px a 375, e a
+       capa lia como dois blocos de medidas diferentes em vez de uma coluna. */
+    document.documentElement.style.setProperty('--nome-larg', wrap.offsetWidth + 'px');
   }
 
   const headEl = document.querySelector('header');
