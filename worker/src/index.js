@@ -11,7 +11,7 @@ import {
   isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
   MODOS_VIDEO, VIMEO_HOSTS, isVimeoConfigValido, isPosterValido,
-  isSlugValid, bytesOf, erroNosBlocos
+  isSlugValid, bytesOf, erroNosBlocos, erroNoSpacing
 } from './validate.js';
 
 /* Cabeçalhos de segurança em toda resposta do Worker — painel (HTML/JS/CSS
@@ -376,6 +376,14 @@ async function handlePublish(request, env) {
          com src apontando para fora do repositório não pode ser gravado só
          porque alguém montou o JSON à mão. */
       if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) {
+        var erroCapaSpacing = erroNoSpacing(op.data.coverSpacing, false);
+        if (erroCapaSpacing) {
+          return json({
+            error: 'invalid_spacing',
+            message: 'Em ' + caminho + ', coverSpacing: ' + erroCapaSpacing + ' Nada foi publicado.',
+            path: caminho
+          }, 422);
+        }
         var erroBloco = erroNosBlocos(op.data.blocks);
         if (erroBloco) {
           return json({

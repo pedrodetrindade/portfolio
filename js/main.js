@@ -1357,7 +1357,7 @@
 
     document.addEventListener('mouseleave', () => {
       ligado = false;
-      camada.classList.remove('on', 'fast', 'is-card', 'is-control');
+      camada.classList.remove('on', 'fast', 'is-card', 'is-control', 'is-on-light');
       if (glow) glow.classList.remove('on');
     });
 
@@ -1376,6 +1376,10 @@
 
     document.addEventListener('mouseover', e => {
       const alvo = e.target;
+      /* O FAQ é a única superfície clara. A camada continua acima de tudo e
+         sem capturar eventos; só troca de contraste quando o alvo real está
+         dentro dela, inclusive em resposta aberta ou link inserido depois. */
+      camada.classList.toggle('is-on-light', !!(alvo.closest && alvo.closest('.faq')));
       /* campos de texto e áreas editáveis mantêm o cursor nativo: o efeito
          some ali em vez de disputar com o I-beam. */
       if (alvo.closest && alvo.closest(SEL_TEXTO)) {

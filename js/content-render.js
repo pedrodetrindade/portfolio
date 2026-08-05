@@ -21,6 +21,15 @@
     if (pt != null) el.setAttribute('data-pt', pt);
     if (en != null) el.setAttribute('data-en', en);
   }
+  /* Ausência do booleano mantém conteúdo antigo visível. O texto continua no
+     dado quando o rótulo é desligado, mas o próprio elemento some do layout;
+     conteúdo vazio também não deixa uma caixa ornamental sem texto. */
+  function setOptionalLabel(el, pt, en, show) {
+    if (!el) return;
+    setText(el, pt, en);
+    var hasText = String(pt || '').trim() || String(en || '').trim();
+    el.hidden = show === false || !hasText;
+  }
   function isCase() { return location.pathname.indexOf('/work/') !== -1; }
   var base = isCase() ? '../' : '';
 
@@ -157,11 +166,11 @@
 
     if (H.about) {
       var A = H.about;
-      setText(document.querySelector('.about-k'), A.kickerPt, A.kickerEn);
+      setOptionalLabel(document.querySelector('.about-k'), A.kickerPt, A.kickerEn, A.showKicker);
       setText(document.querySelector('.about-title'), A.titlePt, A.titleEn);
       setText(document.querySelector('.about-lead'), A.leadPt, A.leadEn);
       setText(document.querySelector('.about-sub'), A.subPt, A.subEn);
-      setText(document.querySelector('.caps-k'), A.capabilitiesLabelPt, A.capabilitiesLabelEn);
+      setOptionalLabel(document.querySelector('.caps-k'), A.capabilitiesLabelPt, A.capabilitiesLabelEn, A.showCapabilitiesLabel);
       var talkBtn = document.querySelector('.about-actions .ghost-cta[data-contact]');
       setText(talkBtn, A.ctaTalkPt, A.ctaTalkEn);
       /* Currículo: só aparece quando existe arquivo enviado pelo painel E o
@@ -191,7 +200,7 @@
     }
 
     if (H.help && Array.isArray(H.help.items)) {
-      setText(document.querySelector('.help-k'), H.help.kickerPt, H.help.kickerEn);
+      setOptionalLabel(document.querySelector('.help-k'), H.help.kickerPt, H.help.kickerEn, H.help.showKicker);
       setText(document.querySelector('.help-title'), H.help.titlePt, H.help.titleEn);
       setText(document.querySelector('.help-lead'), H.help.leadPt, H.help.leadEn);
       var helpList = document.querySelector('.help-list');
@@ -242,7 +251,7 @@
       var lines = document.querySelectorAll('.contact-big .hn-line');
       if (lines[0]) setText(lines[0], H.contact.titleLine1Pt, H.contact.titleLine1En);
       if (lines[1]) setText(lines[1], H.contact.titleLine2Pt, H.contact.titleLine2En);
-      setText(document.querySelector('.mail-k'), H.contact.mailLabelPt, H.contact.mailLabelEn);
+      setOptionalLabel(document.querySelector('.mail-k'), H.contact.mailLabelPt, H.contact.mailLabelEn, H.contact.showMailLabel);
     }
 
     var G = window.__CMS_GLOBAL__ || {};
@@ -302,18 +311,26 @@
         if (xf.status === 200 || xf.status === 0) idx = JSON.parse(xf.responseText);
       }
       if (idx) {
-        var list = (idx.projects || []).filter(function (p) { return p.visible !== false; })
+        var list = (idx.projects || []).filter(function (p) {
+          return p.visible !== false && typeof p.slug === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(p.slug);
+        })
           .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
         var cardsEl = document.querySelector('.cards');
-        if (cardsEl && list.length) {
-          cardsEl.innerHTML = list.map(function (p) {
+        if (cardsEl) {
+          cardsEl.innerHTML = list.map(function (p, cardIndex) {
             var tagsPt = p.tagsPt || [], tagsEn = p.tagsEn || [];
             var tagsHtml = tagsPt.map(function (t, i) {
               return '<span data-pt="' + esc(t) + '" data-en="' + esc(tagsEn[i] || t) + '">' + esc(t) + '</span>';
             }).join('');
+            var sizes = ['normal', 'largo', 'alto', 'grande', 'largura-completa'];
+            var size = sizes.indexOf(p.cardSize) !== -1 ? p.cardSize : 'normal';
+            var cover = String(p.cover || '').trim();
+            var coverMobile = String(p.coverMobile || '').trim();
+            var media = cover ? ((coverMobile ? '<picture><source media="(max-width:639px)" srcset="' + esc(coverMobile) + '">' : '') +
+              '<img src="' + esc(cover) + '" alt="" onerror="this.remove()">' + (coverMobile ? '</picture>' : '')) : '';
             return '' +
-              '<a class="card reveal' + (p.coverLight ? ' card--light' : '') + '" href="work/' + esc(p.slug) + '.html">' +
-              '  <div class="scene"><img src="' + esc(p.cover) + '" alt="" onerror="this.remove()"></div>' +
+              '<a class="card reveal card--' + esc(size) + (p.featured ? ' card--featured' : '') + (p.coverLight ? ' card--light' : '') + '" href="work/' + esc(p.slug) + '.html">' +
+              '  <div class="scene p' + ((cardIndex % 4) + 1) + '">' + media + '</div>' +
               '  <div class="card-tags">' + tagsHtml + '</div>' +
               '  <div class="card-foot">' +
               '    <div>' +
@@ -338,12 +355,9 @@
      .case-blocks.
 
      Blocos de TEXTO consecutivos são agrupados numa <section> só, e cada
-     bloco de outro tipo ganha a sua. Não é enfeite: o padding vertical de
-     <section> é o que separa um assunto do outro, enquanto os três textos de
-     contexto/processo/resultado sempre foram um assunto só, com 41,6px entre
-     eles. Sem o agrupamento, ou os textos se afastariam demais, ou a galeria
-     encostaria no texto. Com ele, um projeto que já existe é desenhado
-     exatamente como antes.
+     bloco de outro tipo ganha a sua. O wrapper é semântico e tem padding
+     neutralizado no CSS; toda distância editável vem do próprio bloco. Textos
+     consecutivos mantêm o default editorial de 41,6px entre si.
 
      Tipo desconhecido é ignorado no site (a página continua legível) e
      recusado na publicação pelo Worker, que é quem decide.
@@ -405,7 +419,7 @@
     var host = document.querySelector('.case-blocks');
     if (!host) return;
     var validos = blocks.filter(function (b) { return b && TIPOS_DE_BLOCO.indexOf(b.type) !== -1; });
-    if (!validos.length) return;
+    if (!validos.length) { host.innerHTML = ''; return; }
 
     /* Agrupa em fatias: uma sequência de textos vira um grupo, cada bloco de
        outro tipo vira um grupo de um. */
@@ -421,21 +435,25 @@
       if (g[0].type === 'text') {
         var corpo = g.map(function (b, i) {
           /* reproduz o antigo gap:2.6rem (41,6px) entre textos do mesmo
-             grupo; o último não leva espaço depois, porque o vão até o
-             próximo assunto já vem do padding da <section> */
+             grupo; o último não leva espaço depois, porque o próximo bloco
+             carrega a própria margem anterior */
           var cssT = blockStyleCss(b.spacing, 0, i === g.length - 1 ? 0 : 41.6);
+          var hasLabel = String(b.labelPt || '').trim() || String(b.labelEn || '').trim();
+          var label = b.showLabel !== false && hasLabel
+            ? '<div class="k reveal" data-pt="' + esc(b.labelPt) + '" data-en="' + esc(b.labelEn) + '">' + esc(b.labelPt) + '</div>'
+            : '';
           return '<div class="case-section" style="' + cssT + '">' +
-            '<div class="k reveal" data-pt="' + esc(b.labelPt) + '" data-en="' + esc(b.labelEn) + '">' + esc(b.labelPt) + '</div>' +
+            label +
             '<p class="reveal" data-pt="' + esc(b.textPt) + '" data-en="' + esc(b.textEn) + '">' + esc(b.textPt) + '</p>' +
             '</div>';
         }).join('');
-        return '<section><div class="case-body">' + corpo + '</div></section>';
+        return '<section class="case-block-group"><div class="case-body">' + corpo + '</div></section>';
       }
       var b = g[0];
       var gap = b.type === 'gallery' ? 22.4 : null;
       var css = blockStyleCss(b.spacing, 16, 0, gap);
       if (b.type === 'video' && b.mode === 'vimeo' && b.vimeo && b.vimeo.videoId) vimeos.push(b.vimeo);
-      return '<section>' + htmlDoBloco(b, css) + '</section>';
+      return '<section class="case-block-group">' + htmlDoBloco(b, css) + '</section>';
     }).join('');
 
     host.querySelectorAll('.case-video .scene[data-vimeo]').forEach(function (slot, i) {
@@ -455,7 +473,7 @@
     var P = overrideProject || window.__CMS_PROJECT__;
     if (!P || !P.hero) return;
     var h = P.hero;
-    setText(document.querySelector('.case-hero .eyebrow'), h.eyebrowPt, h.eyebrowEn);
+    setOptionalLabel(document.querySelector('.case-hero .eyebrow'), h.eyebrowPt, h.eyebrowEn, h.showEyebrow);
     setText(document.querySelector('.case-hero h1'), h.titlePt, h.titleEn);
     setText(document.querySelector('.case-hero .sub'), h.subtitlePt, h.subtitleEn);
 

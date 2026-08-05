@@ -211,7 +211,7 @@ function isPosterValido(valor) {
    impede um payload montado à mão de apontar src para um domínio de
    terceiro, um javascript: ou um caminho fora do repositório. */
 var CHAVES_DE_BLOCO = {
-  text:    ['type', 'labelPt', 'labelEn', 'textPt', 'textEn', 'spacing'],
+  text:    ['type', 'labelPt', 'labelEn', 'showLabel', 'textPt', 'textEn', 'spacing'],
   gallery: ['type', 'images', 'spacing'],
   image:   ['type', 'src', 'alt', 'fit', 'width', 'captionPt', 'captionEn', 'spacing'],
   quote:   ['type', 'quotePt', 'quoteEn', 'authorPt', 'authorEn', 'spacing'],
@@ -239,6 +239,33 @@ function caminhoDeMidiaValido(valor, extensoes) {
 
 var EXT_DE_IMAGEM = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.svg'];
 
+function erroNoSpacing(spacing, incluiGap) {
+  if (spacing === undefined) return null;
+  if (!spacing || typeof spacing !== 'object' || Array.isArray(spacing)) return 'spacing precisa ser um objeto.';
+  var campos = incluiGap ? ['marginTop', 'marginBottom', 'gap'] : ['marginTop', 'marginBottom'];
+  var extra = Object.keys(spacing).filter(function (k) { return campos.indexOf(k) === -1; });
+  if (extra.length) return 'spacing tem campo desconhecido: ' + extra.join(', ') + '.';
+  for (var c = 0; c < campos.length; c++) {
+    var nome = campos[c], niveis = spacing[nome];
+    if (niveis === undefined) continue;
+    if (!niveis || typeof niveis !== 'object' || Array.isArray(niveis)) return 'spacing.' + nome + ' precisa ser um objeto.';
+    var nivelExtra = Object.keys(niveis).filter(function (k) { return ['desktop', 'tablet', 'mobile'].indexOf(k) === -1; });
+    if (nivelExtra.length) return 'spacing.' + nome + ' tem nível desconhecido: ' + nivelExtra.join(', ') + '.';
+    var limite = nome === 'gap' ? LIMITS.gap : LIMITS.spacing;
+    var dispositivos = ['desktop', 'tablet', 'mobile'];
+    for (var d = 0; d < dispositivos.length; d++) {
+      var valor = niveis[dispositivos[d]];
+      /* null continua aceito apenas para ler os JSON antigos; o painel novo
+         grava níveis herdados como chaves ausentes. */
+      if (valor == null) continue;
+      if (typeof valor !== 'number' || !Number.isFinite(valor) || valor < limite[0] || valor > limite[1]) {
+        return 'spacing.' + nome + '.' + dispositivos[d] + ' precisa estar entre ' + limite[0] + ' e ' + limite[1] + 'px.';
+      }
+    }
+  }
+  return null;
+}
+
 /* Devolve null quando está tudo bem, ou uma mensagem dizendo qual bloco e o
    quê. A posição entra na mensagem porque "bloco inválido" sozinho não ajuda
    ninguém a achar o problema num projeto com dez blocos. */
@@ -252,6 +279,11 @@ function erroNosBlocos(blocks) {
     if (!permitidas) return onde + ': tipo desconhecido (' + String(b.type) + ').';
     var extra = Object.keys(b).filter(function (k) { return permitidas.indexOf(k) === -1; });
     if (extra.length) return onde + ' (' + b.type + '): campo desconhecido: ' + extra.join(', ') + '.';
+    if (b.type === 'text' && b.showLabel != null && typeof b.showLabel !== 'boolean') {
+      return onde + ': showLabel precisa ser verdadeiro ou falso.';
+    }
+    var erroSpacing = erroNoSpacing(b.spacing, b.type === 'gallery');
+    if (erroSpacing) return onde + ': ' + erroSpacing;
 
     if (b.type === 'gallery') {
       if (!Array.isArray(b.images)) return onde + ': images precisa ser uma lista.';
@@ -279,7 +311,7 @@ function erroNosBlocos(blocks) {
 }
 
 export {
-  CHAVES_DE_BLOCO, erroNosBlocos, caminhoDeMidiaValido,
+  CHAVES_DE_BLOCO, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido,
   LIMITS, MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
   UPLOAD_DIR, isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,

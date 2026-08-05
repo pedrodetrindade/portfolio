@@ -72,7 +72,15 @@
   }
 
   function markDirty(path, data, sha, message) {
-    state.dirty[path] = { data: data, sha: sha, message: message || ('cms: atualiza ' + path) };
+    var publicado = state.published[path];
+    /* Voltar exatamente ao dado publicado desfaz a pendência. Isso cobre
+       slider restaurado, switch desligado/reativado e digitar o mesmo texto;
+       arquivo idêntico não deve chegar à revisão nem à API de publicação. */
+    if (publicado !== undefined && publicado !== null && JSON.stringify(data) === JSON.stringify(publicado)) {
+      delete state.dirty[path];
+    } else {
+      state.dirty[path] = { data: data, sha: sha, message: message || ('cms: atualiza ' + path) };
+    }
     updateDirtyIndicators();
     renderPublishPanel();
     atualizarSeloPrevia();
@@ -830,6 +838,10 @@
     var u = new URL(state.previewUrl, location.href);
     if (caminho) u.pathname = u.pathname.replace(/\/?$/, '/') + caminho;
     u.searchParams.set('cmsOrigin', location.origin);
+    /* O servidor local canonicaliza .html para a URL sem extensão e pode
+       descartar a query. O fragmento é preservado pelo navegador no redirect
+       e carrega a mesma origem declarada, não uma origem inferida. */
+    u.hash = 'cmsOrigin=' + encodeURIComponent(location.origin);
     if (extra) Object.keys(extra).forEach(function (k) { u.searchParams.set(k, extra[k]); });
     return u.toString();
   }
@@ -1150,7 +1162,9 @@
       ? '<span class="badge custom">próprio</span>'
       : (inheritsFrom ? '<span class="badge default">herdando de ' + inheritsFrom + '</span>'
         : '<span class="badge default">' + esc(fallbackNote || 'padrão') + '</span>');
-    return badge + ((isCustom && inheritsFrom) ? '<button class="btn small" data-reset-field="' + fieldId + '">Voltar a herdar</button>' : '');
+    return badge + (isCustom
+      ? '<button class="btn small" data-reset-field="' + fieldId + '">' + (inheritsFrom ? 'Voltar a herdar' : 'Voltar ao padrão') + '</button>'
+      : '');
   }
 
   /* Redesenha só o selo e o botão "Voltar a herdar" daquele campo. Existe
@@ -1212,7 +1226,8 @@
     });
   }
 
-  function blockSpacingFields(target, key, onSave, includeGap) {
+  function blockSpacingFields(target, key, onSave, includeGap, defaults) {
+    defaults = defaults || {};
     var atual = target[key] || {};
     /* Cada nível ganha um objeto PRÓPRIO, nunca um compartilhado: é a
        referência viva que tieredSpacingField usa depois para decidir se o
@@ -1231,12 +1246,15 @@
       if (v == null) {
         /* limpar não pode criar o objeto que a limpeza deveria remover */
         if (s && s[campo]) {
-          s[campo][dev] = null;
+          delete s[campo][dev];
+          if (!Object.keys(s[campo]).length) delete s[campo];
           if (espacamentoVazio(s)) delete target[key];
         }
       } else {
         s = target[key] || (target[key] = {});
-        if (!s[campo]) s[campo] = nivelVazio();
+        /* O dado publicado é esparso: níveis herdados ficam ausentes, não
+           gravados como null. `nivelVazio` existe só na visão local do painel. */
+        if (!s[campo]) s[campo] = {};
         s[campo][dev] = v;
       }
       onSave();
@@ -1244,14 +1262,14 @@
     var html =
       tieredSpacingField('Espaço antes', 'margin-top', visao.marginTop, LIMITS.spacing[0], LIMITS.spacing[1],
         function (dev, v) { escrever('marginTop', dev, v); },
-        function (dev) { escrever('marginTop', dev, null); renderProjectEditor(); }, 0, 'padrão do site') +
+        function (dev) { escrever('marginTop', dev, null); renderProjectEditor(); }, defaults.marginTop != null ? defaults.marginTop : 0, 'padrão do site') +
       tieredSpacingField('Espaço depois', 'margin-bottom', visao.marginBottom, LIMITS.spacing[0], LIMITS.spacing[1],
         function (dev, v) { escrever('marginBottom', dev, v); },
-        function (dev) { escrever('marginBottom', dev, null); renderProjectEditor(); }, 0, 'padrão do site');
+        function (dev) { escrever('marginBottom', dev, null); renderProjectEditor(); }, defaults.marginBottom != null ? defaults.marginBottom : 0, 'padrão do site');
     if (includeGap) {
       html += tieredSpacingField('Espaço entre elementos', 'gap', visao.gap, LIMITS.gap[0], LIMITS.gap[1],
         function (dev, v) { escrever('gap', dev, v); },
-        function (dev) { escrever('gap', dev, null); renderProjectEditor(); }, 0, 'padrão do site');
+        function (dev) { escrever('gap', dev, null); renderProjectEditor(); }, defaults.gap != null ? defaults.gap : 0, 'padrão do site');
     }
     return html;
   }
@@ -1506,6 +1524,7 @@
     if (!Array.isArray(a.capabilities)) a.capabilities = [];
     document.getElementById('aboutBody').innerHTML =
       fieldRow('Rótulo da seção (PT / EN)', '"Sobre"', inp('ab_kpt', a.kickerPt, half) + inp('ab_ken', a.kickerEn, half)) +
+      fieldRow('Mostrar rótulo da seção', 'Desligar preserva o texto e remove o espaço acima do título.', switchControl('ab_showk', a.showKicker !== false)) +
       fieldRow('Título (PT / EN)', '"Sobre mim"', inp('ab_tpt', a.titlePt, half) + inp('ab_ten', a.titleEn, half)) +
       fieldRow('Texto principal (PT)', '', ta('ab_leadpt', a.leadPt)) +
       fieldRow('Texto principal (EN)', '', ta('ab_leaden', a.leadEn)) +
@@ -1518,6 +1537,7 @@
         inp('ab_cvfile', a.resumeFile, ' placeholder="assets/uploads/curriculo/..."') + '<input type="file" id="ab_cv_upload" accept="application/pdf,.pdf">') +
       fieldRow('Rótulo do currículo (PT / EN)', '"Baixar currículo"', inp('ab_cvlpt', a.resumeLabelPt, half) + inp('ab_cvlen', a.resumeLabelEn, half)) +
       fieldRow('Rótulo das capacidades (PT / EN)', '"Capacidades"', inp('ab_caplpt', a.capabilitiesLabelPt, half) + inp('ab_caplen', a.capabilitiesLabelEn, half)) +
+      fieldRow('Mostrar rótulo das capacidades', 'Desligar preserva o texto.', switchControl('ab_showcapk', a.showCapabilitiesLabel !== false)) +
       listBlock('abcap', a.capabilities, 'Capacidade', function (c, i) {
         return fieldRow('Texto (PT / EN)', '', inp('ab_cap' + i + '_pt', c.pt, half) + inp('ab_cap' + i + '_en', c.en, half));
       });
@@ -1537,6 +1557,8 @@
       aboutPairs.push(['ab_cap' + i + '_en', function (v) { c.en = v; }]);
     });
     bindAll(aboutPairs, touch);
+    bindSwitch('ab_showk', function (v) { if (v) delete a.showKicker; else a.showKicker = false; touch(); });
+    bindSwitch('ab_showcapk', function (v) { if (v) delete a.showCapabilitiesLabel; else a.showCapabilitiesLabel = false; touch(); });
     wireListBlock('abcap', a.capabilities, function () { return { pt: '', en: '' }; }, renderHome);
     var abPhoto = document.getElementById('ab_photo_upload');
     if (abPhoto) abPhoto.addEventListener('change', function () {
@@ -1552,6 +1574,7 @@
     if (!Array.isArray(hp.items)) hp.items = [];
     document.getElementById('helpBody').innerHTML =
       fieldRow('Rótulo da seção (PT / EN)', '"atuação"', inp('hp_kpt', hp.kickerPt, half) + inp('hp_ken', hp.kickerEn, half)) +
+      fieldRow('Mostrar rótulo da seção', 'Desligar preserva o texto e remove o espaço acima do título.', switchControl('hp_showk', hp.showKicker !== false)) +
       fieldRow('Título (PT / EN)', '"O que eu faço"', inp('hp_tpt', hp.titlePt, half) + inp('hp_ten', hp.titleEn, half)) +
       fieldRow('Introdução (PT)', '', ta('hp_lpt', hp.leadPt)) +
       fieldRow('Introdução (EN)', '', ta('hp_len', hp.leadEn)) +
@@ -1580,6 +1603,7 @@
       });
     });
     bindAll(helpPairs, touch);
+    bindSwitch('hp_showk', function (v) { if (v) delete hp.showKicker; else hp.showKicker = false; touch(); });
     wireListBlock('hpitem', hp.items, function () {
       return { titlePt: 'Nova frente', titleEn: 'New area', textPt: '', textEn: '', tags: [] };
     }, renderHome);
@@ -1614,11 +1638,14 @@
       fieldRow('Título linha 1 (PT / EN)', '', inp('ct_l1pt', ct.titleLine1Pt, half) + inp('ct_l1en', ct.titleLine1En, half)) +
       fieldRow('Título linha 2 (PT / EN)', '', inp('ct_l2pt', ct.titleLine2Pt, half) + inp('ct_l2en', ct.titleLine2En, half)) +
       fieldRow('Rótulo do e-mail (PT / EN)', '"Escreva para"', inp('ct_mkpt', ct.mailLabelPt, half) + inp('ct_mken', ct.mailLabelEn, half));
+    document.getElementById('contactBody').insertAdjacentHTML('beforeend',
+      fieldRow('Mostrar rótulo do e-mail', 'Desligar preserva o texto e aproxima o e-mail naturalmente.', switchControl('ct_showmk', ct.showMailLabel !== false)));
     bindAll([
       ['ct_l1pt', function (v) { ct.titleLine1Pt = v; }], ['ct_l1en', function (v) { ct.titleLine1En = v; }],
       ['ct_l2pt', function (v) { ct.titleLine2Pt = v; }], ['ct_l2en', function (v) { ct.titleLine2En = v; }],
       ['ct_mkpt', function (v) { ct.mailLabelPt = v; }], ['ct_mken', function (v) { ct.mailLabelEn = v; }]
     ], touch);
+    bindSwitch('ct_showmk', function (v) { if (v) delete ct.showMailLabel; else ct.showMailLabel = false; touch(); });
   }
 
   /* ---------- Projetos ---------- */
@@ -1738,7 +1765,9 @@
       var swapWith = action === 'up' ? sorted[idx - 1] : sorted[idx + 1];
       if (swapWith) { var tmp = p.order; p.order = swapWith.order; swapWith.order = tmp; }
     }
-    if (action === 'edit') { state.editingSlug = slug; renderProjectEditor(); }
+    /* Abrir o editor é leitura. Antes ele seguia até o markDirty abaixo e
+       marcava index.json como alterado sem mudar um único campo. */
+    if (action === 'edit') { state.editingSlug = slug; renderProjectEditor(); return; }
     markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
     renderProjectsList();
   }
@@ -1801,6 +1830,7 @@
     var meio = 'style="max-width:160px"';
     if (b.type === 'text') {
       return fieldRow('Rótulo (PT / EN)', '"contexto", "processo"', inp(p + 'lpt', b.labelPt, ' ' + meio) + inp(p + 'len', b.labelEn, ' ' + meio)) +
+        fieldRow('Mostrar rótulo', 'Desligar preserva o texto e remove a linha e o espaço internos do rótulo.', switchControl(p + 'showlabel', b.showLabel !== false)) +
         fieldRow('Texto (PT)', '', ta(p + 'tpt', b.textPt)) +
         fieldRow('Texto (EN)', '', ta(p + 'ten', b.textEn));
     }
@@ -1842,7 +1872,8 @@
   }
 
   function ligarBlocos(P, slug, save, rerender) {
-    var blocos = P.blocks;
+    var blocos = Array.isArray(P.blocks) ? P.blocks : [];
+    function assegurarBlocos() { if (!Array.isArray(P.blocks)) P.blocks = blocos; }
     /* Reordenar, duplicar e remover mexem em índice, e todo id da tela carrega
        o índice antigo. Por isso essas três sempre redesenham o editor inteiro
        em vez de tentar remendar o DOM. */
@@ -1862,6 +1893,7 @@
       if (b.type === 'text') {
         campo('lpt', function (v) { b.labelPt = v; }); campo('len', function (v) { b.labelEn = v; });
         campo('tpt', function (v) { b.textPt = v; }); campo('ten', function (v) { b.textEn = v; });
+        bindSwitch(p + 'showlabel', function (v) { if (v) delete b.showLabel; else b.showLabel = false; save(); });
       }
       if (b.type === 'quote') {
         campo('qpt', function (v) { b.quotePt = v; }); campo('qen', function (v) { b.quoteEn = v; });
@@ -1951,6 +1983,7 @@
     if (add) add.addEventListener('click', function () {
       var novo = blocoNovo(document.getElementById('pe_bl_tipo').value);
       if (!novo) return;
+      assegurarBlocos();
       blocos.push(novo);
       projectSectionOpen['bloco-' + (blocos.length - 1)] = true;
       save(); rerender();
@@ -1973,7 +2006,11 @@
     }
     var P = cached.data;
     var indexEntry = state.projectsIndex.projects.filter(function (x) { return x.slug === slug; })[0];
-    if (!Array.isArray(P.blocks)) P.blocks = [];
+    var projectBlocks = Array.isArray(P.blocks) ? P.blocks : [];
+    var tagsPt = Array.isArray(indexEntry.tagsPt) ? indexEntry.tagsPt : [];
+    var tagsEn = Array.isArray(indexEntry.tagsEn) ? indexEntry.tagsEn : [];
+    var cardSizes = Array.isArray(state.projectsIndex.cardSizes) && state.projectsIndex.cardSizes.length
+      ? state.projectsIndex.cardSizes : ['normal'];
     /* A prévia do editor de projeto abre a página DO projeto, não a Home:
        schedulePreview já mandava os dados do projeto, mas não havia nenhuma
        prévia nesta aba, então quem montava um case fazia isso às cegas. */
@@ -1984,31 +2021,44 @@
       fieldRow('Slug', 'não muda depois de criado', '<input type="text" value="' + esc(slug) + '" disabled>') +
       fieldRow('Status', '', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
       fieldRow('Ano', '', '<input type="number" id="pe_year" value="' + esc(P.year) + '" min="1990" max="2100">') +
+      fieldRow('Categoria', 'Metadado do projeto e do índice.', '<input type="text" id="pe_category" value="' + esc(P.category || indexEntry.category) + '">') +
+      fieldRow('Rótulo acima do título (PT / EN)', 'Eyebrow do case.', '<input type="text" id="pe_eyebrowpt" value="' + esc(P.hero.eyebrowPt) + '" style="max-width:160px"><input type="text" id="pe_eyebrowen" value="' + esc(P.hero.eyebrowEn) + '" style="max-width:160px">') +
+      fieldRow('Mostrar rótulo acima do título', 'Desligar preserva o texto e remove seu espaço.', switchControl('pe_showeyebrow', P.hero.showEyebrow !== false)) +
       fieldRow('Título (PT)', '', '<input type="text" id="pe_titlept" value="' + esc(P.hero.titlePt) + '">') +
       fieldRow('Título (EN)', '', '<input type="text" id="pe_titleen" value="' + esc(P.hero.titleEn) + '">') +
       fieldRow('Subtítulo (PT)', '', '<textarea id="pe_subpt">' + esc(P.hero.subtitlePt) + '</textarea>') +
       fieldRow('Subtítulo (EN)', '', '<textarea id="pe_suben">' + esc(P.hero.subtitleEn) + '</textarea>') +
+      fieldRow('Tags do card (PT)', 'Separe por vírgulas.', '<input type="text" id="pe_tagspt" value="' + esc(tagsPt.join(', ')) + '">') +
+      fieldRow('Tags do card (EN)', 'Separe por vírgulas e mantenha a mesma ordem do PT.', '<input type="text" id="pe_tagsen" value="' + esc(tagsEn.join(', ')) + '">') +
+      fieldRow('Tamanho do card', 'Usa as opções já declaradas no índice de projetos.', selectDe('pe_cardsize', indexEntry.cardSize || 'normal', cardSizes.map(function (s) { return [s, s]; }))) +
+      fieldRow('Projeto em destaque', 'No desktop, ocupa a largura da grade sem alterar a ordem.', switchControl('pe_featured', indexEntry.featured === true)) +
       fieldRow('Papel (PT / EN)', '', '<input type="text" id="pe_rolept" value="' + esc(P.hero.rolePt) + '" style="max-width:160px"><input type="text" id="pe_roleen" value="' + esc(P.hero.roleEn) + '" style="max-width:160px">') +
       fieldRow('Escopo (PT / EN)', '', '<input type="text" id="pe_scopept" value="' + esc(P.hero.scopePt) + '" style="max-width:160px"><input type="text" id="pe_scopeen" value="' + esc(P.hero.scopeEn) + '" style="max-width:160px">') +
       fieldRow('Capa', 'caminho do arquivo — envie por Mídia e cole aqui', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
+      fieldRow('Capa para celular', 'Opcional. Se estiver vazia, usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
       fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
       '</div></details>' +
       '<details class="group"' + projectSection('cover') + '><summary>Espaçamento da capa</summary><div class="group-body">' +
       deviceTabsHtml('cover-spacing') +
-      blockSpacingFields(P, 'coverSpacing', function () { save(); }, false) +
+      blockSpacingFields(P, 'coverSpacing', function () { save(); }, false, { marginTop: 16, marginBottom: 0 }) +
       '</div></details>' +
-      P.blocks.map(function (b, i) {
+      projectBlocks.map(function (b, i) {
         return '<details class="group"' + projectSection('bloco-' + i) + '><summary>' +
           esc((i + 1) + '. ' + resumoDoBloco(b)) + '</summary><div class="group-body">' +
           camposDoBloco(b, i) +
-          '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
-          '<b>Espaçamento</b>' +
+           '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
+           '<b>Espaçamento</b>' +
+           '<p class="hint">Controla as margens externas do bloco. Em galerias, controla também o espaço entre imagens. O padding do rótulo de texto é interno e fixo.</p>' +
           deviceTabsHtml('block-spacing-' + i) +
-          blockSpacingFields(b, 'spacing', function () { save(); }, b.type === 'gallery') +
+          blockSpacingFields(b, 'spacing', function () { save(); }, b.type === 'gallery', {
+            marginTop: b.type === 'text' ? 0 : 16,
+            marginBottom: b.type === 'text' && projectBlocks[i + 1] && projectBlocks[i + 1].type === 'text' ? 41.6 : 0,
+            gap: b.type === 'gallery' ? 22.4 : 0
+          }) +
           '</div>' +
           '<div class="bloco-acoes">' +
           '<button class="btn small" data-bl-sobe="' + i + '"' + (i === 0 ? ' disabled' : '') + '>↑ subir</button>' +
-          '<button class="btn small" data-bl-desce="' + i + '"' + (i === P.blocks.length - 1 ? ' disabled' : '') + '>↓ descer</button>' +
+          '<button class="btn small" data-bl-desce="' + i + '"' + (i === projectBlocks.length - 1 ? ' disabled' : '') + '>↓ descer</button>' +
           '<button class="btn small" data-bl-dup="' + i + '">duplicar</button>' +
           '<button class="btn small danger" data-bl-remove="' + i + '">remover bloco</button>' +
           '</div></div></details>';
@@ -2023,22 +2073,43 @@
     /* schedulePreview aqui também: sem isso o editor de projeto era o único
        lugar do painel que alterava conteúdo sem avisar a prévia. */
     function save() { markDirty('content/projects/' + slug + '.json', P, cached.sha); schedulePreview(); }
-    bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); });
-    bindText('pe_titleen', function (v) { P.hero.titleEn = v; indexEntry.titleEn = v; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); });
-    bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; save(); });
-    bindText('pe_suben', function (v) { P.hero.subtitleEn = v; save(); });
+    function saveIndex() { markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); schedulePreview(); }
+    function tagsFrom(v) { return v.split(',').map(function (t) { return t.trim(); }).filter(Boolean); }
+    bindText('pe_eyebrowpt', function (v) { P.hero.eyebrowPt = v; save(); });
+    bindText('pe_eyebrowen', function (v) { P.hero.eyebrowEn = v; save(); });
+    bindSwitch('pe_showeyebrow', function (v) { if (v) delete P.hero.showEyebrow; else P.hero.showEyebrow = false; save(); });
+    bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); saveIndex(); });
+    bindText('pe_titleen', function (v) { P.hero.titleEn = v; indexEntry.titleEn = v; save(); saveIndex(); });
+    bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; indexEntry.subtitlePt = v; save(); saveIndex(); });
+    bindText('pe_suben', function (v) { P.hero.subtitleEn = v; indexEntry.subtitleEn = v; save(); saveIndex(); });
+    bindText('pe_category', function (v) { P.category = v; indexEntry.category = v; save(); saveIndex(); });
+    bindText('pe_tagspt', function (v) { indexEntry.tagsPt = tagsFrom(v); saveIndex(); });
+    bindText('pe_tagsen', function (v) { indexEntry.tagsEn = tagsFrom(v); saveIndex(); });
+    bindSwitch('pe_featured', function (v) { indexEntry.featured = v; saveIndex(); });
     bindText('pe_rolept', function (v) { P.hero.rolePt = v; save(); });
     bindText('pe_roleen', function (v) { P.hero.roleEn = v; save(); });
     bindText('pe_scopept', function (v) { P.hero.scopePt = v; save(); });
     bindText('pe_scopeen', function (v) { P.hero.scopeEn = v; save(); });
-    bindSwitch('pe_coverlight', function (v) { indexEntry.coverLight = v; markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); });
-    bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); });
-    document.getElementById('pe_status').addEventListener('change', function (e) { P.status = e.target.value; save(); });
-    document.getElementById('pe_year').addEventListener('change', function (e) { P.year = Number(e.target.value); indexEntry.year = P.year; save(); });
+    bindSwitch('pe_coverlight', function (v) { indexEntry.coverLight = v; saveIndex(); });
+    bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); saveIndex(); });
+    bindText('pe_covermobile', function (v) { P.coverMobile = v; indexEntry.coverMobile = v; save(); saveIndex(); });
+    document.getElementById('pe_cardsize').addEventListener('change', function (e) { indexEntry.cardSize = e.target.value; saveIndex(); });
+    document.getElementById('pe_status').addEventListener('change', function (e) {
+      P.status = e.target.value;
+      /* `visible` continua sendo a autoridade da Home. Tornar rascunho apenas
+         força a opção segura; publicar não mostra sozinho. */
+      if (P.status === 'draft') { indexEntry.visible = false; saveIndex(); }
+      save();
+    });
+    document.getElementById('pe_year').addEventListener('change', function (e) { P.year = Number(e.target.value); indexEntry.year = P.year; save(); saveIndex(); });
     ligarBlocos(P, slug, save, renderProjectEditor);
     var coverUpload = document.getElementById('pe_cover_upload');
     if (coverUpload) coverUpload.addEventListener('change', function () { uploadFile(coverUpload.files[0], slug, function (path) {
-      P.cover = path; indexEntry.cover = path; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); renderProjectEditor();
+      P.cover = path; indexEntry.cover = path; save(); saveIndex(); renderProjectEditor();
+    }); });
+    var coverMobileUpload = document.getElementById('pe_covermobile_upload');
+    if (coverMobileUpload) coverMobileUpload.addEventListener('change', function () { uploadFile(coverMobileUpload.files[0], slug, function (path) {
+      P.coverMobile = path; indexEntry.coverMobile = path; save(); saveIndex(); renderProjectEditor();
     }); });
 
     wireTieredFields();
@@ -2197,7 +2268,8 @@
     return {
       slug: slug, titlePt: titulo, titleEn: '',
       subtitlePt: '', subtitleEn: '',
-      year: ano, cover: '', coverLight: false,
+      category: '', featured: false, cardSize: 'normal',
+      year: ano, cover: '', coverMobile: '', coverLight: false,
       visible: false, order: ordem,
       tagsPt: [], tagsEn: []
     };

@@ -157,6 +157,17 @@ body.locked{overflow:hidden;height:100dvh}
    Continua pointer-events:none, então estar por cima não bloqueia clique. */
 .cur-layer{position:fixed;inset:0;z-index:100;pointer-events:none;
   contain:layout style size}
+/* O FAQ inverte a superfície para clara. O cursor acompanha essa superfície
+   sem mudar sua lógica nem reativar o ponteiro nativo: só os tokens visuais da
+   camada são invertidos enquanto o alvo está dentro do FAQ. */
+.cur-layer.is-on-light{
+  --cursor-core:var(--ink-2);
+  --cursor-glow-soft:rgba(var(--ink-rgb),.18);
+  --cursor-border:rgba(var(--ink-rgb),.34)}
+/* Várias classes de rótulo declaram display próprio e venceriam o [hidden] da
+   folha do navegador. A regra explícita garante remoção real da caixa. */
+.about-k[hidden],.caps-k[hidden],.help-k[hidden],.mail-k[hidden],
+.case-hero .eyebrow[hidden]{display:none}
 .cur-dot,.cur-trail,.cur-label{position:absolute;top:0;left:0;pointer-events:none;
   will-change:transform}
 /* núcleo: 16px, some por padrão até o ponteiro se mover pela primeira vez */
@@ -903,7 +914,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    editar HTML ou CSS, e nada quebra enquanto a foto não chega. */
 .scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transform:scale(1.01);transition:transform 820ms var(--ease-hover)}
-.scene>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.scene>img,.scene>picture,.scene>picture>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 @media(hover:hover) and (pointer:fine){.card:hover .scene{transform:scale(1.035)}}
 @media(prefers-reduced-motion:reduce){.card:hover .scene{transform:scale(1.01)}}
 /* Sem grão aqui: por cima de uma foto real ele lia como sujeira na imagem, não
@@ -1296,19 +1307,18 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
 }
 
 /* ===== VOLTAR AO TOPO =====
-   Escala máxima de 1.015 e nada que mude a caixa: o botão não empurra o rodapé
-   ao passar o mouse. A seta sobe 4px, o texto ganha contraste e a borda clareia. */
-.to-top{display:inline-flex;align-items:center;gap:.7em;cursor:pointer;
-  font-family:var(--font);font-size:.9rem;font-weight:var(--w-medium);color:var(--muted);
-  background:transparent;border:1px solid var(--line-strong);border-radius:var(--radius-button,100px);
-  padding:.8rem 1.5rem;
-  transition:transform 520ms var(--ease-soft),color 520ms var(--ease-soft),
-             border-color 520ms var(--ease-soft),background-color 520ms var(--ease-soft)}
-.to-top svg{width:15px;height:15px;flex:none;
-  transition:transform 520ms var(--ease-soft)}
-.to-top:hover{transform:scale(1.015);color:var(--paper);
-  border-color:rgba(var(--paper-rgb),.3);background:rgba(var(--paper-rgb),.05)}
-.to-top:hover svg{transform:translateY(-4px)}
+   Controle utilitário, abaixo dos CTAs na hierarquia. A caixa não muda no
+   hover; só contraste, borda e um deslocamento curto da seta respondem. */
+.to-top{display:inline-flex;align-items:center;justify-content:center;gap:.55em;cursor:pointer;
+  min-height:42px;font-family:var(--font);font-size:.78rem;font-weight:var(--w-regular);color:var(--muted-2);
+  background:transparent;border:1px solid var(--line);border-radius:var(--radius-button,100px);
+  padding:.55rem .95rem;
+  transition:color var(--dur-micro) var(--ease-soft),
+             border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft)}
+.to-top svg{width:13px;height:13px;flex:none;
+  transition:transform var(--dur-micro) var(--ease-soft)}
+.to-top:hover{color:var(--muted);border-color:var(--line-strong);background:rgba(var(--paper-rgb),.025)}
+.to-top:hover svg{transform:translateY(-2px)}
 @media(prefers-reduced-motion:reduce){
   .to-top,.to-top svg{transition:none}
   .to-top:hover{transform:none}
@@ -1558,6 +1568,18 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    blocos que não existem mais. */
 .overlay-top--bare{justify-content:flex-end;border-bottom:none;padding-bottom:.6rem}
 
+/* O menu tem seis itens e não precisa da altura confortável do formulário de
+   contato. A faixa de topo contém só o fechar, então fica curta; no modal ela
+   começa perto do topo e no dropdown mantém a ancoragem sob o header. */
+#menu:not(.dropdown) .overlay-sheet{margin-block:clamp(.7rem,3vh,1.8rem) auto}
+#menu.dropdown .overlay-sheet{margin-top:3.35rem;max-height:calc(100svh - 4.4rem)}
+#menu .overlay-top--bare{padding:.8rem 1.25rem .2rem}
+#menu .menu-item{gap:.9rem;padding:.82rem 1.3rem;
+  font-size:clamp(1.2rem,2.4vw,1.65rem)}
+#menu .menu-item:hover{padding-left:1.7rem}
+#menu .menu-ico{width:36px;height:36px;border-radius:10px}
+#menu .menu-ico svg{width:17px;height:17px}
+
 /* ===== OFFSET DAS ÂNCORAS =====
    Um número só, num lugar só, em vez de espalhar cálculo de offset por
    handler. O header é fixo e cobriria o título da seção logo após a
@@ -1585,6 +1607,8 @@ body.ready main,body.ready footer{opacity:1;transform:none}
      cara, mas ainda com altura confortável para toque */
   .menu-item{font-size:clamp(1.25rem,6vw,1.6rem);padding:.95rem 1.3rem}
   .menu-ico{width:36px;height:36px}
+  #menu .menu-item{font-size:clamp(1.12rem,5.4vw,1.4rem);padding:.72rem 1.1rem}
+  #menu .menu-item:hover{padding-left:1.35rem}
 }
 
 /* Item da seção em que o visitante está. Não comunica só por cor: ganha um
@@ -1712,6 +1736,10 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    fluxo normal as margens de blocos vizinhos colapsariam, e o espaço entre
    dois blocos deixaria de ser o que foi configurado. */
 .case-blocks{display:grid}
+/* Os wrappers são semânticos, mas não são capítulos da página. Sem esta
+   neutralização eles herdavam 112px em cada lado da regra global `section`,
+   um espaço invisível aos controles de margem do CMS. */
+.case-blocks>.case-block-group{padding-block:0;min-height:0}
 
 .case-figure{margin:var(--block-mt-desktop,1rem) 0 var(--block-mb-desktop,0px)}
 .case-figure .scene{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;
@@ -1850,7 +1878,14 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 @media(min-width:900px){
   /* preenchem quase a viewport inteira, como no midu.design: a prévia é o
      assunto da seção, não uma miniatura ao lado do texto */
-  .work-bleed .card{aspect-ratio:auto;height:clamp(38rem,88vh,58rem)}}
+  .work-bleed .card{aspect-ratio:auto;height:clamp(38rem,88vh,58rem)}
+  /* Tamanhos já previstos em projects/index.json. O normal preserva a grade
+     atual; as variações só alteram span e altura dentro da mesma linguagem. */
+  .work-bleed .card--largo{grid-column:span 2;height:clamp(30rem,72vh,48rem)}
+  .work-bleed .card--alto{height:clamp(46rem,105vh,68rem)}
+  .work-bleed .card--grande{grid-column:span 2;height:clamp(44rem,98vh,64rem)}
+  .work-bleed .card--featured{grid-column:span 2}
+  .work-bleed .card--largura-completa{grid-column:1/-1;height:clamp(38rem,88vh,58rem)}}
 @media(max-width:899px){
   .work-bleed .card{aspect-ratio:4/4.4}}
 .work-bleed .card-foot{left:clamp(1.4rem,2.2vw,2.4rem);right:clamp(1.4rem,2.2vw,2.4rem);

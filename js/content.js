@@ -261,10 +261,9 @@
 
      Só existe quando três coisas são verdade ao mesmo tempo:
        1. a página está dentro de um <iframe> (visita normal nunca entra aqui);
-       2. a URL declara a origem do painel em ?cmsOrigin=... — é o painel que
-          monta esse endereço ao criar o iframe. Fica na URL, e não fixo no
-          código, justamente para não existir endereço de ambiente nenhum
-          escrito aqui dentro;
+       2. a URL declara a origem do painel em ?cmsOrigin=... (ou no fragmento
+          equivalente, preservado por redirects canônicos) — é o painel que
+          monta esse endereço, sem origem de ambiente fixa no código;
        3. a mensagem vem de window.parent E de uma origem igual à declarada.
 
      O que entra é dado, nunca código: postMessage usa clone estruturado, que
@@ -279,6 +278,9 @@
   function origemDoPainel() {
     try {
       var declarada = new URLSearchParams(location.search).get('cmsOrigin');
+      if (!declarada && location.hash) {
+        declarada = new URLSearchParams(location.hash.slice(1)).get('cmsOrigin');
+      }
       if (!declarada) return null;
       /* normaliza e recusa qualquer coisa que não seja uma origem http(s)
          limpa — sem caminho, sem credencial, sem query */
