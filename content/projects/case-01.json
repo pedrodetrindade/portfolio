@@ -28,12 +28,12 @@
   "coverMobile": "",
   "coverSpacing": {
     "marginTop": {
-      "desktop": 324,
+      "desktop": 0,
       "tablet": null,
       "mobile": null
     },
     "marginBottom": {
-      "desktop": 310,
+      "desktop": 0,
       "tablet": null,
       "mobile": null
     }
@@ -74,17 +74,17 @@
       ],
       "spacing": {
         "marginTop": {
-          "desktop": 495,
+          "desktop": 0,
           "tablet": null,
           "mobile": null
         },
         "marginBottom": {
-          "desktop": 527,
+          "desktop": 1,
           "tablet": null,
           "mobile": null
         },
         "gap": {
-          "desktop": 166,
+          "desktop": 0,
           "tablet": null,
           "mobile": null
         }
@@ -104,17 +104,17 @@
       ],
       "spacing": {
         "marginTop": {
-          "desktop": 544,
+          "desktop": 0,
           "tablet": null,
           "mobile": null
         },
         "marginBottom": {
-          "desktop": 546,
+          "desktop": 0,
           "tablet": null,
           "mobile": null
         },
         "gap": {
-          "desktop": 187,
+          "desktop": 0,
           "tablet": null,
           "mobile": null
         }
