@@ -60,6 +60,19 @@
           "alt": ""
         }
       ]
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/projetos/case-01/galeria-1.jpg",
+          "alt": ""
+        },
+        {
+          "src": "assets/projetos/case-01/galeria-1.jpg",
+          "alt": ""
+        }
+      ]
     }
   ]
 }
