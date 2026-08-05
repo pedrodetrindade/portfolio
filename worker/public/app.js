@@ -1304,32 +1304,95 @@
     wireDeviceTabs(document.getElementById('layoutGlobalBody'), renderLayout);
 
     var sections = state.home.sections;
-    var labels = { work: 'Projetos', about: 'Sobre', help: 'O que eu faço', faq: 'FAQ', contact: 'Contato' };
+    var labels = { hero: 'Capa', work: 'Projetos', about: 'Sobre', help: 'O que eu faço', faq: 'FAQ', contact: 'Contato' };
     /* work e about já tinham respiro próprio, fixo no CSS, antes do CMS
        existir — sem valor gravado aqui, o site usa esse número fixo, não o
        padrão global. help/faq/contact sempre usaram o padrão global. */
     var USA_PADRAO_GLOBAL = { help: true, faq: true, contact: true, work: false, about: false };
-    document.getElementById('layoutSectionsBody').innerHTML = deviceTabsHtml('sections') +
+    function sectionTarget(key) {
+      if (!sections[key]) sections[key] = {};
+      return sections[key];
+    }
+    function cleanEmptySection(key) {
+      var target = sections[key];
+      if (target && Object.keys(target).length === 0) delete sections[key];
+    }
+    function clearSectionSpacing(key, prop, dev, preserveShape) {
+      var target = sections[key];
+      if (!target || !target[prop]) return;
+      if (preserveShape) target[prop][dev] = null;
+      else {
+        delete target[prop][dev];
+        if (Object.keys(target[prop]).every(function (tier) { return target[prop][tier] == null; })) delete target[prop];
+      }
+      cleanEmptySection(key);
+    }
+    function saveSection() {
+      markDirty('content/home.json', state.home, state.homeSha);
+      schedulePreview();
+    }
+    document.getElementById('layoutSectionsBody').innerHTML =
+      '<p class="hint">Cada seção pode usar uma cor própria ou herdar o fundo original. "Divisórias" controla somente as linhas estruturais daquela seção.</p>' +
+      deviceTabsHtml('sections') +
       Object.keys(labels).map(function (key) {
         var s = sections[key] || {};
-        s.spacingTop = s.spacingTop || { desktop: null, tablet: null, mobile: null };
-        s.spacingBottom = s.spacingBottom || { desktop: null, tablet: null, mobile: null };
+        var hadSpacingTop = !!s.spacingTop;
+        var hadSpacingBottom = !!s.spacingBottom;
+        var spacingTop = s.spacingTop || { desktop: null, tablet: null, mobile: null };
+        var spacingBottom = s.spacingBottom || { desktop: null, tablet: null, mobile: null };
+        var fallbackBg = key === 'faq' ? { hex: '#f2eeee', opacity: 100 } :
+          ((state.global.colors && state.global.colors.background) || { hex: '#0d0a0a', opacity: 100 });
+        var ownBg = s.background;
         var usesGlobal = USA_PADRAO_GLOBAL[key];
         var fbTop = usesGlobal ? state.global.layout.sectionSpacingTop.desktop : null;
         var fbBottom = usesGlobal ? state.global.layout.sectionSpacingBottom.desktop : null;
         var note = usesGlobal ? null : 'valor fixo do site (ainda não editável nesta seção)';
         return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
           '<b>' + esc(labels[key]) + '</b>' +
-          tieredSpacingField('Espaço antes da seção', '', s.spacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
-            function (dev, v) { s.spacingTop[dev] = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); },
-            function (dev) { s.spacingTop[dev] = null; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
-            fbTop, note) +
-          tieredSpacingField('Espaço depois da seção', '', s.spacingBottom, LIMITS.spacing[0], LIMITS.spacing[1],
-            function (dev, v) { s.spacingBottom[dev] = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); },
-            function (dev) { s.spacingBottom[dev] = null; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
-            fbBottom, note) +
+          fieldRow('Usar cor de fundo própria', 'Desligado mantém o fundo original.', switchControl('sec_' + key + '_ownbg', !!ownBg)) +
+          fieldRow('Cor de fundo', key === 'faq' ? 'A tipografia do FAQ foi desenhada para fundos claros.' : '',
+            colorControl('sec_' + key + '_bg', (ownBg || fallbackBg).hex, (ownBg || fallbackBg).opacity)) +
+          (key === 'hero' || key === 'work' ? '' : fieldRow('Mostrar divisórias', 'Remove ou restaura as linhas estruturais desta seção.',
+            switchControl('sec_' + key + '_dividers', s.showDividers !== false))) +
+          (key === 'hero' ? '' : tieredSpacingField('Espaço antes da seção', '', spacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
+            function (dev, v) { spacingTop[dev] = v; var target = sectionTarget(key); if (!target.spacingTop) target.spacingTop = {}; target.spacingTop[dev] = v; saveSection(); },
+            function (dev) { spacingTop[dev] = hadSpacingTop ? null : undefined; clearSectionSpacing(key, 'spacingTop', dev, hadSpacingTop); saveSection(); renderLayout(); },
+            fbTop, note)) +
+          (key === 'hero' ? '' : tieredSpacingField('Espaço depois da seção', '', spacingBottom, LIMITS.spacing[0], LIMITS.spacing[1],
+            function (dev, v) { spacingBottom[dev] = v; var target = sectionTarget(key); if (!target.spacingBottom) target.spacingBottom = {}; target.spacingBottom[dev] = v; saveSection(); },
+            function (dev) { spacingBottom[dev] = hadSpacingBottom ? null : undefined; clearSectionSpacing(key, 'spacingBottom', dev, hadSpacingBottom); saveSection(); renderLayout(); },
+            fbBottom, note)) +
           '</div>';
       }).join('');
+    Object.keys(labels).forEach(function (key) {
+      var own = !!(sections[key] && sections[key].background);
+      ['_hex', '_op', '_opn'].forEach(function (suffix) {
+        var el = document.getElementById('sec_' + key + '_bg' + suffix);
+        if (el) el.disabled = !own;
+      });
+      bindSwitch('sec_' + key + '_ownbg', function (enabled) {
+        var target = sectionTarget(key);
+        if (enabled) {
+          var baseColor = key === 'faq' ? { hex: '#f2eeee', opacity: 100 } :
+            ((state.global.colors && state.global.colors.background) || { hex: '#0d0a0a', opacity: 100 });
+          target.background = { hex: baseColor.hex, opacity: baseColor.opacity };
+        } else {
+          delete target.background;
+          cleanEmptySection(key);
+        }
+        saveSection(); renderLayout();
+      });
+      bindColor('sec_' + key + '_bg', function (hex, op) {
+        sectionTarget(key).background = { hex: hex, opacity: op };
+        saveSection();
+      });
+      if (key !== 'hero' && key !== 'work') bindSwitch('sec_' + key + '_dividers', function (enabled) {
+        var target = sectionTarget(key);
+        if (enabled) delete target.showDividers; else target.showDividers = false;
+        cleanEmptySection(key);
+        saveSection();
+      });
+    });
     wireTieredFields();
     wireDeviceTabs(document.getElementById('layoutSectionsBody'), renderLayout);
   }
@@ -1525,7 +1588,8 @@
     document.getElementById('aboutBody').innerHTML =
       fieldRow('Rótulo da seção (PT / EN)', '"Sobre"', inp('ab_kpt', a.kickerPt, half) + inp('ab_ken', a.kickerEn, half)) +
       fieldRow('Mostrar rótulo da seção', 'Desligar preserva o texto e remove o espaço acima do título.', switchControl('ab_showk', a.showKicker !== false)) +
-      fieldRow('Título (PT / EN)', '"Sobre mim"', inp('ab_tpt', a.titlePt, half) + inp('ab_ten', a.titleEn, half)) +
+      fieldRow('Título (PT)', 'Enter força uma nova linha.', ta('ab_tpt', a.titlePt)) +
+      fieldRow('Título (EN)', 'Enter força uma nova linha.', ta('ab_ten', a.titleEn)) +
       fieldRow('Texto principal (PT)', '', ta('ab_leadpt', a.leadPt)) +
       fieldRow('Texto principal (EN)', '', ta('ab_leaden', a.leadEn)) +
       fieldRow('Texto complementar (PT)', '', ta('ab_subpt', a.subPt)) +
@@ -1575,7 +1639,8 @@
     document.getElementById('helpBody').innerHTML =
       fieldRow('Rótulo da seção (PT / EN)', '"atuação"', inp('hp_kpt', hp.kickerPt, half) + inp('hp_ken', hp.kickerEn, half)) +
       fieldRow('Mostrar rótulo da seção', 'Desligar preserva o texto e remove o espaço acima do título.', switchControl('hp_showk', hp.showKicker !== false)) +
-      fieldRow('Título (PT / EN)', '"O que eu faço"', inp('hp_tpt', hp.titlePt, half) + inp('hp_ten', hp.titleEn, half)) +
+      fieldRow('Título (PT)', 'Enter força uma nova linha.', ta('hp_tpt', hp.titlePt)) +
+      fieldRow('Título (EN)', 'Enter força uma nova linha.', ta('hp_ten', hp.titleEn)) +
       fieldRow('Introdução (PT)', '', ta('hp_lpt', hp.leadPt)) +
       fieldRow('Introdução (EN)', '', ta('hp_len', hp.leadEn)) +
       listBlock('hpitem', hp.items, 'Frente', function (item, i) {
@@ -1614,10 +1679,11 @@
     var fq = H.faq;
     if (!Array.isArray(fq.items)) fq.items = [];
     document.getElementById('faqBody').innerHTML =
-      fieldRow('Título da seção (PT / EN)', '', inp('fq_tpt', fq.titlePt, half) + inp('fq_ten', fq.titleEn, half)) +
+      fieldRow('Título da seção (PT)', 'Enter força uma nova linha.', ta('fq_tpt', fq.titlePt)) +
+      fieldRow('Título da seção (EN)', 'Enter força uma nova linha.', ta('fq_ten', fq.titleEn)) +
       listBlock('fqitem', fq.items, 'Pergunta', function (item, i) {
-        return fieldRow('Pergunta (PT)', '', inp('fq_' + i + '_qpt', item.qPt)) +
-          fieldRow('Pergunta (EN)', '', inp('fq_' + i + '_qen', item.qEn)) +
+        return fieldRow('Pergunta (PT)', 'Enter força uma nova linha.', ta('fq_' + i + '_qpt', item.qPt)) +
+          fieldRow('Pergunta (EN)', 'Enter força uma nova linha.', ta('fq_' + i + '_qen', item.qEn)) +
           fieldRow('Resposta (PT)', '', ta('fq_' + i + '_apt', item.aPt)) +
           fieldRow('Resposta (EN)', '', ta('fq_' + i + '_aen', item.aEn));
       });
@@ -2024,8 +2090,8 @@
       fieldRow('Categoria', 'Metadado do projeto e do índice.', '<input type="text" id="pe_category" value="' + esc(P.category || indexEntry.category) + '">') +
       fieldRow('Rótulo acima do título (PT / EN)', 'Eyebrow do case.', '<input type="text" id="pe_eyebrowpt" value="' + esc(P.hero.eyebrowPt) + '" style="max-width:160px"><input type="text" id="pe_eyebrowen" value="' + esc(P.hero.eyebrowEn) + '" style="max-width:160px">') +
       fieldRow('Mostrar rótulo acima do título', 'Desligar preserva o texto e remove seu espaço.', switchControl('pe_showeyebrow', P.hero.showEyebrow !== false)) +
-      fieldRow('Título (PT)', '', '<input type="text" id="pe_titlept" value="' + esc(P.hero.titlePt) + '">') +
-      fieldRow('Título (EN)', '', '<input type="text" id="pe_titleen" value="' + esc(P.hero.titleEn) + '">') +
+      fieldRow('Título (PT)', 'Enter força uma nova linha no case e no card.', '<textarea id="pe_titlept">' + esc(P.hero.titlePt) + '</textarea>') +
+      fieldRow('Título (EN)', 'Enter força uma nova linha no case e no card.', '<textarea id="pe_titleen">' + esc(P.hero.titleEn) + '</textarea>') +
       fieldRow('Subtítulo (PT)', '', '<textarea id="pe_subpt">' + esc(P.hero.subtitlePt) + '</textarea>') +
       fieldRow('Subtítulo (EN)', '', '<textarea id="pe_suben">' + esc(P.hero.subtitleEn) + '</textarea>') +
       fieldRow('Tags do card (PT)', 'Separe por vírgulas.', '<input type="text" id="pe_tagspt" value="' + esc(tagsPt.join(', ')) + '">') +
@@ -2040,7 +2106,7 @@
       '</div></details>' +
       '<details class="group"' + projectSection('cover') + '><summary>Espaçamento da capa</summary><div class="group-body">' +
       deviceTabsHtml('cover-spacing') +
-      blockSpacingFields(P, 'coverSpacing', function () { save(); }, false, { marginTop: 16, marginBottom: 0 }) +
+      blockSpacingFields(P, 'coverSpacing', function () { save(); }, false, { marginTop: 18, marginBottom: 0 }) +
       '</div></details>' +
       projectBlocks.map(function (b, i) {
         return '<details class="group"' + projectSection('bloco-' + i) + '><summary>' +
@@ -2051,9 +2117,9 @@
            '<p class="hint">Controla as margens externas do bloco. Em galerias, controla também o espaço entre imagens. O padding do rótulo de texto é interno e fixo.</p>' +
           deviceTabsHtml('block-spacing-' + i) +
           blockSpacingFields(b, 'spacing', function () { save(); }, b.type === 'gallery', {
-            marginTop: b.type === 'text' ? 0 : 16,
-            marginBottom: b.type === 'text' && projectBlocks[i + 1] && projectBlocks[i + 1].type === 'text' ? 41.6 : 0,
-            gap: b.type === 'gallery' ? 22.4 : 0
+            marginTop: b.type === 'text' ? 0 : 18,
+            marginBottom: b.type === 'text' && projectBlocks[i + 1] && projectBlocks[i + 1].type === 'text' ? 18 : 0,
+            gap: b.type === 'gallery' ? 18 : 0
           }) +
           '</div>' +
           '<div class="bloco-acoes">' +

@@ -357,7 +357,7 @@
      Blocos de TEXTO consecutivos são agrupados numa <section> só, e cada
      bloco de outro tipo ganha a sua. O wrapper é semântico e tem padding
      neutralizado no CSS; toda distância editável vem do próprio bloco. Textos
-     consecutivos mantêm o default editorial de 41,6px entre si.
+     consecutivos usam o mesmo default compacto de 18px dos demais blocos.
 
      Tipo desconhecido é ignorado no site (a página continua legível) e
      recusado na publicação pelo Worker, que é quem decide.
@@ -434,10 +434,9 @@
     host.innerHTML = grupos.map(function (g) {
       if (g[0].type === 'text') {
         var corpo = g.map(function (b, i) {
-          /* reproduz o antigo gap:2.6rem (41,6px) entre textos do mesmo
-             grupo; o último não leva espaço depois, porque o próximo bloco
-             carrega a própria margem anterior */
-          var cssT = blockStyleCss(b.spacing, 0, i === g.length - 1 ? 0 : 41.6);
+          /* O último não leva espaço depois, porque o próximo bloco carrega a
+             própria margem anterior. Textos consecutivos usam 18px. */
+          var cssT = blockStyleCss(b.spacing, 0, i === g.length - 1 ? 0 : 18);
           var hasLabel = String(b.labelPt || '').trim() || String(b.labelEn || '').trim();
           var label = b.showLabel !== false && hasLabel
             ? '<div class="k reveal" data-pt="' + esc(b.labelPt) + '" data-en="' + esc(b.labelEn) + '">' + esc(b.labelPt) + '</div>'
@@ -450,8 +449,8 @@
         return '<section class="case-block-group"><div class="case-body">' + corpo + '</div></section>';
       }
       var b = g[0];
-      var gap = b.type === 'gallery' ? 22.4 : null;
-      var css = blockStyleCss(b.spacing, 16, 0, gap);
+      var gap = b.type === 'gallery' ? 18 : null;
+      var css = blockStyleCss(b.spacing, 18, 0, gap);
       if (b.type === 'video' && b.mode === 'vimeo' && b.vimeo && b.vimeo.videoId) vimeos.push(b.vimeo);
       return '<section class="case-block-group">' + htmlDoBloco(b, css) + '</section>';
     }).join('');
@@ -514,12 +513,12 @@
     var coverImg = document.querySelector('.case-cover .scene img');
     if (coverImg && P.cover) coverImg.setAttribute('src', base + P.cover);
     var coverEl = document.querySelector('.case-cover');
-    if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 16, 0));
+    if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 18, 0));
 
     var blocks = Array.isArray(P.blocks) ? P.blocks : [];
     renderBlocks(blocks, blockStyleCss);
 
-    /* navegação para o próximo projeto: calculada pela posição do projeto
+    /* navegação anterior/próximo: calculada pela posição do projeto
        atual na lista visível e ordenada, nunca por um campo prevProject/
        nextProject gravado à mão. Um campo gravado à mão é exatamente o tipo
        de coisa que quebra sem avisar quando um projeto novo é criado: o
@@ -535,13 +534,22 @@
           .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
         var myPos = -1;
         for (var vi = 0; vi < visible.length; vi++) if (visible[vi].slug === P.slug) { myPos = vi; break; }
+        var prevP = myPos !== -1 && visible.length > 1 ? visible[(myPos - 1 + visible.length) % visible.length] : null;
         var nextP = myPos !== -1 && visible.length > 1 ? visible[(myPos + 1) % visible.length] : null;
-        if (nextP) {
+        navEl.hidden = !nextP;
+        if (prevP && nextP) {
           var links = navEl.querySelectorAll('a');
+          if (links[0]) {
+            links[0].setAttribute('href', prevP.slug + '.html');
+            var prevSpans = links[0].querySelectorAll('span');
+            setText(prevSpans[0], 'anterior', 'previous');
+            setText(prevSpans[1], prevP.titlePt, prevP.titleEn);
+          }
           if (links[1]) {
             links[1].setAttribute('href', nextP.slug + '.html');
-            var span = links[1].querySelectorAll('span')[1];
-            setText(span, nextP.titlePt, nextP.titleEn);
+            var nextSpans = links[1].querySelectorAll('span');
+            setText(nextSpans[0], 'próximo', 'next');
+            setText(nextSpans[1], nextP.titlePt, nextP.titleEn);
           }
         }
       }

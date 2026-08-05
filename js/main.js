@@ -1071,8 +1071,20 @@
     buildScrub = () => {
       document.querySelectorAll('.about-lead, .case-section p').forEach(p => {
         p.classList.add('scrub');
-        p.innerHTML = p.textContent.trim().split(/\s+/)
-          .map(w => `<span class="w">${w}</span>`).join(' ');
+        /* Preserva inclusive quebras editoriais digitadas no CMS. O scrub
+           anterior juntava tudo com espaço e apagava cada Enter do texto. */
+        const texto = p.textContent.trim();
+        const frag = document.createDocumentFragment();
+        texto.split(/(\s+)/).forEach(parte => {
+          if (!parte) return;
+          if (/^\s+$/.test(parte)) { frag.appendChild(document.createTextNode(parte)); return; }
+          const span = document.createElement('span');
+          span.className = 'w';
+          span.textContent = parte;
+          frag.appendChild(span);
+        });
+        p.textContent = '';
+        p.appendChild(frag);
       });
       scrubWords = [...document.querySelectorAll('.scrub .w')];
       measureWords();

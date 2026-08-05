@@ -101,6 +101,9 @@ html{scroll-behavior:smooth;overflow-x:clip;scrollbar-gutter:stable}
 body{font-family:var(--font);background:var(--ink);color:var(--paper);line-height:1.6;font-weight:var(--w-regular);
   -webkit-font-smoothing:antialiased;overflow-x:clip;position:relative}
 body.locked{overflow:hidden;height:100dvh}
+/* Enter nos campos multilinha do CMS vira uma quebra editorial real. O texto
+   continua escapado e espaços comuns continuam colapsando normalmente. */
+[data-pt][data-en]{white-space:pre-line}
 
 /* Nenhum filter:blur() no site. Gradiente radial já é suave por natureza;
    o blur só custava pintura. Os stops foram alargados para compensar. */
@@ -857,6 +860,17 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 #help{padding-block:var(--help-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--help-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
 #faq{padding-block:var(--faq-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--faq-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
 #contact{padding-block:var(--contact-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--contact-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
+/* Fundo opcional por seção. Work, Help e Contact vivem dentro da `.wrap`, por
+   isso o pseudo-elemento sangra até a largura útil da janela. Sem override do
+   CMS, todos preservam o fundo histórico. */
+.hero,#work,#help,#contact{position:relative;isolation:isolate}
+.hero::before,#work::before,#help::before,#contact::before{content:"";position:absolute;
+  inset-block:0;left:50%;width:var(--vw,100vw);margin-left:calc(var(--vw,100vw) / -2);
+  pointer-events:none;z-index:-1}
+.hero::before{background:var(--hero-section-bg,transparent)}
+#work::before{background:var(--work-section-bg,transparent)}
+#help::before{background:var(--help-section-bg,transparent)}
+#contact::before{background:var(--contact-section-bg,transparent)}
 /* #contact saiu do grupo min-height:100svh: centralizado numa caixa quase do
    tamanho da tela, o vazio entre o fim do conteúdo (redes sociais) e a linha
    do rodapé ficava grande demais em telas largas. Sem min-height, a seção
@@ -883,7 +897,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   #contact{padding-block:var(--contact-pad-top-mobile,6.5rem) var(--contact-pad-bottom-mobile,6.5rem)}
 }
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:2rem;
-  border-top:1px solid var(--line);padding-top:1.4rem;margin-bottom:3rem}
+  border-top:var(--work-divider-width,1px) solid var(--line);padding-top:1.4rem;margin-bottom:3rem}
 .sec-head h2{font-size:clamp(1.4rem,2.4vw,2rem);font-weight:var(--w-medium);letter-spacing:-.02em}
 .sec-head .count{font-family:var(--mono);font-size:.78rem;color:var(--muted-2)}
 
@@ -973,7 +987,9 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   width:var(--bleed);position:relative;left:50%;
   margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2);
   padding:var(--about-pad-top-desktop,clamp(5rem,10vh,8rem)) var(--gutter) var(--about-pad-bottom-desktop,clamp(4.5rem,8vh,6.5rem));
-  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  background:var(--about-section-bg,transparent);
+  border-top:var(--about-divider-width,1px) solid var(--line);
+  border-bottom:var(--about-divider-width,1px) solid var(--line)}
 /* Precisa vir depois da regra base acima: mesma especificidade (uma classe
    só), então quem vier depois no arquivo é quem manda. As duas faixas
    responsivas de .about-break moravam antes da regra base e nunca
@@ -1120,7 +1136,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .hi-q:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 /* a linha cresce da esquerda, é o gesto que abre cada frente */
 .hi-line,.stat-line{display:block;height:1px;background:var(--line-strong);transform-origin:left}
-.help-item .hi-line{position:absolute;top:0;left:0;right:0}
+.help-item .hi-line{position:absolute;top:0;left:0;right:0;height:var(--help-divider-width,1px)}
 .js .hi-line,.js .stat-line{transform:scaleX(0)}
 .js .in .hi-line,.js .hi-line.in,.js .in .stat-line,.js .stat-line.in{transform:scaleX(1);
   transition:transform 820ms var(--ease-soft)}
@@ -1153,7 +1169,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    intermediária, sem blur. */
 .faq{--bleed:var(--vw,100vw);
   width:var(--bleed);position:relative;left:50%;margin-left:calc(var(--bleed) / -2);
-  background:#F2EEEE;color:#0D0A0A;
+  background:var(--faq-section-bg,#F2EEEE);color:#0D0A0A;
   padding-inline:var(--gutter)}
 /* título numa coluna lateral e as perguntas ocupando a maior parte da largura:
    o accordion deixa de ser uma coluna estreita no meio da tela */
@@ -1167,8 +1183,8 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .faq-title{font-size:clamp(2rem,5vw,3.6rem);font-weight:var(--w-medium);letter-spacing:-.04em;
   line-height:1.02;margin-bottom:clamp(2.4rem,5vh,4rem)}
 .faq-list{display:flex;flex-direction:column}
-.faq-item{border-bottom:1px solid rgba(38,27,29,.22)}
-.faq-item:first-child{border-top:1px solid rgba(38,27,29,.22)}
+.faq-item{border-bottom:var(--faq-divider-width,1px) solid rgba(38,27,29,.22)}
+.faq-item:first-child{border-top:var(--faq-divider-width,1px) solid rgba(38,27,29,.22)}
 .faq-item h3{margin:0;font-size:inherit;font-weight:inherit}
 /* a linha inteira é o alvo: área de toque confortável, não só o ícone */
 .faq-q{width:100%;display:flex;align-items:flex-start;justify-content:space-between;
@@ -1272,7 +1288,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .contact .links a:hover{color:var(--paper);border-color:var(--accent);background:var(--glass)}
 .ico{width:15px;height:15px;flex:none}
 
-footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
+footer{border-top:var(--contact-divider-width,1px) solid var(--line);padding-top:1.3rem;padding-bottom:0;
   font-size:.74rem;color:var(--muted-2);
   display:flex;flex-direction:column;gap:1.15rem}
 /* Botão e disclaimer empilhados, os dois centrados. O disclaimer vivia
@@ -1580,14 +1596,16 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 /* O menu tem seis itens e não precisa da altura confortável do formulário de
    contato. A faixa de topo contém só o fechar, então fica curta; no modal ela
    começa perto do topo e no dropdown mantém a ancoragem sob o header. */
+#menu .overlay-sheet{max-width:350px}
 #menu:not(.dropdown) .overlay-sheet{margin-block:clamp(.7rem,3vh,1.8rem) auto}
-#menu.dropdown .overlay-sheet{margin-top:3.35rem;max-height:calc(100svh - 4.4rem)}
-#menu .overlay-top--bare{padding:.8rem 1.25rem .2rem}
-#menu .menu-item{gap:.9rem;padding:.82rem 1.3rem;
-  font-size:clamp(1.2rem,2.4vw,1.65rem)}
-#menu .menu-item:hover{padding-left:1.7rem}
-#menu .menu-ico{width:36px;height:36px;border-radius:10px}
-#menu .menu-ico svg{width:17px;height:17px}
+#menu.dropdown .overlay-sheet{margin-top:3.35rem;max-width:350px;max-height:calc(100svh - 4.4rem)}
+#menu.dropdown::before{width:min(350px,92vw)}
+#menu .overlay-top--bare{padding:.56rem .88rem .14rem}
+#menu .menu-item{gap:.63rem;padding:.58rem .91rem;
+  font-size:clamp(.84rem,1.68vw,1.16rem)}
+#menu .menu-item:hover{padding-left:1.2rem}
+#menu .menu-ico{width:25px;height:25px;border-radius:7px}
+#menu .menu-ico svg{width:12px;height:12px}
 
 /* ===== OFFSET DAS ÂNCORAS =====
    Um número só, num lugar só, em vez de espalhar cálculo de offset por
@@ -1616,8 +1634,8 @@ body.ready main,body.ready footer{opacity:1;transform:none}
      cara, mas ainda com altura confortável para toque */
   .menu-item{font-size:clamp(1.25rem,6vw,1.6rem);padding:.95rem 1.3rem}
   .menu-ico{width:36px;height:36px}
-  #menu .menu-item{font-size:clamp(1.12rem,5.4vw,1.4rem);padding:.72rem 1.1rem}
-  #menu .menu-item:hover{padding-left:1.35rem}
+  #menu .menu-item{font-size:clamp(.9rem,4.2vw,1.05rem);padding:.58rem .86rem}
+  #menu .menu-item:hover{padding-left:1.05rem}
 }
 
 /* Item da seção em que o visitante está. Não comunica só por cor: ganha um
@@ -1692,13 +1710,12 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    mesmo esquema de três níveis do espaçamento de seção (ver mais acima,
    --help-pad-top-desktop etc.), só que declarado inline em vez de em :root,
    porque aqui quem varia é o bloco individual, não a página inteira.
-   Sem nenhuma configuração, os literais depois da vírgula reproduzem
-   exatamente o espaçamento que já existia (1rem antes da capa, 2.6rem entre
-   seções de texto, 1rem antes da galeria, 1.4rem entre as imagens dela) —
-   instalar o controle não muda nenhum projeto existente. */
+   Sem configuração própria, todos os blocos e o grid de mídia partem da
+   mesma régua de 18px. Isso mantém alinhamento lateral e vertical previsível
+   mesmo quando galerias têm quantidades diferentes de imagens. */
 .case-cover{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;position:relative;
   border:1px solid var(--line-strong);background:var(--ink-2);
-  margin-top:var(--block-mt-desktop,1rem);margin-bottom:var(--block-mb-desktop,0px)}
+  margin-top:var(--block-mt-desktop,18px);margin-bottom:var(--block-mb-desktop,0px)}
 .case-cover .scene{filter:none;transform:none}
 
 /* .case-body não usa mais gap: precisava de um valor só para todos os
@@ -1713,27 +1730,27 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .case-section p+p{margin-top:1.1rem}
 
 .case-gallery{display:grid;grid-template-columns:1fr;
-  gap:var(--block-gap-desktop,1.4rem);
-  margin-top:var(--block-mt-desktop,1rem);margin-bottom:var(--block-mb-desktop,0px)}
+  gap:var(--block-gap-desktop,18px);
+  margin-top:var(--block-mt-desktop,18px);margin-bottom:var(--block-mb-desktop,0px)}
 @media(min-width:640px){.case-gallery{grid-template-columns:1fr 1fr}}
 .case-gallery .thumb{aspect-ratio:4/3}
 @media(max-width:899px) and (min-width:640px){
-  .case-cover{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,1rem));
+  .case-cover{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,18px));
     margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px))}
   .case-section{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,0px));
     margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px))}
-  .case-gallery{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,1rem));
+  .case-gallery{margin-top:var(--block-mt-tablet,var(--block-mt-desktop,18px));
     margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px));
-    gap:var(--block-gap-tablet,var(--block-gap-desktop,1.4rem))}
+    gap:var(--block-gap-tablet,var(--block-gap-desktop,18px))}
 }
 @media(max-width:639px){
-  .case-cover{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,1rem)));
+  .case-cover{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,18px)));
     margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)))}
   .case-section{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,0px)));
     margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)))}
-  .case-gallery{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,1rem)));
+  .case-gallery{margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,18px)));
     margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)));
-    gap:var(--block-gap-mobile,var(--block-gap-tablet,var(--block-gap-desktop,1.4rem)))}
+    gap:var(--block-gap-mobile,var(--block-gap-tablet,var(--block-gap-desktop,18px)))}
 }
 
 /* ===== BLOCOS LIVRES DA PÁGINA DE PROJETO =====
@@ -1750,7 +1767,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    um espaço invisível aos controles de margem do CMS. */
 .case-blocks>.case-block-group{padding-block:0;min-height:0}
 
-.case-figure{margin:var(--block-mt-desktop,1rem) 0 var(--block-mb-desktop,0px)}
+.case-figure{margin:var(--block-mt-desktop,18px) 0 var(--block-mb-desktop,0px)}
 .case-figure .scene{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;
   position:relative;border:1px solid var(--line-strong);background:var(--ink-2)}
 .case-figure img{display:block;width:100%;height:100%;object-fit:cover}
@@ -1771,13 +1788,13 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 
 /* Sem aspas decorativas nem barra lateral: o que separa a citação do corpo é
    a escala e a cor, como no resto do site. */
-.case-quote{margin:var(--block-mt-desktop,1rem) 0 var(--block-mb-desktop,0px);max-width:44ch}
+.case-quote{margin:var(--block-mt-desktop,18px) 0 var(--block-mb-desktop,0px);max-width:44ch}
 .case-quote p{font-size:clamp(1.25rem,2vw,1.75rem);font-weight:var(--w-light);
   line-height:1.36;letter-spacing:-.02em;color:var(--cream)}
 .case-quote cite{display:block;margin-top:1.1rem;font-style:normal;
   font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;color:var(--muted-2)}
 
-.case-video{margin:var(--block-mt-desktop,1rem) 0 var(--block-mb-desktop,0px)}
+.case-video{margin:var(--block-mt-desktop,18px) 0 var(--block-mb-desktop,0px)}
 .case-video .scene{aspect-ratio:16/9;border-radius:var(--radius-image,18px);overflow:hidden;
   position:relative;border:1px solid var(--line-strong);background:var(--ink-2)}
 .case-video video,.case-video iframe{display:block;width:100%;height:100%;border:0;object-fit:cover}
@@ -1786,21 +1803,44 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 
 @media(max-width:899px) and (min-width:640px){
   .case-figure,.case-quote,.case-video{
-    margin-top:var(--block-mt-tablet,var(--block-mt-desktop,1rem));
+    margin-top:var(--block-mt-tablet,var(--block-mt-desktop,18px));
     margin-bottom:var(--block-mb-tablet,var(--block-mb-desktop,0px))}
 }
 @media(max-width:639px){
   .case-figure,.case-quote,.case-video{
-    margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,1rem)));
+    margin-top:var(--block-mt-mobile,var(--block-mt-tablet,var(--block-mt-desktop,18px)));
     margin-bottom:var(--block-mb-mobile,var(--block-mb-tablet,var(--block-mb-desktop,0px)))}
 }
 
-.case-nav{display:flex;justify-content:space-between;gap:1.6rem;border-top:1px solid var(--line);
-  padding-top:2rem;font-family:var(--mono);font-size:.8rem}
-.case-nav a{color:var(--muted);transition:color var(--dur-micro) var(--ease-out-smooth);display:flex;flex-direction:column;gap:.4em}
-.case-nav a:hover{color:var(--paper)}
-.case-nav a.next{text-align:right;align-items:flex-end}
-.case-nav .lbl{font-size:.7rem;color:var(--muted-2);letter-spacing:.035em}
+.case-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;
+  border-top:1px solid var(--line);padding-top:18px;font-family:var(--font)}
+.case-nav[hidden]{display:none}
+.case-nav a{position:relative;min-height:112px;display:flex;flex-direction:column;
+  justify-content:center;gap:.55rem;padding:1.15rem 1.25rem 1.15rem 3.8rem;
+  color:var(--paper);background:rgba(var(--paper-rgb),.035);
+  border:1px solid var(--line);border-radius:var(--radius-image,18px);
+  transition:transform var(--dur-micro) var(--ease-soft),
+             color var(--dur-micro) var(--ease-soft),
+             background-color var(--dur-micro) var(--ease-soft),
+             border-color var(--dur-micro) var(--ease-soft)}
+.case-nav a::before{content:"←";position:absolute;left:1.15rem;top:50%;translate:0 -50%;
+  width:2rem;height:2rem;display:grid;place-items:center;border-radius:50%;
+  color:var(--muted);background:rgba(var(--paper-rgb),.045);border:1px solid var(--line);
+  transition:transform var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft)}
+.case-nav a:hover{transform:translateY(-2px);color:var(--paper);
+  background:rgba(var(--paper-rgb),.065);border-color:var(--line-strong)}
+.case-nav a:hover::before{transform:translateX(-3px);color:var(--paper)}
+.case-nav a.next{text-align:right;align-items:flex-end;padding:1.15rem 3.8rem 1.15rem 1.25rem}
+.case-nav a.next::before{content:"→";left:auto;right:1.15rem}
+.case-nav a.next:hover::before{transform:translateX(3px)}
+.case-nav a>span:last-child{font-size:clamp(1rem,1.7vw,1.3rem);font-weight:var(--w-medium);
+  line-height:1.2;letter-spacing:-.02em;max-width:28ch}
+.case-nav .lbl{font-family:var(--mono);font-size:.68rem;font-weight:var(--w-regular);
+  color:var(--muted-2);letter-spacing:.025em}
+@media(max-width:639px){
+  .case-nav{grid-template-columns:1fr}
+  .case-nav a{min-height:92px}
+}
 
 /* ===== ENTRADAS POR BLOCO (coreografia via .in do observador) =====
    Índice e título vêm de 18px em 1050ms; descrição e entregáveis de 14px em

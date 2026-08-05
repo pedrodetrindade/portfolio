@@ -236,10 +236,29 @@
     return { desktop: desktop, tablet: tablet, mobile: mobile };
   }
 
+  function sectionColorValue(color) {
+    if (!color || typeof color.hex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color.hex)) return null;
+    var opacity = (typeof color.opacity === 'number') ? clampNum(color.opacity, 0, 100) : 100;
+    if (opacity === null || opacity >= 100) return color.hex;
+    var n = parseInt(color.hex.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + (opacity / 100) + ')';
+  }
+
   function applySectionSpacing(home) {
     var sections = (home && home.sections) || {};
     var root2 = document.documentElement.style;
     var g = window.__CMS_GLOBAL_SPACING__ || {};
+    /* Aparência usa os mesmos objetos de seção do spacing. Campos ausentes
+       removem o override, o que também impede uma prévia antiga de ficar
+       presa depois de "usar padrão". */
+    ['hero', 'work', 'about', 'help', 'faq', 'contact'].forEach(function (key) {
+      var visual = sections[key] || {};
+      var bg = sectionColorValue(visual.background);
+      if (bg) root2.setProperty('--' + key + '-section-bg', bg);
+      else root2.removeProperty('--' + key + '-section-bg');
+      if (visual.showDividers === false) root2.setProperty('--' + key + '-divider-width', '0px');
+      else root2.removeProperty('--' + key + '-divider-width');
+    });
     var keys = ['work', 'about', 'help', 'faq', 'contact'];
     keys.forEach(function (key) {
       var s = sections[key];
