@@ -87,6 +87,22 @@
       if (v === null) return;
       root.setProperty(varName, v + 'px');
     }
+    /* Cada cor do painel tem hex e opacidade. Até aqui só o hex chegava ao
+       site: a opacidade era gravada no JSON e ignorada por tudo que não fosse
+       borda, então mexer no slider não mudava nada na tela. Abaixo de 100% o
+       token agora sai como rgba(), que vale em qualquer lugar onde a cor
+       sólida valia (background, color, border-color). Em 100% continua saindo
+       o hex — mais legível ao inspecionar e sem depender de alpha onde nunca
+       houve. Os triplets --*-rgb continuam separados: eles alimentam os
+       rgba() que já compõem alpha próprio no CSS e não podem levar alpha
+       embutido, senão a cor viraria rgba(rgba(...)). */
+    function setSolid(varName, colorObj) {
+      if (!colorObj || !colorObj.hex) return;
+      var op = (typeof colorObj.opacity === 'number') ? clampNum(colorObj.opacity, 0, 100) : 100;
+      if (op === null) op = 100;
+      var rgb = op >= 100 ? null : hexToRgb(colorObj.hex);
+      root.setProperty(varName, rgb ? 'rgba(' + rgb.join(',') + ',' + (op / 100) + ')' : colorObj.hex);
+    }
 
     var c = g.colors || {};
     /* --ink, --paper etc continuam sendo a cor sólida (hex) usada direto em
@@ -94,15 +110,15 @@
        Setar rgba(...,1) no lugar do hex teria o mesmo efeito visual, mas
        manter os dois tokens sólidos evita depender de opacidade 100% em
        todo lugar que hoje usa a cor "pura". */
-    if (c.background && c.background.hex) { root.setProperty('--ink', c.background.hex); setColorRgb('--ink-rgb', c.background); }
-    if (c.backgroundSecondary && c.backgroundSecondary.hex) root.setProperty('--ink-2', c.backgroundSecondary.hex);
-    if (c.surface && c.surface.hex) root.setProperty('--ink-3', c.surface.hex);
-    if (c.textPrimary && c.textPrimary.hex) { root.setProperty('--paper', c.textPrimary.hex); setColorRgb('--paper-rgb', c.textPrimary); }
-    if (c.textSecondary && c.textSecondary.hex) root.setProperty('--muted', c.textSecondary.hex);
-    if (c.textMuted && c.textMuted.hex) root.setProperty('--muted-2', c.textMuted.hex);
-    if (c.accent && c.accent.hex) root.setProperty('--accent', c.accent.hex);
-    if (c.highlight && c.highlight.hex) root.setProperty('--cream', c.highlight.hex);
-    if (c.heroName && c.heroName.hex) root.setProperty('--color-hero-name', c.heroName.hex);
+    setSolid('--ink', c.background); setColorRgb('--ink-rgb', c.background);
+    setSolid('--ink-2', c.backgroundSecondary);
+    setSolid('--ink-3', c.surface);
+    setSolid('--paper', c.textPrimary); setColorRgb('--paper-rgb', c.textPrimary);
+    setSolid('--muted', c.textSecondary);
+    setSolid('--muted-2', c.textMuted);
+    setSolid('--accent', c.accent);
+    setSolid('--cream', c.highlight);
+    setSolid('--color-hero-name', c.heroName);
     /* a cor da borda alimenta --warm-rgb; as duas opacidades (fraca/forte)
        vêm de --border-opacity e --border-opacity-strong, que --line e
        --line-strong já leem (ver css/style.css) */

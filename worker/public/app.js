@@ -130,7 +130,58 @@
 
   function bindText(id, onChange) {
     var el = document.getElementById(id);
+    if (!el) return;
     el.addEventListener('input', function () { onChange(el.value); });
+  }
+
+  function inp(id, value, extra) {
+    return '<input type="text" id="' + id + '" value="' + esc(value == null ? '' : value) + '"' + (extra || '') + '>';
+  }
+  function ta(id, value) {
+    return '<textarea id="' + id + '">' + esc(value == null ? '' : value) + '</textarea>';
+  }
+  /* pares [id, setter] em vez de uma chamada bindText por campo: os editores
+     de seção passaram de 4 para ~20 campos cada, e a lista de pares deixa
+     claro, num lugar só, qual campo escreve em qual chave do JSON. */
+  function bindAll(pairs, after) {
+    pairs.forEach(function (p) {
+      var el = document.getElementById(p[0]);
+      if (!el) return;
+      el.addEventListener('input', function () { p[1](el.value); after(); });
+    });
+  }
+
+  /* ---------- listas editáveis (adicionar / remover / reordenar) ----------
+     Qualquer array do JSON — frentes de "o que eu faço", perguntas do FAQ,
+     capacidades do Sobre, tags de uma frente — usa o mesmo par
+     listBlock/wireListBlock. `ns` é o prefixo dos data-attributes e precisa
+     ser único dentro do painel: é o que liga o botão clicado ao array certo
+     (as tags usam 'hptag0', 'hptag1'... por isso). */
+  function listBlock(ns, items, label, renderItem) {
+    return items.map(function (item, i) {
+      return '<div class="list-item">' +
+        '<div class="list-item-head"><b>' + esc(label) + ' ' + (i + 1) + '</b>' +
+        '<span class="list-item-acts">' +
+        '<button class="btn small" data-' + ns + '-up="' + i + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button class="btn small" data-' + ns + '-down="' + i + '"' + (i === items.length - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button class="btn small danger" data-' + ns + '-rm="' + i + '">remover</button>' +
+        '</span></div>' + renderItem(item, i) + '</div>';
+    }).join('') +
+      '<button class="btn small" data-' + ns + '-add="1" style="margin-top:.8rem">+ adicionar ' + esc(label.toLowerCase()) + '</button>';
+  }
+
+  function wireListBlock(ns, items, makeNew, after) {
+    function commit() { markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); after(); }
+    function each(attr, fn) {
+      document.querySelectorAll('[data-' + ns + '-' + attr + ']').forEach(function (b) {
+        b.addEventListener('click', function () { fn(Number(b.getAttribute('data-' + ns + '-' + attr))); });
+      });
+    }
+    each('up', function (i) { if (i > 0) { items.splice(i - 1, 0, items.splice(i, 1)[0]); commit(); } });
+    each('down', function (i) { if (i < items.length - 1) { items.splice(i + 1, 0, items.splice(i, 1)[0]); commit(); } });
+    each('rm', function (i) { if (confirm('Remover este item?')) { items.splice(i, 1); commit(); } });
+    var add = document.querySelector('[data-' + ns + '-add]');
+    if (add) add.addEventListener('click', function () { items.push(makeNew()); commit(); });
   }
 
   /* ---------- prévia ao vivo ---------- */
@@ -139,10 +190,15 @@
     clearTimeout(previewDebounce);
     previewDebounce = setTimeout(sendPreview, 200);
   }
+  /* Os três painéis com prévia (aparência, layout, home) ficam todos no DOM ao
+     mesmo tempo — só a classe .active decide qual aparece. Antes isto buscava
+     por id e o id se repetia nos três, então só o primeiro iframe do
+     documento recebia as mudanças: a prévia da aba Home nunca reagia. */
   function sendPreview() {
-    var frame = document.getElementById('previewFrame');
-    if (!frame || !frame.contentWindow) return;
-    frame.contentWindow.postMessage({ __cmsPreview__: true, global: state.global, home: state.home }, '*');
+    document.querySelectorAll('iframe.preview-frame').forEach(function (frame) {
+      if (!frame.contentWindow) return;
+      frame.contentWindow.postMessage({ __cmsPreview__: true, global: state.global, home: state.home }, '*');
+    });
   }
   function previewBlock() {
     if (!state.previewUrl) {
@@ -154,26 +210,35 @@
     }
     return '<div class="preview-wrap">' +
       '<div class="preview-head"><span>Prévia ao vivo</span>' +
-      '<button class="btn small" id="btnChangePreview">trocar URL</button></div>' +
-      '<iframe id="previewFrame" src="' + esc(state.previewUrl) + '"></iframe></div>';
+      '<button class="btn small" data-change-preview="1">trocar URL</button></div>' +
+      '<iframe class="preview-frame" src="' + esc(state.previewUrl) + '"></iframe></div>';
   }
   function wirePreviewBlock(slotId) {
     var slot = document.getElementById(slotId);
     if (!slot) return;
+    /* Não redesenha se a prévia já está montada com a mesma URL: recriar o
+       <iframe> recarrega o site inteiro e perde a rolagem, e os painéis
+       re-renderizam a cada item adicionado ou removido de uma lista. */
+    var current = slot.querySelector('.preview-frame');
+    if (current && state.previewUrl && current.getAttribute('src') === state.previewUrl) return;
     slot.innerHTML = previewBlock();
-    var setBtn = document.getElementById('btnSetPreview');
+    var setBtn = slot.querySelector('#btnSetPreview');
     if (setBtn) setBtn.addEventListener('click', function () {
-      var v = document.getElementById('previewUrlInput').value.trim();
+      var v = slot.querySelector('#previewUrlInput').value.trim();
       if (!v) return;
       state.previewUrl = v; localStorage.setItem('cms_preview_url', v);
-      wirePreviewBlock(slotId);
+      ['previewSlotAppearance', 'previewSlotLayout', 'previewSlotHome'].forEach(wirePreviewBlock);
     });
-    var changeBtn = document.getElementById('btnChangePreview');
+    var changeBtn = slot.querySelector('[data-change-preview]');
     if (changeBtn) changeBtn.addEventListener('click', function () {
       state.previewUrl = ''; localStorage.removeItem('cms_preview_url');
-      wirePreviewBlock(slotId);
+      ['previewSlotAppearance', 'previewSlotLayout', 'previewSlotHome'].forEach(function (id) {
+        var s = document.getElementById(id);
+        if (s) s.innerHTML = '';
+        wirePreviewBlock(id);
+      });
     });
-    var frame = document.getElementById('previewFrame');
+    var frame = slot.querySelector('.preview-frame');
     if (frame) frame.addEventListener('load', sendPreview);
   }
 
@@ -272,26 +337,50 @@
     var inheritsFrom = DEVICE_PARENT[d] ? DEVICE_LABEL[DEVICE_PARENT[d]] : null;
 
     var fieldId = 'tf_' + Math.random().toString(36).slice(2, 9);
+    var html = fieldRow(label, hint, sliderControl(fieldId, value, min, max, 'px') +
+      '<span class="tiered-meta" id="' + fieldId + '_meta">' + tieredMetaHtml(fieldId, isCustom, inheritsFrom, fallbackNote) + '</span>');
+
+    /* registra os handlers depois de o HTML entrar no DOM (feito pelo chamador).
+       `obj` entra na lista de propósito: é a referência viva do objeto de
+       espaçamento, e é o que permite recalcular o selo "próprio/herdando" sem
+       redesenhar o painel inteiro (ver refreshTieredMeta). */
+    tieredSpacingField._pending = tieredSpacingField._pending || [];
+    tieredSpacingField._pending.push({ fieldId: fieldId, min: min, max: max, obj: obj, fallbackNote: fallbackNote, onChange: onChange, onInheritReset: onInheritReset });
+    return html;
+  }
+
+  function tieredMetaHtml(fieldId, isCustom, inheritsFrom, fallbackNote) {
     var badge = isCustom
       ? '<span class="badge custom">próprio</span>'
       : (inheritsFrom ? '<span class="badge default">herdando de ' + inheritsFrom + '</span>'
-        : '<span class="badge default">' + (fallbackNote || 'padrão') + '</span>');
-    var resetBtn = (isCustom && inheritsFrom) ? '<button class="btn small" data-reset-field="' + fieldId + '">Voltar a herdar</button>' : '';
-
-    var html = fieldRow(label, hint, sliderControl(fieldId, value, min, max, 'px') + badge + resetBtn);
-
-    /* registra os handlers depois de o HTML entrar no DOM (feito pelo chamador) */
-    tieredSpacingField._pending = tieredSpacingField._pending || [];
-    tieredSpacingField._pending.push({ fieldId: fieldId, min: min, max: max, onChange: onChange, onInheritReset: onInheritReset, canReset: isCustom && inheritsFrom });
-    return html;
+        : '<span class="badge default">' + esc(fallbackNote || 'padrão') + '</span>');
+    return badge + ((isCustom && inheritsFrom) ? '<button class="btn small" data-reset-field="' + fieldId + '">Voltar a herdar</button>' : '');
   }
+
+  /* Redesenha só o selo e o botão "Voltar a herdar" daquele campo. Existe
+     porque a versão anterior chamava o render do painel inteiro a cada evento
+     `input` do slider: isso substituía o próprio <input type="range"> que
+     estava sendo arrastado, o ponteiro perdia o alvo do arraste e o controle
+     parava de responder depois do primeiro pixel. O sintoma era "o
+     espaçamento não deixa mexer" — nada a ver com o valor não ser salvo, que
+     sempre foi salvo. */
+  function refreshTieredMeta(p) {
+    var el = document.getElementById(p.fieldId + '_meta');
+    if (!el) return;
+    var isCustom = p.obj && p.obj[layoutDevice] != null;
+    var inheritsFrom = DEVICE_PARENT[layoutDevice] ? DEVICE_LABEL[DEVICE_PARENT[layoutDevice]] : null;
+    el.innerHTML = tieredMetaHtml(p.fieldId, isCustom, inheritsFrom, p.fallbackNote);
+    var btn = el.querySelector('[data-reset-field]');
+    if (btn) btn.addEventListener('click', function () { p.onInheritReset(layoutDevice); });
+  }
+
   function wireTieredFields() {
     (tieredSpacingField._pending || []).forEach(function (p) {
-      bindSlider(p.fieldId, p.min, p.max, function (v) { p.onChange(layoutDevice, v); });
-      if (p.canReset) {
-        var btn = document.querySelector('[data-reset-field="' + p.fieldId + '"]');
-        if (btn) btn.addEventListener('click', function () { p.onInheritReset(layoutDevice); });
-      }
+      bindSlider(p.fieldId, p.min, p.max, function (v) {
+        p.onChange(layoutDevice, v);
+        refreshTieredMeta(p);
+      });
+      refreshTieredMeta(p);
     });
     tieredSpacingField._pending = [];
   }
@@ -339,13 +428,13 @@
       fieldRow('Margem lateral (celular)', 'pageGutterMobile · px', sliderControl('lay_gutm', l.pageGutterMobile, 0, 100, 'px')) +
       deviceTabsHtml('global') +
       tieredSpacingField('Espaço antes da seção', 'sectionSpacingTop · padrão para as seções que não têm valor próprio', l.sectionSpacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
-        function (dev, v) { l.sectionSpacingTop[dev] = v; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); },
+        function (dev, v) { l.sectionSpacingTop[dev] = v; markDirty('content/global.json', state.global, state.globalSha); schedulePreview(); },
         function (dev) { l.sectionSpacingTop[dev] = null; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); }) +
       tieredSpacingField('Espaço depois da seção', 'sectionSpacingBottom', l.sectionSpacingBottom, LIMITS.spacing[0], LIMITS.spacing[1],
-        function (dev, v) { l.sectionSpacingBottom[dev] = v; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); },
+        function (dev, v) { l.sectionSpacingBottom[dev] = v; markDirty('content/global.json', state.global, state.globalSha); schedulePreview(); },
         function (dev) { l.sectionSpacingBottom[dev] = null; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); }) +
       tieredSpacingField('Espaço entre colunas (gap da grade de projetos)', 'gridGap', l.gridGap, LIMITS.gap[0], LIMITS.gap[1],
-        function (dev, v) { l.gridGap[dev] = v; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); },
+        function (dev, v) { l.gridGap[dev] = v; markDirty('content/global.json', state.global, state.globalSha); schedulePreview(); },
         function (dev) { l.gridGap[dev] = null; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); });
     wireTieredFields();
     [['lay_maxw', 'contentMaxWidth', LIMITS.contentWidth], ['lay_gutd', 'pageGutterDesktop', [0, 200]],
@@ -376,11 +465,11 @@
         return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
           '<b>' + esc(labels[key]) + '</b>' +
           tieredSpacingField('Espaço antes da seção', '', s.spacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
-            function (dev, v) { s.spacingTop[dev] = v; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
+            function (dev, v) { s.spacingTop[dev] = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); },
             function (dev) { s.spacingTop[dev] = null; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
             fbTop, note) +
           tieredSpacingField('Espaço depois da seção', '', s.spacingBottom, LIMITS.spacing[0], LIMITS.spacing[1],
-            function (dev, v) { s.spacingBottom[dev] = v; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
+            function (dev, v) { s.spacingBottom[dev] = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); },
             function (dev) { s.spacingBottom[dev] = null; markDirty('content/home.json', state.home, state.homeSha); renderLayout(); schedulePreview(); },
             fbBottom, note) +
           '</div>';
@@ -424,83 +513,153 @@
   /* ---------- Home ---------- */
   function renderHome() {
     wirePreviewBlock('previewSlotHome');
-    var hero = state.home.hero;
+    var H = state.home;
+    function touch() { markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); }
+    var half = ' style="max-width:200px"';
+
+    var hero = H.hero;
     document.getElementById('heroBody').innerHTML =
-      fieldRow('Cargo (PT)', '', '<input type="text" id="hero_tagpt" value="' + esc(hero.tagPt) + '">') +
-      fieldRow('Cargo (EN)', '', '<input type="text" id="hero_tagen" value="' + esc(hero.tagEn) + '">') +
-      fieldRow('Localização (PT)', '', '<input type="text" id="hero_locpt" value="' + esc(hero.locationPt) + '">') +
-      fieldRow('Localização (EN)', '', '<input type="text" id="hero_locen" value="' + esc(hero.locationEn) + '">') +
-      fieldRow('Frase de efeito (PT)', '', '<textarea id="hero_claimpt">' + esc(hero.claimPt) + '</textarea>') +
-      fieldRow('Frase de efeito (EN)', '', '<textarea id="hero_claimen">' + esc(hero.claimEn) + '</textarea>') +
+      fieldRow('Cargo (PT / EN)', '', inp('hero_tagpt', hero.tagPt, half) + inp('hero_tagen', hero.tagEn, half)) +
+      fieldRow('Localização (PT / EN)', '', inp('hero_locpt', hero.locationPt, half) + inp('hero_locen', hero.locationEn, half)) +
+      fieldRow('Frase de efeito (PT)', '', ta('hero_claimpt', hero.claimPt)) +
+      fieldRow('Frase de efeito (EN)', '', ta('hero_claimen', hero.claimEn)) +
       fieldRow('Mostrar "disponível para projetos"', '', switchControl('hero_avail', hero.showAvailability)) +
-      fieldRow('Vídeo de fundo da capa (URL)', 'Em branco mantém o fundo animado atual. Aceita um caminho do repositório (assets/...) ou uma URL completa de um vídeo hospedado.', '<input type="text" id="hero_bgvideo" value="' + esc(hero.backgroundVideo) + '" placeholder="assets/capa.mp4">') +
-      fieldRow('Poster do vídeo (URL, opcional)', 'Imagem mostrada antes do vídeo carregar.', '<input type="text" id="hero_bgposter" value="' + esc(hero.backgroundVideoPoster) + '" placeholder="assets/capa-poster.jpg">');
-    ['tagpt', 'tagen', 'locpt', 'locen', 'claimpt', 'claimen', 'bgvideo', 'bgposter'].forEach(function (k) {
-      var map = { tagpt: 'tagPt', tagen: 'tagEn', locpt: 'locationPt', locen: 'locationEn', claimpt: 'claimPt', claimen: 'claimEn', bgvideo: 'backgroundVideo', bgposter: 'backgroundVideoPoster' };
-      bindText('hero_' + k, function (v) { hero[map[k]] = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); });
-    });
-    bindSwitch('hero_avail', function (v) { hero.showAvailability = v; markDirty('content/home.json', state.home, state.homeSha); schedulePreview(); });
+      fieldRow('Texto de disponibilidade (PT / EN)', 'aparece na pílula do header', inp('hero_availpt', hero.availabilityPt, half) + inp('hero_availen', hero.availabilityEn, half)) +
+      fieldRow('Versão curta (PT / EN)', 'usada quando o header encolhe', inp('hero_availspt', hero.availabilityShortPt, half) + inp('hero_availsen', hero.availabilityShortEn, half)) +
+      fieldRow('Indicador de rolagem — rótulo (PT / EN)', '"Continue para ver os projetos"', inp('hero_nhlpt', hero.nextHintLabelPt, half) + inp('hero_nhlen', hero.nextHintLabelEn, half)) +
+      fieldRow('Indicador de rolagem — destino (PT / EN)', '"Projetos"', inp('hero_nhnpt', hero.nextHintNamePt, half) + inp('hero_nhnen', hero.nextHintNameEn, half)) +
+      fieldRow('Vídeo de fundo da capa (URL)', 'Em branco mantém o fundo animado atual. Aceita um caminho do repositório (assets/...) ou uma URL completa de um vídeo hospedado.', inp('hero_bgvideo', hero.backgroundVideo, ' placeholder="assets/capa.mp4"')) +
+      fieldRow('Poster do vídeo (URL, opcional)', 'Imagem mostrada antes do vídeo carregar.', inp('hero_bgposter', hero.backgroundVideoPoster, ' placeholder="assets/capa-poster.jpg"'));
+    bindAll([
+      ['hero_tagpt', function (v) { hero.tagPt = v; }], ['hero_tagen', function (v) { hero.tagEn = v; }],
+      ['hero_locpt', function (v) { hero.locationPt = v; }], ['hero_locen', function (v) { hero.locationEn = v; }],
+      ['hero_claimpt', function (v) { hero.claimPt = v; }], ['hero_claimen', function (v) { hero.claimEn = v; }],
+      ['hero_availpt', function (v) { hero.availabilityPt = v; }], ['hero_availen', function (v) { hero.availabilityEn = v; }],
+      ['hero_availspt', function (v) { hero.availabilityShortPt = v; }], ['hero_availsen', function (v) { hero.availabilityShortEn = v; }],
+      ['hero_nhlpt', function (v) { hero.nextHintLabelPt = v; }], ['hero_nhlen', function (v) { hero.nextHintLabelEn = v; }],
+      ['hero_nhnpt', function (v) { hero.nextHintNamePt = v; }], ['hero_nhnen', function (v) { hero.nextHintNameEn = v; }],
+      ['hero_bgvideo', function (v) { hero.backgroundVideo = v; }], ['hero_bgposter', function (v) { hero.backgroundVideoPoster = v; }]
+    ], touch);
+    bindSwitch('hero_avail', function (v) { hero.showAvailability = v; touch(); });
 
-    var w = state.home.work;
+    var w = H.work;
     document.getElementById('workIntroBody').innerHTML =
-      fieldRow('Título (PT)', '', '<textarea id="wi_titlept">' + esc(w.titlePt) + '</textarea>') +
-      fieldRow('Título (EN)', '', '<textarea id="wi_titleen">' + esc(w.titleEn) + '</textarea>') +
-      fieldRow('Contexto (PT)', '', '<textarea id="wi_ctxpt">' + esc(w.contextPt) + '</textarea>') +
-      fieldRow('Contexto (EN)', '', '<textarea id="wi_ctxen">' + esc(w.contextEn) + '</textarea>');
-    bindText('wi_titlept', function (v) { w.titlePt = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('wi_titleen', function (v) { w.titleEn = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('wi_ctxpt', function (v) { w.contextPt = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('wi_ctxen', function (v) { w.contextEn = v; markDirty('content/home.json', state.home, state.homeSha); });
+      fieldRow('Título (PT)', '', ta('wi_titlept', w.titlePt)) +
+      fieldRow('Título (EN)', '', ta('wi_titleen', w.titleEn)) +
+      fieldRow('Contexto (PT)', '', ta('wi_ctxpt', w.contextPt)) +
+      fieldRow('Contexto (EN)', '', ta('wi_ctxen', w.contextEn)) +
+      fieldRow('Texto lateral (PT)', 'a linha menor ao lado do título', ta('wi_asidept', w.asidePt)) +
+      fieldRow('Texto lateral (EN)', '', ta('wi_asideen', w.asideEn));
+    bindAll([
+      ['wi_titlept', function (v) { w.titlePt = v; }], ['wi_titleen', function (v) { w.titleEn = v; }],
+      ['wi_ctxpt', function (v) { w.contextPt = v; }], ['wi_ctxen', function (v) { w.contextEn = v; }],
+      ['wi_asidept', function (v) { w.asidePt = v; }], ['wi_asideen', function (v) { w.asideEn = v; }]
+    ], touch);
 
-    var a = state.home.about;
+    var a = H.about;
+    if (!Array.isArray(a.capabilities)) a.capabilities = [];
     document.getElementById('aboutBody').innerHTML =
-      fieldRow('Texto principal (PT)', '', '<textarea id="ab_leadpt">' + esc(a.leadPt) + '</textarea>') +
-      fieldRow('Texto principal (EN)', '', '<textarea id="ab_leaden">' + esc(a.leadEn) + '</textarea>') +
-      fieldRow('Texto complementar (PT)', '', '<textarea id="ab_subpt">' + esc(a.subPt) + '</textarea>') +
-      fieldRow('Texto complementar (EN)', '', '<textarea id="ab_suben">' + esc(a.subEn) + '</textarea>');
-    bindText('ab_leadpt', function (v) { a.leadPt = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('ab_leaden', function (v) { a.leadEn = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('ab_subpt', function (v) { a.subPt = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('ab_suben', function (v) { a.subEn = v; markDirty('content/home.json', state.home, state.homeSha); });
-
-    document.getElementById('helpBody').innerHTML = state.home.help.items.map(function (item, i) {
-      return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
-        fieldRow('Título ' + (i + 1) + ' (PT)', '', '<input type="text" id="help_' + i + '_tpt" value="' + esc(item.titlePt) + '">') +
-        fieldRow('Título ' + (i + 1) + ' (EN)', '', '<input type="text" id="help_' + i + '_ten" value="' + esc(item.titleEn) + '">') +
-        fieldRow('Texto (PT)', '', '<textarea id="help_' + i + '_xpt">' + esc(item.textPt) + '</textarea>') +
-        fieldRow('Texto (EN)', '', '<textarea id="help_' + i + '_xen">' + esc(item.textEn) + '</textarea>') +
-        '</div>';
-    }).join('');
-    state.home.help.items.forEach(function (item, i) {
-      bindText('help_' + i + '_tpt', function (v) { item.titlePt = v; markDirty('content/home.json', state.home, state.homeSha); });
-      bindText('help_' + i + '_ten', function (v) { item.titleEn = v; markDirty('content/home.json', state.home, state.homeSha); });
-      bindText('help_' + i + '_xpt', function (v) { item.textPt = v; markDirty('content/home.json', state.home, state.homeSha); });
-      bindText('help_' + i + '_xen', function (v) { item.textEn = v; markDirty('content/home.json', state.home, state.homeSha); });
+      fieldRow('Rótulo da seção (PT / EN)', '"Sobre"', inp('ab_kpt', a.kickerPt, half) + inp('ab_ken', a.kickerEn, half)) +
+      fieldRow('Texto principal (PT)', '', ta('ab_leadpt', a.leadPt)) +
+      fieldRow('Texto principal (EN)', '', ta('ab_leaden', a.leadEn)) +
+      fieldRow('Texto complementar (PT)', '', ta('ab_subpt', a.subPt)) +
+      fieldRow('Texto complementar (EN)', '', ta('ab_suben', a.subEn)) +
+      fieldRow('Retrato', 'caminho do arquivo, ou envie um novo aqui', inp('ab_photo', a.photo) + '<input type="file" id="ab_photo_upload" accept="image/*">') +
+      fieldRow('Botão de contato (PT / EN)', '"Vamos conversar"', inp('ab_ctapt', a.ctaTalkPt, half) + inp('ab_ctaen', a.ctaTalkEn, half)) +
+      fieldRow('Rótulo das capacidades (PT / EN)', '"Capacidades"', inp('ab_caplpt', a.capabilitiesLabelPt, half) + inp('ab_caplen', a.capabilitiesLabelEn, half)) +
+      listBlock('abcap', a.capabilities, 'Capacidade', function (c, i) {
+        return fieldRow('Texto (PT / EN)', '', inp('ab_cap' + i + '_pt', c.pt, half) + inp('ab_cap' + i + '_en', c.en, half));
+      });
+    var aboutPairs = [
+      ['ab_kpt', function (v) { a.kickerPt = v; }], ['ab_ken', function (v) { a.kickerEn = v; }],
+      ['ab_leadpt', function (v) { a.leadPt = v; }], ['ab_leaden', function (v) { a.leadEn = v; }],
+      ['ab_subpt', function (v) { a.subPt = v; }], ['ab_suben', function (v) { a.subEn = v; }],
+      ['ab_photo', function (v) { a.photo = v; }],
+      ['ab_ctapt', function (v) { a.ctaTalkPt = v; }], ['ab_ctaen', function (v) { a.ctaTalkEn = v; }],
+      ['ab_caplpt', function (v) { a.capabilitiesLabelPt = v; }], ['ab_caplen', function (v) { a.capabilitiesLabelEn = v; }]
+    ];
+    a.capabilities.forEach(function (c, i) {
+      aboutPairs.push(['ab_cap' + i + '_pt', function (v) { c.pt = v; }]);
+      aboutPairs.push(['ab_cap' + i + '_en', function (v) { c.en = v; }]);
+    });
+    bindAll(aboutPairs, touch);
+    wireListBlock('abcap', a.capabilities, function () { return { pt: '', en: '' }; }, renderHome);
+    var abPhoto = document.getElementById('ab_photo_upload');
+    if (abPhoto) abPhoto.addEventListener('change', function () {
+      uploadFile(abPhoto.files[0], 'sobre', function (path) { a.photo = path; touch(); renderHome(); });
     });
 
-    document.getElementById('faqBody').innerHTML = state.home.faq.items.map(function (item, i) {
-      return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
-        fieldRow('Pergunta ' + (i + 1) + ' (PT)', '', '<input type="text" id="faq_' + i + '_qpt" value="' + esc(item.qPt) + '">') +
-        fieldRow('Pergunta ' + (i + 1) + ' (EN)', '', '<input type="text" id="faq_' + i + '_qen" value="' + esc(item.qEn) + '">') +
-        fieldRow('Resposta (PT)', '', '<textarea id="faq_' + i + '_apt">' + esc(item.aPt) + '</textarea>') +
-        fieldRow('Resposta (EN)', '', '<textarea id="faq_' + i + '_aen">' + esc(item.aEn) + '</textarea>') +
-        '</div>';
-    }).join('');
-    state.home.faq.items.forEach(function (item, i) {
-      bindText('faq_' + i + '_qpt', function (v) { item.qPt = v; markDirty('content/home.json', state.home, state.homeSha); });
-      bindText('faq_' + i + '_qen', function (v) { item.qEn = v; markDirty('content/home.json', state.home, state.homeSha); });
-      bindText('faq_' + i + '_apt', function (v) { item.aPt = v; markDirty('content/home.json', state.home, state.homeSha); });
-      bindText('faq_' + i + '_aen', function (v) { item.aEn = v; markDirty('content/home.json', state.home, state.homeSha); });
+    var hp = H.help;
+    if (!Array.isArray(hp.items)) hp.items = [];
+    document.getElementById('helpBody').innerHTML =
+      fieldRow('Rótulo da seção (PT / EN)', '"atuação"', inp('hp_kpt', hp.kickerPt, half) + inp('hp_ken', hp.kickerEn, half)) +
+      fieldRow('Título (PT / EN)', '"O que eu faço"', inp('hp_tpt', hp.titlePt, half) + inp('hp_ten', hp.titleEn, half)) +
+      fieldRow('Introdução (PT)', '', ta('hp_lpt', hp.leadPt)) +
+      fieldRow('Introdução (EN)', '', ta('hp_len', hp.leadEn)) +
+      listBlock('hpitem', hp.items, 'Frente', function (item, i) {
+        if (!Array.isArray(item.tags)) item.tags = [];
+        return fieldRow('Título (PT / EN)', '', inp('hp_' + i + '_tpt', item.titlePt, half) + inp('hp_' + i + '_ten', item.titleEn, half)) +
+          fieldRow('Texto (PT)', '', ta('hp_' + i + '_xpt', item.textPt)) +
+          fieldRow('Texto (EN)', '', ta('hp_' + i + '_xen', item.textEn)) +
+          '<div class="sub-list">' + listBlock('hptag' + i, item.tags, 'Tag', function (t, j) {
+            return fieldRow('Texto (PT / EN)', '', inp('hp_' + i + '_tag' + j + '_pt', t.pt, half) + inp('hp_' + i + '_tag' + j + '_en', t.en, half));
+          }) + '</div>';
+      });
+    var helpPairs = [
+      ['hp_kpt', function (v) { hp.kickerPt = v; }], ['hp_ken', function (v) { hp.kickerEn = v; }],
+      ['hp_tpt', function (v) { hp.titlePt = v; }], ['hp_ten', function (v) { hp.titleEn = v; }],
+      ['hp_lpt', function (v) { hp.leadPt = v; }], ['hp_len', function (v) { hp.leadEn = v; }]
+    ];
+    hp.items.forEach(function (item, i) {
+      helpPairs.push(['hp_' + i + '_tpt', function (v) { item.titlePt = v; }]);
+      helpPairs.push(['hp_' + i + '_ten', function (v) { item.titleEn = v; }]);
+      helpPairs.push(['hp_' + i + '_xpt', function (v) { item.textPt = v; }]);
+      helpPairs.push(['hp_' + i + '_xen', function (v) { item.textEn = v; }]);
+      item.tags.forEach(function (t, j) {
+        helpPairs.push(['hp_' + i + '_tag' + j + '_pt', function (v) { t.pt = v; }]);
+        helpPairs.push(['hp_' + i + '_tag' + j + '_en', function (v) { t.en = v; }]);
+      });
+    });
+    bindAll(helpPairs, touch);
+    wireListBlock('hpitem', hp.items, function () {
+      return { titlePt: 'Nova frente', titleEn: 'New area', textPt: '', textEn: '', tags: [] };
+    }, renderHome);
+    hp.items.forEach(function (item, i) {
+      wireListBlock('hptag' + i, item.tags, function () { return { pt: '', en: '' }; }, renderHome);
     });
 
-    var ct = state.home.contact;
+    var fq = H.faq;
+    if (!Array.isArray(fq.items)) fq.items = [];
+    document.getElementById('faqBody').innerHTML =
+      fieldRow('Título da seção (PT / EN)', '', inp('fq_tpt', fq.titlePt, half) + inp('fq_ten', fq.titleEn, half)) +
+      listBlock('fqitem', fq.items, 'Pergunta', function (item, i) {
+        return fieldRow('Pergunta (PT)', '', inp('fq_' + i + '_qpt', item.qPt)) +
+          fieldRow('Pergunta (EN)', '', inp('fq_' + i + '_qen', item.qEn)) +
+          fieldRow('Resposta (PT)', '', ta('fq_' + i + '_apt', item.aPt)) +
+          fieldRow('Resposta (EN)', '', ta('fq_' + i + '_aen', item.aEn));
+      });
+    var faqPairs = [['fq_tpt', function (v) { fq.titlePt = v; }], ['fq_ten', function (v) { fq.titleEn = v; }]];
+    fq.items.forEach(function (item, i) {
+      faqPairs.push(['fq_' + i + '_qpt', function (v) { item.qPt = v; }]);
+      faqPairs.push(['fq_' + i + '_qen', function (v) { item.qEn = v; }]);
+      faqPairs.push(['fq_' + i + '_apt', function (v) { item.aPt = v; }]);
+      faqPairs.push(['fq_' + i + '_aen', function (v) { item.aEn = v; }]);
+    });
+    bindAll(faqPairs, touch);
+    wireListBlock('fqitem', fq.items, function () {
+      return { qPt: 'Nova pergunta', qEn: 'New question', aPt: '', aEn: '' };
+    }, renderHome);
+
+    var ct = H.contact;
     document.getElementById('contactBody').innerHTML =
-      fieldRow('Título linha 1 (PT / EN)', '', '<input type="text" id="ct_l1pt" value="' + esc(ct.titleLine1Pt) + '" style="max-width:160px"><input type="text" id="ct_l1en" value="' + esc(ct.titleLine1En) + '" style="max-width:160px">') +
-      fieldRow('Título linha 2 (PT / EN)', '', '<input type="text" id="ct_l2pt" value="' + esc(ct.titleLine2Pt) + '" style="max-width:160px"><input type="text" id="ct_l2en" value="' + esc(ct.titleLine2En) + '" style="max-width:160px">');
-    bindText('ct_l1pt', function (v) { ct.titleLine1Pt = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('ct_l1en', function (v) { ct.titleLine1En = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('ct_l2pt', function (v) { ct.titleLine2Pt = v; markDirty('content/home.json', state.home, state.homeSha); });
-    bindText('ct_l2en', function (v) { ct.titleLine2En = v; markDirty('content/home.json', state.home, state.homeSha); });
+      fieldRow('Título linha 1 (PT / EN)', '', inp('ct_l1pt', ct.titleLine1Pt, half) + inp('ct_l1en', ct.titleLine1En, half)) +
+      fieldRow('Título linha 2 (PT / EN)', '', inp('ct_l2pt', ct.titleLine2Pt, half) + inp('ct_l2en', ct.titleLine2En, half)) +
+      fieldRow('Rótulo do e-mail (PT / EN)', '"Escreva para"', inp('ct_mkpt', ct.mailLabelPt, half) + inp('ct_mken', ct.mailLabelEn, half));
+    bindAll([
+      ['ct_l1pt', function (v) { ct.titleLine1Pt = v; }], ['ct_l1en', function (v) { ct.titleLine1En = v; }],
+      ['ct_l2pt', function (v) { ct.titleLine2Pt = v; }], ['ct_l2en', function (v) { ct.titleLine2En = v; }],
+      ['ct_mkpt', function (v) { ct.mailLabelPt = v; }], ['ct_mken', function (v) { ct.mailLabelEn = v; }]
+    ], touch);
   }
 
   /* ---------- Projetos ---------- */
@@ -575,6 +734,17 @@
     renderProjectsList();
   }
 
+  /* Estado aberto/fechado de cada <details> do editor de projeto, preservado
+     entre re-renderizações. Trocar a aba de dispositivo re-renderiza o editor
+     inteiro; sem isto, toda seção aberta fechava junto e a impressão era de
+     que o campo de espaçamento tinha parado de responder — era o segundo
+     motivo de "não consigo mexer no espaçamento individual", junto com o
+     re-render que interrompia o arraste do slider. */
+  var projectSectionOpen = { info: true };
+  function projectSection(key) {
+    return ' data-sec="' + key + '"' + (projectSectionOpen[key] ? ' open' : '');
+  }
+
   function renderProjectEditor() {
     var slug = state.editingSlug;
     var editorEl = document.getElementById('projectEditor');
@@ -594,7 +764,7 @@
     var galleryBlock = P.blocks.filter(function (b) { return b.type === 'gallery'; })[0] || { images: [] };
 
     editorEl.innerHTML =
-      '<details class="group" open><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
+      '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
       fieldRow('Slug', 'não muda depois de criado', '<input type="text" value="' + esc(slug) + '" disabled>') +
       fieldRow('Status', '', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
       fieldRow('Ano', '', '<input type="number" id="pe_year" value="' + esc(P.year) + '" min="1990" max="2100">') +
@@ -607,11 +777,11 @@
       fieldRow('Capa', 'caminho do arquivo — envie por Mídia e cole aqui', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
       fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
       '</div></details>' +
-      '<details class="group"><summary>Espaçamento da capa</summary><div class="group-body">' +
+      '<details class="group"' + projectSection('cover') + '><summary>Espaçamento da capa</summary><div class="group-body">' +
       deviceTabsHtml('cover-spacing') +
       blockSpacingFields(P, 'coverSpacing', function () { save(); }, false) +
       '</div></details>' +
-      '<details class="group"><summary>Contexto / processo / resultado</summary><div class="group-body">' +
+      '<details class="group"' + projectSection('blocks') + '><summary>Contexto / processo / resultado</summary><div class="group-body">' +
       textBlocks.map(function (b, i) {
         return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
           '<b>' + esc(b.labelPt) + '</b>' +
@@ -621,7 +791,7 @@
           blockSpacingFields(b, 'spacing', function () { save(); }, false) +
           '</div>';
       }).join('') + '</div></details>' +
-      '<details class="group"><summary>Galeria (' + galleryBlock.images.length + ' imagens)</summary><div class="group-body">' +
+      '<details class="group"' + projectSection('gallery') + '><summary>Galeria (' + galleryBlock.images.length + ' imagens)</summary><div class="group-body">' +
       galleryBlock.images.map(function (img, i) {
         return fieldRow('Imagem ' + (i + 1), '', '<input type="text" id="pe_gal_' + i + '" value="' + esc(img.src) + '">' +
           '<button class="btn small danger" data-gal-remove="' + i + '">remover</button>');
@@ -663,6 +833,9 @@
 
     wireTieredFields();
     wireDeviceTabs(editorEl, renderProjectEditor);
+    editorEl.querySelectorAll('details[data-sec]').forEach(function (d) {
+      d.addEventListener('toggle', function () { projectSectionOpen[d.getAttribute('data-sec')] = d.open; });
+    });
   }
 
   function uploadFile(file, slug, onDone) {
