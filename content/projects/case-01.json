@@ -26,6 +26,18 @@
   },
   "cover": "assets/projetos/case-01/capa.jpg",
   "coverMobile": "",
+  "coverSpacing": {
+    "marginTop": {
+      "desktop": 324,
+      "tablet": null,
+      "mobile": null
+    },
+    "marginBottom": {
+      "desktop": 310,
+      "tablet": null,
+      "mobile": null
+    }
+  },
   "blocks": [
     {
       "type": "text",
@@ -59,7 +71,24 @@
           "src": "assets/projetos/case-01/galeria-2.jpg",
           "alt": ""
         }
-      ]
+      ],
+      "spacing": {
+        "marginTop": {
+          "desktop": 495,
+          "tablet": null,
+          "mobile": null
+        },
+        "marginBottom": {
+          "desktop": 527,
+          "tablet": null,
+          "mobile": null
+        },
+        "gap": {
+          "desktop": 166,
+          "tablet": null,
+          "mobile": null
+        }
+      }
     },
     {
       "type": "gallery",
@@ -72,7 +101,24 @@
           "src": "assets/projetos/case-01/galeria-1.jpg",
           "alt": ""
         }
-      ]
+      ],
+      "spacing": {
+        "marginTop": {
+          "desktop": 544,
+          "tablet": null,
+          "mobile": null
+        },
+        "marginBottom": {
+          "desktop": 546,
+          "tablet": null,
+          "mobile": null
+        },
+        "gap": {
+          "desktop": 187,
+          "tablet": null,
+          "mobile": null
+        }
+      }
     }
   ]
 }
