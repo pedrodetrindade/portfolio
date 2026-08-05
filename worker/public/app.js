@@ -59,6 +59,7 @@
     state.dirty[path] = { data: data, sha: sha, message: message || ('cms: atualiza ' + path) };
     updateDirtyIndicators();
     renderPublishPanel();
+    atualizarSeloPrevia();
   }
 
   function updateDirtyIndicators() {
@@ -186,6 +187,18 @@
 
   /* ---------- prévia ao vivo ---------- */
   var previewDebounce = null;
+  /* Estado da barra da prévia, compartilhado pelos três painéis que a exibem
+     (aparência, layout, home) para não divergirem entre si. */
+  /* Larguras reais de viewport, escolhidas para cair de forma inequívoca em
+     cada faixa do site (os pontos de corte são 900px e 640px):
+     1280 acima de 900, 820 entre 640 e 899, 390 abaixo de 640. */
+  var PREVIEW_LARGURAS = { desktop: 1280, tablet: 820, mobile: 390 };
+  var PREVIEW_ALTURA = 520;
+  var previewDevice = 'desktop', previewWidth = String(PREVIEW_LARGURAS.desktop), previewLang = 'pt';
+  /* Abas abertas pelo botão "Nova aba". Guardadas para receberem as mesmas
+     mensagens do iframe; as que o usuário fechou são descartadas no envio. */
+  var previewTabs = [];
+
   function schedulePreview() {
     clearTimeout(previewDebounce);
     previewDebounce = setTimeout(sendPreview, 200);
@@ -225,6 +238,10 @@
       if (!frame.contentWindow) return;
       frame.contentWindow.postMessage(msg, alvo);
     });
+    previewTabs = previewTabs.filter(function (w) { return w && !w.closed; });
+    previewTabs.forEach(function (w) {
+      try { w.postMessage(msg, alvo); } catch (e) { /* aba trocou de origem */ }
+    });
   }
 
   /* Envia só dado estruturado — nenhuma função, nenhum HTML, nenhum seletor.
@@ -245,6 +262,20 @@
   function sendPreviewLang(lang) {
     postToPreviews({ __cms__: 'preview', v: PREVIEW_PROTOCOL, type: 'lang', lang: lang === 'en' ? 'en' : 'pt' });
   }
+
+  /* Selo de "isto ainda não está no ar". Fica na barra da prévia porque é
+     exatamente ali que a confusão acontece: o que está na tela é rascunho, e
+     nada distinguia isso do site publicado. Conta arquivos, não campos — é o
+     que o botão Publicar realmente vai enviar. Não depende só de cor: traz o
+     número e o texto por extenso. */
+  function atualizarSeloPrevia() {
+    var n = Object.keys(state.dirty).length;
+    document.querySelectorAll('[data-pv-badge]').forEach(function (el) {
+      el.hidden = n === 0;
+      el.textContent = n === 0 ? '' :
+        (n === 1 ? '1 alteração não publicada' : n + ' alterações não publicadas');
+    });
+  }
   function previewBlock() {
     if (!state.previewUrl) {
       return '<div class="group" style="margin-bottom:1.2rem"><div class="group-body">' +
@@ -253,11 +284,58 @@
           '<button class="btn small" id="btnSetPreview">Usar</button>') +
         '</div></div>';
     }
+    /* As larguras caem dentro das faixas reais do site (900px e 640px são os
+       dois únicos pontos de corte do CSS): 820px fica na faixa do tablet
+       (640–899) e 390px na do celular (abaixo de 640). Desktop é fluido, para
+       usar a largura que o painel tiver. */
+    var dispositivos = [
+      ['desktop', 'Desktop', String(PREVIEW_LARGURAS.desktop)],
+      ['tablet', 'Tablet', String(PREVIEW_LARGURAS.tablet)],
+      ['mobile', 'Celular', String(PREVIEW_LARGURAS.mobile)]
+    ];
+    var botoesDisp = dispositivos.map(function (d) {
+      return '<button class="btn small' + (previewDevice === d[0] ? ' on' : '') +
+        '" data-pv-device="' + d[0] + '" data-pv-width="' + d[2] + '">' + d[1] + '</button>';
+    }).join('');
+    var botoesLang = ['pt', 'en'].map(function (l) {
+      return '<button class="btn small' + (previewLang === l ? ' on' : '') +
+        '" data-pv-lang="' + l + '">' + l.toUpperCase() + '</button>';
+    }).join('');
+
     return '<div class="preview-wrap">' +
-      '<div class="preview-head"><span>Prévia ao vivo</span>' +
-      '<button class="btn small" data-change-preview="1">trocar URL</button></div>' +
-      '<iframe class="preview-frame" src="' + esc(urlDaPrevia()) + '"></iframe></div>';
+      '<div class="preview-head">' +
+        '<span class="pv-title">Prévia ao vivo</span>' +
+        '<span class="pv-badge" data-pv-badge hidden></span>' +
+        '<span class="pv-tools">' +
+          '<span class="pv-group" role="group" aria-label="Tamanho da tela">' + botoesDisp + '</span>' +
+          '<span class="pv-group" role="group" aria-label="Idioma da prévia">' + botoesLang + '</span>' +
+          '<button class="btn small" data-pv-reload="1" title="Recarrega o site e reaplica suas alterações">Atualizar</button>' +
+          '<button class="btn small" data-pv-open="1" title="Abre numa aba nova, já com suas alterações não publicadas">Nova aba</button>' +
+          '<button class="btn small" data-change-preview="1">trocar URL</button>' +
+        '</span>' +
+      '</div>' +
+      '<div class="preview-stage">' +
+        '<iframe class="preview-frame" src="' + esc(urlDaPrevia()) + '"></iframe>' +
+      '</div></div>';
   }
+
+  /* Reduz o iframe até caber no palco, sem nunca ampliar: se houver espaço
+     sobrando, fica em 1:1. A altura é compensada pela escala para o conteúdo
+     visível continuar sendo os mesmos 520px de altura em qualquer modo. */
+  function aplicarEscalaPrevia() {
+    var alvo = Number(previewWidth) || PREVIEW_LARGURAS.desktop;
+    document.querySelectorAll('.preview-stage').forEach(function (stage) {
+      var frame = stage.querySelector('.preview-frame');
+      if (!frame) return;
+      var disponivel = stage.clientWidth;
+      if (!disponivel) return;
+      var escala = Math.min(1, disponivel / alvo);
+      frame.style.width = alvo + 'px';
+      frame.style.height = Math.round(PREVIEW_ALTURA / escala) + 'px';
+      frame.style.transform = 'scale(' + escala + ')';
+    });
+  }
+  window.addEventListener('resize', aplicarEscalaPrevia);
   function wirePreviewBlock(slotId) {
     var slot = document.getElementById(slotId);
     if (!slot) return;
@@ -284,7 +362,56 @@
       });
     });
     var frame = slot.querySelector('.preview-frame');
+    /* Reenvia o rascunho a cada carga do iframe. É o que faz "Atualizar"
+       funcionar: o site recarrega com o conteúdo publicado e, logo em
+       seguida, recebe de volta as alterações que ainda não foram enviadas. */
     if (frame) frame.addEventListener('load', sendPreview);
+    aplicarEscalaPrevia();
+
+    /* Um render só da barra para os três slots: o estado é compartilhado, então
+       trocar de dispositivo num painel mantém a escolha nos outros. */
+    function reRenderBarras() {
+      aplicarEscalaPrevia();
+      ['previewSlotAppearance', 'previewSlotLayout', 'previewSlotHome'].forEach(function (id) {
+        var s = document.getElementById(id);
+        if (!s || !s.querySelector('.preview-stage')) return;
+        s.querySelectorAll('[data-pv-device]').forEach(function (b) {
+          b.classList.toggle('on', b.getAttribute('data-pv-device') === previewDevice);
+        });
+        s.querySelectorAll('[data-pv-lang]').forEach(function (b) {
+          b.classList.toggle('on', b.getAttribute('data-pv-lang') === previewLang);
+        });
+      });
+    }
+
+    slot.querySelectorAll('[data-pv-device]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        previewDevice = b.getAttribute('data-pv-device');
+        previewWidth = b.getAttribute('data-pv-width') || '';
+        reRenderBarras();
+      });
+    });
+    slot.querySelectorAll('[data-pv-lang]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        previewLang = b.getAttribute('data-pv-lang');
+        sendPreviewLang(previewLang);
+        reRenderBarras();
+      });
+    });
+    var reloadBtn = slot.querySelector('[data-pv-reload]');
+    if (reloadBtn) reloadBtn.addEventListener('click', function () {
+      var f = slot.querySelector('.preview-frame');
+      if (f) f.setAttribute('src', urlDaPrevia());   // o load reenvia o rascunho
+    });
+    var openBtn = slot.querySelector('[data-pv-open]');
+    if (openBtn) openBtn.addEventListener('click', function () {
+      var w = window.open(urlDaPrevia(), '_blank', 'noopener=no');
+      if (!w) { toast('O navegador bloqueou a nova aba.', 'err'); return; }
+      previewTabs.push(w);
+      /* a aba precisa terminar de carregar antes de receber o rascunho */
+      setTimeout(sendPreview, 1200);
+    });
+    atualizarSeloPrevia();
   }
 
   /* ---------- Visão geral ---------- */
@@ -981,6 +1108,7 @@
       }
       updateDirtyIndicators();
       renderPublishPanel();
+      atualizarSeloPrevia();
       toast(okAll ? 'Publicado.' : 'Publicação parcial — revise os erros.', okAll ? 'ok' : 'err');
     }).catch(function (e) {
       document.getElementById('publishResult').innerHTML = '<span style="color:var(--err)">' + esc(e.message) + '</span>';

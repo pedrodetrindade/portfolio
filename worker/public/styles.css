@@ -108,10 +108,31 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 
 .preview-wrap{position:sticky;top:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;
   background:var(--ink-2);margin-bottom:1.2rem}
-.preview-head{display:flex;align-items:center;justify-content:space-between;padding:.6rem .9rem;
+.preview-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.6rem .9rem;
   border-bottom:1px solid var(--line);font-size:.8rem;color:var(--muted)}
-.preview-head .device-btns{display:flex;gap:.3rem}
-iframe#previewFrame{width:100%;height:520px;border:none;background:#fff;display:block}
+.pv-title{font-weight:500;color:var(--paper)}
+/* selo de rascunho: não comunica só por cor — traz o número e o texto */
+.pv-badge{display:inline-flex;align-items:center;gap:.4em;padding:.2rem .6rem;border-radius:100px;
+  background:rgba(217,161,92,.14);border:1px solid var(--warn);color:var(--warn);font-size:.74rem}
+.pv-badge[hidden]{display:none}
+.pv-badge::before{content:"●";font-size:.6em}
+.pv-tools{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-left:auto}
+.pv-group{display:inline-flex;gap:.2rem;padding:.15rem;border:1px solid var(--line);border-radius:100px}
+.pv-group .btn.small{border-radius:100px;border-color:transparent;background:transparent}
+.pv-group .btn.small.on{background:var(--ink-3);border-color:var(--line-strong);color:var(--paper)}
+
+/* O iframe recebe a largura REAL do dispositivo (1280 / 820 / 390) e é
+   reduzido por transform até caber no palco. Limitar por max-width não
+   funcionaria: o painel raramente tem 1280px livres, então o modo Desktop
+   acabaria renderizando na faixa do tablet e os três modos mostrariam quase o
+   mesmo layout. Com escala, o que o site enxerga é sempre a largura escolhida,
+   e o ponto de corte que dispara é o verdadeiro. */
+.preview-stage{height:520px;overflow:hidden;display:flex;justify-content:center;
+  background:var(--ink)}
+/* flex:none é obrigatório: como item de flex, o iframe encolheria para caber
+   no palco ANTES da escala, e a largura que o site enxergaria voltaria a ser a
+   do painel — o modo Desktop renderizaria na faixa do tablet apesar do rótulo. */
+.preview-frame{flex:none;border:none;background:#fff;display:block;transform-origin:top center}
 
 .summary-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.4rem}
 .summary-list li{display:flex;justify-content:space-between;font-size:.88rem;

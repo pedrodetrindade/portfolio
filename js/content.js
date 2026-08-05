@@ -288,11 +288,17 @@
     } catch (e) { return null; }
   }
 
-  if (window.parent !== window) {
+  /* Enquadrado (iframe da prévia) ou aberto pelo painel numa aba nova. Os dois
+     casos existem: "abrir prévia em nova aba" precisa continuar recebendo
+     rascunho, senão mostraria só o que já está publicado. Em qualquer visita
+     normal do site, nenhuma das duas condições é verdadeira. */
+  var enquadrado = window.parent !== window;
+  if (enquadrado || window.opener) {
     var ORIGEM_PAINEL = origemDoPainel();
     if (ORIGEM_PAINEL) {
       window.addEventListener('message', function (event) {
-        if (event.source !== window.parent) return;
+        var remetenteEsperado = enquadrado ? window.parent : window.opener;
+        if (!remetenteEsperado || event.source !== remetenteEsperado) return;
         if (event.origin !== ORIGEM_PAINEL) return;
         var msg = event.data;
         if (!msg || msg.__cms__ !== 'preview' || msg.v !== PREVIEW_PROTOCOL) return;
