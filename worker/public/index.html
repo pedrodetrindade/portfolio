@@ -146,6 +146,35 @@
   </main>
 </div>
 
+<!-- Tela de revisão (Fase 3). Nasce oculta; só aparece a partir do clique em
+     Publicar, e publicar de verdade só acontece depois da confirmação aqui
+     dentro — ver abrirRevisao()/fecharRevisao() em app.js. -->
+<div id="reviewModal" class="review-modal" hidden role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+  <div class="review-dialog">
+    <div class="review-head">
+      <h2 id="reviewTitle">Revisão antes de publicar</h2>
+      <p class="lead">O que muda no site público, em linguagem simples.</p>
+    </div>
+    <div class="review-scroll">
+      <div id="reviewBody"></div>
+      <details class="group review-advanced">
+        <summary>Ver diferenças técnicas (avançado)</summary>
+        <pre id="reviewTecnico" class="review-tech"></pre>
+      </details>
+    </div>
+    <div class="review-foot">
+      <div class="field">
+        <label>Mensagem da publicação (opcional)<span class="hint">Se ficar em branco, cada arquivo mantém sua mensagem padrão.</span></label>
+        <div class="control"><input type="text" id="reviewMessage" placeholder="ex.: atualiza textos da home e cores"></div>
+      </div>
+      <div class="review-foot-btns">
+        <button class="btn" id="btnReviewCancel">Voltar a editar</button>
+        <button class="btn primary" id="btnReviewConfirm">Confirmar e publicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

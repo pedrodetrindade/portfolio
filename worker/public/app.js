@@ -21,7 +21,10 @@
        rascunhos: o mesmo navegador pode editar repositórios ou branches
        diferentes, e um rascunho nunca deve vazar de um para o outro. */
     repo: null, branch: null,
-    draftSavedAt: null
+    draftSavedAt: null,
+    /* linha de base para a revisão (Fase 3): path -> conteúdo publicado no
+       momento em que foi carregado, antes de qualquer edição */
+    published: {}
   };
 
   var LIMITS = {
@@ -209,6 +212,297 @@
   function refreshDraftState() {
     if (!Object.keys(state.dirty).length) { setDraftState('publicado'); return; }
     setDraftState(state.draftSavedAt ? 'rascunho' : 'pendente');
+  }
+
+  /* ================== REVISÃO ANTES DE PUBLICAR (Fase 3) ==================
+     state.published guarda uma cópia congelada de cada arquivo no momento em
+     que foi carregado do GitHub — antes de qualquer edição. É indispensável
+     porque os campos do painel escrevem direto em state.global/home/projects
+     (bindColor, bindText etc. fazem `state.global.colors[x] = ...`); não
+     sobra nenhuma cópia "limpa" depois do primeiro clique. Sem esta cópia
+     separada, não haveria contra o que comparar. */
+  function snapshotPublished(path, data) {
+    state.published[path] = JSON.parse(JSON.stringify(data));
+  }
+
+  function apiPathFor(path) {
+    if (path === 'content/global.json') return '/api/global';
+    if (path === 'content/home.json') return '/api/home';
+    if (path === 'content/projects/index.json') return '/api/projects';
+    var m = path.match(/^content\/projects\/([a-z0-9-]+)\.json$/);
+    if (m) return '/api/projects/' + m[1];
+    return null;
+  }
+
+  /* Busca a linha de base de qualquer caminho pendente que ainda não tenha
+     uma (caso de um projeto restaurado do rascunho sem nunca ter sido aberto
+     no editor nesta sessão — o rascunho carrega a versão editada direto em
+     state.projects, sem passar pelo fetch que normalmente tira o retrato
+     "antes"). Nunca sobrescreve uma linha de base que já existe. */
+  function ensurePublishedBaseline(paths) {
+    var faltando = paths.filter(function (p) { return !state.published[p]; });
+    if (!faltando.length) return Promise.resolve();
+    return Promise.all(faltando.map(function (p) {
+      var apiPath = apiPathFor(p);
+      if (!apiPath) return Promise.resolve();
+      return api(apiPath).then(function (res) { snapshotPublished(p, res.data); })
+        .catch(function () { snapshotPublished(p, null); }); // arquivo novo: nunca existiu publicado
+    }));
+  }
+
+  /* ---- motor de diff ----
+     Genérico o bastante para cobrir os quatro JSONs sem precisar de um mapa
+     de campo por campo, mas com rótulos legíveis para as chaves conhecidas.
+     Não é um algoritmo de diff de texto: opera em cima da árvore JSON. */
+  var ROTULOS_CAMPO = {
+    hero: 'Capa', work: 'Projetos (introdução)', about: 'Sobre', help: 'O que eu faço',
+    faq: 'Perguntas frequentes', contact: 'Contato', sections: 'Espaçamento por seção',
+    background: 'Fundo principal', backgroundSecondary: 'Fundo secundário', surface: 'Superfície elevada',
+    textPrimary: 'Texto principal', textSecondary: 'Texto secundário', textMuted: 'Texto desativado',
+    accent: 'Cor de destaque', highlight: 'Realce', heroName: 'Cor do nome (capa)',
+    borderColor: 'Cor das bordas (fraca)', borderColorStrong: 'Cor das bordas (forte)',
+    radiusCard: 'Arredondamento dos cards', radiusImage: 'Arredondamento das imagens',
+    radiusButton: 'Arredondamento dos botões', radiusField: 'Arredondamento dos campos',
+    contentMaxWidth: 'Largura máxima do conteúdo', pageGutterDesktop: 'Margem lateral (desktop)',
+    pageGutterMobile: 'Margem lateral (celular)', sectionSpacingTop: 'Espaço antes da seção (padrão)',
+    sectionSpacingBottom: 'Espaço depois da seção (padrão)', gridGap: 'Espaço entre colunas da grade',
+    showLanguageSwitch: 'Mostrar seletor de idioma', showContactButton: 'Mostrar botão de contato',
+    menu: 'Itens de menu', copyrightPt: 'Copyright (PT)', copyrightEn: 'Copyright (EN)',
+    disclaimerPt: 'Disclaimer (PT, reserva)', disclaimerEn: 'Disclaimer (EN, reserva)',
+    marqueeText: 'Texto do marquee', linkedin: 'LinkedIn', behance: 'Behance', email: 'E-mail de contato',
+    tagPt: 'Cargo (PT)', tagEn: 'Cargo (EN)', locationPt: 'Localização (PT)', locationEn: 'Localização (EN)',
+    claimPt: 'Frase de efeito (PT)', claimEn: 'Frase de efeito (EN)', showAvailability: 'Mostrar disponibilidade',
+    backgroundVideo: 'Vídeo de fundo da capa', backgroundVideoPoster: 'Poster do vídeo',
+    titlePt: 'Título (PT)', titleEn: 'Título (EN)', contextPt: 'Contexto (PT)', contextEn: 'Contexto (EN)',
+    asidePt: 'Texto lateral (PT)', asideEn: 'Texto lateral (EN)',
+    kickerPt: 'Rótulo (PT)', kickerEn: 'Rótulo (EN)', leadPt: 'Texto principal (PT)', leadEn: 'Texto principal (EN)',
+    subPt: 'Texto complementar (PT)', subEn: 'Texto complementar (EN)', photo: 'Retrato',
+    ctaTalkPt: 'Botão de contato (PT)', ctaTalkEn: 'Botão de contato (EN)',
+    showResume: 'Mostrar botão de currículo', resumeFile: 'Arquivo do currículo',
+    resumeLabelPt: 'Rótulo do currículo (PT)', resumeLabelEn: 'Rótulo do currículo (EN)',
+    capabilities: 'Capacidades', capabilitiesLabelPt: 'Rótulo das capacidades (PT)', capabilitiesLabelEn: 'Rótulo das capacidades (EN)',
+    items: 'Itens', tags: 'Tags', textPt: 'Texto (PT)', textEn: 'Texto (EN)',
+    qPt: 'Pergunta (PT)', qEn: 'Pergunta (EN)', aPt: 'Resposta (PT)', aEn: 'Resposta (EN)',
+    titleLine1Pt: 'Título linha 1 (PT)', titleLine1En: 'Título linha 1 (EN)',
+    titleLine2Pt: 'Título linha 2 (PT)', titleLine2En: 'Título linha 2 (EN)',
+    mailLabelPt: 'Rótulo do e-mail (PT)', mailLabelEn: 'Rótulo do e-mail (EN)',
+    visible: 'Visibilidade', order: 'Ordem', cover: 'Capa', coverLight: 'Capa clara',
+    year: 'Ano', slug: 'Slug', status: 'Status', rolePt: 'Papel (PT)', roleEn: 'Papel (EN)',
+    scopePt: 'Escopo (PT)', scopeEn: 'Escopo (EN)', subtitlePt: 'Subtítulo (PT)', subtitleEn: 'Subtítulo (EN)',
+    src: 'Imagem', alt: 'Texto alternativo', pt: 'Texto (PT)', en: 'Texto (EN)'
+  };
+  function rotuloCampo(chave) { return ROTULOS_CAMPO[chave] || chave; }
+
+  /* Campos cujo valor é um caminho de arquivo de imagem — tratados como
+     "Imagem alterada" em vez de "Campo alterado", porque o valor bruto (um
+     caminho) não é informativo para quem está revisando. */
+  var CAMPOS_DE_IMAGEM = { cover: 1, photo: 1, src: 1 };
+  var CHAVES_GENERICAS = { hex: 1, opacity: 1 };
+
+  function ehObjeto(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+  /* Chave de identidade de um item de lista, para casar "o mesmo item" entre
+     a versão publicada e a atual mesmo que o conteúdo tenha mudado. Sem uma
+     chave estável (a maioria das listas do CMS não tem id), usa o primeiro
+     campo de texto que normalmente não muda com a edição (slug > título >
+     pergunta > texto em PT); se nada bater, cai no índice — dois itens sem
+     nenhum campo de texto reconhecível são tratados como a mesma posição. */
+  function chaveDoItem(item, idx) {
+    if (!ehObjeto(item)) return String(item);
+    return item.slug || item.titlePt || item.qPt || item.pt || item.src || ('#' + idx);
+  }
+
+  /* Compara duas listas e devolve adicionados, removidos, os que mudaram de
+     conteúdo (mesma chave, dado diferente) e se a ordem dos itens em comum
+     mudou. */
+  function diffLista(antiga, nova) {
+    antiga = antiga || []; nova = nova || [];
+    var chavesAntigas = antiga.map(chaveDoItem), chavesNovas = nova.map(chaveDoItem);
+    var adicionados = nova.filter(function (it, i) { return chavesAntigas.indexOf(chavesNovas[i]) === -1; });
+    var removidos = antiga.filter(function (it, i) { return chavesNovas.indexOf(chavesAntigas[i]) === -1; });
+    var comuns = chavesAntigas.filter(function (k) { return chavesNovas.indexOf(k) !== -1; });
+    var ordemAntiga = chavesAntigas.filter(function (k) { return comuns.indexOf(k) !== -1; });
+    var ordemNova = chavesNovas.filter(function (k) { return comuns.indexOf(k) !== -1; });
+    var reordenado = ordemAntiga.join('|') !== ordemNova.join('|');
+    var alterados = [];
+    comuns.forEach(function (k) {
+      var itAntigo = antiga[chavesAntigas.indexOf(k)], itNovo = nova[chavesNovas.indexOf(k)];
+      if (JSON.stringify(itAntigo) !== JSON.stringify(itNovo)) alterados.push({ antigo: itAntigo, novo: itNovo, chave: k });
+    });
+    return { adicionados: adicionados, removidos: removidos, alterados: alterados, reordenado: reordenado };
+  }
+
+  function rotuloDoItem(item) {
+    if (!ehObjeto(item)) return String(item);
+    return item.titlePt || item.qPt || item.pt || item.slug || item.src || 'item';
+  }
+
+  /* Percorre recursivamente dois objetos e empilha frases legíveis em `saida`.
+     `caminhoTecnico` acumula o caminho JSON (para a visão técnica opcional).
+     Não desce dentro de listas conhecidas por nome (help.items, faq.items,
+     about.capabilities, tags, blocks, images, projects) — essas são tratadas
+     à parte por diffLista, que entende adicionar/remover/reordenar; um diff
+     campo-a-campo genérico dentro de uma lista produziria "item 3 mudou" sem
+     dizer qual pergunta ou frente é essa. */
+  var CHAVES_DE_LISTA_HUMANA = { items: 1, capabilities: 1, tags: 1, blocks: 1, images: 1, projects: 1 };
+
+  function diffObjeto(antigo, novo, saida, caminhoTecnico, rotuloPai) {
+    antigo = antigo || {}; novo = novo || {};
+    var chaves = Object.keys(Object.assign({}, antigo, novo));
+    chaves.forEach(function (k) {
+      if (k === '$schema' || k === '$note') return;
+      var vAntigo = antigo[k], vNovo = novo[k];
+      var caminho = caminhoTecnico.concat(k);
+      if (JSON.stringify(vAntigo) === JSON.stringify(vNovo)) return;
+
+      if (Array.isArray(vNovo) || Array.isArray(vAntigo)) {
+        if (CHAVES_DE_LISTA_HUMANA[k]) {
+          var d = diffLista(vAntigo, vNovo);
+          d.adicionados.forEach(function (it) { saida.push({ tipo: 'adicionado', texto: 'Item adicionado: "' + esc(rotuloDoItem(it)) + '"', caminho: caminho.join('.') }); });
+          d.removidos.forEach(function (it) { saida.push({ tipo: 'removido', texto: 'Item removido: "' + esc(rotuloDoItem(it)) + '"', caminho: caminho.join('.') }); });
+          if (d.reordenado) saida.push({ tipo: 'reordenado', texto: (rotuloPai ? rotuloPai + ': i' : 'I') + 'tens reordenados', caminho: caminho.join('.') });
+          d.alterados.forEach(function (it) {
+            saida.push({ tipo: 'alterado', texto: 'Item alterado: "' + esc(rotuloDoItem(it.novo)) + '"', caminho: caminho.join('.') });
+          });
+        } else {
+          /* lista sem tratamento nomeado (não deveria haver hoje, mas cai
+             aqui em vez de silenciar caso um campo novo apareça no JSON) */
+          saida.push({ tipo: 'alterado', texto: rotuloCampo(k) + ' alterado(a)', caminho: caminho.join('.') });
+        }
+        return;
+      }
+      if (ehObjeto(vNovo) || ehObjeto(vAntigo)) {
+        diffObjeto(vAntigo, vNovo, saida, caminho, rotuloCampo(k));
+        return;
+      }
+      if (CAMPOS_DE_IMAGEM[k]) {
+        var acao = !vAntigo ? 'adicionada' : !vNovo ? 'removida' : 'substituída';
+        saida.push({ tipo: 'imagem', texto: 'Imagem ' + acao + (rotuloPai ? ' (' + rotuloPai + ')' : ''), caminho: caminho.join('.') });
+        return;
+      }
+      /* "hex"/"opacity" não têm rótulo próprio — sozinhos não dizem qual cor
+         mudou. Quando a chave é genérica assim e existe um rótulo do campo
+         pai (ex.: "Cor de destaque", vindo do objeto colors.accent que a
+         envolve), usa o pai: "hex alterado" vira "Cor de destaque alterado". */
+      var baseRotulo = (CHAVES_GENERICAS[k] && rotuloPai) ? rotuloPai : rotuloCampo(k);
+      saida.push({
+        tipo: 'alterado',
+        texto: baseRotulo + ' alterado' + (typeof vNovo === 'boolean' ? (vNovo ? ' (ligado)' : ' (desligado)') : ''),
+        caminho: caminho.join('.'),
+        de: vAntigo, para: vNovo
+      });
+    });
+  }
+
+  /* Agrupa por área de acordo com a origem do arquivo — é a categorização
+     pedida (Aparência, Layout, Header e Footer, Home, Projetos), não uma
+     lista plana de caminhos JSON. */
+  function diffArquivo(path, antigo, novo) {
+    var entradas = [];
+    if (path === 'content/global.json') {
+      var aparencia = [], layout = [], headerFooter = [];
+      diffObjeto((antigo || {}).colors, (novo || {}).colors, aparencia, ['colors'], null);
+      diffObjeto((antigo || {}).borders, (novo || {}).borders, aparencia, ['borders'], null);
+      diffObjeto((antigo || {}).layout, (novo || {}).layout, layout, ['layout'], null);
+      diffObjeto((antigo || {}).header, (novo || {}).header, headerFooter, ['header'], null);
+      diffObjeto((antigo || {}).footer, (novo || {}).footer, headerFooter, ['footer'], null);
+      diffObjeto((antigo || {}).social, (novo || {}).social, headerFooter, ['social'], null);
+      return [
+        { area: 'Aparência', entradas: aparencia },
+        { area: 'Layout e espaçamentos', entradas: layout },
+        { area: 'Header e footer', entradas: headerFooter }
+      ].filter(function (g) { return g.entradas.length; });
+    }
+    if (path === 'content/home.json') {
+      diffObjeto(antigo, novo, entradas, [], null);
+      return entradas.length ? [{ area: 'Home', entradas: entradas }] : [];
+    }
+    if (path === 'content/projects/index.json') {
+      diffObjeto(antigo, novo, entradas, [], null);
+      return entradas.length ? [{ area: 'Projetos', entradas: entradas }] : [];
+    }
+    var m = path.match(/^content\/projects\/([a-z0-9-]+)\.json$/);
+    if (m) {
+      diffObjeto(antigo, novo, entradas, [], null);
+      var titulo = (novo && novo.hero && novo.hero.titlePt) || (antigo && antigo.hero && antigo.hero.titlePt) || m[1];
+      entradas.forEach(function (e) { e.texto = 'Projeto "' + esc(titulo) + '": ' + e.texto.charAt(0).toLowerCase() + e.texto.slice(1); });
+      return entradas.length ? [{ area: 'Projetos', entradas: entradas }] : [];
+    }
+    return [];
+  }
+
+  /* Junta o diff de todos os arquivos pendentes num único agrupamento por
+     área — é isto que vira a tela de revisão. */
+  function calcularRevisao() {
+    var porArea = {};
+    Object.keys(state.dirty).forEach(function (path) {
+      var novo = state.dirty[path].data;
+      var antigo = state.published[path] === undefined ? null : state.published[path];
+      diffArquivo(path, antigo, novo).forEach(function (g) {
+        if (!porArea[g.area]) porArea[g.area] = [];
+        porArea[g.area] = porArea[g.area].concat(g.entradas);
+      });
+    });
+    return Object.keys(porArea).map(function (area) { return { area: area, entradas: porArea[area] }; });
+  }
+
+  var ICONE_TIPO = { adicionado: '+', removido: '−', reordenado: '↕', alterado: '~', imagem: '🖼' };
+
+  function renderRevisaoHtml(grupos) {
+    var totalEntradas = grupos.reduce(function (n, g) { return n + g.entradas.length; }, 0);
+    if (!totalEntradas) {
+      return '<p class="lead">Nada para comparar — os arquivos marcados como alterados são idênticos ao publicado.</p>';
+    }
+    var html = grupos.map(function (g) {
+      return '<div class="review-group"><h3>' + esc(g.area) + '</h3><ul class="review-list">' +
+        g.entradas.map(function (e) {
+          return '<li class="review-item is-' + e.tipo + '"><span class="review-icon" aria-hidden="true">' + ICONE_TIPO[e.tipo] + '</span>' +
+            '<span>' + e.texto + (e.de !== undefined ? ' <span class="review-fromto">(de "' + esc(String(e.de)) + '" para "' + esc(String(e.para)) + '")</span>' : '') + '</span></li>';
+        }).join('') + '</ul></div>';
+    }).join('');
+    return html;
+  }
+
+  /* Sem esc() aqui: o chamador grava isto em .textContent, não em innerHTML,
+     e o textContent já escapa sozinho — passar por esc() antes faria as
+     entidades (&quot; etc.) aparecerem literalmente na tela em vez de aspas. */
+  function renderRevisaoTecnica(grupos) {
+    var linhas = [];
+    grupos.forEach(function (g) {
+      g.entradas.forEach(function (e) { linhas.push(g.area + ' · ' + e.caminho + (e.de !== undefined ? ' : ' + JSON.stringify(e.de) + ' → ' + JSON.stringify(e.para) : '')); });
+    });
+    return linhas.length ? linhas.join('\n') : 'Nada.';
+  }
+
+  var revisaoResolver = null;
+
+  /* Abre a tela de revisão e devolve uma Promise: resolve com a mensagem de
+     commit (string, pode ser vazia) se a pessoa confirmar, ou com null se
+     cancelar. doPublish só é chamado dentro dessa resolução — nada é
+     publicado enquanto a confirmação final não acontece. */
+  function abrirRevisao() {
+    var paths = Object.keys(state.dirty);
+    var modal = document.getElementById('reviewModal');
+    document.getElementById('reviewBody').innerHTML = '<p class="lead">Carregando comparação…</p>';
+    document.getElementById('reviewTecnico').textContent = '';
+    modal.hidden = false;
+    return ensurePublishedBaseline(paths).then(function () {
+      var grupos = calcularRevisao();
+      document.getElementById('reviewBody').innerHTML = renderRevisaoHtml(grupos);
+      document.getElementById('reviewTecnico').textContent = renderRevisaoTecnica(grupos);
+      document.getElementById('reviewMessage').value = '';
+    });
+  }
+
+  /* {confirmado, mensagem} em vez de só a mensagem: "confirmar sem escrever
+     nada" e "cancelar" são coisas diferentes, e as duas produziriam mensagem
+     vazia se não fossem distinguidas por um campo próprio. */
+  function fecharRevisao(confirmado) {
+    document.getElementById('reviewModal').hidden = true;
+    if (revisaoResolver) {
+      revisaoResolver({ confirmado: confirmado, mensagem: document.getElementById('reviewMessage').value.trim() });
+      revisaoResolver = null;
+    }
   }
 
   /* ---------- construtores de campo ---------- */
@@ -1083,6 +1377,7 @@
       editorEl.innerHTML = '<p>Carregando…</p>';
       api('/api/projects/' + slug).then(function (res) {
         state.projects[slug] = { data: res.data, sha: res.sha };
+        snapshotPublished('content/projects/' + slug + '.json', res.data);
         renderProjectEditor();
       }).catch(function (e) { editorEl.innerHTML = '<p style="color:var(--err)">' + esc(e.message) + '</p>'; });
       return;
@@ -1217,10 +1512,16 @@
     btn.disabled = false;
   }
 
-  function doPublish() {
+  /* mensagemCustom: texto opcional vindo da tela de revisão. Quando
+     preenchido, substitui a mensagem individual de cada arquivo pela mesma
+     mensagem em todos — um commit só, uma frase só. Vazio mantém o padrão
+     'cms: atualiza <arquivo>' de cada um, como sempre foi. */
+  function doPublish(mensagemCustom) {
     var paths = Object.keys(state.dirty);
     if (!paths.length) return;
-    var files = paths.map(function (p) { return { path: p, data: state.dirty[p].data, sha: state.dirty[p].sha, message: state.dirty[p].message }; });
+    var files = paths.map(function (p) {
+      return { path: p, data: state.dirty[p].data, sha: state.dirty[p].sha, message: mensagemCustom || state.dirty[p].message };
+    });
     document.getElementById('btnPublish').disabled = true;
     document.getElementById('publishResult').innerHTML = 'Publicando…';
     setDraftState('publicando');
@@ -1233,6 +1534,10 @@
         }).join('') + '</ul>';
       if (okAll) {
         res.results.forEach(function (r) {
+          /* a linha de base avança para o que acabou de ser publicado —
+             senão a próxima revisão compararia com um estado que já não
+             existe mais no repositório */
+          if (state.dirty[r.path]) snapshotPublished(r.path, state.dirty[r.path].data);
           delete state.dirty[r.path];
           if (r.path === 'content/global.json') state.globalSha = r.sha;
           if (r.path === 'content/home.json') state.homeSha = r.sha;
@@ -1291,7 +1596,20 @@
       var btn = e.target.closest('button[data-panel]');
       if (btn) showPanel(btn.getAttribute('data-panel'));
     });
-    document.getElementById('btnPublish').addEventListener('click', doPublish);
+    /* O clique em Publicar nunca chama doPublish direto: sempre passa pela
+       revisão primeiro. abrirRevisao() só resolve quando a pessoa confirma
+       (mensagem) ou cancela (null) — nada é publicado antes disso. */
+    document.getElementById('btnPublish').addEventListener('click', function () {
+      if (!Object.keys(state.dirty).length) return;
+      revisaoResolver = null;
+      abrirRevisao().then(function () {
+        return new Promise(function (resolve) { revisaoResolver = resolve; });
+      }).then(function (resultado) {
+        if (resultado.confirmado) doPublish(resultado.mensagem || null);
+      });
+    });
+    document.getElementById('btnReviewCancel').addEventListener('click', function () { fecharRevisao(false); });
+    document.getElementById('btnReviewConfirm').addEventListener('click', function () { fecharRevisao(true); });
     document.getElementById('btnDiscard').addEventListener('click', function () {
       if (!confirm('Descartar todas as alterações não publicadas?\n\nIsso também apaga o rascunho salvo neste navegador e volta ao conteúdo publicado.')) return;
       /* apaga o rascunho ANTES de recarregar: sem isso o painel voltaria
@@ -1345,6 +1663,15 @@
       state.global = results[1].data; state.globalSha = results[1].sha;
       state.home = results[2].data; state.homeSha = results[2].sha;
       state.projectsIndex = results[3].data; state.projectsIndexSha = results[3].sha;
+
+      /* Linha de base para a revisão (Fase 3): uma cópia congelada do que
+         está publicado agora, ANTES de qualquer edição. É necessária porque
+         os campos do painel escrevem direto em state.global/home/projects —
+         não existe mais uma cópia "limpa" depois do primeiro clique, então
+         sem isto não haveria contra o que comparar. */
+      snapshotPublished('content/global.json', state.global);
+      snapshotPublished('content/home.json', state.home);
+      snapshotPublished('content/projects/index.json', state.projectsIndex);
 
       document.getElementById('app').hidden = false;
 
