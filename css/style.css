@@ -136,6 +136,87 @@ body.locked{overflow:hidden;height:100dvh}
   transition:transform .55s var(--ease-out-smooth),opacity var(--dur-default) var(--ease-out-smooth)}
 .cursor-glow.on{opacity:1}
 @media(prefers-reduced-motion:reduce),(pointer:coarse){.cursor-glow{display:none}}
+
+/* ===== CURSOR INTERATIVO =====
+   Um glow compacto e exatamente três rastros, todos reaproveitados: nenhum nó
+   é criado durante o movimento. A camada inteira é pointer-events:none, então
+   nada aqui bloqueia clique, hover, arraste ou seleção.
+   O .cursor-glow acima continua existindo: ele é a luz ambiente do fundo
+   (z-index:-1, 273px), coisa diferente do cursor. O que mudou é que os dois
+   passaram a ser movidos pelo mesmo listener e pelo mesmo laço.
+   Cores derivadas da paleta, sem valor solto: --cream para o núcleo quente,
+   --paper-rgb para halo e borda. */
+:root{
+  --cursor-core:var(--cream);
+  --cursor-glow-soft:rgba(var(--paper-rgb),.16);
+  --cursor-border:rgba(var(--paper-rgb),.34);
+}
+.cur-layer{position:fixed;inset:0;z-index:70;pointer-events:none;
+  contain:layout style size}
+.cur-dot,.cur-trail,.cur-label{position:absolute;top:0;left:0;pointer-events:none;
+  will-change:transform}
+/* núcleo: 16px, some por padrão até o ponteiro se mover pela primeira vez */
+.cur-dot{width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+  background:radial-gradient(circle,var(--cursor-core),var(--cursor-glow-soft) 62%,transparent 72%);
+  box-shadow:0 0 12px 2px var(--cursor-glow-soft);
+  opacity:0;transition:opacity var(--dur-micro) var(--ease-soft),
+                       width var(--dur-micro) var(--ease-soft),
+                       height var(--dur-micro) var(--ease-soft),
+                       margin var(--dur-micro) var(--ease-soft)}
+.cur-layer.on .cur-dot{opacity:1}
+/* sobre controle: menor e mais preciso. Sobre card: vira halo atrás do rótulo. */
+.cur-layer.is-control .cur-dot{width:9px;height:9px;margin:-4.5px 0 0 -4.5px}
+.cur-layer.is-card .cur-dot{width:64px;height:64px;margin:-32px 0 0 -32px;opacity:.5}
+
+/* três rastros fixos, cada um menor e mais apagado que o anterior */
+.cur-trail{border-radius:50%;background:var(--cursor-glow-soft);opacity:0;
+  transition:opacity 320ms var(--ease-soft)}
+.cur-trail:nth-child(1){width:11px;height:11px;margin:-5.5px 0 0 -5.5px}
+.cur-trail:nth-child(2){width:8px;height:8px;margin:-4px 0 0 -4px}
+.cur-trail:nth-child(3){width:5px;height:5px;margin:-2.5px 0 0 -2.5px}
+.cur-layer.fast .cur-trail:nth-child(1){opacity:.42}
+.cur-layer.fast .cur-trail:nth-child(2){opacity:.26}
+.cur-layer.fast .cur-trail:nth-child(3){opacity:.14}
+/* sobre card ou controle o rastro sai: ali o cursor precisa ser preciso */
+.cur-layer.is-card .cur-trail,.cur-layer.is-control .cur-trail{opacity:0}
+
+/* rótulo "Ver projeto": centrado no mesmo ponto do núcleo, então o cursor
+   parece crescer e revelar o texto por dentro, sem animar largura. */
+.cur-label{transform-origin:50% 50%;white-space:nowrap;
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.025em;color:var(--paper);
+  padding:.6rem 1.05rem;border-radius:var(--radius-button,100px);
+  background:rgba(var(--ink-rgb),.55);border:1px solid var(--cursor-border);
+  backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);
+  opacity:0;visibility:hidden;
+  transition:opacity var(--dur-micro) var(--ease-soft),
+             transform var(--dur-micro) var(--ease-soft),
+             visibility var(--dur-micro)}
+.cur-layer.is-card .cur-label{opacity:1;visibility:visible}
+
+/* O cursor nativo só desaparece depois que o JS confirma que a camada foi
+   criada e o dispositivo é compatível — a classe é adicionada por último, no
+   fim da inicialização. Se o JS falhar em qualquer ponto antes disso, a classe
+   nunca entra e o ponteiro do sistema continua lá.
+   Campos de texto e áreas editáveis mantêm o cursor nativo: o I-beam informa
+   onde o texto será inserido, e um glow não substitui isso. */
+html.has-custom-cursor,
+html.has-custom-cursor a,
+html.has-custom-cursor button,
+html.has-custom-cursor [role="button"],
+html.has-custom-cursor summary{cursor:none}
+html.has-custom-cursor input,
+html.has-custom-cursor textarea,
+html.has-custom-cursor select,
+html.has-custom-cursor [contenteditable="true"],
+html.has-custom-cursor label{cursor:auto}
+
+/* Sem ponteiro fino, sem hover ou sob movimento reduzido a camada nem é criada
+   pelo JS. Estas regras são a rede de segurança para o caso de o HTML vir de
+   um cache antigo com a camada já no documento. */
+@media(prefers-reduced-motion:reduce),(pointer:coarse),(hover:none){
+  .cur-layer{display:none}
+  html.has-custom-cursor,html.has-custom-cursor a,html.has-custom-cursor button{cursor:auto}
+}
 .orb{position:absolute;border-radius:50%}
 .orb.a{width:88vw;height:88vw;top:-40vw;right:-30vw;background:radial-gradient(circle,rgba(89,79,79,.20),rgba(89,79,79,.06) 44%,transparent 72%)}
 .orb.b{width:76vw;height:76vw;bottom:-36vw;left:-30vw;background:radial-gradient(circle,rgba(64,54,56,.22),rgba(64,54,56,.07) 46%,transparent 74%)}
@@ -771,18 +852,11 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .scene.p3{background:radial-gradient(circle at 64% 36%,rgba(201,189,189,.24),transparent 46%),radial-gradient(circle at 38% 70%,rgba(115,104,104,.18),transparent 50%),radial-gradient(circle at 50% 50%,#251A1C,#100C0D 80%)}
 .scene.p4{background:radial-gradient(circle at 43% 48%,transparent 19%,rgba(184,172,172,.18) 27%,transparent 40%),radial-gradient(circle at 57% 52%,rgba(160,148,148,.22),transparent 36%),radial-gradient(circle at 50% 50%,#251A1C,#100C0D 80%)}
 
-/* visibility:hidden, não só opacity:0. Camada fixa com backdrop-filter continua
-   sendo composta mesmo invisível; escondida de verdade, o navegador a ignora. */
-.card-cue{position:fixed;top:0;left:0;z-index:60;pointer-events:none;
-  transform:translate(-50%,-50%) scale(.7);opacity:0;visibility:hidden;
-  transition:opacity var(--dur-micro) var(--ease-out-smooth),transform var(--dur-micro) var(--ease-out-smooth),
-             visibility var(--dur-micro);
-  font-family:var(--mono);font-size:.72rem;letter-spacing:.025em;color:var(--paper);
-  background:rgba(var(--paper-rgb),.10);border:1px solid rgba(var(--paper-rgb),.22);
-  backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);
-  white-space:nowrap;padding:.7rem 1.2rem;border-radius:var(--radius-button,100px);box-shadow:0 14px 34px rgba(0,0,0,.32)}
-.card-cue.show{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
-@media(pointer:coarse){.card-cue{display:none}}
+/* .card-cue foi removido: o rótulo "Ver projeto" agora vive dentro do próprio
+   cursor (.cur-label), movido pelo mesmo laço. O elemento antigo era posicionado
+   por left/top — propriedades de layout — e dependia de listeners presos aos
+   .card existentes no carregamento, que a grade reconstruída pelo CMS
+   invalidava sem aviso. */
 
 #about{padding-block:0}
 /* Borda limpa contra o fundo escuro: sem máscara, sem névoa, sem orbes
@@ -1280,7 +1354,7 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
   .js .reveal[data-reveal="soft"],
   .js .reveal[data-reveal="soft"].in{filter:none!important}
   .scrub .w{color:inherit}
-  .cursor-glow,.card-cue{display:none}
+  .cursor-glow,.cur-layer{display:none}
   /* nada preso em estado inicial: intro, máscaras, linhas e capacidades */
   .intro-veil{display:none}
   .js .h-step,.js .hn-line,.js .caps-grid li{opacity:1!important;transform:none!important}

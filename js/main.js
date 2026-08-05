@@ -1110,26 +1110,182 @@
     acordar();
   }
 
-  const glow = document.querySelector('.cursor-glow');
-  if (glow && fine && !reduced) {
-    document.addEventListener('mousemove', e => {
-      glow.style.setProperty('--mx', e.clientX + 'px');
-      glow.style.setProperty('--my', e.clientY + 'px');
-      glow.classList.add('on');
-    });
-    document.addEventListener('mouseleave', () => glow.classList.remove('on'));
-  }
+  /* ================== CURSOR INTERATIVO ==================
+     Substitui dois sistemas que existiam antes e se sobrepunham:
+     - .cursor-glow tinha listener próprio de mousemove;
+     - .card-cue tinha OUTRO listener de mousemove e movia por left/top
+       (propriedades de layout), com mouseenter/mouseleave presos aos .card
+       existentes no carregamento — quando content-render.js reconstruía a
+       grade, os cards novos ficavam sem nenhum handler e o rótulo parava de
+       aparecer em silêncio.
+     Agora existe um listener de ponteiro e um laço de rAF só. Os cards são
+     reconhecidos por delegação, então grade reconstruída, troca de idioma e
+     prévia do CMS continuam funcionando sem religar nada.
 
-  const cue = document.querySelector('.card-cue');
-  const cards = document.querySelectorAll('.card');
-  if (cue && fine && cards.length) {
+     A luz ambiente (.cursor-glow, z-index:-1) continua: ela é o fundo do site,
+     não o cursor. O que mudou é que passou a ser movida por este mesmo
+     listener, em vez de ter o dela. */
+  const glow = document.querySelector('.cursor-glow');
+  /* pointer:fine sozinho não basta — um híbrido com caneta reporta fine sem
+     ter hover de verdade. hover:hover é o que garante estado de passagem. */
+  const podeCursor = window.matchMedia('(pointer: fine) and (hover: hover)').matches;
+
+  if (podeCursor && !reduced) {
+    const camada = document.createElement('div');
+    camada.className = 'cur-layer';
+    camada.setAttribute('aria-hidden', 'true');
+    /* três rastros fixos, criados uma vez. Nunca são recriados: durante o
+       movimento só o transform deles muda. */
+    for (let i = 0; i < 3; i++) camada.appendChild(document.createElement('i')).className = 'cur-trail';
+    const ponto = document.createElement('div');
+    ponto.className = 'cur-dot';
+    const rotulo = document.createElement('span');
+    rotulo.className = 'cur-label';
+    rotulo.setAttribute('data-pt', 'Ver projeto');
+    rotulo.setAttribute('data-en', 'View project');
+    /* o texto inicial acompanha o idioma já detectado: o cursor nasce depois
+       do primeiro setLang, então nascer sempre em PT deixaria o rótulo errado
+       até a próxima troca. Das próximas vezes quem atualiza é o próprio
+       setLang, que varre [data-pt] — por isso nada aqui é recriado ao trocar. */
+    rotulo.textContent = (document.documentElement.lang || 'pt').indexOf('en') === 0 ? 'View project' : 'Ver projeto';
+    camada.appendChild(ponto);
+    camada.appendChild(rotulo);
+    document.body.appendChild(camada);
+    /* só depois de a camada existir de verdade */
+    document.documentElement.classList.add('has-custom-cursor');
+
+    const trilhas = [...camada.querySelectorAll('.cur-trail')];
+    let alvoX = innerWidth / 2, alvoY = innerHeight / 2;
+    let x = alvoX, y = alvoY;
+    const tx = [alvoX, alvoX, alvoX], ty = [alvoY, alvoY, alvoY];
+    let rodando = false, ligado = false, rapidoAte = 0;
+    let magneto = null, magnetoMax = 0;
+
+    const LERP = .22;          /* inércia curta: acompanha sem parecer atrasado */
+    const LERP_TRILHA = .3;
+    const VEL_RASTRO = 7;      /* px por amostra: abaixo disso o rastro some */
+
+    const escrever = (el, px, py) => { el.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)'; };
+
+    const laco = () => {
+      /* alvo com magnetismo: puxa em direção ao centro do elemento sob o
+         ponteiro, com teto curto para o cursor nunca parecer descolado do
+         ponteiro real. O clique não muda de lugar: só o desenho se desloca. */
+      let ax = alvoX, ay = alvoY;
+      if (magneto) {
+        const dx = (magneto.cx - alvoX), dy = (magneto.cy - alvoY);
+        const d = Math.hypot(dx, dy) || 1;
+        const puxa = Math.min(magnetoMax, d);
+        ax += (dx / d) * puxa; ay += (dy / d) * puxa;
+      }
+      x += (ax - x) * LERP; y += (ay - y) * LERP;
+      escrever(ponto, x, y);
+      escrever(rotulo, x, y);
+      let px = x, py = y;
+      for (let i = 0; i < 3; i++) {
+        tx[i] += (px - tx[i]) * LERP_TRILHA;
+        ty[i] += (py - ty[i]) * LERP_TRILHA;
+        escrever(trilhas[i], tx[i], ty[i]);
+        px = tx[i]; py = ty[i];
+      }
+      if (performance.now() > rapidoAte) camada.classList.remove('fast');
+      /* para o laço quando tudo assentou: sem movimento não há o que pintar */
+      const parado = Math.abs(ax - x) < .1 && Math.abs(ay - y) < .1 &&
+        Math.abs(tx[2] - x) < .1 && Math.abs(ty[2] - y) < .1;
+      if (parado && performance.now() > rapidoAte) { rodando = false; return; }
+      requestAnimationFrame(laco);
+    };
+    const acordarCursor = () => { if (!rodando) { rodando = true; requestAnimationFrame(laco); } };
+
+    let ultimoX = alvoX, ultimoY = alvoY, primeiraAmostra = true;
     document.addEventListener('mousemove', e => {
-      cue.style.left = e.clientX + 'px';
-      cue.style.top = e.clientY + 'px';
+      alvoX = e.clientX; alvoY = e.clientY;
+      /* A primeira amostra não vira velocidade: sem isto ela seria medida
+         contra o centro da viewport (o chute inicial) e o cursor entraria
+         piscando um rastro que nenhum movimento real produziu. Na primeira
+         vez o cursor também salta direto para o ponteiro, em vez de deslizar
+         do centro da tela até ele. */
+      if (primeiraAmostra) {
+        primeiraAmostra = false;
+        ultimoX = alvoX; ultimoY = alvoY;
+        x = alvoX; y = alvoY;
+        for (let i = 0; i < 3; i++) { tx[i] = alvoX; ty[i] = alvoY; }
+      }
+      /* rastro por velocidade, não por intervalo fixo: um movimento mínimo
+         não pode gerar rastro. */
+      else if (Math.hypot(alvoX - ultimoX, alvoY - ultimoY) > VEL_RASTRO) {
+        camada.classList.add('fast');
+        rapidoAte = performance.now() + 380;   /* dentro da faixa 250–450ms */
+      }
+      ultimoX = alvoX; ultimoY = alvoY;
+      if (!ligado) { ligado = true; camada.classList.add('on'); }
+      if (glow) {
+        glow.style.setProperty('--mx', alvoX + 'px');
+        glow.style.setProperty('--my', alvoY + 'px');
+        glow.classList.add('on');
+      }
+      acordarCursor();
+    }, { passive: true });
+
+    document.addEventListener('mouseleave', () => {
+      ligado = false;
+      camada.classList.remove('on', 'fast', 'is-card', 'is-control');
+      if (glow) glow.classList.remove('on');
     });
-    cards.forEach(card => {
-      card.addEventListener('mouseenter', () => cue.classList.add('show'));
-      card.addEventListener('mouseleave', () => cue.classList.remove('show'));
+
+    /* ---- estados por delegação ----
+       mouseover/mouseout sobem na árvore, então cards e controles criados
+       depois do carregamento (grade reconstruída pelo CMS, menu injetado)
+       são reconhecidos sem religar nada e sem acumular listener. */
+    const SEL_CARD = '.card';
+    const SEL_CONTROLE = 'a,button,[role="button"],summary,.menu-item,.faq-q,.hi-q,.lp-toggle,.menu-btn,.nav-cta';
+    const SEL_TEXTO = 'input,textarea,select,[contenteditable="true"]';
+
+    const medirMagneto = el => {
+      const r = el.getBoundingClientRect();
+      return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+    };
+
+    document.addEventListener('mouseover', e => {
+      const alvo = e.target;
+      /* campos de texto e áreas editáveis mantêm o cursor nativo: o efeito
+         some ali em vez de disputar com o I-beam. */
+      if (alvo.closest && alvo.closest(SEL_TEXTO)) {
+        camada.classList.remove('is-card', 'is-control');
+        camada.style.opacity = '0';
+        magneto = null;
+        return;
+      }
+      camada.style.opacity = '';
+      const card = alvo.closest && alvo.closest(SEL_CARD);
+      /* com overlay aberto, card atrás do menu não vale */
+      if (card && !document.body.classList.contains('locked')) {
+        camada.classList.add('is-card');
+        camada.classList.remove('is-control');
+        magneto = medirMagneto(card); magnetoMax = 5;
+        acordarCursor();
+        return;
+      }
+      const ctrl = alvo.closest && alvo.closest(SEL_CONTROLE);
+      camada.classList.remove('is-card');
+      if (ctrl) {
+        camada.classList.add('is-control');
+        magneto = medirMagneto(ctrl); magnetoMax = 4;   /* faixa 2–5px */
+      } else {
+        camada.classList.remove('is-control');
+        magneto = null;
+      }
+      acordarCursor();
+    }, { passive: true });
+
+    /* o retângulo guardado envelhece quando a página rola ou muda de tamanho;
+       zerar é mais barato e mais seguro que remedir a cada quadro */
+    const zerarMagneto = () => { magneto = null; };
+    window.addEventListener('scroll', zerarMagneto, { passive: true });
+    window.addEventListener('resize', zerarMagneto, { passive: true });
+    /* aba em segundo plano não precisa de laço; ao voltar, ele reacende */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') acordarCursor();
     });
   }
 
