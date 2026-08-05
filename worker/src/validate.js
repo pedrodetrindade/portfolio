@@ -22,10 +22,16 @@ var MAX_UPLOAD_BYTES = 5 * 1024 * 1024; /* 5MB por arquivo */
 /* .pdf entrou por causa do currículo da seção Sobre, que o painel troca sem
    passar por código. A lista continua fechada: qualquer extensão fora dela é
    recusada antes de o arquivo chegar ao GitHub. */
-var ALLOWED_UPLOAD_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.pdf'];
+/* .gif, .mp4 e .webm entraram com os blocos de mídia da página de projeto.
+   O teto de 5MB por arquivo continua valendo para todos: vídeo de verdade não
+   cabe nele e deve ir para o Vimeo, que é justamente por isso que o bloco de
+   vídeo tem os dois modos. Subir o teto encostaria no limite de blob da API do
+   GitHub e deixaria o repositório pesado para quem clona. */
+var ALLOWED_UPLOAD_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif', '.mp4', '.webm', '.pdf'];
 var ALLOWED_UPLOAD_MIME = {
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
   '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+  '.gif': 'image/gif', '.mp4': 'video/mp4', '.webm': 'video/webm',
   '.pdf': 'application/pdf'
 };
 

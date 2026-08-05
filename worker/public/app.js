@@ -197,7 +197,9 @@
 
   /* mesma régua do Worker, reaplicada aqui só para avisar cedo — quem decide
      continua sendo o Worker */
-  var EXT_MIDIA = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.pdf'];
+  /* Espelha ALLOWED_UPLOAD_EXT de worker/src/validate.js. Quem decide é o
+     Worker; isto existe para o erro aparecer na hora de escolher o arquivo. */
+  var EXT_MIDIA = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif', '.mp4', '.webm', '.pdf'];
   var MAX_MIDIA_BYTES = 5 * 1024 * 1024;
   function sanitizarNome(nome) {
     var baixo = String(nome || '').toLowerCase().trim();
@@ -476,6 +478,10 @@
 
   function rotuloDoItem(item) {
     if (!ehObjeto(item)) return String(item);
+    /* Bloco de projeto antes do resto: sem isto, a revisão dizia "item
+       adicionado" para um bloco de texto, porque nenhuma das chaves abaixo
+       existe nele. Agora diz qual bloco é, do mesmo jeito que o editor. */
+    if (item.type && resumoDoBloco) return resumoDoBloco(item);
     return item.titlePt || item.qPt || item.pt || item.slug || item.src || 'item';
   }
 
@@ -815,11 +821,22 @@
 
   /* Monta a URL do iframe declarando a origem do painel, para o site poder
      validar event.origin sem ter nenhum endereço fixo no código. */
-  function urlDaPrevia(extra) {
+  /* `caminho` aponta a prévia para outra página do mesmo site — hoje só a de
+     um projeto (work/<slug>.html). Sem ele, editar um case mostrava a Home:
+     o painel mandava os dados do projeto para uma página que não os usa, e
+     quem editava não via nada mudar. O slug é conferido antes de virar
+     caminho, porque ele acaba dentro de uma URL. */
+  function urlDaPrevia(extra, caminho) {
     var u = new URL(state.previewUrl, location.href);
+    if (caminho) u.pathname = u.pathname.replace(/\/?$/, '/') + caminho;
     u.searchParams.set('cmsOrigin', location.origin);
     if (extra) Object.keys(extra).forEach(function (k) { u.searchParams.set(k, extra[k]); });
     return u.toString();
+  }
+
+  function caminhoDaPreviaDoProjeto() {
+    var s = state.editingSlug;
+    return (typeof s === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s)) ? 'work/' + s + '.html' : '';
   }
 
   function postToPreviews(msg) {
@@ -868,7 +885,7 @@
         (n === 1 ? '1 alteração não publicada' : n + ' alterações não publicadas');
     });
   }
-  function previewBlock() {
+  function previewBlock(caminho) {
     if (!state.previewUrl) {
       return '<div class="group" style="margin-bottom:1.2rem"><div class="group-body">' +
         fieldRow('URL da prévia', 'Endereço do site (local ou publicado) usado só para você ver o efeito das mudanças aqui no painel.',
@@ -907,7 +924,7 @@
         '</span>' +
       '</div>' +
       '<div class="preview-stage">' +
-        '<iframe class="preview-frame" src="' + esc(urlDaPrevia()) + '"></iframe>' +
+        '<iframe class="preview-frame" src="' + esc(urlDaPrevia(null, caminho)) + '"></iframe>' +
       '</div></div>';
   }
 
@@ -928,30 +945,42 @@
     });
   }
   window.addEventListener('resize', aplicarEscalaPrevia);
-  function wirePreviewBlock(slotId) {
+  /* Refaz todas as prévias de uma vez, cada uma com o caminho que é o dela.
+     Era `[...].forEach(wirePreviewBlock)`, que funcionava enquanto a função
+     tinha um parâmetro só; com o segundo, o forEach passaria o ÍNDICE como
+     caminho e a segunda e a terceira prévias tentariam abrir /1 e /2. */
+  var SLOTS_DE_PREVIA = ['previewSlotAppearance', 'previewSlotLayout', 'previewSlotHome', 'previewSlotProject'];
+
+  function remontarPrevias(limpar) {
+    SLOTS_DE_PREVIA.forEach(function (id) {
+      var s = document.getElementById(id);
+      if (limpar && s) s.innerHTML = '';
+      wirePreviewBlock(id, id === 'previewSlotProject' ? caminhoDaPreviaDoProjeto() : '');
+    });
+  }
+
+  function wirePreviewBlock(slotId, caminho) {
     var slot = document.getElementById(slotId);
     if (!slot) return;
     /* Não redesenha se a prévia já está montada com a mesma URL: recriar o
        <iframe> recarrega o site inteiro e perde a rolagem, e os painéis
-       re-renderizam a cada item adicionado ou removido de uma lista. */
+       re-renderizam a cada item adicionado ou removido de uma lista.
+       A comparação inclui o caminho, senão trocar de projeto deixaria a
+       prévia do anterior na tela. */
     var current = slot.querySelector('.preview-frame');
-    if (current && state.previewUrl && current.getAttribute('src') === urlDaPrevia()) return;
-    slot.innerHTML = previewBlock();
+    if (current && state.previewUrl && current.getAttribute('src') === urlDaPrevia(null, caminho)) return;
+    slot.innerHTML = previewBlock(caminho);
     var setBtn = slot.querySelector('#btnSetPreview');
     if (setBtn) setBtn.addEventListener('click', function () {
       var v = slot.querySelector('#previewUrlInput').value.trim();
       if (!v) return;
       state.previewUrl = v; localStorage.setItem('cms_preview_url', v);
-      ['previewSlotAppearance', 'previewSlotLayout', 'previewSlotHome'].forEach(wirePreviewBlock);
+      remontarPrevias(false);
     });
     var changeBtn = slot.querySelector('[data-change-preview]');
     if (changeBtn) changeBtn.addEventListener('click', function () {
       state.previewUrl = ''; localStorage.removeItem('cms_preview_url');
-      ['previewSlotAppearance', 'previewSlotLayout', 'previewSlotHome'].forEach(function (id) {
-        var s = document.getElementById(id);
-        if (s) s.innerHTML = '';
-        wirePreviewBlock(id);
-      });
+      remontarPrevias(true);
     });
     var frame = slot.querySelector('.preview-frame');
     /* Reenvia o rascunho a cada carga do iframe. É o que faz "Atualizar"
@@ -1165,22 +1194,64 @@
      bloco: {marginTop:{desktop,tablet,mobile}, marginBottom:{...}, gap:{...}}.
      Ausente = bloco sem nenhuma personalização, e o site usa o espaçamento
      que já existia (ver js/content-render.js, blockStyleCss). */
+  /* NÃO materializa o objeto de espaçamento só por desenhar a tela. A versão
+     anterior fazia `target[key] || (target[key] = {})` e preenchia os três
+     níveis com null: abrir um projeto para editar já sujava o arquivo e
+     gravava um bloco de nulls em CADA bloco, sem ninguém ter mexido em nada.
+     Na revisão isso aparecia como "desktop alterado / tablet alterado /
+     mobile alterado" em blocos intocados, e ia junto no commit.
+     Agora o objeto nasce local, só para a tela, e só vai para o dado quando
+     existe um valor de verdade; limpar o último valor remove o objeto. */
+  function nivelVazio() { return { desktop: null, tablet: null, mobile: null }; }
+
+  function espacamentoVazio(s) {
+    if (!s) return true;
+    return Object.keys(s).every(function (campo) {
+      var n = s[campo];
+      return !n || ['desktop', 'tablet', 'mobile'].every(function (d) { return n[d] == null; });
+    });
+  }
+
   function blockSpacingFields(target, key, onSave, includeGap) {
-    var spacing = target[key] || (target[key] = {});
-    if (!spacing.marginTop) spacing.marginTop = { desktop: null, tablet: null, mobile: null };
-    if (!spacing.marginBottom) spacing.marginBottom = { desktop: null, tablet: null, mobile: null };
-    if (includeGap && !spacing.gap) spacing.gap = { desktop: null, tablet: null, mobile: null };
+    var atual = target[key] || {};
+    /* Cada nível ganha um objeto PRÓPRIO, nunca um compartilhado: é a
+       referência viva que tieredSpacingField usa depois para decidir se o
+       campo mostra "próprio" ou "herdando de Desktop". Com um objeto único
+       para todos os campos, o selo de um bloco falaria pelo outro. Quando o
+       dado já existe, a visão é o próprio dado, e escrever atualiza os dois
+       de uma vez. */
+    var visao = {
+      marginTop: atual.marginTop || nivelVazio(),
+      marginBottom: atual.marginBottom || nivelVazio(),
+      gap: atual.gap || nivelVazio()
+    };
+    function escrever(campo, dev, v) {
+      visao[campo][dev] = v;
+      var s = target[key];
+      if (v == null) {
+        /* limpar não pode criar o objeto que a limpeza deveria remover */
+        if (s && s[campo]) {
+          s[campo][dev] = null;
+          if (espacamentoVazio(s)) delete target[key];
+        }
+      } else {
+        s = target[key] || (target[key] = {});
+        if (!s[campo]) s[campo] = nivelVazio();
+        s[campo][dev] = v;
+      }
+      onSave();
+    }
     var html =
-      tieredSpacingField('Espaço antes', 'margin-top', spacing.marginTop, LIMITS.spacing[0], LIMITS.spacing[1],
-        function (dev, v) { spacing.marginTop[dev] = v; onSave(); },
-        function (dev) { spacing.marginTop[dev] = null; onSave(); renderProjectEditor(); }, 0, 'padrão do site') +
-      tieredSpacingField('Espaço depois', 'margin-bottom', spacing.marginBottom, LIMITS.spacing[0], LIMITS.spacing[1],
-        function (dev, v) { spacing.marginBottom[dev] = v; onSave(); },
-        function (dev) { spacing.marginBottom[dev] = null; onSave(); renderProjectEditor(); }, 0, 'padrão do site');
+      tieredSpacingField('Espaço antes', 'margin-top', visao.marginTop, LIMITS.spacing[0], LIMITS.spacing[1],
+        function (dev, v) { escrever('marginTop', dev, v); },
+        function (dev) { escrever('marginTop', dev, null); renderProjectEditor(); }, 0, 'padrão do site') +
+      tieredSpacingField('Espaço depois', 'margin-bottom', visao.marginBottom, LIMITS.spacing[0], LIMITS.spacing[1],
+        function (dev, v) { escrever('marginBottom', dev, v); },
+        function (dev) { escrever('marginBottom', dev, null); renderProjectEditor(); }, 0, 'padrão do site');
     if (includeGap) {
-      html += tieredSpacingField('Espaço entre elementos', 'gap', spacing.gap, LIMITS.gap[0], LIMITS.gap[1],
-        function (dev, v) { spacing.gap[dev] = v; onSave(); },
-        function (dev) { spacing.gap[dev] = null; onSave(); renderProjectEditor(); }, 0, 'padrão do site');
+      html += tieredSpacingField('Espaço entre elementos', 'gap', visao.gap, LIMITS.gap[0], LIMITS.gap[1],
+        function (dev, v) { escrever('gap', dev, v); },
+        function (dev) { escrever('gap', dev, null); renderProjectEditor(); }, 0, 'padrão do site');
     }
     return html;
   }
@@ -1683,6 +1754,209 @@
     return ' data-sec="' + key + '"' + (projectSectionOpen[key] ? ' open' : '');
   }
 
+  /* ===== EDITOR DE BLOCOS =====
+     Antes existiam dois grupos fixos no editor: "contexto/processo/resultado"
+     e "galeria". Eles não editavam blocos, editavam POSIÇÕES: o primeiro
+     mostrava todo bloco de texto que existisse, o segundo só o primeiro bloco
+     de galeria. Não dava para reordenar, nem acrescentar, nem sequer ver um
+     segundo bloco de galeria.
+     Agora cada bloco é um grupo próprio, na ordem do arquivo, com subir,
+     descer, duplicar e remover. A lista de tipos espelha TIPOS_DE_BLOCO de
+     js/content-render.js e CHAVES_DE_BLOCO de worker/src/validate.js — quem
+     decide continua sendo o Worker, que revalida na publicação. */
+  var TIPOS_DE_BLOCO_PAINEL = [
+    ['text', 'Texto'], ['image', 'Imagem'], ['gallery', 'Galeria'],
+    ['quote', 'Citação'], ['video', 'Vídeo']
+  ];
+
+  function resumoDoBloco(b) {
+    if (b.type === 'text') return 'Texto — ' + (b.labelPt || 'sem rótulo');
+    if (b.type === 'gallery') return 'Galeria — ' + ((b.images || []).length) + ' imagens';
+    if (b.type === 'image') return 'Imagem — ' + (b.src ? b.src.split('/').pop() : 'sem arquivo');
+    if (b.type === 'quote') return 'Citação — ' + String(b.quotePt || '').slice(0, 40);
+    if (b.type === 'video') return 'Vídeo — ' + (b.mode === 'vimeo' ? 'Vimeo' : 'arquivo');
+    return String(b.type);
+  }
+
+  /* Bloco recém-criado nasce com todos os campos do tipo já presentes, mesmo
+     vazios. É o mesmo princípio do projetoNovo: um objeto meio montado é o que
+     produz campo aparecendo e sumindo conforme a pessoa digita. */
+  function blocoNovo(tipo) {
+    if (tipo === 'text') return { type: 'text', labelPt: '', labelEn: '', textPt: '', textEn: '' };
+    if (tipo === 'gallery') return { type: 'gallery', images: [] };
+    if (tipo === 'image') return { type: 'image', src: '', alt: '', fit: 'cover', width: 'content', captionPt: '', captionEn: '' };
+    if (tipo === 'quote') return { type: 'quote', quotePt: '', quoteEn: '', authorPt: '', authorEn: '' };
+    if (tipo === 'video') return { type: 'video', mode: 'file', src: '', poster: '', captionPt: '', captionEn: '' };
+    return null;
+  }
+
+  function selectDe(id, valor, opcoes) {
+    return '<select id="' + id + '">' + opcoes.map(function (o) {
+      return '<option value="' + o[0] + '"' + (valor === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>';
+    }).join('') + '</select>';
+  }
+
+  function camposDoBloco(b, i) {
+    var p = 'pe_bl_' + i + '_';
+    var meio = 'style="max-width:160px"';
+    if (b.type === 'text') {
+      return fieldRow('Rótulo (PT / EN)', '"contexto", "processo"', inp(p + 'lpt', b.labelPt, ' ' + meio) + inp(p + 'len', b.labelEn, ' ' + meio)) +
+        fieldRow('Texto (PT)', '', ta(p + 'tpt', b.textPt)) +
+        fieldRow('Texto (EN)', '', ta(p + 'ten', b.textEn));
+    }
+    if (b.type === 'quote') {
+      return fieldRow('Citação (PT)', '', ta(p + 'qpt', b.quotePt)) +
+        fieldRow('Citação (EN)', '', ta(p + 'qen', b.quoteEn)) +
+        fieldRow('Autor (PT / EN)', 'opcional', inp(p + 'apt', b.authorPt, ' ' + meio) + inp(p + 'aen', b.authorEn, ' ' + meio));
+    }
+    if (b.type === 'image') {
+      return fieldRow('Arquivo', 'envie aqui ou cole um caminho de assets/', inp(p + 'src', b.src) + '<input type="file" id="' + p + 'up" accept="image/*">') +
+        fieldRow('Texto alternativo', 'descreve a imagem para quem não a vê', inp(p + 'alt', b.alt)) +
+        fieldRow('Enquadramento', 'Recortada mantém 16/9; proporção livre deixa a imagem mandar na altura (peça vertical, captura de tela, GIF).',
+          selectDe(p + 'fit', b.fit || 'cover', [['cover', 'Recortada em 16/9'], ['auto', 'Proporção livre']])) +
+        fieldRow('Largura', '', selectDe(p + 'wid', b.width || 'content', [['content', 'Coluna de conteúdo'], ['full', 'De ponta a ponta']])) +
+        fieldRow('Legenda (PT / EN)', 'opcional', inp(p + 'cpt', b.captionPt, ' ' + meio) + inp(p + 'cen', b.captionEn, ' ' + meio));
+    }
+    if (b.type === 'gallery') {
+      var imgs = b.images || [];
+      return imgs.map(function (im, j) {
+        return fieldRow('Imagem ' + (j + 1), '',
+          inp(p + 'img' + j, im.src) +
+          '<input type="file" id="' + p + 'imgup' + j + '" accept="image/*">' +
+          '<button class="btn small danger" data-bl-imgrm="' + i + ':' + j + '">remover</button>') +
+          fieldRow('Texto alternativo ' + (j + 1), '', inp(p + 'alt' + j, im.alt));
+      }).join('') + '<button class="btn small" data-bl-imgadd="' + i + '">+ adicionar imagem</button>';
+    }
+    if (b.type === 'video') {
+      var ehVimeo = b.mode === 'vimeo';
+      return fieldRow('Origem', 'Arquivo tem teto de 5MB. Vídeo de verdade vai para o Vimeo.',
+          selectDe(p + 'mode', b.mode || 'file', [['file', 'Arquivo no repositório'], ['vimeo', 'Vimeo']])) +
+        (ehVimeo
+          ? fieldRow('Endereço do Vimeo', 'cole o link do vídeo', inp(p + 'vurl', (b.vimeo && b.vimeo.url) || '')) +
+            '<div class="hint" id="' + p + 'vmsg"></div>'
+          : fieldRow('Arquivo', 'mp4 ou webm', inp(p + 'src', b.src) + '<input type="file" id="' + p + 'up" accept="video/mp4,video/webm">')) +
+        fieldRow('Imagem de espera', 'opcional, aparece antes de o vídeo tocar', inp(p + 'poster', b.poster)) +
+        fieldRow('Legenda (PT / EN)', 'opcional', inp(p + 'cpt', b.captionPt, ' ' + meio) + inp(p + 'cen', b.captionEn, ' ' + meio));
+    }
+    return '';
+  }
+
+  function ligarBlocos(P, slug, save, rerender) {
+    var blocos = P.blocks;
+    /* Reordenar, duplicar e remover mexem em índice, e todo id da tela carrega
+       o índice antigo. Por isso essas três sempre redesenham o editor inteiro
+       em vez de tentar remendar o DOM. */
+    function mover(i, delta) {
+      var j = i + delta;
+      if (j < 0 || j >= blocos.length) return;
+      var t = blocos[i]; blocos[i] = blocos[j]; blocos[j] = t;
+      save(); rerender();
+    }
+    blocos.forEach(function (b, i) {
+      var p = 'pe_bl_' + i + '_';
+      var campo = function (id, fn) { bindText(p + id, function (v) { fn(v); save(); }); };
+      var sel = function (id, fn) {
+        var el = document.getElementById(p + id);
+        if (el) el.addEventListener('change', function (e) { fn(e.target.value); save(); rerender(); });
+      };
+      if (b.type === 'text') {
+        campo('lpt', function (v) { b.labelPt = v; }); campo('len', function (v) { b.labelEn = v; });
+        campo('tpt', function (v) { b.textPt = v; }); campo('ten', function (v) { b.textEn = v; });
+      }
+      if (b.type === 'quote') {
+        campo('qpt', function (v) { b.quotePt = v; }); campo('qen', function (v) { b.quoteEn = v; });
+        campo('apt', function (v) { b.authorPt = v; }); campo('aen', function (v) { b.authorEn = v; });
+      }
+      if (b.type === 'image') {
+        campo('src', function (v) { b.src = v; }); campo('alt', function (v) { b.alt = v; });
+        campo('cpt', function (v) { b.captionPt = v; }); campo('cen', function (v) { b.captionEn = v; });
+        sel('fit', function (v) { b.fit = v; }); sel('wid', function (v) { b.width = v; });
+        var up = document.getElementById(p + 'up');
+        if (up) up.addEventListener('change', function () {
+          uploadFile(up.files[0], slug, function (path) { b.src = path; save(); rerender(); });
+        });
+      }
+      if (b.type === 'gallery') {
+        (b.images || []).forEach(function (im, j) {
+          campo('img' + j, function (v) { im.src = v; });
+          campo('alt' + j, function (v) { im.alt = v; });
+          var iu = document.getElementById(p + 'imgup' + j);
+          if (iu) iu.addEventListener('change', function () {
+            uploadFile(iu.files[0], slug, function (path) { im.src = path; save(); rerender(); });
+          });
+        });
+      }
+      if (b.type === 'video') {
+        campo('poster', function (v) { b.poster = v; });
+        campo('cpt', function (v) { b.captionPt = v; }); campo('cen', function (v) { b.captionEn = v; });
+        sel('mode', function (v) {
+          b.mode = v;
+          /* trocar de origem limpa a outra, para não deixar um objeto meio
+             preenchido que o Worker recusaria depois */
+          if (v === 'vimeo') { delete b.src; } else { delete b.vimeo; b.src = b.src || ''; }
+        });
+        if (b.mode === 'file') {
+          campo('src', function (v) { b.src = v; });
+          var vu = document.getElementById(p + 'up');
+          if (vu) vu.addEventListener('change', function () {
+            uploadFile(vu.files[0], slug, function (path) { b.src = path; save(); rerender(); });
+          });
+        } else {
+          var msg = document.getElementById(p + 'vmsg');
+          bindText(p + 'vurl', function (v) {
+            var cfg = parseVimeoNoPainel(v);
+            if (cfg) { b.vimeo = { url: v.trim(), videoId: cfg.videoId, hash: cfg.hash }; if (msg) msg.textContent = 'Vídeo ' + cfg.videoId + '.'; }
+            else { if (msg) msg.textContent = v.trim() ? 'Endereço do Vimeo não reconhecido.' : ''; }
+            save();
+          });
+        }
+      }
+    });
+
+    var q = function (sel) { return document.querySelectorAll(sel); };
+    q('[data-bl-sobe]').forEach(function (el) {
+      el.addEventListener('click', function () { mover(Number(el.getAttribute('data-bl-sobe')), -1); });
+    });
+    q('[data-bl-desce]').forEach(function (el) {
+      el.addEventListener('click', function () { mover(Number(el.getAttribute('data-bl-desce')), 1); });
+    });
+    q('[data-bl-dup]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var i = Number(el.getAttribute('data-bl-dup'));
+        blocos.splice(i + 1, 0, JSON.parse(JSON.stringify(blocos[i])));
+        save(); rerender();
+      });
+    });
+    q('[data-bl-remove]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var i = Number(el.getAttribute('data-bl-remove'));
+        if (!confirm('Remover o bloco "' + resumoDoBloco(blocos[i]) + '"?')) return;
+        blocos.splice(i, 1); save(); rerender();
+      });
+    });
+    q('[data-bl-imgadd]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var b = blocos[Number(el.getAttribute('data-bl-imgadd'))];
+        if (!Array.isArray(b.images)) b.images = [];
+        b.images.push({ src: '', alt: '' }); save(); rerender();
+      });
+    });
+    q('[data-bl-imgrm]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var par = el.getAttribute('data-bl-imgrm').split(':');
+        blocos[Number(par[0])].images.splice(Number(par[1]), 1); save(); rerender();
+      });
+    });
+    var add = document.getElementById('pe_bl_add');
+    if (add) add.addEventListener('click', function () {
+      var novo = blocoNovo(document.getElementById('pe_bl_tipo').value);
+      if (!novo) return;
+      blocos.push(novo);
+      projectSectionOpen['bloco-' + (blocos.length - 1)] = true;
+      save(); rerender();
+    });
+  }
+
   function renderProjectEditor() {
     var slug = state.editingSlug;
     var editorEl = document.getElementById('projectEditor');
@@ -1699,8 +1973,11 @@
     }
     var P = cached.data;
     var indexEntry = state.projectsIndex.projects.filter(function (x) { return x.slug === slug; })[0];
-    var textBlocks = P.blocks.filter(function (b) { return b.type === 'text'; });
-    var galleryBlock = P.blocks.filter(function (b) { return b.type === 'gallery'; })[0] || { images: [] };
+    if (!Array.isArray(P.blocks)) P.blocks = [];
+    /* A prévia do editor de projeto abre a página DO projeto, não a Home:
+       schedulePreview já mandava os dados do projeto, mas não havia nenhuma
+       prévia nesta aba, então quem montava um case fazia isso às cegas. */
+    wirePreviewBlock('previewSlotProject', caminhoDaPreviaDoProjeto());
 
     editorEl.innerHTML =
       '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
@@ -1720,26 +1997,28 @@
       deviceTabsHtml('cover-spacing') +
       blockSpacingFields(P, 'coverSpacing', function () { save(); }, false) +
       '</div></details>' +
-      '<details class="group"' + projectSection('blocks') + '><summary>Contexto / processo / resultado</summary><div class="group-body">' +
-      textBlocks.map(function (b, i) {
-        return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
-          '<b>' + esc(b.labelPt) + '</b>' +
-          fieldRow('Texto (PT)', '', '<textarea id="pe_block_' + i + '_pt">' + esc(b.textPt) + '</textarea>') +
-          fieldRow('Texto (EN)', '', '<textarea id="pe_block_' + i + '_en">' + esc(b.textEn) + '</textarea>') +
+      P.blocks.map(function (b, i) {
+        return '<details class="group"' + projectSection('bloco-' + i) + '><summary>' +
+          esc((i + 1) + '. ' + resumoDoBloco(b)) + '</summary><div class="group-body">' +
+          camposDoBloco(b, i) +
+          '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
+          '<b>Espaçamento</b>' +
           deviceTabsHtml('block-spacing-' + i) +
-          blockSpacingFields(b, 'spacing', function () { save(); }, false) +
-          '</div>';
-      }).join('') + '</div></details>' +
-      '<details class="group"' + projectSection('gallery') + '><summary>Galeria (' + galleryBlock.images.length + ' imagens)</summary><div class="group-body">' +
-      galleryBlock.images.map(function (img, i) {
-        return fieldRow('Imagem ' + (i + 1), '', '<input type="text" id="pe_gal_' + i + '" value="' + esc(img.src) + '">' +
-          '<button class="btn small danger" data-gal-remove="' + i + '">remover</button>');
-      }).join('') + '<button class="btn small" id="pe_gal_add">+ adicionar imagem</button>' +
-      '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
-      '<b data-pt="Espaçamento da galeria">Espaçamento da galeria</b>' +
-      deviceTabsHtml('gallery-spacing') +
-      blockSpacingFields(galleryBlock, 'spacing', function () { save(); }, true) +
-      '</div></details>';
+          blockSpacingFields(b, 'spacing', function () { save(); }, b.type === 'gallery') +
+          '</div>' +
+          '<div class="bloco-acoes">' +
+          '<button class="btn small" data-bl-sobe="' + i + '"' + (i === 0 ? ' disabled' : '') + '>↑ subir</button>' +
+          '<button class="btn small" data-bl-desce="' + i + '"' + (i === P.blocks.length - 1 ? ' disabled' : '') + '>↓ descer</button>' +
+          '<button class="btn small" data-bl-dup="' + i + '">duplicar</button>' +
+          '<button class="btn small danger" data-bl-remove="' + i + '">remover bloco</button>' +
+          '</div></div></details>';
+      }).join('') +
+      '<div class="bloco-novo">' +
+      '<select id="pe_bl_tipo">' + TIPOS_DE_BLOCO_PAINEL.map(function (t) {
+        return '<option value="' + t[0] + '">' + esc(t[1]) + '</option>';
+      }).join('') + '</select>' +
+      '<button class="btn small" id="pe_bl_add">+ adicionar bloco</button>' +
+      '</div>';
 
     /* schedulePreview aqui também: sem isso o editor de projeto era o único
        lugar do painel que alterava conteúdo sem avisar a prévia. */
@@ -1756,17 +2035,7 @@
     bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); });
     document.getElementById('pe_status').addEventListener('change', function (e) { P.status = e.target.value; save(); });
     document.getElementById('pe_year').addEventListener('change', function (e) { P.year = Number(e.target.value); indexEntry.year = P.year; save(); });
-    textBlocks.forEach(function (b, i) {
-      bindText('pe_block_' + i + '_pt', function (v) { b.textPt = v; save(); });
-      bindText('pe_block_' + i + '_en', function (v) { b.textEn = v; save(); });
-    });
-    galleryBlock.images.forEach(function (img, i) {
-      bindText('pe_gal_' + i, function (v) { img.src = v; save(); });
-      var rm = document.querySelector('[data-gal-remove="' + i + '"]');
-      if (rm) rm.addEventListener('click', function () { galleryBlock.images.splice(i, 1); save(); renderProjectEditor(); });
-    });
-    var addBtn = document.getElementById('pe_gal_add');
-    if (addBtn) addBtn.addEventListener('click', function () { galleryBlock.images.push({ src: '', alt: '' }); save(); renderProjectEditor(); });
+    ligarBlocos(P, slug, save, renderProjectEditor);
     var coverUpload = document.getElementById('pe_cover_upload');
     if (coverUpload) coverUpload.addEventListener('change', function () { uploadFile(coverUpload.files[0], slug, function (path) {
       P.cover = path; indexEntry.cover = path; save(); markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); renderProjectEditor();
@@ -1786,7 +2055,7 @@
   function uploadFile(file, slug, onDone) {
     if (!file) return;
     var nome = sanitizarNome(file.name);
-    if (!nome) { toast('Extensão não permitida. Use jpg, png, webp, svg ou pdf.', 'err'); return; }
+    if (!nome) { toast('Extensão não permitida. Use jpg, png, webp, gif, svg, mp4, webm ou pdf.', 'err'); return; }
     if (file.size > MAX_MIDIA_BYTES) {
       toast('Arquivo maior que ' + Math.round(MAX_MIDIA_BYTES / 1024 / 1024) + 'MB.', 'err'); return;
     }

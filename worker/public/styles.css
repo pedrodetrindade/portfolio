@@ -237,3 +237,15 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
   .nav{display:none}
   .field{grid-template-columns:1fr}
 }
+
+/* Ações de bloco (subir, descer, duplicar, remover) e a linha de adicionar.
+   Ficam numa faixa própria, separada dos campos por uma hairline, para não
+   parecerem mais um campo do formulário. */
+.bloco-acoes{display:flex;flex-wrap:wrap;gap:.5rem;
+  border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem}
+.bloco-acoes .btn.small:disabled{opacity:.4;cursor:not-allowed}
+.bloco-novo{display:flex;gap:.5rem;align-items:center;margin-top:.9rem}
+.bloco-novo select{max-width:180px}
+/* O texto de retorno do Vimeo mora fora de .field, então não herda o .hint
+   de label; repete o mesmo tamanho e cor para ler como um. */
+.group-body>.hint{display:block;font-size:.74rem;color:var(--muted-2);margin:-.4rem 0 .8rem}
