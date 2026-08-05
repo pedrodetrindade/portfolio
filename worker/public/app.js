@@ -1703,6 +1703,65 @@
     });
   }
 
+  /* ================== TEMPLATE CANÔNICO DE PROJETO ==================
+     Fonte única da verdade da estrutura de um projeto novo. Substitui o clone
+     do primeiro projeto da lista, que trazia problemas reais: um projeto novo
+     herdava a quantidade de blocos e de imagens de galeria de outro, os
+     rótulos de seção daquele projeto específico, e qualquer campo que só
+     existisse nele.
+
+     Aqui a estrutura é declarada, não copiada. Todos os campos de topo que o
+     schema atual exige estão presentes (os mesmos que CHAVES_DE_TOPO aceita no
+     Worker), com texto vazio, sem capa e com galeria vazia.
+
+     Três blocos de texto porque é a espinha editorial das páginas de projeto
+     (contexto, processo, resultado) e o HTML do modelo espera encontrá-los; a
+     galeria nasce declarada mas sem imagem nenhuma.
+
+     Espaçamento: nenhum campo de spacing é declarado de propósito. Ausente
+     significa "usa o padrão do site" (ver js/content-render.js, blockStyleCss),
+     que é o valor seguro — declarar zeros aqui achataria o projeto novo. */
+  function projetoNovo(slug, titulo) {
+    return {
+      $schema: 'Conteúdo de uma página de projeto. Editado pelo painel administrativo.',
+      slug: slug,
+      status: 'draft',
+      client: '',
+      year: new Date().getFullYear(),
+      category: '',
+      services: [],
+      seo: { title: '', description: '' },
+      hero: {
+        eyebrowPt: '', eyebrowEn: '',
+        titlePt: titulo, titleEn: '',
+        subtitlePt: '', subtitleEn: '',
+        rolePt: '', roleEn: '',
+        scopePt: '', scopeEn: ''
+      },
+      cover: '',
+      coverMobile: '',
+      blocks: [
+        { type: 'text', labelPt: 'contexto', labelEn: 'context', textPt: '', textEn: '' },
+        { type: 'text', labelPt: 'processo', labelEn: 'process', textPt: '', textEn: '' },
+        { type: 'text', labelPt: 'resultado', labelEn: 'outcome', textPt: '', textEn: '' },
+        { type: 'gallery', images: [] }
+      ]
+    };
+  }
+
+  /* Entrada correspondente no índice. Nasce oculta (visible:false), o mesmo
+     conceito de rascunho que duplicar já usava: o projeto existe no painel mas
+     não aparece no site até alguém decidir mostrá-lo. */
+  function entradaDeIndiceNova(slug, titulo, ano, ordem) {
+    return {
+      slug: slug, titlePt: titulo, titleEn: '',
+      subtitlePt: '', subtitleEn: '',
+      year: ano, cover: '', coverLight: false,
+      visible: false, order: ordem,
+      tagsPt: [], tagsEn: []
+    };
+  }
+
   /* Um lugar só para "algo pendente mudou": mantém rascunho, selo da prévia,
      painel de publicação e indicadores de aba em sincronia. */
   function marcarPendenteMudou() {
@@ -1740,44 +1799,30 @@
       var lista = state.projectsIndex.projects;
       if (lista.some(function (x) { return x.slug === slug; })) { toast('Já existe um projeto com esse slug.', 'err'); return; }
 
-      var modeloSlug = lista.length ? lista[0].slug : null;
-      if (!modeloSlug) { toast('É preciso ter ao menos um projeto para servir de modelo.', 'err'); return; }
+      /* Estrutura vem do template canônico, NÃO de um clone do primeiro
+         projeto: um projeto novo não deve herdar quantidade de blocos, imagens
+         de galeria nem rótulos de outro projeto. Nada é buscado do GitHub aqui.
+         Só a PÁGINA HTML ainda usa um projeto existente como origem, porque o
+         Worker recusa marcação vinda do cliente e o modelo precisa ser um
+         arquivo já versionado. */
+      var novo = projetoNovo(slug, titlePt);
+      var caminho = 'content/projects/' + slug + '.json';
+      state.projects[slug] = { data: novo, sha: null };
+      state.published[caminho] = null;
+      markDirty(caminho, novo, null, 'cms: cria projeto ' + slug);
 
-      carregarProjeto(modeloSlug).then(function (modelo) {
-        var novo = JSON.parse(JSON.stringify(modelo));
-        novo.slug = slug;
-        novo.status = 'draft';
-        novo.year = new Date().getFullYear();
-        if (novo.hero) {
-          novo.hero.titlePt = titlePt; novo.hero.titleEn = '';
-          novo.hero.subtitlePt = ''; novo.hero.subtitleEn = '';
-        }
-        /* zera o conteúdo herdado do modelo: fica a estrutura, não o texto */
-        if (Array.isArray(novo.blocks)) novo.blocks.forEach(function (b) {
-          if (b.type === 'text') { b.textPt = ''; b.textEn = ''; }
-          if (b.type === 'gallery') b.images = [];
-        });
-        novo.cover = '';
+      var ordem = lista.reduce(function (m, x) { return Math.max(m, x.order || 0); }, 0) + 1;
+      lista.push(entradaDeIndiceNova(slug, titlePt, novo.year, ordem));
+      markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
 
-        var caminho = 'content/projects/' + slug + '.json';
-        state.projects[slug] = { data: novo, sha: null };
-        state.published[caminho] = null;
-        markDirty(caminho, novo, null, 'cms: cria projeto ' + slug);
+      var origemPagina = lista.length > 1 ? lista[0].slug : null;
+      if (!origemPagina) { toast('É preciso um projeto existente para servir de modelo da página HTML.', 'err'); return; }
+      state.pendingPages['work/' + slug + '.html'] = { slug: slug, fromSlug: origemPagina };
 
-        lista.push({
-          slug: slug, titlePt: titlePt, titleEn: '', subtitlePt: '', subtitleEn: '',
-          year: novo.year, cover: '', coverLight: false, visible: false,
-          order: lista.reduce(function (m, x) { return Math.max(m, x.order || 0); }, 0) + 1,
-          tagsPt: [], tagsEn: []
-        });
-        markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
-        state.pendingPages['work/' + slug + '.html'] = { slug: slug, fromSlug: modeloSlug };
-
-        state.editingSlug = slug;
-        marcarPendenteMudou();
-        renderProjectsList(); renderProjectEditor();
-        toast('Projeto "' + slug + '" criado como pendente. Sobe no próximo Publicar.', 'ok');
-      }).catch(function (e) { toast(e.message, 'err'); });
+      state.editingSlug = slug;
+      marcarPendenteMudou();
+      renderProjectsList(); renderProjectEditor();
+      toast('Projeto "' + slug + '" criado como pendente. Sobe no próximo Publicar.', 'ok');
     });
   }
 
@@ -1886,11 +1931,27 @@
          desfeito. O rascunho e as mídias pendentes ficam intactos para a
          pessoa tentar de novo sem perder trabalho. */
       var msg = e && e.message ? e.message : 'Falha ao publicar.';
-      var conflito = e && e.body && e.body.error === 'conflict';
+      var erro = e && e.body && e.body.error;
+      var conflito = erro === 'conflict';
+      var camposDesconhecidos = erro === 'unknown_fields';
+      var titulo = conflito ? 'Conflito — nada foi publicado'
+        : camposDesconhecidos ? 'Campo desconhecido — nada foi publicado'
+          : 'Falha — nada foi publicado';
+      var ajuda = '';
+      if (conflito) {
+        ajuda = '<p class="hint">Recarregue o painel para trazer a versão publicada. Seu rascunho e suas mídias continuam salvos neste navegador.</p>';
+      } else if (camposDesconhecidos) {
+        /* nomeia arquivo e chaves, para a pessoa saber exatamente onde mexer.
+           O campo NÃO foi descartado: continua no rascunho, intacto. */
+        var chaves = (e.body.keys || []).map(esc).join(', ');
+        ajuda = '<p class="hint">Arquivo: <code>' + esc(e.body.path || '') + '</code><br>' +
+          'Campo(s): <code>' + chaves + '</code><br>' +
+          'O campo não foi apagado — seu rascunho continua como estava. Remova o campo pelo painel, ' +
+          'ou inclua-o em CHAVES_DE_TOPO no Worker se ele deve passar a existir.</p>';
+      }
       document.getElementById('publishResult').innerHTML =
-        '<div class="badge custom">' + (conflito ? 'Conflito — nada foi publicado' : 'Falha — nada foi publicado') + '</div>' +
-        '<p style="color:var(--err);margin-top:.5rem">' + esc(msg) + '</p>' +
-        (conflito ? '<p class="hint">Recarregue o painel para trazer a versão publicada. Seu rascunho e suas mídias continuam salvos neste navegador.</p>' : '');
+        '<div class="badge custom">' + titulo + '</div>' +
+        '<p style="color:var(--err);margin-top:.5rem">' + esc(msg) + '</p>' + ajuda;
       saveDraftNow();
       setDraftState('falha');
       toast(msg, 'err');

@@ -50,30 +50,43 @@ async function readJsonBody(request) {
   }
 }
 
-/* Bloqueia campos desconhecidos: só os nomes de topo esperados sobrevivem.
-   Não impede um objeto aninhado incorreto (isso é responsabilidade de cada
-   rota), mas impede que um payload traga chaves estranhas escondidas junto
-   com as válidas. */
-function pickKnownKeys(obj, knownKeys) {
+
+/* Reordena o objeto seguindo a lista conhecida, para o arquivo publicado não
+   trocar de ordem de chaves a cada publicação (o que produziria um diff
+   cosmético enorme). SÓ reordena: nada é removido aqui.
+   A versão anterior usava pickKnownKeys, que descartava em silêncio o que não
+   reconhecia. Isso era destrutivo: um campo novo, legítimo, adicionado fora do
+   CMS desaparecia na primeira publicação sem ninguém ficar sabendo. Agora
+   chave desconhecida derruba a publicação (422) antes de chegar aqui. */
+function reordenarChaves(obj, ordem) {
   var out = {};
-  knownKeys.forEach(function (k) { if (obj && Object.prototype.hasOwnProperty.call(obj, k)) out[k] = obj[k]; });
+  ordem.forEach(function (k) { if (Object.prototype.hasOwnProperty.call(obj, k)) out[k] = obj[k]; });
   return out;
 }
 
-/* Chaves de topo aceitas por arquivo. Herdado das rotas PUT que a publicação
-   atômica substituiu: sem isto, a publicação seria MAIS permissiva que a rota
-   que veio substituir, e um payload poderia enfiar chaves estranhas escondidas
-   junto com as válidas. Arquivo de projeto fica de fora porque sua estrutura
-   varia legitimamente (blocks, coverSpacing, seo...). */
-/* A ORDEM importa: pickKnownKeys reescreve o arquivo seguindo esta lista, e
+/* Chaves de topo aceitas por arquivo.
+   A ORDEM importa: reordenarChaves reescreve o arquivo seguindo esta lista, e
    uma ordem diferente da que os arquivos já têm produz um diff cosmético
-   gigante na primeira publicação. $schema vem primeiro porque é onde ele está
-   nos arquivos hoje. */
+   gigante. $schema vem primeiro porque é onde ele está nos arquivos hoje. */
 var CHAVES_DE_TOPO = {
   'content/global.json': ['$schema', 'colors', 'typography', 'borders', 'layout', 'motion', 'header', 'footer', 'social', 'seo'],
   'content/home.json': ['$schema', 'hero', 'sections', 'work', 'about', 'help', 'faq', 'contact'],
-  'content/projects/index.json': ['$schema', 'projects', 'cardSizes']
+  /* cardSizes antes de projects: é a ordem que o arquivo tem hoje. Trocar
+     produziria um diff cosmético de 14 linhas na primeira publicação. */
+  'content/projects/index.json': ['$schema', 'cardSizes', 'projects'],
+  /* coverSpacing entra aqui porque o painel pode criá-lo (espaçamento da capa)
+     mesmo que nenhum projeto o tenha hoje */
+  '__projeto__': ['$schema', 'slug', 'status', 'client', 'year', 'category', 'services',
+    'seo', 'hero', 'cover', 'coverMobile', 'coverSpacing', 'blocks']
 };
+
+/* O arquivo de um projeto tem slug variável, então não cabe numa chave fixa do
+   mapa acima. */
+function chavesPermitidasPara(caminho) {
+  if (CHAVES_DE_TOPO[caminho]) return CHAVES_DE_TOPO[caminho];
+  if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) return CHAVES_DE_TOPO.__projeto__;
+  return null;
+}
 
 async function handleGetFile(env, path) {
   var file = await readFile(env, path);
@@ -198,8 +211,25 @@ async function handlePublish(request, env) {
       if (!op.data || typeof op.data !== 'object') {
         return json({ error: 'invalid_data', message: 'Conteúdo ausente ou inválido em ' + caminho + '.' }, 400);
       }
-      var permitidas = CHAVES_DE_TOPO[caminho];
-      var texto = JSON.stringify(permitidas ? pickKnownKeys(op.data, permitidas) : op.data, null, 2) + '\n';
+      /* Chave de topo desconhecida derruba a publicação inteira, em vez de
+         ser descartada. Descartar em silêncio era destrutivo: um campo novo e
+         legítimo, adicionado fora do CMS, desaparecia na primeira publicação
+         sem ninguém ficar sabendo. Bloquear devolve a decisão a quem edita —
+         ou o campo entra na lista de conhecidos, ou sai do arquivo. */
+      var permitidas = chavesPermitidasPara(caminho);
+      if (permitidas) {
+        var desconhecidas = Object.keys(op.data).filter(function (k) { return permitidas.indexOf(k) === -1; });
+        if (desconhecidas.length) {
+          return json({
+            error: 'unknown_fields',
+            message: 'Campo desconhecido em ' + caminho + ': ' + desconhecidas.join(', ') +
+              '. Nada foi publicado. Remova o campo ou inclua-o na lista de campos conhecidos do Worker.',
+            path: caminho,
+            keys: desconhecidas
+          }, 422);
+        }
+      }
+      var texto = JSON.stringify(permitidas ? reordenarChaves(op.data, permitidas) : op.data, null, 2) + '\n';
       var b = bytesOf(texto);
       if (b > MAX_JSON_BYTES) return json({ error: 'payload_too_large', message: 'Arquivo ' + caminho + ' passa do limite de tamanho.' }, 413);
       totalBytes += b;
