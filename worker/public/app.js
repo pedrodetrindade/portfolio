@@ -1318,6 +1318,19 @@
       fieldRow('URL do Vimeo', 'Cole o link do vídeo. Aceita vimeo.com/123456789, player.vimeo.com/video/123456789 e vídeo não listado com hash. Não cole código de incorporação.',
         inp('hero_vimeourl', (hero.vimeo && hero.vimeo.url) || '', ' placeholder="https://vimeo.com/1215686904"') +
         '<span class="vimeo-status" id="hero_vimeostatus"></span>') +
+      /* Ajuda curta e permanente, não só a validação de erro: um vídeo com
+         privacidade "Domínios específicos" mal configurada passa em toda
+         validação daqui (é um endereço válido, o id existe) e só falha
+         visivelmente no site, dentro do player. Sem isto, esse tipo de falha
+         pareceria um bug do CMS. */
+      '<p class="hint vimeo-help">' +
+        '<b>Antes de colar o link:</b> o vídeo precisa permitir incorporação. ' +
+        'Em vimeo.com → seu vídeo → Configurações de privacidade → "Onde ele pode ser incorporado", ' +
+        'escolha "Em qualquer lugar" ou, em "Domínios específicos", inclua o domínio deste portfólio. ' +
+        'Vídeo "não listado" precisa do link completo, com o hash (a parte depois do id) — sem ele o vídeo não carrega. ' +
+        'Se o vídeo aparecer com uma mensagem de erro do próprio Vimeo dentro do player (não uma mensagem deste painel), ' +
+        'o link e o id estão corretos — o ajuste é na configuração de privacidade do vídeo, no site do Vimeo, não aqui.' +
+      '</p>' +
       '</div>' +
       fieldRow('Poster (imagem, opcional)', 'Aparece antes do vídeo carregar, se o vídeo for bloqueado e quando o visitante pede menos animação. Precisa ser uma imagem, não o link do vídeo.', inp('hero_bgposter', hero.backgroundVideoPoster, ' placeholder="assets/capa-poster.jpg"'));
     bindAll([

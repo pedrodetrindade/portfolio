@@ -14,15 +14,59 @@ import {
   isSlugValid, bytesOf
 } from './validate.js';
 
-/* Cabeçalhos de segurança em toda resposta da API. Como painel e API vivem
-   na mesma origem (o mesmo Worker serve os dois), não existe necessidade de
-   CORS — e por isso nenhum header de CORS é enviado. */
+/* Cabeçalhos de segurança em toda resposta do Worker — painel (HTML/JS/CSS
+   estáticos) e API. Como os dois vivem na mesma origem, não existe necessidade
+   de CORS, e por isso nenhum header de CORS é enviado.
+
+   Até a Entrega 4 estes cabeçalhos só chegavam às respostas JSON da API: a
+   função json() os aplicava, mas env.ASSETS.fetch(request) — o caminho que
+   serve index.html, app.js e styles.css do painel — devolvia a resposta crua,
+   sem nenhum deles. O painel administrativo rodava sem CSP, sem
+   X-Frame-Options, sem nada. Corrigido em applyBaseHeaders(), chamado no fim
+   de fetch() para toda resposta, dos dois caminhos.
+
+   frame-src 'self' https: — o painel embute a prévia do site num <iframe>
+   (Fase 1), e o destino é o que a pessoa configurar em "URL da prévia":
+   localhost durante o desenvolvimento, ou o domínio real em produção. Não dá
+   para prever o host com antecedência, e é exatamente essa prévia que o
+   escopo desta auditoria pede para não quebrar — por isso https: (não *) em
+   vez de restringir a uma lista, que exigiria editar código toda vez que o
+   domínio de preview mudasse.
+   Isto não abre uma porta nova: a página do painel já podia (e continua
+   podendo) embutir qualquer coisa via <iframe>, porque nenhum CSP existia
+   antes. O que muda é que passa a ter alguma restrição (https, não http nem
+   dado arbitrário) em vez de nenhuma.
+   O SITE PÚBLICO (index.html raiz, publicado pelo GitHub Pages) não é servido
+   por este Worker — está fora do alcance destes cabeçalhos. É lá que o
+   <iframe> do Vimeo é criado; ver a nota em conferirVimeoExiste sobre o motivo
+   de a validação de existência do vídeo acontecer aqui e não lá. */
 var SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'no-referrer',
-  'Content-Security-Policy': "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Cache-Control': 'no-store',
+  /* frame-src precisa aceitar http://localhost:* além de https: — a prévia
+     local (worker/public/app.js, urlDaPrevia()) roda contra
+     http://localhost:5500 ou :8123 durante o desenvolvimento, e todo o
+     workflow de teste deste projeto depende disso (ver CLAUDE.md). Restringir
+     a https: sozinho quebraria exatamente a prévia que esta auditoria pediu
+     para preservar. Em produção a URL de prévia normalmente aponta para o
+     domínio publicado (https), que já cai em "https:". */
+  'Content-Security-Policy': "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; " +
+    "script-src 'self'; connect-src 'self'; frame-src 'self' https: http://localhost:*; " +
+    "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 };
+
+/* Aplica o conjunto acima por cima de QUALQUER resposta, sem depender de cada
+   rota lembrar de chamar json(). Preserva status e corpo originais; só
+   acrescenta cabeçalho que ainda não exista (uma resposta de erro específica
+   pode declarar o próprio Content-Type, por exemplo, e não deve perdê-lo). */
+function comCabecalhosDeSeguranca(response) {
+  var h = new Headers(response.headers);
+  Object.keys(SECURITY_HEADERS).forEach(function (k) { h.set(k, SECURITY_HEADERS[k]); });
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers: h });
+}
 
 function json(body, status, extraHeaders) {
   return new Response(JSON.stringify(body), {
@@ -457,7 +501,8 @@ export default {
     var url = new URL(request.url);
 
     if (!url.pathname.startsWith('/api/')) {
-      return env.ASSETS.fetch(request);
+      var estatico = await env.ASSETS.fetch(request);
+      return comCabecalhosDeSeguranca(estatico);
     }
 
     if (!['GET', 'PUT', 'POST', 'DELETE'].includes(request.method)) {
@@ -474,9 +519,10 @@ export default {
        pessoa autorizada (ADMIN_EMAIL) em todo este sistema. */
 
     try {
-      return await route(request, env);
+      var resposta = await route(request, env);
+      return comCabecalhosDeSeguranca(resposta);
     } catch (e) {
-      return errorResponse(e);
+      return comCabecalhosDeSeguranca(errorResponse(e));
     }
   }
 };
