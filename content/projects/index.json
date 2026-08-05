@@ -96,20 +96,6 @@
       "cover": "assets/projetos/case-04/capa.jpg",
       "coverMobile": "",
       "coverLight": true
-    },
-    {
-      "slug": "template-limpo",
-      "titlePt": "Projeto Template Limpo",
-      "titleEn": "",
-      "subtitlePt": "",
-      "subtitleEn": "",
-      "year": 2026,
-      "cover": "",
-      "coverLight": false,
-      "visible": false,
-      "order": 5,
-      "tagsPt": [],
-      "tagsEn": []
     }
   ],
   "cardSizes": [
