@@ -330,8 +330,64 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
    média (.6) é o meio-termo: continua imperceptível sobre o fundo escuro
    padrão do site, mas ainda define a borda da letra o bastante sobre um
    fundo muito claro. */
+/* ===== TEMA DO HEADER: UM ESTADO SÓ =====
+   Antes, o contraste sobre fundo claro era resolvido por uma regra .on-light
+   que listava só quatro elementos (.brand, .menu-btn, .avail, .lp-toggle).
+   Todo o resto — ponto de disponibilidade, botão Contato e seu ícone, fundo e
+   borda da pílula, divisor, bandeira, seta, hover e foco — continuava com cor
+   de tema escuro e sumia sobre o FAQ claro.
+   Agora existe um conjunto de variáveis locais do header. Todo componente lê
+   daqui; trocar de tema é trocar estas variáveis num lugar só, e nenhum
+   componente pode ficar para trás por esquecimento. */
+header{
+  --hd-fg:var(--paper);                          /* texto principal */
+  --hd-fg-soft:var(--muted);                     /* texto secundário */
+  --hd-fg-dim:var(--muted-2);                    /* ícones fracos */
+  --hd-surface:rgba(var(--paper-rgb),.05);       /* material da pílula */
+  --hd-surface-hover:rgba(var(--paper-rgb),.09);
+  --hd-line:var(--line);
+  --hd-line-strong:var(--line-strong);
+  --hd-div:rgba(var(--paper-rgb),.14);           /* divisor interno */
+  --hd-ring:rgba(var(--paper-rgb),.16);          /* anel da bandeira */
+  --hd-cta-bg:var(--paper);                      /* botão Contato */
+  --hd-cta-fg:var(--ink);
+  --hd-halo:rgba(var(--ink-rgb),.6);             /* drop-shadow do glifo */
+  --hd-dot:#9EAD8B;                              /* ponto de disponibilidade */
+}
+/* Sobre fundo claro (FAQ, capa de projeto clara): inverte o conjunto inteiro.
+   O ponto de disponibilidade escurece porque o verde claro original sumia
+   sobre #F2EEEE; o botão Contato inverte para não virar branco sobre claro. */
+header[data-theme="light"]{
+  --hd-fg:var(--ink);
+  --hd-fg-soft:var(--ink-3);
+  --hd-fg-dim:var(--ink-3);
+  --hd-surface:rgba(var(--ink-rgb),.06);
+  --hd-surface-hover:rgba(var(--ink-rgb),.11);
+  --hd-line:rgba(var(--ink-rgb),.20);
+  --hd-line-strong:rgba(var(--ink-rgb),.34);
+  --hd-div:rgba(var(--ink-rgb),.20);
+  --hd-ring:rgba(var(--ink-rgb),.24);
+  --hd-cta-bg:var(--ink);
+  --hd-cta-fg:var(--paper);
+  --hd-halo:rgba(255,255,255,.55);
+  --hd-dot:#5F7A4A;
+}
+/* A troca precisa ser suave e simultânea em todo o topo. Só cor, borda e
+   sombra entram na transição: nada de layout, então não existe salto. */
+header .brand,header .menu-btn,header .avail,header .lp-toggle,
+header .nav-cta,header .ctrl-group,header .ctrl-div,header .avail-dot,
+header .lp-arrow,header .lp-flag,header .menu-btn i{
+  transition:color var(--dur-default) var(--ease-soft),
+             background-color var(--dur-default) var(--ease-soft),
+             border-color var(--dur-default) var(--ease-soft),
+             box-shadow var(--dur-default) var(--ease-soft),
+             filter var(--dur-default) var(--ease-soft),
+             background-image var(--dur-default) var(--ease-soft)}
+/* drop-shadow em vez de text-shadow porque também precisa cobrir SVG (seta do
+   idioma, ponto do Menu). Raio curto e opacidade média: imperceptível sobre o
+   fundo escuro padrão, mas ainda define a borda do glifo sobre fundo claro. */
 .brand,.menu-btn,.avail,.lp-toggle{
-  filter:drop-shadow(0 1px 2px rgba(var(--ink-rgb),.6))}
+  filter:drop-shadow(0 1px 2px var(--hd-halo))}
 
 /* Sobre um card marcado --light no CMS (ver content/projects/index.json,
    coverLight), o header troca para texto escuro em vez de contar só com o
@@ -339,51 +395,45 @@ header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
    escuro. js/main.js (medirClaros/pintarClaros) liga esta classe pela mesma
    lógica de posição por scroll que o resto do arquivo usa, porque
    IntersectionObserver não reavalia com a rolagem suave por transform. */
-header.on-light .brand,header.on-light .menu-btn,
-header.on-light .avail,header.on-light .lp-toggle{
-  color:var(--ink);filter:none}
-header.on-light .brand span{color:var(--ink-3)}
-header.on-light .menu-btn i{background-image:radial-gradient(circle,var(--ink-3) 1.4px,transparent 1.5px)}
-header.on-light .lp-arrow{color:var(--ink-3)}
+/* As regras .on-light que existiam aqui (só .brand, .menu-btn, .avail e
+   .lp-toggle) foram substituídas pelas variáveis --hd-* acima, que todo o
+   header consome. */
 /* ===== CAIXA COMPARTILHADA: MENU + DISPONIBILIDADE =====
    Um contorno só, um raio só, um material só. O fundo e a borda vivem no
    container; o botão e o status ficam sem contorno próprio, senão o conjunto
    voltaria a ler como dois pills encostados. */
 .nav .ctrl-group{justify-self:center;display:flex;align-items:center;
   padding:.22rem;border-radius:var(--radius-button,100px);
-  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);
-  backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
-  transition:border-color var(--dur-hover) var(--ease-hover)}
+  background:var(--hd-surface);border:1px solid var(--hd-line);
+  backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}
 @media(hover:hover) and (pointer:fine){
-  .nav .ctrl-group:hover{border-color:var(--line-strong)}
+  .nav .ctrl-group:hover{border-color:var(--hd-line-strong)}
 }
 /* divisor interno discreto, altura parcial */
 .ctrl-div{width:1px;height:1.1rem;flex:none;margin-inline:.3rem;
-  background:rgba(var(--paper-rgb),.14)}
+  background:var(--hd-div)}
 .nav .nav-right{justify-self:end}
-.brand{font-weight:var(--w-medium);letter-spacing:-.01em;font-size:1rem}
-.brand span{color:var(--cream)}
+.brand{font-weight:var(--w-medium);letter-spacing:-.01em;font-size:1rem;color:var(--hd-fg)}
+.brand span{color:var(--hd-fg-soft)}
 .nav-right{display:flex;align-items:center;gap:1rem}
 /* Sem contorno nem material próprios: quem os carrega é o .ctrl-group. O Menu
    é o elemento principal, então fica em Medium, com contraste cheio e 44px de
    altura mínima para toque. */
 .menu-btn{display:inline-flex;align-items:center;gap:.6em;cursor:pointer;font-family:var(--font);
-  font-size:.88rem;font-weight:var(--w-medium);color:var(--paper);
+  font-size:.88rem;font-weight:var(--w-medium);color:var(--hd-fg);
   padding:.62rem 1.05rem;min-height:44px;border-radius:var(--radius-button,100px);
-  background:transparent;border:none;
-  transition:background-color var(--dur-hover) var(--ease-hover),color var(--dur-hover) var(--ease-hover)}
+  background:transparent;border:none}
 @media(hover:hover) and (pointer:fine){
-  .menu-btn:hover{background:rgba(var(--paper-rgb),.09)}
-  .menu-btn:hover i{background-image:radial-gradient(circle,var(--paper) 1.4px,transparent 1.5px)}
+  .menu-btn:hover{background:var(--hd-surface-hover)}
+  .menu-btn:hover i{background-image:radial-gradient(circle,var(--hd-fg) 1.4px,transparent 1.5px)}
 }
-.menu-btn i{transition:background-image var(--dur-hover) var(--ease-hover)}
 .menu-btn i{width:9px;height:9px;flex:none;
-  background-image:radial-gradient(circle,var(--muted) 1.4px,transparent 1.5px);
+  background-image:radial-gradient(circle,var(--hd-fg-soft) 1.4px,transparent 1.5px);
   background-size:4.5px 4.5px}
 
 .nav-cta{position:relative;display:inline-flex;align-items:center;gap:.55em;cursor:pointer;
-  font-family:var(--font);font-size:.88rem;font-weight:var(--w-medium);color:var(--ink);
-  padding:.6rem 1.1rem;border-radius:var(--radius-button,100px);background:var(--paper);border:none;
+  font-family:var(--font);font-size:.88rem;font-weight:var(--w-medium);color:var(--hd-cta-fg);
+  padding:.6rem 1.1rem;border-radius:var(--radius-button,100px);background:var(--hd-cta-bg);border:none;
   transition:transform var(--dur-micro) var(--ease-soft),
              background-color var(--dur-micro) var(--ease-soft)}
 .nav-cta svg{width:14px;height:14px;flex:none;
@@ -531,10 +581,10 @@ header.on-light .lp-arrow{color:var(--ink-3)}
    --muted sem opacity extra já basta para diferenciar do Menu (esse sim em
    --paper, peso Medium). */
 .avail{display:inline-flex;align-items:center;gap:.55em;
-  font-size:.7rem;font-weight:var(--w-regular);letter-spacing:.02em;color:var(--muted);
+  font-size:.7rem;font-weight:var(--w-regular);letter-spacing:.02em;color:var(--hd-fg-soft);
   padding:.3rem .85rem .3rem .2rem;white-space:nowrap;
   background:none;border:none}
-.avail-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#9EAD8B;
+.avail-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--hd-dot);
   animation:pulso-disp 1600ms var(--ease-smooth) infinite}
 @keyframes pulso-disp{
   0%,100%{opacity:.5;transform:scale(.9)}
@@ -1038,7 +1088,6 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .contact .links a:hover{transform:translateY(-2px)}
 .contact .links a:hover{color:var(--paper);border-color:var(--accent);background:var(--glass)}
 .ico{width:15px;height:15px;flex:none}
-.overlay-foot a.soc{display:inline-flex;align-items:center;gap:.5em}
 
 footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
   font-size:.74rem;color:var(--muted-2);
@@ -1238,7 +1287,7 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
   .js .mask-reveal{clip-path:none!important;transform:none!important}
   .hi-line,.stat-line{transform:scaleX(1)!important}
   /* menu simplificado: aparece sem escalonar nem deslizar */
-  .overlay.dropdown .menu-item,.overlay.dropdown .overlay-foot{
+  .overlay.dropdown .menu-item{
     opacity:1!important;transform:none!important;transition-delay:0ms!important}}
 
 /* ===== ENTRADA DA HERO =====
@@ -1326,35 +1375,48 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .overlay.dropdown::before{content:"";position:absolute;top:2.9rem;left:50%;translate:-50% 0;
   width:min(500px,92vw);height:2rem;pointer-events:auto}
 /* conteúdo interno entra escalonado, e sai junto para o fechamento ser curto */
-.overlay.dropdown .menu-item,.overlay.dropdown .overlay-foot{
+.overlay.dropdown .menu-item{
   opacity:0;transform:translateY(-6px);
   transition:opacity var(--dur-fast) var(--ease-soft),transform var(--dur-fast) var(--ease-soft)}
-.overlay.dropdown.open .menu-item,.overlay.dropdown.open .overlay-foot{opacity:1;transform:none}
+.overlay.dropdown.open .menu-item{opacity:1;transform:none}
 .overlay.dropdown.open .menu-item:nth-child(1){transition-delay:70ms}
 .overlay.dropdown.open .menu-item:nth-child(2){transition-delay:115ms}
 .overlay.dropdown.open .menu-item:nth-child(3){transition-delay:160ms}
-.overlay.dropdown.open .overlay-foot{transition-delay:205ms}
+.overlay.dropdown.open .menu-item:nth-child(4){transition-delay:205ms}
 .overlay-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;
   padding:1.3rem 1.6rem;border-bottom:1px solid var(--line)}
 .overlay-note{font-family:var(--mono);font-size:.7rem;color:var(--muted-2);letter-spacing:.02em}
 .overlay-x{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;padding:.3rem;transition:color var(--dur-micro) var(--ease-out-smooth)}
 .overlay-x:hover{color:var(--paper)}
 
+/* Sem a marca e sem o "aberto a novos projetos", o topo do menu carrega só o
+   botão de fechar: alinha à direita e dispensa a borda, que separava dois
+   blocos que não existem mais. */
+.overlay-top--bare{justify-content:flex-end;border-bottom:none;padding-bottom:.6rem}
+
 .menu-list{display:flex;flex-direction:column}
-.menu-item{display:flex;align-items:center;justify-content:space-between;gap:1.4rem;
+/* Ícone à esquerda e texto em seguida: o olho encontra o mesmo ponto de
+   partida em todas as linhas. Antes o item era justify-between, com uma caixa
+   de 104x64 na ponta direita que lia como thumbnail de projeto. */
+.menu-item{display:flex;align-items:center;justify-content:flex-start;gap:1.1rem;
   padding:1.1rem 1.6rem;border-bottom:1px solid var(--line);
   font-size:clamp(1.4rem,3vw,2rem);font-weight:var(--w-medium);letter-spacing:-.02em;
   transition:background-color var(--dur-micro) var(--ease-out-smooth),padding-left var(--dur-default) var(--ease-out-smooth)}
+.menu-item:last-child{border-bottom:none}
 .menu-item:hover{background:rgba(var(--paper-rgb),.05);padding-left:2.1rem}
-.menu-thumb{position:relative;width:104px;height:64px;border-radius:12px;overflow:hidden;flex:none;
-  border:1px solid var(--line-strong);background:var(--ink-2)}
-.menu-thumb .scene{filter:none;transform:scale(1.02);transition:transform var(--dur-slow) var(--ease-out-smooth)}
-.menu-item:hover .scene{transform:scale(1.12)}
-.overlay-foot{display:flex;flex-wrap:wrap;align-items:center;gap:1.4rem;padding:0 1.6rem 1.5rem;
-  font-family:var(--mono);font-size:.78rem}
-.overlay-foot .k{color:var(--accent);font-size:.7rem;letter-spacing:.02em;width:100%}
-.overlay-foot a{color:var(--muted);transition:color var(--dur-micro) var(--ease-out-smooth)}
-.overlay-foot a:hover{color:var(--paper)}
+/* Caixa do ícone: material discreto, não thumbnail. Tamanho fixo para as
+   linhas ficarem alinhadas mesmo com rótulos de larguras diferentes. */
+.menu-ico{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:12px;color:var(--muted);
+  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:color var(--dur-micro) var(--ease-out-smooth),
+             background-color var(--dur-micro) var(--ease-out-smooth),
+             border-color var(--dur-micro) var(--ease-out-smooth)}
+.menu-ico svg{width:19px;height:19px;display:block}
+.menu-item:hover .menu-ico,.menu-item:focus-visible .menu-ico{
+  color:var(--paper);background:rgba(var(--paper-rgb),.1);border-color:var(--line-strong)}
+.menu-item[aria-current="page"] .menu-ico{color:var(--paper);border-color:var(--line-strong)}
 
 .cform{padding:1.8rem 1.6rem 2rem}
 .cform h2{font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:var(--w-medium);letter-spacing:-.025em;line-height:1.1;
@@ -1464,19 +1526,16 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    completos e um check discreto no idioma atual. */
 .lang-pick{position:relative}
 .lp-toggle{display:inline-flex;align-items:center;gap:.5em;cursor:pointer;
-  font-family:var(--font);font-size:.82rem;font-weight:var(--w-medium);color:var(--muted);
+  font-family:var(--font);font-size:.82rem;font-weight:var(--w-medium);color:var(--hd-fg-soft);
   padding:.5rem .75rem;border-radius:var(--radius-button,100px);
-  background:transparent;border:1px solid var(--line);
-  transition:color var(--dur-micro) var(--ease-soft),
-             border-color var(--dur-micro) var(--ease-soft),
-             background-color var(--dur-micro) var(--ease-soft)}
-.lp-toggle:hover{color:var(--paper);border-color:var(--line-strong);
-  background:rgba(var(--paper-rgb),.04)}
+  background:transparent;border:1px solid var(--hd-line)}
+.lp-toggle:hover{color:var(--hd-fg);border-color:var(--hd-line-strong);
+  background:var(--hd-surface)}
 .lp-flag{display:block;width:17px;height:17px;flex:none;border-radius:50%;overflow:hidden;
-  box-shadow:0 0 0 1px rgba(var(--paper-rgb),.16)}
+  box-shadow:0 0 0 1px var(--hd-ring)}
 .lp-flag svg{display:block;width:100%;height:100%;border-radius:50%}
 .lp-code{letter-spacing:.02em}
-.lp-arrow{width:12px;height:12px;flex:none;color:var(--muted-2);
+.lp-arrow{width:12px;height:12px;flex:none;color:var(--hd-fg-dim);
   transition:transform var(--dur-micro) var(--ease-soft)}
 .lang-pick.open .lp-arrow{transform:rotate(180deg)}
 

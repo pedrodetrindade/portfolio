@@ -34,7 +34,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=91">
+<link rel="stylesheet" href="css/style.css?v=92">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
@@ -397,7 +397,10 @@
        encerramento escuro. Sangra de ponta a ponta e não vive dentro de card.
        O conteúdo mora aqui, em data-pt/data-en, uma vez só; o comportamento
        do accordion é genérico e fica no js/main.js. -->
-  <section id="faq" class="faq">
+  <!-- data-header-light: esta seção tem fundo claro (#F2EEEE), então o header
+       precisa inverter o contraste enquanto passa por cima dela. Quem lê o
+       atributo é medirClaros/pintarClaros em js/main.js. -->
+  <section id="faq" class="faq" data-header-light>
     <div class="faq-inner">
       <h2 class="faq-title reveal" data-reveal="words" data-pt="Perguntas frequentes" data-en="FAQs">Perguntas frequentes</h2>
 
@@ -567,6 +570,6 @@
      HTML da página já existe. Precisa vir antes de main.js, que é quem lê
      data-pt/data-en para decidir o idioma exibido. -->
 <script src="js/content-render.js?v=9"></script>
-<script src="js/main.js?v=83"></script>
+<script src="js/main.js?v=84"></script>
 </body>
 </html>

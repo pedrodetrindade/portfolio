@@ -65,11 +65,60 @@
   if (flag('nosmooth')) diag.push('nosmooth');
   if (diag.length) console.info('[diagnóstico] desligado:', diag.join(', '));
 
-  const MENU = [
-    { pt:'Início',      en:'Home',       href: base + 'index.html',           scene:'p2' },
-    { pt:'Sobre',       en:'About',      href: base + 'index.html#about',     scene:'p3' },
-    { pt:'Trabalhos',   en:'Work',       href: base + 'index.html#work',      scene:'p1' }
+  /* ---- itens do menu ----
+     Fonte única: content/global.json > header.menu, já carregado por
+     js/content.js em window.__CMS_GLOBAL__. A lista fixa que existia aqui
+     virava uma segunda fonte da verdade — editar o menu pelo painel não
+     mudava nada no site. O array abaixo é só rede de segurança para quando o
+     JSON não carregar (mesma regra do resto do site: sem CMS, o conteúdo
+     estático continua valendo). */
+  const MENU_PADRAO = [
+    { pt:'Início',    en:'Home',  hrefHome:'index.html' },
+    { pt:'Sobre',     en:'About', hrefHome:'index.html#about' },
+    { pt:'Trabalhos', en:'Work',  hrefHome:'index.html#work' }
   ];
+  const cfgMenu = (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.header && Array.isArray(window.__CMS_GLOBAL__.header.menu) && window.__CMS_GLOBAL__.header.menu.length)
+    ? window.__CMS_GLOBAL__.header.menu : MENU_PADRAO;
+
+  /* Ícones temáticos, SVG inline (sem biblioteca, sem requisição). São
+     decorativos: quem carrega o significado é o texto ao lado, então todos
+     levam aria-hidden. A escolha é por rótulo normalizado, com um genérico
+     de reserva para item novo criado no painel. */
+  const ICONES_MENU = {
+    inicio: '<path d="M3 10.2 12 3.5l9 6.7V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    sobre:  '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>',
+    trabalhos: '<rect x="3.2" y="3.2" width="7" height="7" rx="1.6"/><rect x="13.8" y="3.2" width="7" height="7" rx="1.6"/><rect x="3.2" y="13.8" width="7" height="7" rx="1.6"/><rect x="13.8" y="13.8" width="7" height="7" rx="1.6"/>',
+    contato: '<rect x="2.8" y="5" width="18.4" height="14" rx="2.6"/><path d="M3.6 7.4l7.2 5a2.1 2.1 0 0 0 2.4 0l7.2-5"/>',
+    generico: '<circle cx="12" cy="12" r="7.6"/>'
+  };
+  const semAcento = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  function iconeDoItem(item) {
+    const k = semAcento(item.pt);
+    if (k.indexOf('inicio') === 0 || k === 'home') return ICONES_MENU.inicio;
+    if (k.indexOf('sobre') === 0 || k === 'about') return ICONES_MENU.sobre;
+    if (k.indexOf('trabalho') === 0 || k === 'work' || k.indexOf('projeto') === 0) return ICONES_MENU.trabalhos;
+    if (k.indexOf('contato') === 0 || k === 'contact') return ICONES_MENU.contato;
+    return ICONES_MENU.generico;
+  }
+
+  /* Seção opcional escondida pelo painel não pode aparecer no menu apontando
+     para uma âncora que não existe mais. Só vale para as opcionais: hero,
+     work e contact sustentam layout e navegação e são ignoradas por visible. */
+  const OPCIONAIS = { '#about': 'about', '#help': 'help', '#faq': 'faq' };
+  function itemVisivel(item) {
+    const href = String(item.hrefHome || item.href || '');
+    const hash = href.indexOf('#') !== -1 ? href.slice(href.indexOf('#')) : '';
+    const chave = OPCIONAIS[hash];
+    if (!chave) return true;
+    const secoes = window.__CMS_HOME__ && window.__CMS_HOME__.sections;
+    if (secoes && secoes[chave] && secoes[chave].visible === false) return false;
+    return true;
+  }
+
+  const MENU = cfgMenu.filter(itemVisivel).map(i => ({
+    pt: i.pt, en: i.en,
+    href: base + ((base && i.hrefWork) ? i.hrefWork : (i.hrefHome || i.href || 'index.html'))
+  }));
 
   /* ---- indicador de próxima seção ----
      Um só componente, montado a partir desta tabela e injetado no fim de cada
@@ -97,25 +146,22 @@
   document.body.insertAdjacentHTML('beforeend', `
     <div class="veil" aria-hidden="true"></div>
 
+    <!-- Menu enxuto: só fechar e navegação. Marca, "aberto a novos projetos" e
+         o bloco de redes saíram daqui — a marca e a disponibilidade já estão no
+         header logo acima, e as redes seguem no rodapé (os dados continuam em
+         global.json > social, nada foi apagado). -->
     <div class="overlay" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
       <div class="overlay-sheet">
-        <div class="overlay-top">
-          <span class="brand">Pedro de Trindade<span>.</span></span>
-          <span class="overlay-note" data-pt="aberto a novos projetos" data-en="open to new projects">aberto a novos projetos</span>
+        <div class="overlay-top overlay-top--bare">
           <button class="overlay-x" data-close data-pt-label="Fechar" data-en-label="Close" aria-label="Fechar">✕</button>
         </div>
         <nav class="menu-list">
           ${MENU.map(i => `
             <a class="menu-item" href="${i.href}">
+              <span class="menu-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconeDoItem(i)}</svg></span>
               <span data-pt="${i.pt}" data-en="${i.en}">${i.pt}</span>
-              <span class="menu-thumb"><i class="scene ${i.scene}"></i></span>
             </a>`).join('')}
         </nav>
-        <div class="overlay-foot">
-          <div class="k" data-pt="redes" data-en="social">redes</div>
-          <a class="soc" href="https://www.linkedin.com/in/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>LinkedIn</a>
-          <a class="soc" href="https://www.behance.net/pedrodetrindade" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="500" font-size="17" fill="currentColor">Bē</text></svg>Behance</a>
-        </div>
       </div>
     </div>
 
@@ -441,6 +487,7 @@
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     el.classList.add('open');
     modalOpen = modal;
+    if (window.__travarTemaHeader) window.__travarTemaHeader(true);
     if (!modal) return;
     lastFocused = document.activeElement;
     document.body.classList.add('locked');
@@ -453,6 +500,7 @@
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     document.body.classList.remove('locked');
     lockBackground(false);
+    if (window.__travarTemaHeader) window.__travarTemaHeader(false);
     /* devolver o foco só faz sentido se ele tiver sido movido na abertura */
     if (wasOpen && modalOpen && lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
     modalOpen = false;
@@ -820,19 +868,39 @@
      navegador não reavalia interseção quando o deslocamento vem de
      transform de ancestral. */
   let claros = [], headAltura = headEl.offsetHeight, headNaClara = false;
+  /* Qualquer coisa que possa passar por baixo do header com fundo claro entra
+     aqui: card de capa clara (marcado pelo CMS) e seção clara marcada com
+     data-header-light no HTML (hoje o FAQ, que é #F2EEEE). O atributo existe
+     para não precisar editar este arquivo quando outra seção virar clara. */
   const medirClaros = () => {
     headAltura = headEl.offsetHeight;
-    claros = [...document.querySelectorAll('.card--light')].map(el => {
+    claros = [...document.querySelectorAll('.card--light,[data-header-light]')].map(el => {
       const r = el.getBoundingClientRect();
       return { topo: r.top + posVisual, base: r.bottom + posVisual };
     });
   };
+  /* Com o menu aberto o tema congela: o overlay cobre o topo, e deixar o
+     conteúdo que rola por trás continuar trocando o contraste faria os
+     controles do header piscarem durante a navegação no menu. */
+  let temaCongelado = false;
+  const aplicarTemaHeader = () => {
+    headEl.setAttribute('data-theme', headNaClara ? 'light' : 'dark');
+  };
   const pintarClaros = y => {
+    if (temaCongelado) return;
     const onLight = claros.length > 0 && claros.some(c => c.topo < y + headAltura && c.base > y);
     if (onLight === headNaClara) return;
     headNaClara = onLight;
-    headEl.classList.toggle('on-light', onLight);
+    aplicarTemaHeader();
   };
+  /* chamado pelos overlays: congela no tema escuro enquanto o menu está aberto,
+     e volta a acompanhar a rolagem ao fechar */
+  window.__travarTemaHeader = travar => {
+    temaCongelado = travar;
+    if (travar) { headEl.setAttribute('data-theme', 'dark'); }
+    else { aplicarTemaHeader(); }
+  };
+  aplicarTemaHeader();
 
   const readScroll = () => {
     queued = false;
