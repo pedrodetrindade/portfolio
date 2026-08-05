@@ -39,6 +39,34 @@ var WRITABLE_PATTERNS = [
   /^content\/projects\/index\.json$/,
   /^content\/projects\/[a-z0-9-]+\.json$/
 ];
+
+/* Publicação atômica escreve mais que JSON: a página de um projeto novo e as
+   mídias enviadas entram no mesmo commit. Antes, criar/duplicar/excluir
+   projeto chamavam writeFile direto em work/<slug>.html SEM passar por
+   isPathWritable — a whitelist existia e era contornada. Agora cada tipo de
+   escrita tem sua própria lista, e nada escreve fora de uma delas. */
+var WRITABLE_PAGE_PATTERN = /^work\/[a-z0-9-]+\.html$/;
+
+function isPagePathWritable(path) {
+  if (typeof path !== 'string') return false;
+  if (path.indexOf('..') !== -1 || path.indexOf('\0') !== -1) return false;
+  return WRITABLE_PAGE_PATTERN.test(path);
+}
+
+/* Mídia: só dentro de assets/uploads/, com nome já sanitizado e extensão da
+   lista fechada. Confere o caminho inteiro, não só o prefixo, para um
+   "assets/uploads/../../x" nunca passar. */
+function isUploadPathWritable(path) {
+  if (typeof path !== 'string') return false;
+  if (path.indexOf('..') !== -1 || path.indexOf('\0') !== -1) return false;
+  if (path.indexOf(UPLOAD_DIR) !== 0) return false;
+  var resto = path.slice(UPLOAD_DIR.length);
+  if (!resto || resto.indexOf('//') !== -1) return false;
+  /* uma pasta opcional de um nível (o slug) mais o arquivo */
+  if (!/^(?:[a-z0-9-]+\/)?[a-z0-9._-]+$/.test(resto)) return false;
+  var ext = resto.slice(resto.lastIndexOf('.'));
+  return ALLOWED_UPLOAD_EXT.indexOf(ext) !== -1;
+}
 /* Pasta de upload de imagens. Adaptado de "public/uploads/" (o exemplo do
    escopo original) para "assets/uploads/", que é a pasta estática real
    deste projeto — não existe pasta "public/" aqui. */
@@ -81,7 +109,15 @@ function clamp(value, key) {
    fazer JSON.parse — evita gastar CPU decodificando payloads gigantes. */
 function bytesOf(str) { return new TextEncoder().encode(str).length; }
 
+/* Tetos da publicação inteira, não só de cada arquivo: sem eles, um payload
+   com centenas de operações ou dezenas de MB chegaria a montar blobs no
+   GitHub antes de qualquer recusa. */
+var MAX_OPS_POR_PUBLICACAO = 60;
+var MAX_BYTES_POR_PUBLICACAO = 25 * 1024 * 1024;
+
 export {
   LIMITS, MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
-  UPLOAD_DIR, isPathWritable, sanitizeUploadName, isSlugValid, clamp, bytesOf
+  UPLOAD_DIR, isPathWritable, isPagePathWritable, isUploadPathWritable,
+  MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
+  sanitizeUploadName, isSlugValid, clamp, bytesOf
 };

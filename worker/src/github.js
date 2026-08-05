@@ -124,4 +124,79 @@ async function deleteFile(env, path, expectedSha, message) {
   }
 }
 
-export { GithubError, readFile, writeFile, writeBinaryFile, deleteFile };
+/* ===== GIT DATA API: UM COMMIT PARA TUDO =====
+   As funções acima usam a Contents API, que faz um commit por arquivo. Isso
+   servia enquanto cada rota escrevia um arquivo, mas não serve para publicar:
+   quatro arquivos alterados viravam quatro commits, e se o terceiro falhasse
+   os dois primeiros já estavam no repositório, sem desfazer.
+   Estas funções montam a operação do jeito que o Git realmente funciona:
+   objetos (blobs) -> uma árvore -> um commit -> um único movimento da branch.
+   Enquanto a referência não é movida, nada do que foi enviado existe para
+   quem clona o repositório; se qualquer etapa falhar antes disso, a branch
+   continua exatamente onde estava. */
+
+/* A barra de "feature/portfolio-cms" precisa continuar barra: o nome da branch
+   faz parte do CAMINHO da ref, não é um parâmetro. encodeURIComponent puro
+   viraria "feature%2Fportfolio-cms" e o GitHub responderia 404. Mesmo cuidado
+   que readFile já tomava com o caminho do arquivo. */
+function refPath(branch) {
+  return 'heads/' + encodeURIComponent(branch).replace(/%2F/g, '/');
+}
+
+async function getRef(env, branch) {
+  var data = await githubRequest(env, 'GET', 'git/ref/' + refPath(branch));
+  return data.object.sha;
+}
+
+async function getCommit(env, sha) {
+  return githubRequest(env, 'GET', 'git/commits/' + sha);
+}
+
+/* encoding: 'utf-8' para texto, 'base64' para binário (imagem, PDF) */
+async function createBlob(env, content, encoding) {
+  var data = await githubRequest(env, 'POST', 'git/blobs', { content: content, encoding: encoding || 'utf-8' });
+  return data.sha;
+}
+
+/* entries: [{path, mode, type, sha}] — sha:null remove o caminho da árvore.
+   base_tree faz o GitHub partir da árvore atual, então só o que está em
+   entries muda: o resto do repositório é carregado por referência, sem
+   precisar reenviar arquivo nenhum. */
+async function createTree(env, baseTreeSha, entries) {
+  var data = await githubRequest(env, 'POST', 'git/trees', { base_tree: baseTreeSha, tree: entries });
+  return data.sha;
+}
+
+async function createCommit(env, message, treeSha, parentSha) {
+  var data = await githubRequest(env, 'POST', 'git/commits', {
+    message: message, tree: treeSha, parents: [parentSha]
+  });
+  return data.sha;
+}
+
+/* Sem force: se a branch tiver andado entre a leitura e agora, o GitHub
+   recusa em vez de sobrescrever o trabalho de outra pessoa. É a última
+   barreira de conflito, depois da checagem por SHA de arquivo. */
+async function updateRef(env, branch, commitSha) {
+  return githubRequest(env, 'PATCH', 'git/refs/' + refPath(branch), {
+    sha: commitSha, force: false
+  });
+}
+
+/* Só o SHA do blob, para conferir conflito sem baixar o conteúdo inteiro de
+   cada arquivo tocado. null quando o arquivo ainda não existe. */
+async function getFileSha(env, path) {
+  try {
+    var data = await githubRequest(env, 'GET', 'contents/' + encodeURIComponent(path).replace(/%2F/g, '/') + '?ref=' + env.GITHUB_BRANCH);
+    if (Array.isArray(data)) return null;
+    return data.sha;
+  } catch (e) {
+    if (e instanceof GithubError && e.kind === 'not_found') return null;
+    throw e;
+  }
+}
+
+export {
+  GithubError, readFile, writeFile, writeBinaryFile, deleteFile,
+  getRef, getCommit, createBlob, createTree, createCommit, updateRef, getFileSha
+};

@@ -1,8 +1,13 @@
 import { verifyAccessJWT } from './access.js';
-import { GithubError, readFile, writeFile, writeBinaryFile, deleteFile } from './github.js';
+import {
+  GithubError, readFile, writeFile, writeBinaryFile, deleteFile,
+  getRef, getCommit, createBlob, createTree, createCommit, updateRef, getFileSha
+} from './github.js';
 import {
   MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
-  UPLOAD_DIR, isPathWritable, sanitizeUploadName, isSlugValid, bytesOf
+  UPLOAD_DIR, isPathWritable, isPagePathWritable, isUploadPathWritable,
+  MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
+  sanitizeUploadName, isSlugValid, bytesOf
 } from './validate.js';
 
 /* Cabeçalhos de segurança em toda resposta da API. Como painel e API vivem
@@ -328,42 +333,165 @@ async function handleUpload(request, env) {
   return json({ ok: true, path: path, commit: result.commit.sha });
 }
 
-/* Publica várias mudanças de uma vez (o "resumo antes de publicar" do
-   painel). Cada item precisa apontar para um caminho na whitelist; qualquer
-   item fora dela derruba a publicação inteira antes de escrever qualquer
-   coisa, para nunca publicar parcialmente por engano. */
+/* ===== PUBLICAÇÃO ATÔMICA =====
+   Recebe TODAS as operações pendentes e as transforma em UM commit.
+
+   A versão anterior fazia um writeFile por arquivo pela Contents API: quatro
+   arquivos alterados viravam quatro commits, e se o terceiro falhasse os dois
+   primeiros já estavam publicados, sem desfazer. O `break` no erro evitava a
+   cascata, mas não a publicação parcial.
+
+   Agora tudo é validado primeiro, depois vira blob, depois UMA árvore, depois
+   UM commit, e só no fim a branch se move uma única vez. Enquanto a
+   referência não é movida, nada existe para quem clona o repositório — então
+   falhar no meio não deixa resto.
+
+   Tipos de operação aceitos:
+     json    — conteúdo estruturado, whitelist de content/
+     binary  — mídia em base64, whitelist de assets/uploads/
+     page    — página de projeto; o HTML NUNCA vem do cliente, o Worker lê o
+               modelo do próprio repositório
+     delete  — remoção de um caminho de qualquer uma das whitelists  */
 async function handlePublish(request, env) {
   var body = await readJsonBody(request);
-  var files = body && body.files;
-  if (!Array.isArray(files) || !files.length) {
+  /* aceita o formato antigo ({files:[...]}) para uma aba que ficou aberta
+     durante o deploy não quebrar: vira uma lista de operações json */
+  var ops = body && Array.isArray(body.ops) ? body.ops
+    : (body && Array.isArray(body.files) ? body.files.map(function (f) {
+      return { type: 'json', path: f.path, data: f.data, sha: f.sha };
+    }) : null);
+
+  if (!Array.isArray(ops) || !ops.length) {
     return json({ error: 'nothing_to_publish', message: 'Nenhuma alteração para publicar.' }, 400);
   }
-  for (var i = 0; i < files.length; i++) {
-    if (!isPathWritable(files[i].path)) {
-      return json({ error: 'path_not_allowed', message: 'Caminho não autorizado: ' + files[i].path }, 403);
-    }
-    var content = JSON.stringify(files[i].data, null, 2) + '\n';
-    if (bytesOf(content) > MAX_JSON_BYTES) {
-      return json({ error: 'payload_too_large', message: 'Arquivo ' + files[i].path + ' passa do limite de tamanho.' }, 413);
-    }
+  if (ops.length > MAX_OPS_POR_PUBLICACAO) {
+    return json({ error: 'too_many_ops', message: 'Publicação com operações demais (limite de ' + MAX_OPS_POR_PUBLICACAO + ').' }, 413);
   }
 
-  var results = [];
-  for (var j = 0; j < files.length; j++) {
-    var f = files[j];
-    var text = JSON.stringify(f.data, null, 2) + '\n';
-    try {
-      var r = await writeFile(env, f.path, text, f.message || ('cms: publica ' + f.path), f.sha || undefined);
-      results.push({ path: f.path, ok: true, sha: r.content.sha, commit: r.commit.sha });
-    } catch (e) {
-      results.push({ path: f.path, ok: false, error: e instanceof GithubError ? e.kind : 'unknown', message: e instanceof GithubError ? e.detail : 'Erro desconhecido' });
-      /* para de publicar os próximos assim que um falha, para o usuário ver
-         exatamente onde parou em vez de uma lista de erros em cascata */
-      break;
+  /* ---- 1. validação: nada toca o GitHub antes de tudo passar ---- */
+  var preparadas = [], totalBytes = 0, vistos = {};
+  for (var i = 0; i < ops.length; i++) {
+    var op = ops[i] || {};
+    var tipo = op.type;
+    var caminho = op.path;
+
+    if (tipo === 'page') {
+      if (!isSlugValid(op.slug)) return json({ error: 'invalid_slug', message: 'Slug inválido para página de projeto.' }, 400);
+      if (op.fromSlug != null && !isSlugValid(op.fromSlug)) return json({ error: 'invalid_slug', message: 'Slug de origem inválido.' }, 400);
+      caminho = 'work/' + op.slug + '.html';
+      if (!isPagePathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'Caminho de página não autorizado.' }, 403);
+    } else if (tipo === 'json') {
+      if (!isPathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'Caminho não autorizado: ' + caminho }, 403);
+      var texto = JSON.stringify(op.data, null, 2) + '\n';
+      if (op.data === undefined || op.data === null) return json({ error: 'invalid_data', message: 'Conteúdo ausente em ' + caminho + '.' }, 400);
+      var b = bytesOf(texto);
+      if (b > MAX_JSON_BYTES) return json({ error: 'payload_too_large', message: 'Arquivo ' + caminho + ' passa do limite de tamanho.' }, 413);
+      totalBytes += b;
+      op.__texto = texto;
+    } else if (tipo === 'binary') {
+      if (!isUploadPathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'Caminho de mídia não autorizado: ' + caminho }, 403);
+      if (typeof op.contentBase64 !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(op.contentBase64)) {
+        return json({ error: 'invalid_upload', message: 'Conteúdo de mídia inválido em ' + caminho + '.' }, 400);
+      }
+      var bruto = Math.floor(op.contentBase64.length * 3 / 4);
+      if (bruto > MAX_UPLOAD_BYTES) return json({ error: 'file_too_large', message: 'Arquivo ' + caminho + ' maior que ' + Math.round(MAX_UPLOAD_BYTES / 1024 / 1024) + 'MB.' }, 413);
+      /* extensão x MIME declarado, a mesma checagem do upload avulso */
+      var ext = caminho.slice(caminho.lastIndexOf('.'));
+      var mimeEsperado = ALLOWED_UPLOAD_MIME[ext];
+      if (op.mime && mimeEsperado && op.mime !== mimeEsperado && !(ext === '.jpg' && op.mime === 'image/jpg')) {
+        return json({ error: 'mime_mismatch', message: 'O tipo do arquivo não corresponde à extensão em ' + caminho + '.' }, 400);
+      }
+      totalBytes += bruto;
+    } else if (tipo === 'delete') {
+      if (!isPathWritable(caminho) && !isPagePathWritable(caminho) && !isUploadPathWritable(caminho)) {
+        return json({ error: 'path_not_allowed', message: 'Caminho não autorizado para exclusão: ' + caminho }, 403);
+      }
+    } else {
+      return json({ error: 'invalid_op', message: 'Tipo de operação desconhecido.' }, 400);
     }
+
+    if (vistos[caminho]) return json({ error: 'duplicate_path', message: 'O mesmo caminho aparece duas vezes: ' + caminho }, 400);
+    vistos[caminho] = true;
+    op.__path = caminho;
+    preparadas.push(op);
   }
-  var allOk = results.every(function (r) { return r.ok; });
-  return json({ ok: allOk, results: results, publishedAt: new Date().toISOString() }, allOk ? 200 : 207);
+  if (totalBytes > MAX_BYTES_POR_PUBLICACAO) {
+    return json({ error: 'payload_too_large', message: 'Publicação maior que ' + Math.round(MAX_BYTES_POR_PUBLICACAO / 1024 / 1024) + 'MB no total.' }, 413);
+  }
+
+  try {
+    /* ---- 2. conflito: confere cada caminho tocado contra o remoto ----
+       Antes de montar qualquer coisa. Se alguém mexeu no mesmo arquivo desde
+       que o painel leu, a publicação inteira para e o trabalho local fica
+       intacto para a pessoa decidir o que fazer. */
+    var conflitos = [];
+    for (var c = 0; c < preparadas.length; c++) {
+      var pc = preparadas[c];
+      if (pc.type === 'page' || pc.sha === undefined) continue;  /* página nova não tem base */
+      var atual = await getFileSha(env, pc.__path);
+      var esperado = pc.sha || null;
+      if ((atual || null) !== esperado) conflitos.push(pc.__path);
+    }
+    if (conflitos.length) {
+      return json({
+        error: 'conflict',
+        message: 'Estes arquivos mudaram no repositório desde que você abriu o painel: ' + conflitos.join(', ') + '. Nada foi publicado.',
+        paths: conflitos
+      }, 409);
+    }
+
+    /* ---- 3. blobs ---- */
+    var entradas = [];
+    for (var p = 0; p < preparadas.length; p++) {
+      var o = preparadas[p];
+      if (o.type === 'delete') {
+        entradas.push({ path: o.__path, mode: '100644', type: 'blob', sha: null });
+        continue;
+      }
+      var blobSha;
+      if (o.type === 'json') {
+        blobSha = await createBlob(env, o.__texto, 'utf-8');
+      } else if (o.type === 'binary') {
+        blobSha = await createBlob(env, o.contentBase64, 'base64');
+      } else { /* page */
+        /* o HTML nunca vem do cliente: é lido de um modelo já versionado e
+           testado, e o cliente só escolhe o slug */
+        var modeloPath = 'work/' + (o.fromSlug || 'case-01') + '.html';
+        var modelo = await readFile(env, modeloPath);
+        if (!modelo) return json({ error: 'template_missing', message: 'Modelo de página não encontrado: ' + modeloPath }, 500);
+        blobSha = await createBlob(env, modelo.content, 'utf-8');
+      }
+      entradas.push({ path: o.__path, mode: '100644', type: 'blob', sha: blobSha });
+    }
+
+    /* ---- 4. uma árvore, um commit, um movimento da branch ---- */
+    var refSha = await getRef(env, env.GITHUB_BRANCH);
+    var commitBase = await getCommit(env, refSha);
+    var treeSha = await createTree(env, commitBase.tree.sha, entradas);
+    var mensagem = (typeof body.message === 'string' && body.message.trim()) || ('cms: publica ' + preparadas.length + ' alteração(ões)');
+    var novoCommit = await createCommit(env, mensagem, treeSha, refSha);
+    await updateRef(env, env.GITHUB_BRANCH, novoCommit);
+
+    /* SHAs novos, para o painel seguir detectando conflito na próxima vez */
+    var shasFinais = {};
+    for (var s = 0; s < preparadas.length; s++) {
+      var ps = preparadas[s];
+      if (ps.type === 'delete') continue;
+      shasFinais[ps.__path] = await getFileSha(env, ps.__path);
+    }
+
+    return json({
+      ok: true, commit: novoCommit, publishedAt: new Date().toISOString(),
+      paths: preparadas.map(function (x) { return x.__path; }), shas: shasFinais
+    });
+  } catch (e) {
+    /* Falhou em qualquer ponto: a branch não foi movida, então não existe
+       publicação parcial. Blobs eventualmente criados ficam órfãos e o GitHub
+       os recolhe sozinho — nenhum deles é alcançável por nenhuma branch. */
+    var kind = e instanceof GithubError ? e.kind : 'unknown';
+    var detalhe = e instanceof GithubError ? e.detail : 'Erro inesperado ao publicar.';
+    return json({ error: kind, message: detalhe + ' Nada foi publicado.' }, kind === 'conflict' ? 409 : 502);
+  }
 }
 
 export default {
