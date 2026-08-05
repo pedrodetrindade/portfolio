@@ -569,6 +569,39 @@ header .lp-arrow,header .lp-flag,header .menu-btn i{
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .liquid-bg.has-video .lq{display:none}
 
+/* Poster da capa: fica ATRÁS do vídeo e do iframe, então aparece antes de
+   qualquer um deles carregar, e continua sendo o que se vê se o Vimeo estiver
+   bloqueado ou sob movimento reduzido. Pintado por variável, definida pelo JS,
+   para o caminho da imagem não precisar entrar em innerHTML. */
+.liquid-bg.has-poster::before{content:"";position:absolute;inset:0;z-index:0;
+  background-image:var(--hero-poster);background-size:cover;background-position:50% 50%}
+
+/* O iframe do Vimeo cobre a capa como um object-fit:cover faria. Um iframe não
+   tem object-fit, então o recorte vem de dimensionar por aspecto: o player é
+   16/9 e precisa transbordar no eixo mais curto para não deixar barra preta.
+   min-width/min-height em vw e vh cobrem os dois casos, e o translate recentra
+   o excesso.
+
+   opacity entra em cena depois que o iframe carrega (.is-pronto, posta pelo JS
+   no evento load). Antes disso ele fica invisível, e o que se vê é o poster ou
+   o fundo animado. Isso resolve um caso concreto: quando o vídeo não existe,
+   é privado ou o Vimeo está fora do ar, o player renderiza a própria tela de
+   erro ("Desculpe, este vídeo não existe") — que apareceria por cima da capa,
+   competindo com o nome. Invisível por padrão, um vídeo que não carrega
+   simplesmente não aparece, e a capa continua íntegra. */
+.hero-vimeo{position:absolute;top:50%;left:50%;z-index:1;border:0;
+  width:100vw;height:56.25vw;min-width:177.78vh;min-height:100vh;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  opacity:0;transition:opacity var(--dur-slow) var(--ease-soft)}
+.hero-vimeo.is-pronto{opacity:1}
+/* decorativo: não captura clique nem foco, e o conteúdo da capa segue acima */
+.liquid-bg .lq-veil{z-index:2}
+@media(prefers-reduced-motion:reduce){
+  /* rede de segurança: o JS já não cria o iframe neste modo */
+  .hero-vimeo{display:none}
+}
+
 .lq{position:absolute;display:block;border-radius:50%}
 .lq1{width:76vw;height:76vw;top:-26vw;left:-16vw;
   background:radial-gradient(circle,rgba(92,62,48,.50),rgba(74,50,40,.22) 38%,rgba(58,40,34,.07) 62%,transparent 78%);

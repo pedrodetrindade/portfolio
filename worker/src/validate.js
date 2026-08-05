@@ -115,9 +115,92 @@ function bytesOf(str) { return new TextEncoder().encode(str).length; }
 var MAX_OPS_POR_PUBLICACAO = 60;
 var MAX_BYTES_POR_PUBLICACAO = 25 * 1024 * 1024;
 
+/* ===== VÍDEO DE FUNDO DA CAPA =====
+   Quatro modos. 'liquid' é o fundo animado em CSS que sempre existiu, e é o
+   padrão de quem nunca configurou nada. */
+var MODOS_VIDEO = ['liquid', 'file', 'vimeo', 'none'];
+
+/* Hostnames aceitos, comparados por igualdade exata do hostname já
+   normalizado pelo parser de URL. Não é comparação por substring: "vimeo.com"
+   dentro de "vimeo.com.evil.tld" não passa, porque o hostname daquele
+   endereço é "vimeo.com.evil.tld" e não bate com nenhum item da lista. */
+var VIMEO_HOSTS = ['vimeo.com', 'www.vimeo.com', 'player.vimeo.com'];
+
+/* Extrai APENAS id e hash de uma URL do Vimeo. Nada mais do endereço original
+   é reaproveitado: quem monta a URL final é o site, a partir destes dois
+   valores. Assim, um endereço com parâmetros arbitrários (ou com HTML, script
+   e esquemas perigosos) não tem por onde chegar ao iframe.
+   Devolve {videoId, hash} ou null. */
+function parseVimeoUrl(valor) {
+  if (typeof valor !== 'string') return null;
+  var texto = valor.trim();
+  if (!texto) return null;
+  /* recusa de cara qualquer coisa que não seja um endereço: marcação, script,
+     esquemas perigosos e aspas usadas para escapar de atributo */
+  if (/[<>"'`\\]/.test(texto)) return null;
+  if (/^\s*(javascript|data|vbscript|file|blob)\s*:/i.test(texto)) return null;
+
+  var u;
+  try { u = new URL(texto); } catch (e) { return null; }
+  if (u.protocol !== 'https:') return null;                 /* só HTTPS */
+  if (VIMEO_HOSTS.indexOf(u.hostname.toLowerCase()) === -1) return null;
+  if (u.username || u.password) return null;                /* sem credencial embutida */
+
+  var partes = u.pathname.split('/').filter(Boolean);
+  var id = null, hash = null;
+  if (u.hostname.toLowerCase() === 'player.vimeo.com') {
+    /* player.vimeo.com/video/<id> — o hash vem em ?h= */
+    if (partes[0] !== 'video' || !partes[1]) return null;
+    id = partes[1];
+    hash = u.searchParams.get('h');
+  } else {
+    /* vimeo.com/<id> ou vimeo.com/<id>/<hash> (vídeo não listado) */
+    if (!partes[0]) return null;
+    id = partes[0];
+    if (partes[1]) hash = partes[1];
+  }
+  if (!/^[0-9]{6,12}$/.test(id)) return null;               /* id é só dígitos */
+  if (hash != null) {
+    hash = String(hash);
+    if (!/^[a-zA-Z0-9]{6,20}$/.test(hash)) return null;     /* hash alfanumérico */
+  }
+  return { videoId: id, hash: hash || null };
+}
+
+/* Confere o objeto salvo no JSON. Exige que id e hash sejam coerentes com a
+   URL guardada: um payload não pode declarar uma URL inofensiva e um videoId
+   diferente, porque é o videoId que o site usa para montar o iframe. */
+function isVimeoConfigValido(v) {
+  if (!v || typeof v !== 'object') return false;
+  var p = parseVimeoUrl(v.url);
+  if (!p) return false;
+  if (String(v.videoId || '') !== p.videoId) return false;
+  var hashGuardado = v.hash == null ? null : String(v.hash);
+  if (hashGuardado !== p.hash) return false;
+  return true;
+}
+
+/* Poster tem de ser imagem, nunca o endereço do player: um link de vídeo no
+   atributo poster não renderiza nada e some sem explicação. Aceita caminho do
+   repositório ou URL https de imagem. */
+function isPosterValido(valor) {
+  if (typeof valor !== 'string') return false;
+  var t = valor.trim();
+  if (!t) return true;                                       /* vazio é válido */
+  if (/[<>"'`\\]/.test(t)) return false;
+  if (/vimeo\.com/i.test(t)) return false;                   /* é vídeo, não imagem */
+  var ext = t.toLowerCase().split('?')[0];
+  ext = ext.slice(ext.lastIndexOf('.'));
+  if (['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.svg'].indexOf(ext) === -1) return false;
+  if (/^https:\/\//i.test(t)) return true;
+  if (/^(assets|content)\//.test(t) && t.indexOf('..') === -1) return true;
+  return false;
+}
+
 export {
   LIMITS, MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
   UPLOAD_DIR, isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
+  MODOS_VIDEO, VIMEO_HOSTS, parseVimeoUrl, isVimeoConfigValido, isPosterValido,
   sanitizeUploadName, isSlugValid, clamp, bytesOf
 };

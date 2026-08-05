@@ -1305,8 +1305,21 @@
       fieldRow('Versão curta (PT / EN)', 'usada quando o header encolhe', inp('hero_availspt', hero.availabilityShortPt, half) + inp('hero_availsen', hero.availabilityShortEn, half)) +
       fieldRow('Indicador de rolagem — rótulo (PT / EN)', '"Continue para ver os projetos"', inp('hero_nhlpt', hero.nextHintLabelPt, half) + inp('hero_nhlen', hero.nextHintLabelEn, half)) +
       fieldRow('Indicador de rolagem — destino (PT / EN)', '"Projetos"', inp('hero_nhnpt', hero.nextHintNamePt, half) + inp('hero_nhnen', hero.nextHintNameEn, half)) +
-      fieldRow('Vídeo de fundo da capa (URL)', 'Em branco mantém o fundo animado atual. Aceita um caminho do repositório (assets/...) ou uma URL completa de um vídeo hospedado.', inp('hero_bgvideo', hero.backgroundVideo, ' placeholder="assets/capa.mp4"')) +
-      fieldRow('Poster do vídeo (URL, opcional)', 'Imagem mostrada antes do vídeo carregar.', inp('hero_bgposter', hero.backgroundVideoPoster, ' placeholder="assets/capa-poster.jpg"'));
+      fieldRow('Fundo da capa', 'O que aparece atrás do seu nome.',
+        '<select id="hero_videomode">' + MODOS_CAPA.map(function (m) {
+          return '<option value="' + m[0] + '"' + (modoDaCapa(hero) === m[0] ? ' selected' : '') + '>' + esc(m[1]) + '</option>';
+        }).join('') + '</select>') +
+      /* os dois campos abaixo aparecem conforme o modo: mostrar caminho de
+         arquivo e URL do Vimeo ao mesmo tempo convida a preencher o errado */
+      '<div data-modo-capa="file">' +
+      fieldRow('Arquivo de vídeo', 'Caminho no repositório. MP4 ou WebM.', inp('hero_bgvideo', hero.backgroundVideo, ' placeholder="assets/capa.mp4"')) +
+      '</div>' +
+      '<div data-modo-capa="vimeo">' +
+      fieldRow('URL do Vimeo', 'Cole o link do vídeo. Aceita vimeo.com/123456789, player.vimeo.com/video/123456789 e vídeo não listado com hash. Não cole código de incorporação.',
+        inp('hero_vimeourl', (hero.vimeo && hero.vimeo.url) || '', ' placeholder="https://vimeo.com/1215686904"') +
+        '<span class="vimeo-status" id="hero_vimeostatus"></span>') +
+      '</div>' +
+      fieldRow('Poster (imagem, opcional)', 'Aparece antes do vídeo carregar, se o vídeo for bloqueado e quando o visitante pede menos animação. Precisa ser uma imagem, não o link do vídeo.', inp('hero_bgposter', hero.backgroundVideoPoster, ' placeholder="assets/capa-poster.jpg"'));
     bindAll([
       ['hero_tagpt', function (v) { hero.tagPt = v; }], ['hero_tagen', function (v) { hero.tagEn = v; }],
       ['hero_locpt', function (v) { hero.locationPt = v; }], ['hero_locen', function (v) { hero.locationEn = v; }],
@@ -1318,6 +1331,63 @@
       ['hero_bgvideo', function (v) { hero.backgroundVideo = v; }], ['hero_bgposter', function (v) { hero.backgroundVideoPoster = v; }]
     ], touch);
     bindSwitch('hero_avail', function (v) { hero.showAvailability = v; touch(); });
+
+    /* ---- fundo da capa ---- */
+    function mostrarCamposDoModo() {
+      var modo = document.getElementById('hero_videomode').value;
+      document.querySelectorAll('[data-modo-capa]').forEach(function (bloco) {
+        bloco.hidden = bloco.getAttribute('data-modo-capa') !== modo;
+      });
+    }
+    document.getElementById('hero_videomode').addEventListener('change', function (e) {
+      hero.videoMode = e.target.value;
+      /* modo none/liquid limpa a configuração do Vimeo, para não deixar um
+         objeto meio preenchido que o Worker recusaria depois */
+      if (hero.videoMode !== 'vimeo') delete hero.vimeo;
+      mostrarCamposDoModo();
+      validarVimeoNoPainel();
+      touch();
+    });
+    /* Validação imediata, com a MESMA régua do Worker (ver parseVimeoUrl em
+       worker/src/validate.js). É conveniência: quem decide continua sendo o
+       Worker, que revalida tudo na publicação. */
+    function validarVimeoNoPainel() {
+      var campo = document.getElementById('hero_vimeourl');
+      var selo = document.getElementById('hero_vimeostatus');
+      if (!campo || !selo) return;
+      var bruto = campo.value.trim();
+      if (!bruto) {
+        selo.className = 'vimeo-status';
+        selo.textContent = '';
+        delete hero.vimeo;
+        return;
+      }
+      var p = parseVimeoNoPainel(bruto);
+      if (!p) {
+        selo.className = 'vimeo-status is-erro';
+        /* "<" ou "<iframe" é código de incorporação colado. Não procurar a
+           palavra "script" solta: ela aparece dentro de "javascript:", que é
+           outro problema e merece outra frase. */
+        selo.textContent = /<\s*\/?\s*[a-z]/i.test(bruto)
+          ? 'Cole apenas o link, não o código de incorporação.'
+          : 'Link do Vimeo inválido.';
+        delete hero.vimeo;
+        return;
+      }
+      selo.className = 'vimeo-status is-ok';
+      selo.textContent = 'id ' + p.videoId + (p.hash ? ' · não listado' : '');
+      /* guarda a URL normalizada, não a que foi colada: parâmetro arbitrário
+         não entra no JSON */
+      hero.vimeo = {
+        url: p.hash ? 'https://vimeo.com/' + p.videoId + '/' + p.hash : 'https://vimeo.com/' + p.videoId,
+        videoId: p.videoId,
+        hash: p.hash
+      };
+    }
+    var campoVimeo = document.getElementById('hero_vimeourl');
+    if (campoVimeo) campoVimeo.addEventListener('input', function () { validarVimeoNoPainel(); touch(); });
+    mostrarCamposDoModo();
+    validarVimeoNoPainel();
 
     var w = H.work;
     document.getElementById('workIntroBody').innerHTML =
@@ -1701,6 +1771,56 @@
     }).catch(function () {
       toast('Não foi possível guardar a mídia neste navegador.', 'err');
     });
+  }
+
+  /* ================== FUNDO DA CAPA ==================
+     Espelha a régua de worker/src/validate.js (parseVimeoUrl). Duplicação
+     consciente: o painel não consegue importar módulos do Worker, e o mesmo
+     acontece com LIMITS. Quem DECIDE é sempre o Worker, que revalida na
+     publicação; isto aqui existe para o erro aparecer enquanto a pessoa
+     digita, em vez de só ao publicar. */
+  var MODOS_CAPA = [
+    ['liquid', 'Fundo animado (padrão)'],
+    ['file', 'Arquivo de vídeo'],
+    ['vimeo', 'Vimeo'],
+    ['none', 'Sem vídeo']
+  ];
+  var VIMEO_HOSTS_PAINEL = ['vimeo.com', 'www.vimeo.com', 'player.vimeo.com'];
+
+  /* Compatibilidade: hero sem videoMode é lido pelo que já existe. */
+  function modoDaCapa(hero) {
+    var m = hero && hero.videoMode;
+    if (m && MODOS_CAPA.some(function (x) { return x[0] === m; })) return m;
+    return (hero && hero.backgroundVideo) ? 'file' : 'liquid';
+  }
+
+  function parseVimeoNoPainel(valor) {
+    if (typeof valor !== 'string') return null;
+    var texto = valor.trim();
+    if (!texto) return null;
+    if (/[<>"'`\\]/.test(texto)) return null;
+    if (/^\s*(javascript|data|vbscript|file|blob)\s*:/i.test(texto)) return null;
+    var u;
+    try { u = new URL(texto); } catch (e) { return null; }
+    if (u.protocol !== 'https:') return null;
+    if (VIMEO_HOSTS_PAINEL.indexOf(u.hostname.toLowerCase()) === -1) return null;
+    if (u.username || u.password) return null;
+    var partes = u.pathname.split('/').filter(Boolean);
+    var id = null, hash = null;
+    if (u.hostname.toLowerCase() === 'player.vimeo.com') {
+      if (partes[0] !== 'video' || !partes[1]) return null;
+      id = partes[1]; hash = u.searchParams.get('h');
+    } else {
+      if (!partes[0]) return null;
+      id = partes[0];
+      if (partes[1]) hash = partes[1];
+    }
+    if (!/^[0-9]{6,12}$/.test(id)) return null;
+    if (hash != null) {
+      hash = String(hash);
+      if (!/^[a-zA-Z0-9]{6,20}$/.test(hash)) return null;
+    }
+    return { videoId: id, hash: hash || null };
   }
 
   /* ================== TEMPLATE CANÔNICO DE PROJETO ==================

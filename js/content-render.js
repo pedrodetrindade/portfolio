@@ -27,6 +27,95 @@
   try { renderHome(); } catch (e) { /* mantém o HTML estático */ }
   try { renderProject(); } catch (e) { /* mantém o HTML estático */ }
 
+  /* ===== FUNDO DA CAPA =====
+     Quatro modos: liquid (o fundo animado em CSS que sempre existiu), file
+     (mp4/webm do repositório), vimeo e none.
+
+     Compatibilidade: hero sem videoMode é lido pelo que já existe —
+     backgroundVideo preenchido significa 'file', vazio significa 'liquid'.
+     Nenhum conteúdo antigo precisa ser migrado.
+
+     O iframe é construído com createElement e setAttribute, nunca por
+     innerHTML, e a URL é REMONTADA a partir de id e hash. Nada do endereço que
+     a pessoa colou é reaproveitado, então parâmetro arbitrário, marcação ou
+     esquema perigoso não têm por onde chegar aqui.
+     player.js (o SDK do Vimeo) não é carregado: background=1 já entrega
+     autoplay sem controles, e o SDK só serviria para uma API que não usamos. */
+  function modoDoVideo(hero) {
+    if (hero.videoMode && ['liquid', 'file', 'vimeo', 'none'].indexOf(hero.videoMode) !== -1) return hero.videoMode;
+    return hero.backgroundVideo ? 'file' : 'liquid';
+  }
+
+  function urlDoPlayerVimeo(cfg) {
+    var u = 'https://player.vimeo.com/video/' + encodeURIComponent(cfg.videoId) +
+      '?background=1&autopause=0&muted=1&loop=1&autoplay=1';
+    if (cfg.hash) u += '&h=' + encodeURIComponent(cfg.hash);
+    return u;
+  }
+
+  function aplicarVideoDaCapa(hero) {
+    var liquidBg = document.querySelector('.hero .liquid-bg');
+    if (!liquidBg) return;
+    var video = liquidBg.querySelector('.hero-video');
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var modo = modoDoVideo(hero);
+    var poster = typeof hero.backgroundVideoPoster === 'string' ? hero.backgroundVideoPoster.trim() : '';
+
+    /* Limpa o estado anterior SEMPRE, antes de decidir o novo. É o que impede
+       iframe duplicado quando a prévia do CMS reenvia dados a cada tecla. */
+    var iframeAntigo = liquidBg.querySelector('.hero-vimeo');
+    if (iframeAntigo) iframeAntigo.remove();
+    if (video) { video.hidden = true; video.removeAttribute('src'); }
+    liquidBg.classList.remove('has-video');
+    liquidBg.style.removeProperty('--hero-poster');
+
+    /* Poster primeiro, sempre que existir: ele aparece antes do iframe, se o
+       Vimeo estiver bloqueado, e é o que fica sob movimento reduzido. */
+    if (poster && !/vimeo\.com/i.test(poster)) {
+      liquidBg.style.setProperty('--hero-poster', 'url("' + encodeURI(base + poster) + '")');
+      liquidBg.classList.add('has-poster');
+    } else {
+      liquidBg.classList.remove('has-poster');
+    }
+
+    /* Movimento reduzido: nada de autoplay. Fica o poster, ou o fundo animado
+       em CSS, que nesse modo já está parado (ver main.js/pintarFundos). */
+    if (reduced || modo === 'none' || modo === 'liquid') return;
+
+    if (modo === 'file' && hero.backgroundVideo) {
+      if (!video) return;
+      video.setAttribute('src', base + hero.backgroundVideo);
+      if (poster) video.setAttribute('poster', base + poster);
+      video.hidden = false;
+      liquidBg.classList.add('has-video');
+      var p = video.play();
+      if (p && p.catch) p.catch(function () { /* autoplay recusado: fica o poster */ });
+      return;
+    }
+
+    if (modo === 'vimeo' && hero.vimeo && hero.vimeo.videoId) {
+      var frame = document.createElement('iframe');
+      frame.className = 'hero-vimeo';
+      frame.setAttribute('src', urlDoPlayerVimeo(hero.vimeo));
+      frame.setAttribute('title', '');
+      frame.setAttribute('aria-hidden', 'true');
+      frame.setAttribute('tabindex', '-1');
+      frame.setAttribute('frameborder', '0');
+      frame.setAttribute('allow', 'autoplay');
+      frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+      /* decorativo: não recebe clique nem foco, e o conteúdo por cima continua
+         inteiramente utilizável */
+      /* Só fica visível depois de carregar, para não piscar o quadro preto do
+         player antes do vídeo começar. O evento load NÃO distingue sucesso de
+         erro (o Vimeo responde 200 com a própria tela de "vídeo não existe"),
+         então quem impede um vídeo quebrado de ir ao ar é a validação na
+         publicação — ver validarVideoDaCapa no Worker. */
+      frame.addEventListener('load', function () { frame.classList.add('is-pronto'); });
+      liquidBg.appendChild(frame);
+      liquidBg.classList.add('has-video');
+    }
+  }
+
   function renderHome(overrideHome, overrideIndex) {
     if (isCase()) return;
     var H = overrideHome || window.__CMS_HOME__;
@@ -50,22 +139,7 @@
     setText(nhLabel, hero.nextHintLabelPt, hero.nextHintLabelEn);
     setText(nhName, hero.nextHintNamePt, hero.nextHintNameEn);
 
-    /* Vídeo de fundo da capa, opcional. Ignorado sob prefers-reduced-motion:
-       um vídeo autoplay é a própria coisa que essa preferência pede para não
-       rodar, e as massas de vidro líquido (que ali já ficam paradas, ver
-       main.js/pintarFundos) seguem servindo de fundo. */
-    if (hero.backgroundVideo) {
-      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var video = document.querySelector('.hero .hero-video');
-      var liquidBg = document.querySelector('.hero .liquid-bg');
-      if (video && liquidBg && !reduced) {
-        video.src = hero.backgroundVideo;
-        if (hero.backgroundVideoPoster) video.poster = hero.backgroundVideoPoster;
-        video.hidden = false;
-        liquidBg.classList.add('has-video');
-        video.play().catch(function () {});
-      }
-    }
+    aplicarVideoDaCapa(hero);
 
     if (H.work) {
       setText(document.querySelector('.wi-title'), H.work.titlePt, H.work.titleEn);

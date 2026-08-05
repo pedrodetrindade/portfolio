@@ -10,6 +10,7 @@ import {
   MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_MIME,
   isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
+  MODOS_VIDEO, VIMEO_HOSTS, isVimeoConfigValido, isPosterValido,
   isSlugValid, bytesOf
 } from './validate.js';
 
@@ -85,6 +86,99 @@ var CHAVES_DE_TOPO = {
 function chavesPermitidasPara(caminho) {
   if (CHAVES_DE_TOPO[caminho]) return CHAVES_DE_TOPO[caminho];
   if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) return CHAVES_DE_TOPO.__projeto__;
+  return null;
+}
+
+/* Confere o vídeo de fundo da capa. Devolve null quando está tudo bem, ou
+   {status, corpo} para a rota responder e abortar a publicação inteira.
+   Nada de conteúdo antigo é exigido: hero sem videoMode e sem vimeo continua
+   passando, porque é exatamente o que existe hoje no repositório. */
+function validarVideoDaCapa(hero) {
+  if (!hero || typeof hero !== 'object') return null;
+
+  if (hero.videoMode !== undefined) {
+    if (MODOS_VIDEO.indexOf(hero.videoMode) === -1) {
+      return {
+        status: 422,
+        corpo: {
+          error: 'invalid_video_mode',
+          message: 'Modo de vídeo da capa inválido: "' + String(hero.videoMode) +
+            '". Use um de: ' + MODOS_VIDEO.join(', ') + '. Nada foi publicado.',
+          path: 'content/home.json'
+        }
+      };
+    }
+  }
+
+  if (hero.vimeo !== undefined && hero.vimeo !== null) {
+    if (!isVimeoConfigValido(hero.vimeo)) {
+      return {
+        status: 422,
+        corpo: {
+          error: 'invalid_vimeo',
+          message: 'Endereço do Vimeo inválido. Aceita apenas https em ' + VIMEO_HOSTS.join(', ') +
+            ', com id numérico e, se houver, hash alfanumérico. Nada foi publicado.',
+          path: 'content/home.json'
+        }
+      };
+    }
+  }
+  /* modo vimeo sem configuração renderizaria uma capa vazia */
+  if (hero.videoMode === 'vimeo' && !isVimeoConfigValido(hero.vimeo)) {
+    return {
+      status: 422,
+      corpo: {
+        error: 'invalid_vimeo',
+        message: 'O modo Vimeo está selecionado mas não há um endereço válido salvo. Nada foi publicado.',
+        path: 'content/home.json'
+      }
+    };
+  }
+
+  if (hero.backgroundVideoPoster !== undefined && !isPosterValido(hero.backgroundVideoPoster)) {
+    return {
+      status: 422,
+      corpo: {
+        error: 'invalid_poster',
+        message: 'O poster deve ser uma imagem, não o link do vídeo. Nada foi publicado.',
+        path: 'content/home.json'
+      }
+    };
+  }
+  return null;
+}
+
+/* O site não consegue saber se um vídeo do Vimeo existe: o iframe é de outra
+   origem, e o player responde 200 com a PRÓPRIA tela de erro ("Desculpe, este
+   vídeo não existe"), que apareceria por cima da capa. Detectar isso no
+   navegador exigiria o SDK (player.js), que o escopo proíbe.
+   Então a checagem acontece aqui, uma vez, na publicação: oEmbed é um endpoint
+   público de metadados, não o SDK, e responde 404 ou 403 para vídeo
+   inexistente ou privado.
+   Falha de REDE não derruba a publicação: publicar não pode depender de o
+   Vimeo estar no ar. Só uma resposta explícita de indisponível bloqueia. */
+async function conferirVimeoExiste(cfg) {
+  if (!cfg || !cfg.videoId) return null;
+  var alvo = 'https://vimeo.com/' + cfg.videoId + (cfg.hash ? '/' + cfg.hash : '');
+  var res;
+  try {
+    res = await fetch('https://vimeo.com/api/oembed.json?url=' + encodeURIComponent(alvo), {
+      headers: { 'User-Agent': 'portfolio-cms-worker' }
+    });
+  } catch (e) {
+    return null;   /* Vimeo inalcançável: segue em frente */
+  }
+  if (res.status === 404 || res.status === 403 || res.status === 401) {
+    return {
+      status: 422,
+      corpo: {
+        error: 'vimeo_indisponivel',
+        message: 'O Vimeo respondeu que este vídeo não está disponível (' + res.status +
+          '). Confira se o id está certo e se o vídeo é público ou não listado com o hash correto. Nada foi publicado.',
+        path: 'content/home.json'
+      }
+    };
+  }
   return null;
 }
 
@@ -229,6 +323,15 @@ async function handlePublish(request, env) {
           }, 422);
         }
       }
+      /* Validação do vídeo de fundo da capa. Fica aqui, e não só no painel,
+         porque o painel é conveniência: quem decide é o Worker. Um payload
+         montado à mão não pode enfiar iframe, script ou domínio de terceiro
+         no JSON e esperar que o site renderize. */
+      if (caminho === 'content/home.json') {
+        var erroVideo = validarVideoDaCapa(op.data.hero);
+        if (erroVideo) return json(erroVideo.corpo, erroVideo.status);
+        op.__conferirVimeo = op.data.hero && op.data.hero.videoMode === 'vimeo' ? op.data.hero.vimeo : null;
+      }
       var texto = JSON.stringify(permitidas ? reordenarChaves(op.data, permitidas) : op.data, null, 2) + '\n';
       var b = bytesOf(texto);
       if (b > MAX_JSON_BYTES) return json({ error: 'payload_too_large', message: 'Arquivo ' + caminho + ' passa do limite de tamanho.' }, 413);
@@ -263,6 +366,15 @@ async function handlePublish(request, env) {
   }
   if (totalBytes > MAX_BYTES_POR_PUBLICACAO) {
     return json({ error: 'payload_too_large', message: 'Publicação maior que ' + Math.round(MAX_BYTES_POR_PUBLICACAO / 1024 / 1024) + 'MB no total.' }, 413);
+  }
+
+  /* ---- 1b. o vídeo do Vimeo existe mesmo? ----
+     Ainda antes de tocar o GitHub. Só bloqueia com resposta explícita de
+     indisponível; Vimeo fora do ar não impede publicar. */
+  for (var v = 0; v < preparadas.length; v++) {
+    if (!preparadas[v].__conferirVimeo) continue;
+    var erroVimeo = await conferirVimeoExiste(preparadas[v].__conferirVimeo);
+    if (erroVimeo) return json(erroVimeo.corpo, erroVimeo.status);
   }
 
   try {

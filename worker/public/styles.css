@@ -182,6 +182,16 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 .sub-list .list-item{border-top:none;padding-top:.3rem;margin-top:.3rem}
 .tiered-meta{display:inline-flex;align-items:center;gap:.4rem}
 
+/* Selo de validação do link do Vimeo: aparece enquanto a pessoa digita, com
+   texto próprio em cada estado — não comunica só por cor. */
+.vimeo-status{font-size:.76rem;display:inline-flex;align-items:center;gap:.35em}
+.vimeo-status:empty{display:none}
+.vimeo-status::before{content:"●";font-size:.7em}
+.vimeo-status.is-ok{color:var(--ok)}
+.vimeo-status.is-erro{color:var(--err)}
+/* blocos que aparecem conforme o modo do fundo da capa */
+[data-modo-capa][hidden]{display:none}
+
 /* ===== Revisão antes de publicar (Fase 3) =====
    Modal simples, sem biblioteca: overlay fixo + caixa central. O conteúdo
    principal (review-body) é linguagem humana; o diff técnico fica dentro de
