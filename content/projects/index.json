@@ -1,12 +1,5 @@
 {
   "$schema": "Lista e ordem dos projetos exibidos na grade da Home. O conteúdo completo de cada projeto mora em content/projects/<slug>.json. coverLight marca capas predominantemente claras (ex.: o amarelo do case-04): com isso o header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima desse card, em vez de depender de sombra.",
-  "cardSizes": [
-    "normal",
-    "largo",
-    "alto",
-    "grande",
-    "largura-completa"
-  ],
   "projects": [
     {
       "slug": "case-01",
@@ -103,6 +96,27 @@
       "cover": "assets/projetos/case-04/capa.jpg",
       "coverMobile": "",
       "coverLight": true
+    },
+    {
+      "slug": "template-limpo",
+      "titlePt": "Projeto Template Limpo",
+      "titleEn": "",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "year": 2026,
+      "cover": "",
+      "coverLight": false,
+      "visible": false,
+      "order": 5,
+      "tagsPt": [],
+      "tagsEn": []
     }
+  ],
+  "cardSizes": [
+    "normal",
+    "largo",
+    "alto",
+    "grande",
+    "largura-completa"
   ]
 }
