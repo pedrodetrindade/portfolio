@@ -186,6 +186,11 @@
   }
 
   let buildScrub = null;
+  /* Divisor de palavras da entrada de destaque (data-reveal="words"). Fica ao
+     lado do buildScrub pelo mesmo motivo que ele existe: o setLang reescreve o
+     innerHTML de todo [data-pt] ao trocar de idioma, o que apagaria os spans.
+     Os dois são reconstruídos logo depois, no fim do setLang. */
+  let buildPalavras = null;
 
   /* ---- bandeiras ----
      SVG inline em vez de emoji: no Windows o emoji de bandeira não renderiza,
@@ -274,6 +279,7 @@
        quem trocar o idioma do navegador ou abrir de outro país. */
     if (explicit) localStorage.setItem('lang', lang);
     if (buildScrub) buildScrub();
+    if (buildPalavras) buildPalavras();
     measureCta();
     paintStamp();          // o formato de data muda com o idioma
     medirDeslocamentoNome();
@@ -557,7 +563,21 @@
      Cada tipo de bloco mantém sua coreografia própria. */
   let alvos = [];
 
+  /* 55ms entre palavras, com teto de 14 passos: um título de 20 palavras não
+     pode fazer a última esperar mais de um segundo depois da primeira. */
+  const PALAVRA_PASSO = 55, PALAVRA_TETO = 14;
+  const aplicarAtrasoPalavras = el => {
+    el.querySelectorAll('.rv-w').forEach((w, i) => {
+      w.style.transitionDelay = Math.min(i, PALAVRA_TETO) * PALAVRA_PASSO + 'ms';
+    });
+  };
+
   const entrar = el => {
+    if (el.dataset.reveal === 'words') {
+      aplicarAtrasoPalavras(el);
+      el.classList.add('in');
+      return;
+    }
     if (el.classList.contains('caps-grid')) {
       [...el.children].forEach((li, i) => { li.style.transitionDelay = (i * 55) + 'ms'; });
       el.classList.add('in');
@@ -870,6 +890,45 @@
         readScroll();
       });
     }
+  }
+
+  /* ---- entrada palavra por palavra ----
+     Bloco próprio, e não junto do buildScrub: aquele está atrás de
+     !flag('noscrub'), uma chave de depuração de outro efeito, e a entrada de
+     destaque não deveria morrer junto com ela. Só depende de movimento
+     reduzido — nesse modo nem divide, e o texto entra inteiro pelo .reveal.
+
+     Só quem estiver marcado com data-reveal="words": título curto de destaque,
+     nunca parágrafo corrido. A divisão é de apresentação — o texto em
+     data-pt/data-en e no JSON continua inteiro, então leitor de tela, SEO e
+     troca de idioma não enxergam diferença, e nada é duplicado.
+     O split guarda o separador como nó de texto real (grupo de captura no
+     regex, diferente do buildScrub, que normaliza espaço com \s+): assim
+     espaço duplo, quebra de linha, acento e pontuação sobrevivem, e a linha
+     quebra nos mesmos pontos de antes — é o que evita salto de layout, já que
+     a soma das larguras não muda. */
+  if (!reduced) {
+    buildPalavras = () => {
+      document.querySelectorAll('[data-reveal="words"]').forEach(el => {
+        const texto = el.textContent;
+        if (!texto.trim()) return;
+        const frag = document.createDocumentFragment();
+        texto.split(/(\s+)/).forEach(parte => {
+          if (!parte) return;
+          if (/^\s+$/.test(parte)) { frag.appendChild(document.createTextNode(parte)); return; }
+          const s = document.createElement('span');
+          s.className = 'rv-w';
+          s.textContent = parte;
+          frag.appendChild(s);
+        });
+        el.textContent = '';
+        el.appendChild(frag);
+        /* já revelado (troca de idioma depois da entrada): as palavras novas
+           nascem no estado final, sem repetir a animação */
+        if (el.classList.contains('in')) aplicarAtrasoPalavras(el);
+      });
+    };
+    buildPalavras();
   }
   medirAlvos();
   medirFundos();

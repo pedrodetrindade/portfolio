@@ -122,6 +122,8 @@
     ]
   },
   "footer": {
+    "copyrightPt": "© {year} Pedro de Trindade. Site inteiramente planejado e desenvolvido por Pedro de Trindade. Todos os direitos reservados.",
+    "copyrightEn": "© {year} Pedro de Trindade. Website fully planned and developed by Pedro de Trindade. All rights reserved.",
     "disclaimerPt": "Site inteiramente planejado e desenvolvido por Pedro de Trindade.",
     "disclaimerEn": "Website fully planned and developed by Pedro de Trindade.",
     "marqueeText": "Pedro de Trindade."

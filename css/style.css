@@ -1049,11 +1049,16 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
    permanentemente é o pior lugar para uma informação de crédito. Subir para
    este bloco tira o texto de debaixo do desfoque, e o marquee, decorativo e já
    com baixa opacidade, vira o verdadeiro fim visual da página. */
+/* O respiro entre o botão e o crédito era 1rem fixo, e a linha do copyright
+   ficava colada nele. Cresce com a largura em vez de trocar por três valores
+   em media query: clamp resolve desktop, tablet e celular numa declaração só,
+   sem breakpoint novo. 1,5rem no celular, 2,4rem no desktop largo — folga
+   suficiente para separar os dois blocos, sem abrir um vão que empurre o
+   marquee para longe. */
 .foot-row{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:1rem}
+  gap:clamp(1.5rem,2.6vw,2.4rem)}
 .foot-note{font-size:.82rem;font-weight:var(--w-light);line-height:1.5;
   color:var(--muted-2);opacity:.78;text-align:center}
-.foot-yr{white-space:nowrap}
 
 /* ===== MARQUEE DE ENCERRAMENTO =====
    Dois grupos idênticos lado a lado; a faixa anda -50% e volta ao início, que
@@ -1166,6 +1171,37 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
 /* linhas e divisores dos itens de atuação */
 .js .help-item.reveal{--rv-y:14px;--rv-dur:700ms}
 
+/* ===== ENTRADA DE DESTAQUE: PALAVRA POR PALAVRA E BLUR SUAVE =====
+   Opt-in por data-reveal, nunca por seletor genérico de heading: quem entra
+   nesses dois modos é escolhido um a um no HTML.
+     data-reveal="words" -> título curto, revelado palavra a palavra
+     data-reveal="soft"  -> texto principal de seção, blur no bloco inteiro
+   O blur é a única exceção à regra de "nenhum filter:blur no site" (ver
+   CLAUDE.md). Ele foi banido por custo de pintura em camada fixa de tela
+   cheia, que repinta todo quadro; aqui é o oposto: alguns elementos curtos,
+   só durante a transição de entrada, terminando em blur(0). Nada fica
+   borrado em repouso e nada disso está no caminho da rolagem. */
+.js [data-reveal="words"] .rv-w{display:inline-block;opacity:0;
+  filter:blur(10px);transform:translateY(16px);
+  transition:opacity var(--rv-w-dur,780ms) var(--ease-soft),
+             filter var(--rv-w-dur,780ms) var(--ease-soft),
+             transform var(--rv-w-dur,780ms) var(--ease-soft)}
+.js [data-reveal="words"].in .rv-w{opacity:1;filter:blur(0);transform:none}
+/* Duas animações concorrentes seriam o bloco e as palavras entrando juntos.
+   Quem tem palavra por palavra abre mão da entrada de bloco: o container fica
+   parado e visível, e só as palavras animam. */
+.js .reveal[data-reveal="words"]{opacity:1;transform:none;transition:none}
+
+/* Blur no bloco, para o texto principal que NÃO é palavra por palavra. Entra
+   um pouco mais devagar que o padrão (980ms contra 750ms), que é o "um pouco
+   mais lento que os secundários" pedido. */
+.js .reveal[data-reveal="soft"]{--rv-y:18px;--rv-dur:980ms;filter:blur(8px);
+  transition:opacity var(--rv-dur) var(--ease-soft),
+             transform var(--rv-dur) var(--ease-soft),
+             filter var(--rv-dur) var(--ease-soft);
+  transition-delay:var(--d,0ms)}
+.js .reveal[data-reveal="soft"].in{filter:blur(0)}
+
 /* máscara de linha: só o transform interno anima, o pai não some */
 .js .hn-mask.reveal{opacity:1;transform:none}
 .js .hn-mask.reveal .hn-line{transition:transform var(--rv-dur,1150ms) var(--ease-soft);
@@ -1187,6 +1223,13 @@ footer{border-top:1px solid var(--line);padding-top:1.3rem;padding-bottom:0;
     transition-duration:.01ms!important;
     scroll-behavior:auto!important}
   .js .reveal,.js .reveal.in{opacity:1!important;transform:none!important}
+  /* entrada de destaque: sem blur, sem deslocamento e sem sequência. O texto
+     já nasce legível — o JS também não chega a dividir em palavras neste modo,
+     mas a regra fica como rede caso ele divida (troca de idioma, por exemplo). */
+  .js [data-reveal="words"] .rv-w{opacity:1!important;filter:none!important;
+    transform:none!important;transition-delay:0ms!important}
+  .js .reveal[data-reveal="soft"],
+  .js .reveal[data-reveal="soft"].in{filter:none!important}
   .scrub .w{color:inherit}
   .cursor-glow,.card-cue{display:none}
   /* nada preso em estado inicial: intro, máscaras, linhas e capacidades */

@@ -176,8 +176,29 @@
       if (G.social.behance) for (var j = 0; j < behanceLinks.length; j++) behanceLinks[j].setAttribute('href', G.social.behance);
     }
     if (G.footer) {
-      var noteSpan = document.querySelector('.foot-note span:last-child');
-      setText(noteSpan, G.footer.disclaimerPt, G.footer.disclaimerEn);
+      /* Copyright do rodapé.
+         O bug anterior morava no seletor: era `.foot-note span:last-child`, e
+         `span:last-child` casa com QUALQUER span que seja último filho do
+         próprio pai. O `<span data-yr>` era o último filho de `.foot-yr` e vinha
+         antes no documento, então o querySelector devolvia ele, não o
+         disclaimer. O texto do disclaimer ia parar no span do ano, o setLang
+         escrevia ali, e a linha saía "© <disclaimer> · <disclaimer>", com o ano
+         perdido. Agora existe um elemento só, .foot-copy, sem ambiguidade
+         possível.
+         {year} é trocado aqui, na renderização, para o texto salvo no CMS
+         continuar editável por inteiro e nunca envelhecer. */
+      var copyEl = document.querySelector('.foot-copy');
+      if (copyEl) {
+        var ano = new Date().getFullYear();
+        var comAno = function (txt) { return String(txt).replace(/\{year\}/g, ano); };
+        /* Compatibilidade com global.json antigo, que só tem disclaimerPt/En:
+           monta "© ano · disclaimer", que é exatamente o que a marcação antiga
+           tentava exibir, sem repetir nada e sem inventar frase nova. Assim que
+           copyrightPt/En existirem, eles passam a mandar. */
+        var pt = G.footer.copyrightPt || ('© ' + ano + ' · ' + (G.footer.disclaimerPt || ''));
+        var en = G.footer.copyrightEn || ('© ' + ano + ' · ' + (G.footer.disclaimerEn || ''));
+        setText(copyEl, comAno(pt), comAno(en));
+      }
       if (G.footer.marqueeText) {
         var mqBs = document.querySelectorAll('.mq-group b');
         for (var k = 0; k < mqBs.length; k++) mqBs[k].textContent = G.footer.marqueeText;

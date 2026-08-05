@@ -497,12 +497,22 @@
     });
 
     var f = state.global.footer, s = state.global.social;
+    /* Arquivo antigo (só disclaimerPt/En) abre normalmente: os campos de
+       copyright nascem com o texto que o site já monta nesse caso, e passam a
+       mandar assim que forem salvos. Nada do footer é apagado no caminho. */
+    var anoAtual = new Date().getFullYear();
+    if (f.copyrightPt == null) f.copyrightPt = '© {year} · ' + (f.disclaimerPt || '');
+    if (f.copyrightEn == null) f.copyrightEn = '© {year} · ' + (f.disclaimerEn || '');
     document.getElementById('footerBody').innerHTML =
-      fieldRow('Disclaimer (PT)', '', '<textarea id="foot_pt">' + esc(f.disclaimerPt) + '</textarea>') +
+      fieldRow('Copyright (PT)', 'Escreva {year} onde o ano deve aparecer — vira ' + anoAtual + ' sozinho, e continua certo no ano que vem.', '<textarea id="foot_cpt">' + esc(f.copyrightPt) + '</textarea>') +
+      fieldRow('Copyright (EN)', 'Mesma coisa: {year} vira o ano atual.', '<textarea id="foot_cen">' + esc(f.copyrightEn) + '</textarea>') +
+      fieldRow('Disclaimer (PT)', 'Texto antigo, mantido só como reserva. O site usa o campo de copyright acima.', '<textarea id="foot_pt">' + esc(f.disclaimerPt) + '</textarea>') +
       fieldRow('Disclaimer (EN)', '', '<textarea id="foot_en">' + esc(f.disclaimerEn) + '</textarea>') +
       fieldRow('LinkedIn', '', '<input type="url" id="soc_li" value="' + esc(s.linkedin) + '">') +
       fieldRow('Behance', '', '<input type="url" id="soc_be" value="' + esc(s.behance) + '">') +
       fieldRow('E-mail de contato', '', '<input type="email" id="soc_em" value="' + esc(s.email) + '">');
+    bindText('foot_cpt', function (v) { state.global.footer.copyrightPt = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindText('foot_cen', function (v) { state.global.footer.copyrightEn = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_pt', function (v) { state.global.footer.disclaimerPt = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_en', function (v) { state.global.footer.disclaimerEn = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('soc_li', function (v) { state.global.social.linkedin = v; markDirty('content/global.json', state.global, state.globalSha); });
