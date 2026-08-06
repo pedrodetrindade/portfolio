@@ -588,8 +588,10 @@
   /* ---- overlays ----
      modal=true  : painel de contato, trava fundo e move o foco
      modal=false : menu em hover no desktop, não trava nada nem rouba foco */
-  let lastFocused = null, modalOpen = false;
+  let lastFocused = null, modalOpen = false, menuCloseTimer = 0, menuVisualVersion = 0;
   function openOverlay(el, modal = true){
+    clearTimeout(menuCloseTimer);
+    menuVisualVersion++;
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     /* O painel nasce com o tema que o header estava usando sobre a seção
        atual. Só depois o header é congelado no escuro. Sem guardar este estado,
@@ -608,9 +610,26 @@
   }
   function closeOverlays(){
     const wasOpen = document.querySelector('.overlay.open');
+    const menuClosing = !!(menu && menu.classList.contains('open') && menu.classList.contains('dropdown'));
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     document.body.classList.remove('locked');
-    document.body.classList.remove('menu-open');
+    /* No dropdown, a pílula fechada só volta depois que o painel terminou de
+       desaparecer. Remover menu-open no mesmo quadro fazia os dois controles
+       ficarem sobrepostos durante a transição de fechamento. */
+    if (menuClosing) {
+      clearTimeout(menuCloseTimer);
+      const closeVersion = ++menuVisualVersion;
+      const sheet = menu.querySelector('.overlay-sheet');
+      const liberarPill = () => {
+        if (closeVersion === menuVisualVersion && !menu.classList.contains('open')) {
+          document.body.classList.remove('menu-open');
+        }
+      };
+      if (sheet) sheet.addEventListener('transitionend', liberarPill, { once: true });
+      menuCloseTimer = setTimeout(liberarPill, 700);
+    } else {
+      document.body.classList.remove('menu-open');
+    }
     lockBackground(false);
     if (window.__travarTemaHeader) window.__travarTemaHeader(false);
     /* devolver o foco só faz sentido se ele tiver sido movido na abertura */
@@ -1024,7 +1043,9 @@
      Nas páginas de projeto não há seção nenhuma da Home, então a lista nasce
      vazia e a função sai na primeira linha. */
   const grainEl = document.querySelector('.grain');
+  const edgeBlurEl = document.querySelector('.edge-blur');
   let grainAssinatura = '';
+  let edgeBlurClear = false;
   const pintarGrain = id => {
     if (!grainEl) return;
     let origem = document.documentElement;
@@ -1088,6 +1109,14 @@
   const readScroll = () => {
     queued = false;
     const y = posVisual;
+    const noFimDaPagina = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
+
+    /* O desfoque de borda é útil durante a leitura, mas não pode cobrir o
+       marquee quando o visitante chega ao fim real do documento. */
+    if (edgeBlurEl && noFimDaPagina !== edgeBlurClear) {
+      edgeBlurClear = noFimDaPagina;
+      edgeBlurEl.classList.toggle('is-clear', noFimDaPagina);
+    }
 
     /* Só escreve o transform quando o estado vira. Reescrever a cada quadro
        invalidava o backdrop-filter do .menu-btn, que é filho do header: o
@@ -1112,7 +1141,6 @@
        por exemplo), porque não sobra scroll suficiente para satisfazer a
        conta. Ao encostar no fim real do documento, revela tudo que restou,
        sem depender do limite proporcional à viewport. */
-    const noFimDaPagina = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
     pintarEntradas(noFimDaPagina ? Infinity : y + window.innerHeight * (estreito.matches ? .86 : .74));
     pintarFundos(y);
   };

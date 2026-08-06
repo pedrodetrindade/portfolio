@@ -151,6 +151,9 @@ function erroNosEfeitosGlobais(effects) {
   if (grain.opacity !== undefined && (typeof grain.opacity !== 'number' || !Number.isFinite(grain.opacity) || grain.opacity < 0 || grain.opacity > 12)) {
     return 'effects.grain.opacity precisa estar entre 0 e 12%.';
   }
+  if (grain.size !== undefined && (typeof grain.size !== 'number' || !Number.isFinite(grain.size) || grain.size < 100 || grain.size > 360)) {
+    return 'effects.grain.size precisa estar entre 100 e 360px.';
+  }
   return null;
 }
 

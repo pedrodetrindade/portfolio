@@ -1296,7 +1296,8 @@
       fieldRow('Margem lateral (telas grandes)', 'pageGutterDesktop · px', sliderControl('lay_gutd', l.pageGutterDesktop, 0, 200, 'px')) +
       fieldRow('Margem lateral (celular)', 'pageGutterMobile · px', sliderControl('lay_gutm', l.pageGutterMobile, 0, 100, 'px')) +
       fieldRow('Grain vivo global', 'Textura leve animada por composição. Cada seção pode herdar, ligar ou desligar.', switchControl('lay_grain', grain.enabled !== false)) +
-      fieldRow('Intensidade do grain', 'Percentual de opacidade. O FAQ reduz automaticamente essa intensidade para preservar o branco.', sliderControl('lay_grain_op', grain.opacity == null ? 4.5 : grain.opacity, 0, 12, '%', .5)) +
+      fieldRow('Intensidade do grain', 'Percentual de opacidade. O FAQ reduz automaticamente essa intensidade para preservar o branco.', sliderControl('lay_grain_op', grain.opacity == null ? 10 : grain.opacity, 0, 12, '%', .5)) +
+      fieldRow('Tamanho do grain', 'Escala da textura monocromática. Valores maiores deixam os grãos mais amplos e perceptíveis.', sliderControl('lay_grain_size', grain.size == null ? 220 : grain.size, 100, 360, 'px', 10)) +
       deviceTabsHtml('global') +
       tieredSpacingField('Espaço antes da seção', 'sectionSpacingTop · padrão para as seções que não têm valor próprio', l.sectionSpacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
         function (dev, v) { l.sectionSpacingTop[dev] = v; markDirty('content/global.json', state.global, state.globalSha); schedulePreview(); },
@@ -1315,6 +1316,11 @@
     });
     bindSlider('lay_grain_op', 0, 12, function (v) {
       grainTarget().opacity = v;
+      markDirty('content/global.json', state.global, state.globalSha);
+      schedulePreview();
+    });
+    bindSlider('lay_grain_size', 100, 360, function (v) {
+      grainTarget().size = v;
       markDirty('content/global.json', state.global, state.globalSha);
       schedulePreview();
     });

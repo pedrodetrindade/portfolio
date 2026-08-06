@@ -65,8 +65,8 @@
 
   function grainOpacityDaSecao(key) {
     var G = window.__CMS_GLOBAL__ || {};
-    var valor = G.effects && G.effects.grain ? Number(G.effects.grain.opacity) : 4.5;
-    if (!isFinite(valor)) valor = 4.5;
+    var valor = G.effects && G.effects.grain ? Number(G.effects.grain.opacity) : 10;
+    if (!isFinite(valor)) valor = 10;
     valor = Math.max(0, Math.min(12, valor)) / 100;
     /* No FAQ claro a mesma textura precisa ser mais quieta para não sujar o
        branco. A redução é automática e continua proporcional ao controle

@@ -21,8 +21,8 @@ O mesmo estado é carregado na Home e em todas as páginas de case. Os campos
 `showAvailability` e os textos antigos continuam aceitos para compatibilidade,
 mas `availabilityStatus` é a autoridade quando existir.
 
-Em **Layout e espaçamentos**, o painel agora controla o grain vivo global e
-sua intensidade. Cada seção da Home pode herdar o padrão global, ligar ou
+Em **Layout e espaçamentos**, o painel agora controla o grain vivo global,
+sua intensidade e o tamanho da textura. Cada seção da Home pode herdar o padrão global, ligar ou
 desligar o efeito individualmente. O FAQ reduz automaticamente a intensidade
 para preservar a superfície clara. Cada case também pode herdar, ligar ou
 desligar o grain no próprio editor de projeto.
@@ -34,7 +34,8 @@ continua acima dela. O efeito usa uma única textura pequena e anima somente
 `transform`, evitando várias camadas de ruído sendo repintadas ao mesmo tempo.
 
 Na configuração padrão, `content/global.json > effects.grain` mantém o efeito
-ligado a 4,5% de opacidade. Abrir a página com `?nograin=1` continua sendo a
+ligado a 10% de opacidade e 220px de escala. A textura é explicitamente
+monocromática. Abrir a página com `?nograin=1` continua sendo a
 chave de diagnóstico para desligá-lo temporariamente sem alterar o CMS.
 
 ---

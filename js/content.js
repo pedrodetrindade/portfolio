@@ -184,7 +184,9 @@
        e preservam compatibilidade com arquivos antigos. */
     var grain = g.effects && g.effects.grain ? g.effects.grain : {};
     var grainOpacity = clampNum(grain.opacity, 0, 12);
-    root.setProperty('--grain-opacity', String((grainOpacity === null ? 4.5 : grainOpacity) / 100));
+    var grainSize = clampNum(grain.size, 100, 360);
+    root.setProperty('--grain-opacity', String((grainOpacity === null ? 10 : grainOpacity) / 100));
+    root.setProperty('--grain-size', (grainSize === null ? 220 : grainSize) + 'px');
     document.documentElement.setAttribute('data-grain-global', grain.enabled === false ? 'false' : 'true');
   }
   applyGlobalTokens(GLOBAL);

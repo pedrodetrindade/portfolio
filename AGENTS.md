@@ -151,36 +151,19 @@ e ainda "desliza" de lado ao entrar. Já aconteceu: a transição de
 `translateX(10px)` → `none`, produzindo um botão torto com uma animação
 lateral indesejada em vez de só opacidade e um leve movimento vertical.
 
-**O header não tem fundo próprio.** Marca, pílula de Menu/Disponibilidade e
-seletor de idioma não têm contraste garantido contra o que rola por baixo do
-header fixo (uma capa de projeto clara, o retrato do Sobre): sem alguma
-proteção o contraste virava loteria dependendo da seção. A primeira tentativa
-foi uma vinheta de largura cheia (`header::before`, gradiente escuro fixo no
-topo, sem blur). Funcionava, mas pintava uma faixa visível mesmo sobre o
-fundo escuro padrão do site, lendo como uma sombra que não deveria estar ali.
-Foi trocada por `filter:drop-shadow(...)` direto em `.brand`, `.menu-btn`,
-`.avail` e `.lp-toggle`. `filter` e não `text-shadow` porque também precisa
-cobrir os ícones SVG (seta do idioma, ponto do Menu), e `text-shadow` não
-pinta forma vetorial. Sem retângulo pintado: invisível sobre o próprio fundo
-escuro do site, só aparece (como halo escuro em volta da letra) quando o
-fundo por trás realmente precisa. Passou por duas calibragens: a primeira
-empilhava dois drop-shadow, um deles com 7px de raio e opacidade .55, forte e
-espalhada demais, visível até onde não precisava; a segunda, um só
-drop-shadow com opacidade .4, ficou fraca demais e voltou a perder a letra
-sobre um fundo bem claro. Raio curto (2px, sem segunda camada) com opacidade
-média (.6) é o meio-termo: imperceptível sobre o fundo escuro padrão do site,
-mas ainda segura a borda da letra sobre um fundo muito claro.
-`.avail` ("Disponível para projetos") também perdeu o
-`color:var(--muted-2)` com `opacity:.82`: combinar uma cor já baixa com uma
-opacidade extra por cima não sobrava contraste sobre fundo muito claro, nem
-com o drop-shadow. Passou para `--muted` sem opacity extra, que ainda lê mais
-quieto que o Menu (esse em `--paper`, peso Medium).
+**O header não tem fundo de largura cheia.** A marca continua protegida por um
+`drop-shadow` curto e acompanha o tema claro/escuro da seção. Já a pílula de
+Menu/Disponibilidade e o seletor de idioma usam um material fixo escuro,
+translúcido e quente, definido pelos tokens `--floating-*`. Esse vidro não
+inverte sobre FAQ ou capas claras: é justamente a superfície estável que
+garante contraste em qualquer trecho e faz o estado fechado, o menu aberto e
+o dropdown de idioma parecerem partes do mesmo sistema. Os filhos desses
+controles removem o `drop-shadow`, porque o próprio material já os protege.
 
 **Cards com capa predominantemente clara (o amarelo do Assertivo, por
-exemplo) têm uma segunda defesa além do drop-shadow: `coverLight:true` em
-`content/projects/index.json` marca o card com a classe `.card--light`, e o
-header troca para texto escuro (`.on-light`) só enquanto esse card passa por
-baixo dele.** Mais limpo que empilhar sombra escura sobre um fundo já claro.
+exemplo) usam `coverLight:true` em `content/projects/index.json`.** A classe
+`.card--light` faz marca e CTA do header trocarem para o tema escuro enquanto
+o card passa por baixo; Menu e idioma preservam o vidro fixo.
 `js/main.js` (`medirClaros`/`pintarClaros`) mede a posição documento-relativa
 de todo `.card--light` e liga a classe pela mesma lógica de comparação de
 posição por scroll que o resto do arquivo usa (`medirAlvos`/`pintarEntradas`,
