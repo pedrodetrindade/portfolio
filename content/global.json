@@ -100,8 +100,8 @@
   "effects": {
     "grain": {
       "enabled": true,
-      "opacity": 10,
-      "size": 220
+      "opacity": 12,
+      "size": 320
     }
   },
   "header": {
