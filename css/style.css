@@ -33,6 +33,10 @@
   --ink-rgb:13,10,10;
   --paper-rgb:242,238,238;
   --warm-rgb:115,104,104;
+  --status-available:#9EAD8B;
+  --status-available-on-light:#5F7A4A;
+  --status-unavailable:#D9797D;
+  --status-unavailable-on-light:#9A353B;
   /* Opacidade da borda separada da cor: o CMS controla as duas de forma
      independente, sem exigir rgba() manual. --line e --line-strong continuam
      existindo com o mesmo resultado de sempre, só que compostas a partir de
@@ -87,6 +91,7 @@
      chega no mesmo tempo em que a página assenta, e o conjunto lê como um
      movimento só. Não use isto em hover, que continua em --dur-micro. */
   --dur-enter:1500ms;
+  --grain-opacity:.045;
   --grain-url:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -248,8 +253,19 @@ html.has-custom-cursor label{cursor:auto}
    a remisturar todo o viewport a cada quadro da rolagem, e era o que fazia o
    scroll agarrar. Blend segue nos elementos pequenos, onde a área é limitada.
    A opacidade compensa a troca: ajuste só este número se o grão pedir. */
-.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.06;background:var(--grain-url);
-  will-change:transform}
+.grain{position:fixed;inset:-24%;z-index:72;pointer-events:none;
+  opacity:var(--grain-current-opacity,var(--grain-opacity));background-image:var(--grain-url);
+  background-size:180px 180px;will-change:transform,opacity;
+  animation:grain-vivo 1450ms steps(2,end) infinite;
+  transition:opacity var(--dur-micro) var(--ease-soft)}
+.grain.is-off{opacity:0;animation-play-state:paused}
+@keyframes grain-vivo{
+  0%,100%{transform:translate3d(-2%,1%,0)}
+  24%{transform:translate3d(1.5%,-2%,0)}
+  49%{transform:translate3d(2%,1.5%,0)}
+  74%{transform:translate3d(-1.5%,-1%,0)}
+}
+@media(prefers-reduced-motion:reduce){.grain{animation:none}}
 /* ===== DESFOQUE DE BORDA INFERIOR =====
    Faixa fixa no rodapé da janela que borra o que passa por baixo e some para
    cima por máscara. Acompanha a página inteira e dá a sensação de o conteúdo
@@ -465,7 +481,7 @@ header{
   --hd-cta-bg:var(--paper);                      /* botão Contato */
   --hd-cta-fg:var(--ink);
   --hd-halo:rgba(var(--ink-rgb),.6);             /* drop-shadow do glifo */
-  --hd-dot:#9EAD8B;                              /* ponto de disponibilidade */
+  --hd-dot:var(--status-available);               /* ponto de disponibilidade */
 }
 /* Sobre fundo claro (FAQ, capa de projeto clara): inverte o conjunto inteiro.
    O ponto de disponibilidade escurece porque o verde claro original sumia
@@ -483,12 +499,14 @@ header[data-theme="light"]{
   --hd-cta-bg:var(--ink);
   --hd-cta-fg:var(--paper);
   --hd-halo:rgba(255,255,255,.55);
-  --hd-dot:#5F7A4A;
+  --hd-dot:var(--status-available-on-light);
 }
+body[data-availability="unavailable"] header{--hd-dot:var(--status-unavailable)}
+body[data-availability="unavailable"] header[data-theme="light"]{--hd-dot:var(--status-unavailable-on-light)}
 /* A troca precisa ser suave e simultânea em todo o topo. Só cor, borda e
    sombra entram na transição: nada de layout, então não existe salto. */
 header .brand,header .menu-btn,header .avail,header .lp-toggle,
-header .nav-cta,header .ctrl-group,header .ctrl-div,header .avail-dot,
+header .nav-cta,header .ctrl-group,header .ctrl-div,
 header .lp-arrow,header .lp-flag,header .menu-btn i{
   transition:color var(--dur-default) var(--ease-soft),
              background-color var(--dur-default) var(--ease-soft),
@@ -529,6 +547,7 @@ body.menu-open header .ctrl-group{opacity:0}
 /* divisor interno discreto, altura parcial */
 .ctrl-div{width:1px;height:1.1rem;flex:none;margin-inline:.3rem;
   background:var(--hd-div)}
+.ctrl-div[hidden],.avail[hidden],.menu-panel-div[hidden],.menu-panel-avail[hidden]{display:none!important}
 .nav .nav-right{justify-self:end}
 .brand{font-weight:var(--w-medium);letter-spacing:-.01em;font-size:1rem;color:var(--hd-fg)}
 .brand span{color:var(--hd-fg-soft)}
@@ -734,8 +753,9 @@ body.menu-open header .ctrl-group{opacity:0}
   font-size:.7rem;font-weight:var(--w-regular);letter-spacing:.02em;color:var(--hd-fg-soft);
   padding:.3rem .85rem .3rem .2rem;white-space:nowrap;
   background:none;border:none}
-.avail-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--hd-dot);
+.avail-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--hd-dot,var(--status-available));
   animation:pulso-disp 1600ms var(--ease-smooth) infinite}
+body[data-availability="unavailable"] .menu-panel-avail .avail-dot{background:var(--status-unavailable)}
 @keyframes pulso-disp{
   0%,100%{opacity:.5;transform:scale(.9)}
   50%{opacity:1;transform:scale(1.15)}
@@ -883,6 +903,16 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 #work::before{background:var(--work-section-bg,transparent)}
 #help::before{background:var(--help-section-bg,transparent)}
 #contact::before{background:var(--contact-section-bg,transparent)}
+/* Imagem opcional do CMS. A camada fica acima da cor da seção e abaixo de
+   todo conteúdo; a opacidade permite preservar contraste sem editar o arquivo
+   original. O sangramento usa a mesma largura útil medida pelo site. */
+.cms-section-surface{position:relative;isolation:isolate}
+.cms-section-surface.has-section-image::after{content:"";position:absolute;inset-block:0;
+  left:50%;width:var(--vw,100vw);margin-left:calc(var(--vw,100vw) / -2);z-index:-1;
+  pointer-events:none;background-image:var(--section-image);background-size:cover;
+  background-position:var(--section-image-position,50% 50%);background-repeat:no-repeat;
+  opacity:var(--section-image-opacity,1)}
+.hero.has-section-image .liquid-bg{display:none}
 /* #contact saiu do grupo min-height:100svh: centralizado numa caixa quase do
    tamanho da tela, o vazio entre o fim do conteúdo (redes sociais) e a linha
    do rodapé ficava grande demais em telas largas. Sem min-height, a seção
@@ -1306,9 +1336,14 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .contact .links a:hover{color:var(--paper);border-color:var(--accent);background:var(--glass)}
 .ico{width:15px;height:15px;flex:none}
 
-footer{border-top:var(--contact-divider-width,1px) solid var(--line);padding-top:1.3rem;padding-bottom:0;
+footer{border-top:var(--contact-divider-width,1px) solid var(--line);
+  padding-top:var(--contact-pad-bottom-desktop,clamp(3rem,7vh,5rem));padding-bottom:0;
   font-size:.74rem;color:var(--muted-2);
   display:flex;flex-direction:column;gap:1.15rem}
+@media(max-width:899px) and (min-width:640px){
+  footer{padding-top:var(--contact-pad-bottom-tablet,6.5rem)}
+}
+@media(max-width:639px){footer{padding-top:var(--contact-pad-bottom-mobile,6.5rem)}}
 /* Botão e disclaimer empilhados, os dois centrados. O disclaimer vivia
    sozinho depois do marquee, exatamente na faixa que .edge-blur (o desfoque
    fixo do rodapé da janela) borra sem parar: texto pequeno perdendo nitidez
@@ -1581,11 +1616,12 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    é um painel, não um modal. */
 .overlay.dropdown{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
   pointer-events:none;align-items:flex-start;overflow:visible;padding-block:0;
-  transition:opacity var(--dur-fast) var(--ease-soft),visibility var(--dur-fast)}
+  opacity:1;transition:visibility 0s linear var(--dur-micro)}
+.overlay.dropdown.open{transition-delay:0s}
 .overlay.dropdown .overlay-sheet{pointer-events:auto;margin-block:0;margin-top:4.4rem;max-width:500px;
-  transform:translateY(-8px) scale(.99);opacity:0;
+  transform:translateY(-8px) scale(.99);opacity:1;
   box-shadow:0 30px 70px rgba(0,0,0,.5);
-  transition:transform var(--dur-default) var(--ease-soft),opacity var(--dur-default) var(--ease-soft)}
+  transition:transform var(--dur-micro) var(--ease-soft)}
 .overlay.dropdown.open .overlay-sheet{transform:none;opacity:1}
 /* ponte invisível cobrindo o vão entre o botão e o painel: sem ela o cursor
    sai da região interativa no meio do caminho e o menu pisca */
@@ -1593,13 +1629,9 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   width:min(500px,92vw);height:2rem;pointer-events:auto}
 /* conteúdo interno entra escalonado, e sai junto para o fechamento ser curto */
 .overlay.dropdown .menu-item{
-  opacity:0;transform:translateY(-6px);
-  transition:opacity var(--dur-fast) var(--ease-soft),transform var(--dur-fast) var(--ease-soft)}
+  opacity:1;transform:none;
+  transition:background-color var(--dur-micro) var(--ease-soft),padding-left var(--dur-micro) var(--ease-soft)}
 .overlay.dropdown.open .menu-item{opacity:1;transform:none}
-.overlay.dropdown.open .menu-item:nth-child(1){transition-delay:70ms}
-.overlay.dropdown.open .menu-item:nth-child(2){transition-delay:115ms}
-.overlay.dropdown.open .menu-item:nth-child(3){transition-delay:160ms}
-.overlay.dropdown.open .menu-item:nth-child(4){transition-delay:205ms}
 .overlay-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;
   padding:1.3rem 1.6rem;border-bottom:1px solid var(--line)}
 .overlay-note{font-family:var(--mono);font-size:.7rem;color:var(--muted-2);letter-spacing:.02em}
@@ -1608,24 +1640,35 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 
 /* O painel aberto nasce da mesma pílula translúcida do header. A primeira
    faixa repete Menu + disponibilidade, sem X e sem trocar de material. */
+#menu{
+  --menu-fg:var(--paper);--menu-muted:var(--muted);--menu-line:var(--line);
+  --menu-line-strong:var(--line-strong);--menu-surface:rgba(var(--ink-rgb),.72);
+  --menu-hover:rgba(var(--paper-rgb),.05);--menu-icon-surface:rgba(var(--paper-rgb),.05)
+}
+#menu[data-theme="light"]{
+  --menu-fg:var(--ink);--menu-muted:var(--ink-3);--menu-line:rgba(var(--ink-rgb),.18);
+  --menu-line-strong:rgba(var(--ink-rgb),.30);--menu-surface:rgba(var(--paper-rgb),.74);
+  --menu-hover:rgba(var(--ink-rgb),.055);--menu-icon-surface:rgba(var(--ink-rgb),.045)
+}
 #menu .overlay-sheet{max-width:350px}
 #menu:not(.dropdown) .overlay-sheet{margin-block:clamp(.7rem,3vh,1.8rem) auto}
 #menu.dropdown .overlay-sheet{margin-top:1.1rem;max-width:350px;max-height:calc(100svh - 2.2rem)}
 #menu.dropdown::before{display:none}
-#menu .overlay-sheet{background:rgba(var(--paper-rgb),.055);border-color:var(--line);
+#menu .overlay-sheet{background:var(--menu-surface);border-color:var(--menu-line);
   backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
   box-shadow:0 24px 64px rgba(var(--ink-rgb),.42);border-radius:20px}
 .menu-panel-head{min-height:55px;display:flex;align-items:center;padding:.22rem .75rem;
-  border-bottom:1px solid var(--line);color:var(--paper)}
+  border-bottom:1px solid var(--menu-line);color:var(--menu-fg)}
 .menu-panel-title{display:inline-flex;align-items:center;gap:.58rem;padding:.62rem .3rem;
   font-size:.88rem;font-weight:var(--w-medium)}
 .menu-panel-title>i{width:9px;height:9px;flex:none;
-  background-image:radial-gradient(circle,var(--muted) 1.4px,transparent 1.5px);
+  background-image:radial-gradient(circle,var(--menu-muted) 1.4px,transparent 1.5px);
   background-size:4.5px 4.5px}
-.menu-panel-div{width:1px;height:1.1rem;flex:none;margin-inline:.65rem .55rem;background:var(--line-strong)}
+.menu-panel-div{width:1px;height:1.1rem;flex:none;margin-inline:.65rem .55rem;background:var(--menu-line-strong)}
 .menu-panel-avail{min-width:0;display:inline-flex;align-items:center;gap:.48rem;
-  color:var(--muted);font-size:.68rem;letter-spacing:.01em;white-space:nowrap}
+  color:var(--menu-muted);font-size:.68rem;letter-spacing:.01em;white-space:nowrap}
 .menu-panel-avail>span{overflow:hidden;text-overflow:ellipsis}
+body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 #menu .menu-item{gap:.63rem;padding:.58rem .91rem;
   font-size:clamp(.84rem,1.68vw,1.16rem)}
 #menu .menu-item:hover{padding-left:1.2rem}
@@ -1667,9 +1710,9 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 
 /* Item da seção em que o visitante está. Não comunica só por cor: ganha um
    traço à esquerda e peso, e carrega aria-current no HTML. */
-.menu-item[aria-current="location"]{background:rgba(var(--paper-rgb),.05)}
+.menu-item[aria-current="location"]{background:var(--menu-hover,rgba(var(--paper-rgb),.05))}
 .menu-item[aria-current="location"] .menu-ico{
-  color:var(--paper);border-color:var(--line-strong);background:rgba(var(--paper-rgb),.1)}
+  color:var(--menu-fg,var(--paper));border-color:var(--menu-line-strong,var(--line-strong));background:var(--menu-hover,rgba(var(--paper-rgb),.1))}
 .menu-item[aria-current="location"]::before{content:"";position:absolute;left:0;top:50%;
   width:3px;height:1.5em;border-radius:0 3px 3px 0;background:var(--accent);
   transform:translateY(-50%)}
@@ -1680,24 +1723,24 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    partida em todas as linhas. Antes o item era justify-between, com uma caixa
    de 104x64 na ponta direita que lia como thumbnail de projeto. */
 .menu-item{display:flex;align-items:center;justify-content:flex-start;gap:1.1rem;
-  padding:1.1rem 1.6rem;border-bottom:1px solid var(--line);
+  padding:1.1rem 1.6rem;border-bottom:1px solid var(--menu-line,var(--line));color:var(--menu-fg,var(--paper));
   font-size:clamp(1.4rem,3vw,2rem);font-weight:var(--w-medium);letter-spacing:-.02em;
   transition:background-color var(--dur-micro) var(--ease-out-smooth),padding-left var(--dur-default) var(--ease-out-smooth)}
 .menu-item:last-child{border-bottom:none}
-.menu-item:hover{background:rgba(var(--paper-rgb),.05);padding-left:2.1rem}
+.menu-item:hover{background:var(--menu-hover,rgba(var(--paper-rgb),.05));padding-left:2.1rem}
 /* Caixa do ícone: material discreto, não thumbnail. Tamanho fixo para as
    linhas ficarem alinhadas mesmo com rótulos de larguras diferentes. */
 .menu-ico{flex:none;display:inline-flex;align-items:center;justify-content:center;
-  width:40px;height:40px;border-radius:12px;color:var(--muted);
-  background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);
+  width:40px;height:40px;border-radius:12px;color:var(--menu-muted,var(--muted));
+  background:var(--menu-icon-surface,rgba(var(--paper-rgb),.05));border:1px solid var(--menu-line,var(--line));
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   transition:color var(--dur-micro) var(--ease-out-smooth),
              background-color var(--dur-micro) var(--ease-out-smooth),
              border-color var(--dur-micro) var(--ease-out-smooth)}
 .menu-ico svg{width:19px;height:19px;display:block}
 .menu-item:hover .menu-ico,.menu-item:focus-visible .menu-ico{
-  color:var(--paper);background:rgba(var(--paper-rgb),.1);border-color:var(--line-strong)}
-.menu-item[aria-current="page"] .menu-ico{color:var(--paper);border-color:var(--line-strong)}
+  color:var(--menu-fg,var(--paper));background:var(--menu-hover,rgba(var(--paper-rgb),.1));border-color:var(--menu-line-strong,var(--line-strong))}
+.menu-item[aria-current="page"] .menu-ico{color:var(--menu-fg,var(--paper));border-color:var(--menu-line-strong,var(--line-strong))}
 
 .cform{padding:1.8rem 1.6rem 2rem}
 .cform h2{font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:var(--w-medium);letter-spacing:-.025em;line-height:1.1;
@@ -1890,7 +1933,8 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .lp-toggle{display:inline-flex;align-items:center;gap:.5em;cursor:pointer;
   font-family:var(--font);font-size:.82rem;font-weight:var(--w-medium);color:var(--hd-fg-soft);
   padding:.5rem .75rem;border-radius:var(--radius-button,100px);
-  background:transparent;border:1px solid var(--hd-line)}
+  background:var(--hd-surface);border:1px solid var(--hd-line);
+  backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}
 .lp-toggle:hover{color:var(--hd-fg);border-color:var(--hd-line-strong);
   background:var(--hd-surface)}
 .lp-flag{display:block;width:17px;height:17px;flex:none;border-radius:50%;overflow:hidden;

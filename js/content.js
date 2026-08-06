@@ -177,15 +177,26 @@
     var m = g.motion || {};
     if (typeof m.durationHover === 'number') root.setProperty('--dur-hover', clampNum(m.durationHover, 0, 3000) + 'ms');
     if (typeof m.durationMicro === 'number') root.setProperty('--dur-micro', clampNum(m.durationMicro, 0, 3000) + 'ms');
+
+    /* O grain vivo usa uma textura pequena que se move apenas por transform.
+       O CMS controla aqui a intensidade global; cada seção decide depois se
+       herda, liga ou desliga o efeito. Campos ausentes mantêm o padrão visual
+       e preservam compatibilidade com arquivos antigos. */
+    var grain = g.effects && g.effects.grain ? g.effects.grain : {};
+    var grainOpacity = clampNum(grain.opacity, 0, 12);
+    root.setProperty('--grain-opacity', String((grainOpacity === null ? 4.5 : grainOpacity) / 100));
+    document.documentElement.setAttribute('data-grain-global', grain.enabled === false ? 'false' : 'true');
   }
   applyGlobalTokens(GLOBAL);
 
   /* Página só usa a própria seção de dados a partir daqui; guardamos tudo em
      window para a Fase B (chamada de outro <script>, no fim do body,
      depois que o HTML existe) reaproveitar sem novo pedido de rede. */
-  if (!isCase) {
-    window.__CMS_HOME__ = xhrJSON('content/home.json?v=1') || {};
-  } else {
+  /* O estado de disponibilidade mora na Home, mas o header é compartilhado
+     com os cases. Carregar home.json também em /work/ elimina a segunda fonte
+     da verdade que deixava o status diferente entre páginas. */
+  window.__CMS_HOME__ = xhrJSON('content/home.json?v=1') || {};
+  if (isCase) {
     var slug = location.pathname.split('/').pop().replace('.html', '');
     window.__CMS_PROJECT__ = xhrJSON('content/projects/' + slug + '.json?v=1') || {};
     window.__CMS_PROJECTS_INDEX__ = xhrJSON('content/projects/index.json?v=1') || {};
@@ -337,8 +348,16 @@
         var d = msg.data || {};
         /* tokens visuais primeiro: eles são só variáveis de CSS e não dependem
            do HTML, então aplicam mesmo se a re-renderização de texto falhar */
-        if (d.global && typeof d.global === 'object') applyGlobalTokens(d.global);
-        if (d.home && typeof d.home === 'object') applySectionSpacing(d.home);
+        if (d.global && typeof d.global === 'object') {
+          window.__CMS_GLOBAL__ = d.global;
+          applyGlobalTokens(d.global);
+        }
+        if (d.home && typeof d.home === 'object') {
+          window.__CMS_HOME__ = d.home;
+          applySectionSpacing(d.home);
+        }
+        if (d.project && typeof d.project === 'object') window.__CMS_PROJECT__ = d.project;
+        if (d.projectsIndex && typeof d.projectsIndex === 'object') window.__CMS_PROJECTS_INDEX__ = d.projectsIndex;
 
         var R = window.__CMS_RENDER__;
         var mexeuNoTexto = false;

@@ -43,7 +43,8 @@
      Nenhuma altera o site em uso normal: sem parâmetro, nada muda. */
   const flag = nome => new URLSearchParams(location.search).has(nome);
   const diag = [];
-  if (flag('nograin')) {
+  const grainDiagnosticOff = flag('nograin');
+  if (grainDiagnosticOff) {
     document.documentElement.style.setProperty('--grain-url', 'none');
     diag.push('nograin');
   }
@@ -256,6 +257,42 @@
     </div>
   `);
 
+  /* ===== DISPONIBILIDADE: UM ESTADO PARA HEADER E MENU =====
+     A configuração vive em home.json, mas é aplicada a toda página, inclusive
+     aos cases. `showAvailability` continua aceito para conteúdo antigo;
+     availabilityStatus acrescenta o terceiro estado "indisponível". */
+  function dadosDeDisponibilidade() {
+    const hero = (window.__CMS_HOME__ && window.__CMS_HOME__.hero) || {};
+    const permitidos = ['available', 'unavailable', 'hidden'];
+    const status = permitidos.includes(hero.availabilityStatus)
+      ? hero.availabilityStatus
+      : (hero.showAvailability === false ? 'hidden' : 'available');
+    const indisponivel = status === 'unavailable';
+    return {
+      status,
+      pt: indisponivel ? (hero.unavailabilityPt || 'Indisponível para projetos') : (hero.availabilityPt || 'Disponível para projetos'),
+      en: indisponivel ? (hero.unavailabilityEn || 'Unavailable for projects') : (hero.availabilityEn || 'Available for projects'),
+      ptShort: indisponivel ? (hero.unavailabilityShortPt || 'Indisponível') : (hero.availabilityShortPt || 'Disponível'),
+      enShort: indisponivel ? (hero.unavailabilityShortEn || 'Unavailable') : (hero.availabilityShortEn || 'Available')
+    };
+  }
+
+  function aplicarDisponibilidade() {
+    const cfg = dadosDeDisponibilidade();
+    const escondido = cfg.status === 'hidden';
+    document.body.setAttribute('data-availability', cfg.status);
+    document.querySelectorAll('.avail,.menu-panel-avail').forEach(el => {
+      el.hidden = escondido;
+      const texto = el.querySelector('span:not(.avail-dot)');
+      if (!texto) return;
+      texto.dataset.pt = cfg.pt;
+      texto.dataset.en = cfg.en;
+      texto.dataset.ptShort = cfg.ptShort;
+      texto.dataset.enShort = cfg.enShort;
+    });
+    document.querySelectorAll('.ctrl-div,.menu-panel-div').forEach(el => { el.hidden = escondido; });
+  }
+
   /* ano do copyright: dinâmico, nunca escrito à mão */
   document.querySelectorAll('[data-yr]').forEach(el => { el.textContent = new Date().getFullYear(); });
 
@@ -427,6 +464,7 @@
     [headEl, mainEl, footEl].forEach(el => { if (el) el.inert = state; });
   }
 
+  aplicarDisponibilidade();
   setLang(detectLang());
 
   /* O limiar das variantes curtas é uma media query, então precisa ser ouvido:
@@ -553,6 +591,10 @@
   let lastFocused = null, modalOpen = false;
   function openOverlay(el, modal = true){
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+    /* O painel nasce com o tema que o header estava usando sobre a seção
+       atual. Só depois o header é congelado no escuro. Sem guardar este estado,
+       abrir o menu sobre o FAQ claro produzia vidro claro com texto branco. */
+    if (el === menu) el.setAttribute('data-theme', headEl.getAttribute('data-theme') || 'dark');
     el.classList.add('open');
     document.body.classList.toggle('menu-open', el === menu);
     modalOpen = modal;
@@ -981,6 +1023,29 @@
      reescrever o atributo a cada quadro seria trabalho puro para o navegador.
      Nas páginas de projeto não há seção nenhuma da Home, então a lista nasce
      vazia e a função sai na primeira linha. */
+  const grainEl = document.querySelector('.grain');
+  let grainAssinatura = '';
+  const pintarGrain = id => {
+    if (!grainEl) return;
+    let origem = document.documentElement;
+    if (!base && id) {
+      if (id === 'top') origem = document.querySelector('.hero');
+      else if (id === 'about') origem = document.querySelector('#about .about-break');
+      else origem = document.getElementById(id);
+    }
+    const ligado = !grainDiagnosticOff && (base
+      ? document.documentElement.getAttribute('data-grain-page') !== 'false'
+      : !!origem && origem.getAttribute('data-grain-enabled') !== 'false');
+    const opacidade = base
+      ? (document.documentElement.getAttribute('data-grain-page-opacity') || getComputedStyle(document.documentElement).getPropertyValue('--grain-opacity').trim())
+      : ((origem && origem.getAttribute('data-grain-opacity')) || getComputedStyle(document.documentElement).getPropertyValue('--grain-opacity').trim());
+    const assinatura = String(ligado) + '|' + opacidade;
+    if (assinatura === grainAssinatura) return;
+    grainAssinatura = assinatura;
+    grainEl.classList.toggle('is-off', !ligado);
+    if (opacidade) grainEl.style.setProperty('--grain-current-opacity', opacidade);
+  };
+
   let alvosSpy = [], secaoAtiva = null;
   const medirSpy = () => {
     /* Só na Home. Nas páginas de projeto o <main id="top"> existe, então sem
@@ -997,7 +1062,7 @@
       .sort((a, b) => a.topo - b.topo);
   };
   const pintarSpy = y => {
-    if (!alvosSpy.length) return;
+    if (!alvosSpy.length) { pintarGrain(null); return; }
     /* a linha de leitura fica um pouco abaixo do header: é o ponto em que a
        seção "assumiu" a tela, e não o instante em que encosta na borda */
     const linha = y + headAltura + 40;
@@ -1011,6 +1076,7 @@
        do documento, a última seção é a que está sendo lida. */
     const fim = document.documentElement.scrollHeight - window.innerHeight;
     if (fim > 0 && y >= fim - 2) atual = alvosSpy[alvosSpy.length - 1].id;
+    pintarGrain(atual);
     if (atual === secaoAtiva) return;
     secaoAtiva = atual;
     document.querySelectorAll('.menu-item[data-secao]').forEach(a => {
@@ -1452,6 +1518,7 @@
      formato da mensagem é o content.js, antes de chegar aqui. */
   window.__CMS_REINIT__ = () => {
     const atual = (document.documentElement.lang || 'pt').indexOf('pt') === 0 ? 'pt' : 'en';
+    aplicarDisponibilidade();
     setLang(atual);
     ligarPerguntas();
     medirAlvos();

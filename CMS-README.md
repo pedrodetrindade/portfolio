@@ -7,6 +7,38 @@ Access). Ele foi escrito para quem não mexe em código no dia a dia.
 
 ---
 
+## Ajuste final antes da carga dos projetos — status, fundos e grain
+
+O status do header agora tem uma única fonte de verdade em
+`content/home.json > hero.availabilityStatus`. O painel oferece três estados:
+
+- `available`: texto configurável e ponto verde pulsante;
+- `unavailable`: texto próprio configurável e ponto vermelho pulsante;
+- `hidden`: remove status e divisor tanto da pílula fechada quanto do menu
+  aberto, sem deixar linha ou espaço residual.
+
+O mesmo estado é carregado na Home e em todas as páginas de case. Os campos
+`showAvailability` e os textos antigos continuam aceitos para compatibilidade,
+mas `availabilityStatus` é a autoridade quando existir.
+
+Em **Layout e espaçamentos**, o painel agora controla o grain vivo global e
+sua intensidade. Cada seção da Home pode herdar o padrão global, ligar ou
+desligar o efeito individualmente. O FAQ reduz automaticamente a intensidade
+para preservar a superfície clara. Cada case também pode herdar, ligar ou
+desligar o grain no próprio editor de projeto.
+
+As seis seções da Home aceitam uma imagem de fundo por upload, caminho em
+`assets/` ou URL HTTPS direta. Também há controles de intensidade e posição
+(centro, topo ou base). A imagem é desenhada atrás do conteúdo e o grain
+continua acima dela. O efeito usa uma única textura pequena e anima somente
+`transform`, evitando várias camadas de ruído sendo repintadas ao mesmo tempo.
+
+Na configuração padrão, `content/global.json > effects.grain` mantém o efeito
+ligado a 4,5% de opacidade. Abrir a página com `?nograin=1` continua sendo a
+chave de diagnóstico para desligá-lo temporariamente sem alterar o CMS.
+
+---
+
 ## Segunda revisão: espaçamento por bloco e validação final antes do deploy
 
 ### A. Estado anterior

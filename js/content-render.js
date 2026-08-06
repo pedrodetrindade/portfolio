@@ -38,9 +38,79 @@
      de o Worker aplicar a validação definitiva na publicação. */
   function resolveAssetUrl(valor) {
     var t = typeof valor === 'string' ? valor.trim() : '';
-    if (/^https:\/\//i.test(t)) return t;
-    if (/^(assets|content)\//.test(t) && t.indexOf('..') === -1) return base + t;
+    if (!t || /[<>"'`\\]/.test(t)) return '';
+    if (/^https:\/\//i.test(t)) {
+      try {
+        var u = new URL(t);
+        if (u.protocol !== 'https:' || u.username || u.password) return '';
+        return u.href;
+      } catch (e) { return ''; }
+    }
+    if (/^(assets|content)\//.test(t) && t.indexOf('..') === -1) {
+      try { return new URL(base + t, location.href).href; } catch (e) { return ''; }
+    }
     return '';
+  }
+
+  /* ===== APARÊNCIA DE FUNDO E GRAIN =====
+     A imagem é uma camada de fundo da seção, nunca conteúdo: o CSS usa um
+     pseudo-elemento e mantém texto, links e mídia no fluxo normal. O grain é
+     uma única textura fixa para a página inteira; cada seção apenas publica
+     se o efeito deve estar ligado quando ela ocupa a linha de leitura. Assim
+     não existem seis animações de ruído concorrendo entre si. */
+  function grainGlobalLigado() {
+    var G = window.__CMS_GLOBAL__ || {};
+    return !(G.effects && G.effects.grain && G.effects.grain.enabled === false);
+  }
+
+  function grainOpacityDaSecao(key) {
+    var G = window.__CMS_GLOBAL__ || {};
+    var valor = G.effects && G.effects.grain ? Number(G.effects.grain.opacity) : 4.5;
+    if (!isFinite(valor)) valor = 4.5;
+    valor = Math.max(0, Math.min(12, valor)) / 100;
+    /* No FAQ claro a mesma textura precisa ser mais quieta para não sujar o
+       branco. A redução é automática e continua proporcional ao controle
+       global de intensidade. */
+    return key === 'faq' ? valor * .58 : valor;
+  }
+
+  function aplicarFundoDaSecao(el, key, visual) {
+    if (!el) return;
+    visual = visual || {};
+    el.classList.add('cms-section-surface');
+    var imagem = resolveAssetUrl(visual.backgroundImage);
+    el.classList.toggle('has-section-image', !!imagem);
+    if (imagem) el.style.setProperty('--section-image', 'url("' + encodeURI(imagem) + '")');
+    else el.style.removeProperty('--section-image');
+
+    var opacidade = Number(visual.backgroundImageOpacity);
+    if (!isFinite(opacidade)) opacidade = 100;
+    el.style.setProperty('--section-image-opacity', String(Math.max(0, Math.min(100, opacidade)) / 100));
+    var posicoes = { center: '50% 50%', top: '50% 0%', bottom: '50% 100%' };
+    el.style.setProperty('--section-image-position', posicoes[visual.backgroundPosition] || posicoes.center);
+
+    var grainLigado = typeof visual.grainEnabled === 'boolean' ? visual.grainEnabled : grainGlobalLigado();
+    el.setAttribute('data-grain-enabled', grainLigado ? 'true' : 'false');
+    el.setAttribute('data-grain-opacity', String(grainOpacityDaSecao(key)));
+  }
+
+  function aplicarAparenciaHome(H) {
+    var sections = (H && H.sections) || {};
+    var mapa = {
+      hero: document.querySelector('.hero'),
+      work: document.getElementById('work'),
+      about: document.querySelector('.about-break'),
+      help: document.getElementById('help'),
+      faq: document.getElementById('faq'),
+      contact: document.getElementById('contact')
+    };
+    Object.keys(mapa).forEach(function (key) { aplicarFundoDaSecao(mapa[key], key, sections[key]); });
+  }
+
+  function aplicarAparenciaProjeto(P) {
+    var ligado = typeof P.grainEnabled === 'boolean' ? P.grainEnabled : grainGlobalLigado();
+    document.documentElement.setAttribute('data-grain-page', ligado ? 'true' : 'false');
+    document.documentElement.setAttribute('data-grain-page-opacity', String(grainOpacityDaSecao('project')));
   }
 
   /* Header/footer são compartilhados por Home e cases. Esta aplicação não
@@ -180,6 +250,7 @@
     if (isCase()) return;
     var H = overrideHome || window.__CMS_HOME__;
     if (!H || !H.hero) return;
+    aplicarAparenciaHome(H);
 
     var hero = H.hero;
     setText(document.querySelector('.hero-tag'), hero.tagPt, hero.tagEn);
@@ -192,8 +263,6 @@
       if (hero.availabilityShortPt) availSpan.setAttribute('data-pt-short', hero.availabilityShortPt);
       if (hero.availabilityShortEn) availSpan.setAttribute('data-en-short', hero.availabilityShortEn);
     }
-    var availWrap = document.querySelector('.ctrl-group .avail');
-    if (availWrap && hero.showAvailability === false) availWrap.style.display = 'none';
     var nhLabel = document.querySelector('.hero .next-hint .nh-label');
     var nhName = document.querySelector('.hero .next-hint .nh-name');
     setText(nhLabel, hero.nextHintLabelPt, hero.nextHintLabelEn);
@@ -472,6 +541,7 @@
     if (!isCase()) return;
     var P = overrideProject || window.__CMS_PROJECT__;
     if (!P || !P.hero) return;
+    aplicarAparenciaProjeto(P);
     var h = P.hero;
     setOptionalLabel(document.querySelector('.case-hero .eyebrow'), h.eyebrowPt, h.eyebrowEn, h.showEyebrow);
     setText(document.querySelector('.case-hero h1'), h.titlePt, h.titleEn);

@@ -99,7 +99,12 @@
   },
   "effects": {
     "grain": {
+<<<<<<< Updated upstream
       "opacity": 10
+=======
+      "enabled": true,
+      "opacity": 4.5
+>>>>>>> Stashed changes
     }
   },
   "header": {

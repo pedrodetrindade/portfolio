@@ -1283,11 +1283,20 @@
   function renderLayout() {
     wirePreviewBlock('previewSlotLayout');
     var l = state.global.layout;
+    var effects = state.global.effects || {};
+    var grain = effects.grain || {};
+    function grainTarget() {
+      if (!state.global.effects) state.global.effects = {};
+      if (!state.global.effects.grain) state.global.effects.grain = {};
+      return state.global.effects.grain;
+    }
 
     document.getElementById('layoutGlobalBody').innerHTML =
       fieldRow('Largura máxima do conteúdo', 'contentMaxWidth · px', sliderControl('lay_maxw', l.contentMaxWidth, LIMITS.contentWidth[0], LIMITS.contentWidth[1], 'px')) +
       fieldRow('Margem lateral (telas grandes)', 'pageGutterDesktop · px', sliderControl('lay_gutd', l.pageGutterDesktop, 0, 200, 'px')) +
       fieldRow('Margem lateral (celular)', 'pageGutterMobile · px', sliderControl('lay_gutm', l.pageGutterMobile, 0, 100, 'px')) +
+      fieldRow('Grain vivo global', 'Textura leve animada por composição. Cada seção pode herdar, ligar ou desligar.', switchControl('lay_grain', grain.enabled !== false)) +
+      fieldRow('Intensidade do grain', 'Percentual de opacidade. O FAQ reduz automaticamente essa intensidade para preservar o branco.', sliderControl('lay_grain_op', grain.opacity == null ? 4.5 : grain.opacity, 0, 12, '%', .5)) +
       deviceTabsHtml('global') +
       tieredSpacingField('Espaço antes da seção', 'sectionSpacingTop · padrão para as seções que não têm valor próprio', l.sectionSpacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
         function (dev, v) { l.sectionSpacingTop[dev] = v; markDirty('content/global.json', state.global, state.globalSha); schedulePreview(); },
@@ -1299,6 +1308,16 @@
         function (dev, v) { l.gridGap[dev] = v; markDirty('content/global.json', state.global, state.globalSha); schedulePreview(); },
         function (dev) { l.gridGap[dev] = null; markDirty('content/global.json', state.global, state.globalSha); renderLayout(); schedulePreview(); });
     wireTieredFields();
+    bindSwitch('lay_grain', function (v) {
+      grainTarget().enabled = v;
+      markDirty('content/global.json', state.global, state.globalSha);
+      schedulePreview();
+    });
+    bindSlider('lay_grain_op', 0, 12, function (v) {
+      grainTarget().opacity = v;
+      markDirty('content/global.json', state.global, state.globalSha);
+      schedulePreview();
+    });
     [['lay_maxw', 'contentMaxWidth', LIMITS.contentWidth], ['lay_gutd', 'pageGutterDesktop', [0, 200]],
      ['lay_gutm', 'pageGutterMobile', [0, 100]]].forEach(function (m) {
       bindSlider(m[0], m[2][0], m[2][1], function (v) {
@@ -1338,7 +1357,7 @@
       schedulePreview();
     }
     document.getElementById('layoutSectionsBody').innerHTML =
-      '<p class="hint">Cada seção pode usar uma cor própria ou herdar o fundo original. "Divisórias" controla somente as linhas estruturais daquela seção.</p>' +
+      '<p class="hint">Cada seção pode usar cor e imagem próprias ou herdar o fundo original. O grain pode seguir o padrão global, ser ligado ou desligado só naquela seção. "Divisórias" controla somente as linhas estruturais.</p>' +
       deviceTabsHtml('sections') +
       Object.keys(labels).map(function (key) {
         var s = sections[key] || {};
@@ -1358,6 +1377,17 @@
           fieldRow('Usar cor de fundo própria', 'Desligado mantém o fundo original.', switchControl('sec_' + key + '_ownbg', !!ownBg)) +
           fieldRow('Cor de fundo', key === 'faq' ? 'A tipografia do FAQ foi desenhada para fundos claros.' : '',
             colorControl('sec_' + key + '_bg', (ownBg || fallbackBg).hex, (ownBg || fallbackBg).opacity)) +
+          fieldRow('Imagem de fundo', 'Opcional. Envie um arquivo, cole um caminho assets/ ou uma URL HTTPS direta.',
+            '<input type="text" id="sec_' + key + '_image" value="' + esc(s.backgroundImage || '') + '"><input type="file" id="sec_' + key + '_image_upload" accept="image/*">') +
+          fieldRow('Intensidade da imagem', 'Reduza para misturar a imagem com a cor de fundo e preservar a leitura.',
+            sliderControl('sec_' + key + '_image_opacity', s.backgroundImageOpacity == null ? 100 : s.backgroundImageOpacity, 0, 100, '%')) +
+          fieldRow('Posição da imagem', '', selectDe('sec_' + key + '_image_position', s.backgroundPosition || 'center', [
+            ['center', 'Centro'], ['top', 'Topo'], ['bottom', 'Base']
+          ])) +
+          fieldRow('Grain nesta seção', 'Herdar acompanha o controle global.', selectDe('sec_' + key + '_grain',
+            typeof s.grainEnabled === 'boolean' ? (s.grainEnabled ? 'on' : 'off') : 'inherit', [
+              ['inherit', 'Herdar do global'], ['on', 'Ligado'], ['off', 'Desligado']
+            ])) +
           (key === 'hero' || key === 'work' ? '' : fieldRow('Mostrar divisórias', 'Remove ou restaura as linhas estruturais desta seção.',
             switchControl('sec_' + key + '_dividers', s.showDividers !== false))) +
           (key === 'hero' ? '' : tieredSpacingField('Espaço antes da seção', '', spacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
@@ -1391,6 +1421,39 @@
       bindColor('sec_' + key + '_bg', function (hex, op) {
         sectionTarget(key).background = { hex: hex, opacity: op };
         saveSection();
+      });
+      bindText('sec_' + key + '_image', function (v) {
+        var target = sectionTarget(key);
+        if (v.trim()) target.backgroundImage = v.trim();
+        else delete target.backgroundImage;
+        cleanEmptySection(key);
+        saveSection();
+      });
+      bindSlider('sec_' + key + '_image_opacity', 0, 100, function (v) {
+        sectionTarget(key).backgroundImageOpacity = v;
+        saveSection();
+      });
+      document.getElementById('sec_' + key + '_image_position').addEventListener('change', function (e) {
+        var target = sectionTarget(key);
+        if (e.target.value === 'center') delete target.backgroundPosition;
+        else target.backgroundPosition = e.target.value;
+        cleanEmptySection(key);
+        saveSection();
+      });
+      document.getElementById('sec_' + key + '_grain').addEventListener('change', function (e) {
+        var target = sectionTarget(key);
+        if (e.target.value === 'inherit') delete target.grainEnabled;
+        else target.grainEnabled = e.target.value === 'on';
+        cleanEmptySection(key);
+        saveSection();
+      });
+      var bgUpload = document.getElementById('sec_' + key + '_image_upload');
+      if (bgUpload) bgUpload.addEventListener('change', function () {
+        uploadFile(bgUpload.files[0], 'fundos-' + key, function (path) {
+          sectionTarget(key).backgroundImage = path;
+          saveSection();
+          renderLayout();
+        });
       });
       if (key !== 'hero' && key !== 'work') bindSwitch('sec_' + key + '_dividers', function (enabled) {
         var target = sectionTarget(key);
@@ -1467,6 +1530,8 @@
     var half = ' style="max-width:200px"';
 
     var hero = H.hero;
+    var availabilityStatus = ['available', 'unavailable', 'hidden'].indexOf(hero.availabilityStatus) !== -1
+      ? hero.availabilityStatus : (hero.showAvailability === false ? 'hidden' : 'available');
     document.getElementById('heroBody').innerHTML =
       fieldRow('Cargo (PT)', 'Enter força uma nova linha.', ta('hero_tagpt', hero.tagPt)) +
       fieldRow('Cargo (EN)', 'Enter força uma nova linha.', ta('hero_tagen', hero.tagEn)) +
@@ -1474,11 +1539,17 @@
       fieldRow('Localização (EN)', 'Enter força uma nova linha.', ta('hero_locen', hero.locationEn)) +
       fieldRow('Frase de efeito (PT)', '', ta('hero_claimpt', hero.claimPt)) +
       fieldRow('Frase de efeito (EN)', '', ta('hero_claimen', hero.claimEn)) +
-      fieldRow('Mostrar "disponível para projetos"', '', switchControl('hero_avail', hero.showAvailability)) +
+      fieldRow('Status de disponibilidade', 'O estado aparece igual no header e dentro do menu, inclusive nos cases.', selectDe('hero_availstatus', availabilityStatus, [
+        ['available', 'Disponível · luz verde'], ['unavailable', 'Indisponível · luz vermelha'], ['hidden', 'Não mostrar status']
+      ])) +
       fieldRow('Texto de disponibilidade (PT)', 'Aparece na pílula do header. Enter força uma nova linha.', ta('hero_availpt', hero.availabilityPt)) +
       fieldRow('Texto de disponibilidade (EN)', 'Enter força uma nova linha.', ta('hero_availen', hero.availabilityEn)) +
       fieldRow('Versão curta (PT)', 'Usada quando o header encolhe.', ta('hero_availspt', hero.availabilityShortPt)) +
       fieldRow('Versão curta (EN)', '', ta('hero_availsen', hero.availabilityShortEn)) +
+      fieldRow('Texto de indisponibilidade (PT)', 'Usado com a luz vermelha.', ta('hero_unavailpt', hero.unavailabilityPt || 'Indisponível para projetos')) +
+      fieldRow('Texto de indisponibilidade (EN)', '', ta('hero_unavailen', hero.unavailabilityEn || 'Unavailable for projects')) +
+      fieldRow('Versão curta indisponível (PT)', 'Usada quando o header encolhe.', ta('hero_unavailspt', hero.unavailabilityShortPt || 'Indisponível')) +
+      fieldRow('Versão curta indisponível (EN)', '', ta('hero_unavailsen', hero.unavailabilityShortEn || 'Unavailable')) +
       fieldRow('Indicador de rolagem — rótulo (PT)', '"Continue para ver os projetos"', ta('hero_nhlpt', hero.nextHintLabelPt)) +
       fieldRow('Indicador de rolagem — rótulo (EN)', '', ta('hero_nhlen', hero.nextHintLabelEn)) +
       fieldRow('Indicador de rolagem — destino (PT)', '"Projetos"', ta('hero_nhnpt', hero.nextHintNamePt)) +
@@ -1517,11 +1588,19 @@
       ['hero_claimpt', function (v) { hero.claimPt = v; }], ['hero_claimen', function (v) { hero.claimEn = v; }],
       ['hero_availpt', function (v) { hero.availabilityPt = v; }], ['hero_availen', function (v) { hero.availabilityEn = v; }],
       ['hero_availspt', function (v) { hero.availabilityShortPt = v; }], ['hero_availsen', function (v) { hero.availabilityShortEn = v; }],
+      ['hero_unavailpt', function (v) { hero.unavailabilityPt = v; }], ['hero_unavailen', function (v) { hero.unavailabilityEn = v; }],
+      ['hero_unavailspt', function (v) { hero.unavailabilityShortPt = v; }], ['hero_unavailsen', function (v) { hero.unavailabilityShortEn = v; }],
       ['hero_nhlpt', function (v) { hero.nextHintLabelPt = v; }], ['hero_nhlen', function (v) { hero.nextHintLabelEn = v; }],
       ['hero_nhnpt', function (v) { hero.nextHintNamePt = v; }], ['hero_nhnen', function (v) { hero.nextHintNameEn = v; }],
       ['hero_bgvideo', function (v) { hero.backgroundVideo = v; }], ['hero_bgposter', function (v) { hero.backgroundVideoPoster = v; }]
     ], touch);
-    bindSwitch('hero_avail', function (v) { hero.showAvailability = v; touch(); });
+    document.getElementById('hero_availstatus').addEventListener('change', function (e) {
+      hero.availabilityStatus = e.target.value;
+      /* Compatibilidade com versões anteriores do site/CMS. O campo legado
+         continua coerente, mas o estado de três opções é quem manda. */
+      hero.showAvailability = e.target.value !== 'hidden';
+      touch();
+    });
 
     /* ---- fundo da capa ---- */
     function mostrarCamposDoModo() {
@@ -2215,6 +2294,10 @@
       '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
       fieldRow('URL do case', 'Use letras minúsculas, números e hífen. A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">alterar URL</button></div>') +
       fieldRow('Status', '', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
+      fieldRow('Grain neste case', 'Herdar acompanha o controle global do site.', selectDe('pe_grain',
+        typeof P.grainEnabled === 'boolean' ? (P.grainEnabled ? 'on' : 'off') : 'inherit', [
+          ['inherit', 'Herdar do global'], ['on', 'Ligado'], ['off', 'Desligado']
+        ])) +
       fieldRow('Ano', '', '<input type="number" id="pe_year" value="' + esc(P.year) + '" min="1990" max="2100">') +
       fieldRow('Categoria', 'Metadado do projeto e do índice.', '<input type="text" id="pe_category" value="' + esc(P.category || indexEntry.category) + '">') +
       fieldRow('Rótulo acima do título (PT)', 'Eyebrow do case. Enter força uma nova linha.', ta('pe_eyebrowpt', P.hero.eyebrowPt)) +
@@ -2303,6 +2386,11 @@
       /* `visible` continua sendo a autoridade da Home. Tornar rascunho apenas
          força a opção segura; publicar não mostra sozinho. */
       if (P.status === 'draft') { indexEntry.visible = false; saveIndex(); }
+      save();
+    });
+    document.getElementById('pe_grain').addEventListener('change', function (e) {
+      if (e.target.value === 'inherit') delete P.grainEnabled;
+      else P.grainEnabled = e.target.value === 'on';
       save();
     });
     document.getElementById('pe_year').addEventListener('change', function (e) { P.year = Number(e.target.value); indexEntry.year = P.year; save(); saveIndex(); });

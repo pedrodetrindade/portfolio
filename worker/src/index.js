@@ -122,14 +122,14 @@ function reordenarChaves(obj, ordem) {
    uma ordem diferente da que os arquivos já têm produz um diff cosmético
    gigante. $schema vem primeiro porque é onde ele está nos arquivos hoje. */
 var CHAVES_DE_TOPO = {
-  'content/global.json': ['$schema', 'colors', 'typography', 'borders', 'layout', 'motion', 'header', 'footer', 'social', 'seo'],
+  'content/global.json': ['$schema', 'colors', 'typography', 'borders', 'layout', 'motion', 'effects', 'header', 'footer', 'social', 'seo'],
   'content/home.json': ['$schema', 'hero', 'sections', 'work', 'about', 'help', 'faq', 'contact'],
   /* cardSizes antes de projects: é a ordem que o arquivo tem hoje. Trocar
      produziria um diff cosmético de 14 linhas na primeira publicação. */
   'content/projects/index.json': ['$schema', 'cardSizes', 'projects'],
   /* coverSpacing entra aqui porque o painel pode criá-lo (espaçamento da capa)
      mesmo que nenhum projeto o tenha hoje */
-  '__projeto__': ['$schema', 'slug', 'status', 'client', 'year', 'category', 'services',
+  '__projeto__': ['$schema', 'slug', 'status', 'grainEnabled', 'client', 'year', 'category', 'services',
     'seo', 'hero', 'cover', 'coverMobile', 'coverSpacing', 'blocks']
 };
 
@@ -138,6 +138,46 @@ var CHAVES_DE_TOPO = {
 function chavesPermitidasPara(caminho) {
   if (CHAVES_DE_TOPO[caminho]) return CHAVES_DE_TOPO[caminho];
   if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) return CHAVES_DE_TOPO.__projeto__;
+  return null;
+}
+
+function erroNosEfeitosGlobais(effects) {
+  if (effects === undefined) return null;
+  if (!effects || typeof effects !== 'object' || Array.isArray(effects)) return 'effects precisa ser um objeto.';
+  if (effects.grain === undefined) return null;
+  var grain = effects.grain;
+  if (!grain || typeof grain !== 'object' || Array.isArray(grain)) return 'effects.grain precisa ser um objeto.';
+  if (grain.enabled !== undefined && typeof grain.enabled !== 'boolean') return 'effects.grain.enabled precisa ser verdadeiro ou falso.';
+  if (grain.opacity !== undefined && (typeof grain.opacity !== 'number' || !Number.isFinite(grain.opacity) || grain.opacity < 0 || grain.opacity > 12)) {
+    return 'effects.grain.opacity precisa estar entre 0 e 12%.';
+  }
+  return null;
+}
+
+function erroNaAparenciaDaHome(home) {
+  var status = home && home.hero ? home.hero.availabilityStatus : undefined;
+  if (status !== undefined && ['available', 'unavailable', 'hidden'].indexOf(status) === -1) {
+    return 'hero.availabilityStatus precisa ser available, unavailable ou hidden.';
+  }
+  var sections = home && home.sections;
+  if (!sections || typeof sections !== 'object' || Array.isArray(sections)) return null;
+  var ids = ['hero', 'work', 'about', 'help', 'faq', 'contact'];
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i], s = sections[id];
+    if (!s || typeof s !== 'object' || Array.isArray(s)) continue;
+    if (s.backgroundImage !== undefined && s.backgroundImage !== '' && !isPosterValido(s.backgroundImage)) {
+      return 'sections.' + id + '.backgroundImage precisa ser uma imagem em assets/ ou uma URL HTTPS válida.';
+    }
+    if (s.backgroundImageOpacity !== undefined && (typeof s.backgroundImageOpacity !== 'number' || !Number.isFinite(s.backgroundImageOpacity) || s.backgroundImageOpacity < 0 || s.backgroundImageOpacity > 100)) {
+      return 'sections.' + id + '.backgroundImageOpacity precisa estar entre 0 e 100%.';
+    }
+    if (s.backgroundPosition !== undefined && ['center', 'top', 'bottom'].indexOf(s.backgroundPosition) === -1) {
+      return 'sections.' + id + '.backgroundPosition precisa ser center, top ou bottom.';
+    }
+    if (s.grainEnabled !== undefined && typeof s.grainEnabled !== 'boolean') {
+      return 'sections.' + id + '.grainEnabled precisa ser verdadeiro ou falso.';
+    }
+  }
   return null;
 }
 
@@ -395,6 +435,13 @@ async function handlePublish(request, env) {
             path: caminho
           }, 422);
         }
+        if (op.data.grainEnabled !== undefined && typeof op.data.grainEnabled !== 'boolean') {
+          return json({
+            error: 'invalid_grain',
+            message: 'grainEnabled precisa ser verdadeiro ou falso em ' + caminho + '.',
+            path: caminho
+          }, 422);
+        }
         var erroCapaSpacing = erroNoSpacing(op.data.coverSpacing, false);
         if (erroCapaSpacing) {
           return json({
@@ -413,9 +460,15 @@ async function handlePublish(request, env) {
         }
       }
       if (caminho === 'content/home.json') {
+        var erroAparencia = erroNaAparenciaDaHome(op.data);
+        if (erroAparencia) return json({ error: 'invalid_appearance', message: erroAparencia + ' Nada foi publicado.', path: caminho }, 422);
         var erroVideo = validarVideoDaCapa(op.data.hero);
         if (erroVideo) return json(erroVideo.corpo, erroVideo.status);
         op.__conferirVimeo = op.data.hero && op.data.hero.videoMode === 'vimeo' ? op.data.hero.vimeo : null;
+      }
+      if (caminho === 'content/global.json') {
+        var erroEfeitos = erroNosEfeitosGlobais(op.data.effects);
+        if (erroEfeitos) return json({ error: 'invalid_effects', message: erroEfeitos + ' Nada foi publicado.', path: caminho }, 422);
       }
       var texto = JSON.stringify(permitidas ? reordenarChaves(op.data, permitidas) : op.data, null, 2) + '\n';
       var b = bytesOf(texto);
