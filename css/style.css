@@ -104,6 +104,11 @@ body.locked{overflow:hidden;height:100dvh}
 /* Enter nos campos multilinha do CMS vira uma quebra editorial real. O texto
    continua escapado e espaços comuns continuam colapsando normalmente. */
 [data-pt][data-en]{white-space:pre-line}
+/* Proteção automática contra palavras órfãs. Quebras digitadas no CMS
+   continuam soberanas porque são quebras forçadas preservadas por pre-line. */
+p[data-pt][data-en]{text-wrap:pretty}
+.wi-title,.about-title,.help-title,.faq-title,.contact-big,
+.card-foot h3,.hi-title,.faq-q span,.case-hero h1,.case-nav a>span:last-child{text-wrap:balance}
 
 /* Nenhum filter:blur() no site. Gradiente radial já é suave por natureza;
    o blur só custava pintura. Os stops foram alargados para compensar. */
@@ -514,6 +519,10 @@ header .lp-arrow,header .lp-flag,header .menu-btn i{
   padding:.22rem;border-radius:var(--radius-button,100px);
   background:var(--hd-surface);border:1px solid var(--hd-line);
   backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}
+/* O cabeçalho continua atrás do painel translúcido durante a abertura. Sem
+   ocultar a pílula original, os dois textos aparecem sobrepostos até o fade
+   terminar. Ela segue na área de hit para o hover, mas deixa de ser pintada. */
+body.menu-open header .ctrl-group{opacity:0}
 @media(hover:hover) and (pointer:fine){
   .nav .ctrl-group:hover{border-color:var(--hd-line-strong)}
 }
@@ -790,9 +799,11 @@ header .lp-arrow,header .lp-flag,header .menu-btn i{
 /* No estreito a linha de metadados não cabe lado a lado: vira duas linhas,
    profissão acima e carimbo abaixo, cada um mantendo sua borda. */
 @media(max-width:640px){
-  .hero-meta{grid-template-columns:1fr;gap:.6rem}
-  .hero-tag{justify-self:start;text-align:left}
-  .hero-when{justify-self:end;text-align:right}
+  .hero-meta{grid-template-columns:1fr;justify-items:center;gap:.65rem;
+    width:min(100%,32rem);margin-top:1.15rem}
+  .hero-tag{justify-self:stretch;text-align:center;padding-bottom:.65rem;
+    border-bottom:1px solid var(--line)}
+  .hero-when{justify-self:center;align-items:center;text-align:center;gap:.18rem}
   /* No desktop o nome é, de longe, o elemento mais largo da capa. No celular
      ele encolhe com a viewport e a frase passava a ultrapassá-lo, o que
      desmanchava a coluna. --nome-larg é publicado pelo JS a cada remedição;
@@ -818,7 +829,8 @@ header .lp-arrow,header .lp-flag,header .menu-btn i{
 .hn-line i{font-style:normal;color:inherit;opacity:.62}
 
 @media(max-width:760px){
-  .hero-tag,.hero-when{white-space:nowrap}
+  .hero-tag{white-space:nowrap}
+  .hero-when{white-space:normal}
 }
 
 section{padding-block:clamp(4rem,8vw,7rem)}
@@ -938,7 +950,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   transform:scale(1.01);transition:transform 820ms var(--ease-hover)}
 .scene>img,.scene>picture,.scene>picture>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-@media(hover:hover) and (pointer:fine){.card:hover .scene{transform:scale(1.035)}}
+@media(hover:hover) and (pointer:fine){.card:hover .scene{transform:scale(1.15)}}
 @media(prefers-reduced-motion:reduce){.card:hover .scene{transform:scale(1.01)}}
 /* Sem grão aqui: por cima de uma foto real ele lia como sujeira na imagem, não
    como textura do site. O degradê continua, é o que garante contraste do
@@ -1003,16 +1015,22 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .about-inner{position:relative;z-index:1;max-width:var(--content-max);margin-inline:auto}
 /* grid editorial de 12 colunas: retrato em 5, conteúdo em 6, com uma coluna de
    respiro entre eles, usando a largura toda do container */
-.about-grid{display:grid;grid-template-columns:1fr;gap:2.6rem}
-@media(min-width:900px){
+.about-grid{display:grid;grid-template-columns:1fr;gap:2.3rem}
+.about-details .caps{margin-top:0}
+/* Tablet já usa a composição editorial de duas colunas, com retrato menor.
+   No celular a ordem do HTML manda: cabeçalho, dois textos, foto, detalhes. */
+@media(min-width:640px){
   .about-grid{grid-template-columns:repeat(12,minmax(0,1fr));
-    column-gap:clamp(1.4rem,2.4vw,3rem);row-gap:1.8rem;align-items:start}
-  /* A ordem do documento é cabeçalho, texto, foto — a leitura certa no
-     celular. No desktop o grid recoloca a foto na coluna da esquerda,
-     ocupando as duas linhas, e o layout editorial de antes fica igual. */
-  .about-photo{grid-column:1 / span 5;grid-row:1 / span 2}
-  .about-head{grid-column:7 / span 6;grid-row:1}
-  .about-copy{grid-column:7 / span 6;grid-row:2}
+    column-gap:clamp(1rem,2.2vw,2rem);row-gap:1.8rem;align-items:start}
+  .about-photo{grid-column:1 / span 4;grid-row:1 / span 3}
+  .about-head{grid-column:6 / span 7;grid-row:1}
+  .about-text{grid-column:6 / span 7;grid-row:2}
+  .about-details{grid-column:6 / span 7;grid-row:3}
+}
+@media(min-width:900px){
+  .about-grid{column-gap:clamp(1.4rem,2.4vw,3rem)}
+  .about-photo{grid-column:1 / span 5}
+  .about-head,.about-text,.about-details{grid-column:7 / span 6}
 }
 .about-photo{margin:0}
 .portrait{position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;
@@ -1502,22 +1520,22 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);padding-top
    por cima da cauda do movimento do nome */
 .js body.name-in .hero-name .hn-line,
 .js body.hero-in .hero-name .hn-line{transform:none;
-  transition:transform 1230ms var(--ease-soft)}
-/* escalonamento dos secundários: 120ms entre eles. Entram sobre a cauda da
+  transition:transform 1476ms var(--ease-soft)}
+/* escalonamento dos secundários: 144ms entre eles. Entram sobre a cauda da
    subida do nome, nunca desde o começo da intro.
-   Durações e atrasos escalados no mesmo fator 1,5 da intro: manter 820ms aqui
-   com uma intro de 3s faria os secundários entrarem rápido demais contra o
+   Durações e atrasos acompanham a mesma escala de 20% da intro: manter os
+   valores anteriores faria os secundários entrarem rápido demais contra o
    movimento lento do nome, e a sequência perderia a costura. */
 /* Com .js na frente: sem isso estas três perdiam para .js .h-step, que declara
    a transição inteira com --dur-slow, e as durações escalonadas nunca chegavam
    a valer. Os atrasos logo abaixo valiam, porque empatam em especificidade e
    vêm depois; era só a duração que se perdia, e por isso passou despercebido. */
-.js .h-step.hero-tag{transition-duration:1230ms}
-.js .h-step.hero-when{transition-duration:1320ms}
-.js .h-step.hero-claim{transition-duration:1440ms}
+.js .h-step.hero-tag{transition-duration:1476ms}
+.js .h-step.hero-when{transition-duration:1584ms}
+.js .h-step.hero-claim{transition-duration:1728ms}
 .hero-sec .hero-tag,.hero-in .hero-tag{transition-delay:0ms}
-.hero-sec .hero-when,.hero-in .hero-when{transition-delay:120ms}
-.hero-sec .hero-claim,.hero-in .hero-claim{transition-delay:240ms}
+.hero-sec .hero-when,.hero-in .hero-when{transition-delay:144ms}
+.hero-sec .hero-claim,.hero-in .hero-claim{transition-delay:288ms}
 
 /* O indicador da hero não pode depender do observador de rolagem: ele fica no
    rodapé da primeira dobra e só entraria na conta depois de um scroll. Aqui ele
@@ -1525,7 +1543,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);padding-top
 .js body.intro-mode:not(.hero-sec) .hero .next-hint{opacity:0;transform:translateX(-50%) translateY(10px)}
 .js body.hero-sec .hero .next-hint,
 .js body.hero-in .hero .next-hint{opacity:1;transform:translateX(-50%);
-  transition:opacity 1350ms var(--ease-soft) 360ms,transform 1350ms var(--ease-soft) 360ms}
+  transition:opacity 1620ms var(--ease-soft) 432ms,transform 1620ms var(--ease-soft) 432ms}
 
 /* ===== ACCESSIBILITY: focus & skip link =====
    Sem border-radius aqui: era ele que quadrava o botão de idioma em foco.
@@ -1562,7 +1580,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    Ancorado logo abaixo do header, sem véu escuro e sem travar a rolagem:
    é um painel, não um modal. */
 .overlay.dropdown{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
-  pointer-events:none;align-items:flex-start;overflow:visible;
+  pointer-events:none;align-items:flex-start;overflow:visible;padding-block:0;
   transition:opacity var(--dur-fast) var(--ease-soft),visibility var(--dur-fast)}
 .overlay.dropdown .overlay-sheet{pointer-events:auto;margin-block:0;margin-top:4.4rem;max-width:500px;
   transform:translateY(-8px) scale(.99);opacity:0;
@@ -1588,19 +1606,26 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .overlay-x{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;padding:.3rem;transition:color var(--dur-micro) var(--ease-out-smooth)}
 .overlay-x:hover{color:var(--paper)}
 
-/* Sem a marca e sem o "aberto a novos projetos", o topo do menu carrega só o
-   botão de fechar: alinha à direita e dispensa a borda, que separava dois
-   blocos que não existem mais. */
-.overlay-top--bare{justify-content:flex-end;border-bottom:none;padding-bottom:.6rem}
-
-/* O menu tem seis itens e não precisa da altura confortável do formulário de
-   contato. A faixa de topo contém só o fechar, então fica curta; no modal ela
-   começa perto do topo e no dropdown mantém a ancoragem sob o header. */
+/* O painel aberto nasce da mesma pílula translúcida do header. A primeira
+   faixa repete Menu + disponibilidade, sem X e sem trocar de material. */
 #menu .overlay-sheet{max-width:350px}
 #menu:not(.dropdown) .overlay-sheet{margin-block:clamp(.7rem,3vh,1.8rem) auto}
-#menu.dropdown .overlay-sheet{margin-top:3.35rem;max-width:350px;max-height:calc(100svh - 4.4rem)}
-#menu.dropdown::before{width:min(350px,92vw)}
-#menu .overlay-top--bare{padding:.56rem .88rem .14rem}
+#menu.dropdown .overlay-sheet{margin-top:1.1rem;max-width:350px;max-height:calc(100svh - 2.2rem)}
+#menu.dropdown::before{display:none}
+#menu .overlay-sheet{background:rgba(var(--paper-rgb),.055);border-color:var(--line);
+  backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
+  box-shadow:0 24px 64px rgba(var(--ink-rgb),.42);border-radius:20px}
+.menu-panel-head{min-height:55px;display:flex;align-items:center;padding:.22rem .75rem;
+  border-bottom:1px solid var(--line);color:var(--paper)}
+.menu-panel-title{display:inline-flex;align-items:center;gap:.58rem;padding:.62rem .3rem;
+  font-size:.88rem;font-weight:var(--w-medium)}
+.menu-panel-title>i{width:9px;height:9px;flex:none;
+  background-image:radial-gradient(circle,var(--muted) 1.4px,transparent 1.5px);
+  background-size:4.5px 4.5px}
+.menu-panel-div{width:1px;height:1.1rem;flex:none;margin-inline:.65rem .55rem;background:var(--line-strong)}
+.menu-panel-avail{min-width:0;display:inline-flex;align-items:center;gap:.48rem;
+  color:var(--muted);font-size:.68rem;letter-spacing:.01em;white-space:nowrap}
+.menu-panel-avail>span{overflow:hidden;text-overflow:ellipsis}
 #menu .menu-item{gap:.63rem;padding:.58rem .91rem;
   font-size:clamp(.84rem,1.68vw,1.16rem)}
 #menu .menu-item:hover{padding-left:1.2rem}
@@ -1636,6 +1661,8 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   .menu-ico{width:36px;height:36px}
   #menu .menu-item{font-size:clamp(.9rem,4.2vw,1.05rem);padding:.58rem .86rem}
   #menu .menu-item:hover{padding-left:1.05rem}
+  .menu-panel-avail>span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .menu-panel-div{margin-inline:auto .55rem}
 }
 
 /* Item da seção em que o visitante está. Não comunica só por cor: ganha um
@@ -1813,7 +1840,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 }
 
 .case-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;
-  border-top:1px solid var(--line);padding-top:18px;font-family:var(--font)}
+  border-top:0;padding-top:0;font-family:var(--font)}
 .case-nav[hidden]{display:none}
 .case-nav a{position:relative;min-height:112px;display:flex;flex-direction:column;
   justify-content:center;gap:.55rem;padding:1.15rem 1.25rem 1.15rem 3.8rem;
@@ -1834,7 +1861,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .case-nav a.next::before{content:"→";left:auto;right:1.15rem}
 .case-nav a.next:hover::before{transform:translateX(3px)}
 .case-nav a>span:last-child{font-size:clamp(1rem,1.7vw,1.3rem);font-weight:var(--w-medium);
-  line-height:1.2;letter-spacing:-.02em;max-width:28ch}
+  line-height:1.2;letter-spacing:-.02em;width:100%;max-width:none}
 .case-nav .lbl{font-family:var(--mono);font-size:.68rem;font-weight:var(--w-regular);
   color:var(--muted-2);letter-spacing:.025em}
 @media(max-width:639px){

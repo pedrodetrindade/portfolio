@@ -207,8 +207,9 @@
      continua sendo o Worker */
   /* Espelha ALLOWED_UPLOAD_EXT de worker/src/validate.js. Quem decide é o
      Worker; isto existe para o erro aparecer na hora de escolher o arquivo. */
-  var EXT_MIDIA = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif', '.mp4', '.webm', '.pdf'];
-  var MAX_MIDIA_BYTES = 5 * 1024 * 1024;
+  var EXT_MIDIA = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.svg', '.gif', '.mp4', '.webm', '.pdf'];
+  var MAX_MIDIA_BYTES = 25 * 1024 * 1024;
+  var MAX_MIDIA_POR_PUBLICACAO = 32 * 1024 * 1024;
   function sanitizarNome(nome) {
     var baixo = String(nome || '').toLowerCase().trim();
     var ponto = baixo.lastIndexOf('.');
@@ -848,7 +849,12 @@
 
   function caminhoDaPreviaDoProjeto() {
     var s = state.editingSlug;
-    return (typeof s === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s)) ? 'work/' + s + '.html' : '';
+    if (typeof s !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(s)) return '';
+    /* Uma URL criada ou renomeada ainda não existe no servidor de prévia.
+       Usa a página-modelo até a publicação; o postMessage injeta o projeto
+       em edição, então o conteúdo continua sendo o novo. */
+    var pendente = state.pendingPages['work/' + s + '.html'];
+    return 'work/' + (pendente && pendente.fromSlug ? pendente.fromSlug : s) + '.html';
   }
 
   function postToPreviews(msg) {
@@ -1404,9 +1410,8 @@
       fieldRow('Mostrar seletor de idioma', '', switchControl('hdr_lang', h.showLanguageSwitch)) +
       fieldRow('Mostrar botão de contato', '', switchControl('hdr_contact', h.showContactButton)) +
       h.menu.map(function (item, i) {
-        return fieldRow('Item de menu ' + (i + 1) + ' (PT / EN)', '',
-          '<input type="text" id="menu_' + i + '_pt" value="' + esc(item.pt) + '" style="max-width:160px">' +
-          '<input type="text" id="menu_' + i + '_en" value="' + esc(item.en) + '" style="max-width:160px">') +
+        return fieldRow('Item de menu ' + (i + 1) + ' (PT)', 'Enter força uma nova linha.', ta('menu_' + i + '_pt', item.pt)) +
+          fieldRow('Item de menu ' + (i + 1) + ' (EN)', 'Enter força uma nova linha.', ta('menu_' + i + '_en', item.en)) +
           fieldRow('Leva para', 'seções da Home',
             '<select id="menu_' + i + '_sec">' + SECOES_PAINEL.map(function (s) {
               return '<option value="' + s[0] + '"' + (secaoDoItemPainel(item) === s[0] ? ' selected' : '') +
@@ -1463,15 +1468,21 @@
 
     var hero = H.hero;
     document.getElementById('heroBody').innerHTML =
-      fieldRow('Cargo (PT / EN)', '', inp('hero_tagpt', hero.tagPt, half) + inp('hero_tagen', hero.tagEn, half)) +
-      fieldRow('Localização (PT / EN)', '', inp('hero_locpt', hero.locationPt, half) + inp('hero_locen', hero.locationEn, half)) +
+      fieldRow('Cargo (PT)', 'Enter força uma nova linha.', ta('hero_tagpt', hero.tagPt)) +
+      fieldRow('Cargo (EN)', 'Enter força uma nova linha.', ta('hero_tagen', hero.tagEn)) +
+      fieldRow('Localização (PT)', 'Enter força uma nova linha.', ta('hero_locpt', hero.locationPt)) +
+      fieldRow('Localização (EN)', 'Enter força uma nova linha.', ta('hero_locen', hero.locationEn)) +
       fieldRow('Frase de efeito (PT)', '', ta('hero_claimpt', hero.claimPt)) +
       fieldRow('Frase de efeito (EN)', '', ta('hero_claimen', hero.claimEn)) +
       fieldRow('Mostrar "disponível para projetos"', '', switchControl('hero_avail', hero.showAvailability)) +
-      fieldRow('Texto de disponibilidade (PT / EN)', 'aparece na pílula do header', inp('hero_availpt', hero.availabilityPt, half) + inp('hero_availen', hero.availabilityEn, half)) +
-      fieldRow('Versão curta (PT / EN)', 'usada quando o header encolhe', inp('hero_availspt', hero.availabilityShortPt, half) + inp('hero_availsen', hero.availabilityShortEn, half)) +
-      fieldRow('Indicador de rolagem — rótulo (PT / EN)', '"Continue para ver os projetos"', inp('hero_nhlpt', hero.nextHintLabelPt, half) + inp('hero_nhlen', hero.nextHintLabelEn, half)) +
-      fieldRow('Indicador de rolagem — destino (PT / EN)', '"Projetos"', inp('hero_nhnpt', hero.nextHintNamePt, half) + inp('hero_nhnen', hero.nextHintNameEn, half)) +
+      fieldRow('Texto de disponibilidade (PT)', 'Aparece na pílula do header. Enter força uma nova linha.', ta('hero_availpt', hero.availabilityPt)) +
+      fieldRow('Texto de disponibilidade (EN)', 'Enter força uma nova linha.', ta('hero_availen', hero.availabilityEn)) +
+      fieldRow('Versão curta (PT)', 'Usada quando o header encolhe.', ta('hero_availspt', hero.availabilityShortPt)) +
+      fieldRow('Versão curta (EN)', '', ta('hero_availsen', hero.availabilityShortEn)) +
+      fieldRow('Indicador de rolagem — rótulo (PT)', '"Continue para ver os projetos"', ta('hero_nhlpt', hero.nextHintLabelPt)) +
+      fieldRow('Indicador de rolagem — rótulo (EN)', '', ta('hero_nhlen', hero.nextHintLabelEn)) +
+      fieldRow('Indicador de rolagem — destino (PT)', '"Projetos"', ta('hero_nhnpt', hero.nextHintNamePt)) +
+      fieldRow('Indicador de rolagem — destino (EN)', '', ta('hero_nhnen', hero.nextHintNameEn)) +
       fieldRow('Fundo da capa', 'O que aparece atrás do seu nome.',
         '<select id="hero_videomode">' + MODOS_CAPA.map(function (m) {
           return '<option value="' + m[0] + '"' + (modoDaCapa(hero) === m[0] ? ' selected' : '') + '>' + esc(m[1]) + '</option>';
@@ -1586,7 +1597,8 @@
     var a = H.about;
     if (!Array.isArray(a.capabilities)) a.capabilities = [];
     document.getElementById('aboutBody').innerHTML =
-      fieldRow('Rótulo da seção (PT / EN)', '"Sobre"', inp('ab_kpt', a.kickerPt, half) + inp('ab_ken', a.kickerEn, half)) +
+      fieldRow('Rótulo da seção (PT)', '"Sobre"', ta('ab_kpt', a.kickerPt)) +
+      fieldRow('Rótulo da seção (EN)', '', ta('ab_ken', a.kickerEn)) +
       fieldRow('Mostrar rótulo da seção', 'Desligar preserva o texto e remove o espaço acima do título.', switchControl('ab_showk', a.showKicker !== false)) +
       fieldRow('Título (PT)', 'Enter força uma nova linha.', ta('ab_tpt', a.titlePt)) +
       fieldRow('Título (EN)', 'Enter força uma nova linha.', ta('ab_ten', a.titleEn)) +
@@ -1595,15 +1607,19 @@
       fieldRow('Texto complementar (PT)', '', ta('ab_subpt', a.subPt)) +
       fieldRow('Texto complementar (EN)', '', ta('ab_suben', a.subEn)) +
       fieldRow('Retrato', 'caminho do arquivo, ou envie um novo aqui', inp('ab_photo', a.photo) + '<input type="file" id="ab_photo_upload" accept="image/*">') +
-      fieldRow('Botão de contato (PT / EN)', '"Vamos conversar"', inp('ab_ctapt', a.ctaTalkPt, half) + inp('ab_ctaen', a.ctaTalkEn, half)) +
+      fieldRow('Botão de contato (PT)', '"Vamos conversar"', ta('ab_ctapt', a.ctaTalkPt)) +
+      fieldRow('Botão de contato (EN)', '', ta('ab_ctaen', a.ctaTalkEn)) +
       fieldRow('Mostrar botão de currículo', 'Desligar esconde o botão no site sem apagar o arquivo.', switchControl('ab_showcv', a.showResume !== false)) +
       fieldRow('Arquivo do currículo (PDF)', a.resumeFile ? 'atual: ' + a.resumeFile : 'nenhum arquivo enviado ainda — o botão fica escondido até você enviar um',
         inp('ab_cvfile', a.resumeFile, ' placeholder="assets/uploads/curriculo/..."') + '<input type="file" id="ab_cv_upload" accept="application/pdf,.pdf">') +
-      fieldRow('Rótulo do currículo (PT / EN)', '"Baixar currículo"', inp('ab_cvlpt', a.resumeLabelPt, half) + inp('ab_cvlen', a.resumeLabelEn, half)) +
-      fieldRow('Rótulo das capacidades (PT / EN)', '"Capacidades"', inp('ab_caplpt', a.capabilitiesLabelPt, half) + inp('ab_caplen', a.capabilitiesLabelEn, half)) +
+      fieldRow('Rótulo do currículo (PT)', '"Baixar currículo"', ta('ab_cvlpt', a.resumeLabelPt)) +
+      fieldRow('Rótulo do currículo (EN)', '', ta('ab_cvlen', a.resumeLabelEn)) +
+      fieldRow('Rótulo das capacidades (PT)', '"Capacidades"', ta('ab_caplpt', a.capabilitiesLabelPt)) +
+      fieldRow('Rótulo das capacidades (EN)', '', ta('ab_caplen', a.capabilitiesLabelEn)) +
       fieldRow('Mostrar rótulo das capacidades', 'Desligar preserva o texto.', switchControl('ab_showcapk', a.showCapabilitiesLabel !== false)) +
       listBlock('abcap', a.capabilities, 'Capacidade', function (c, i) {
-        return fieldRow('Texto (PT / EN)', '', inp('ab_cap' + i + '_pt', c.pt, half) + inp('ab_cap' + i + '_en', c.en, half));
+        return fieldRow('Texto (PT)', 'Enter força uma nova linha.', ta('ab_cap' + i + '_pt', c.pt)) +
+          fieldRow('Texto (EN)', 'Enter força uma nova linha.', ta('ab_cap' + i + '_en', c.en));
       });
     var aboutPairs = [
       ['ab_kpt', function (v) { a.kickerPt = v; }], ['ab_ken', function (v) { a.kickerEn = v; }],
@@ -1637,7 +1653,8 @@
     var hp = H.help;
     if (!Array.isArray(hp.items)) hp.items = [];
     document.getElementById('helpBody').innerHTML =
-      fieldRow('Rótulo da seção (PT / EN)', '"atuação"', inp('hp_kpt', hp.kickerPt, half) + inp('hp_ken', hp.kickerEn, half)) +
+      fieldRow('Rótulo da seção (PT)', '"atuação"', ta('hp_kpt', hp.kickerPt)) +
+      fieldRow('Rótulo da seção (EN)', '', ta('hp_ken', hp.kickerEn)) +
       fieldRow('Mostrar rótulo da seção', 'Desligar preserva o texto e remove o espaço acima do título.', switchControl('hp_showk', hp.showKicker !== false)) +
       fieldRow('Título (PT)', 'Enter força uma nova linha.', ta('hp_tpt', hp.titlePt)) +
       fieldRow('Título (EN)', 'Enter força uma nova linha.', ta('hp_ten', hp.titleEn)) +
@@ -1645,11 +1662,13 @@
       fieldRow('Introdução (EN)', '', ta('hp_len', hp.leadEn)) +
       listBlock('hpitem', hp.items, 'Frente', function (item, i) {
         if (!Array.isArray(item.tags)) item.tags = [];
-        return fieldRow('Título (PT / EN)', '', inp('hp_' + i + '_tpt', item.titlePt, half) + inp('hp_' + i + '_ten', item.titleEn, half)) +
+        return fieldRow('Título (PT)', 'Enter força uma nova linha.', ta('hp_' + i + '_tpt', item.titlePt)) +
+          fieldRow('Título (EN)', 'Enter força uma nova linha.', ta('hp_' + i + '_ten', item.titleEn)) +
           fieldRow('Texto (PT)', '', ta('hp_' + i + '_xpt', item.textPt)) +
           fieldRow('Texto (EN)', '', ta('hp_' + i + '_xen', item.textEn)) +
           '<div class="sub-list">' + listBlock('hptag' + i, item.tags, 'Tag', function (t, j) {
-            return fieldRow('Texto (PT / EN)', '', inp('hp_' + i + '_tag' + j + '_pt', t.pt, half) + inp('hp_' + i + '_tag' + j + '_en', t.en, half));
+            return fieldRow('Texto (PT)', 'Enter força uma nova linha.', ta('hp_' + i + '_tag' + j + '_pt', t.pt)) +
+              fieldRow('Texto (EN)', 'Enter força uma nova linha.', ta('hp_' + i + '_tag' + j + '_en', t.en));
           }) + '</div>';
       });
     var helpPairs = [
@@ -1701,9 +1720,12 @@
 
     var ct = H.contact;
     document.getElementById('contactBody').innerHTML =
-      fieldRow('Título linha 1 (PT / EN)', '', inp('ct_l1pt', ct.titleLine1Pt, half) + inp('ct_l1en', ct.titleLine1En, half)) +
-      fieldRow('Título linha 2 (PT / EN)', '', inp('ct_l2pt', ct.titleLine2Pt, half) + inp('ct_l2en', ct.titleLine2En, half)) +
-      fieldRow('Rótulo do e-mail (PT / EN)', '"Escreva para"', inp('ct_mkpt', ct.mailLabelPt, half) + inp('ct_mken', ct.mailLabelEn, half));
+      fieldRow('Título linha 1 (PT)', 'Enter força uma nova linha.', ta('ct_l1pt', ct.titleLine1Pt)) +
+      fieldRow('Título linha 1 (EN)', 'Enter força uma nova linha.', ta('ct_l1en', ct.titleLine1En)) +
+      fieldRow('Título linha 2 (PT)', 'Enter força uma nova linha.', ta('ct_l2pt', ct.titleLine2Pt)) +
+      fieldRow('Título linha 2 (EN)', 'Enter força uma nova linha.', ta('ct_l2en', ct.titleLine2En)) +
+      fieldRow('Rótulo do e-mail (PT)', '"Escreva para"', ta('ct_mkpt', ct.mailLabelPt)) +
+      fieldRow('Rótulo do e-mail (EN)', '', ta('ct_mken', ct.mailLabelEn));
     document.getElementById('contactBody').insertAdjacentHTML('beforeend',
       fieldRow('Mostrar rótulo do e-mail', 'Desligar preserva o texto e aproxima o e-mail naturalmente.', switchControl('ct_showmk', ct.showMailLabel !== false)));
     bindAll([
@@ -1718,8 +1740,10 @@
   function renderProjectsList() {
     var list = state.projectsIndex.projects.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
     document.getElementById('projectsList').innerHTML = list.map(function (p, i) {
+      var capa = String(p.cover || '').trim();
+      var capaPainel = /^https:\/\//i.test(capa) ? capa : '../' + capa;
       return '<div class="list-row' + (p.visible === false ? ' hidden-project' : '') + '" data-slug="' + esc(p.slug) + '">' +
-        '<div class="thumb" style="background-image:url(\'../' + esc(p.cover) + '\')"></div>' +
+        '<div class="thumb" style="background-image:url(\'' + esc(capaPainel) + '\')"></div>' +
         '<div class="info"><b>' + esc(p.titlePt) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year) + (p.visible === false ? ' · oculto' : '') + '</span></div>' +
         '<div class="actions">' +
         '<button class="btn small" data-act="up">↑</button>' +
@@ -1906,7 +1930,7 @@
         fieldRow('Autor (PT / EN)', 'opcional', inp(p + 'apt', b.authorPt, ' ' + meio) + inp(p + 'aen', b.authorEn, ' ' + meio));
     }
     if (b.type === 'image') {
-      return fieldRow('Arquivo', 'envie aqui ou cole um caminho de assets/', inp(p + 'src', b.src) + '<input type="file" id="' + p + 'up" accept="image/*">') +
+      return fieldRow('Imagem', 'Envie um arquivo de até 25MB ou cole um caminho assets/ ou URL HTTPS direta.', inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
         fieldRow('Texto alternativo', 'descreve a imagem para quem não a vê', inp(p + 'alt', b.alt)) +
         fieldRow('Enquadramento', 'Recortada mantém 16/9; proporção livre deixa a imagem mandar na altura (peça vertical, captura de tela, GIF).',
           selectDe(p + 'fit', b.fit || 'cover', [['cover', 'Recortada em 16/9'], ['auto', 'Proporção livre']])) +
@@ -1915,22 +1939,23 @@
     }
     if (b.type === 'gallery') {
       var imgs = b.images || [];
-      return imgs.map(function (im, j) {
-        return fieldRow('Imagem ' + (j + 1), '',
+      return fieldRow('Adicionar várias imagens', 'Selecione várias de uma vez. JPG, PNG, WebP, AVIF, GIF ou SVG; até 25MB por arquivo e 32MB por publicação.',
+        '<input type="file" id="' + p + 'multi" multiple accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') + imgs.map(function (im, j) {
+        return fieldRow('Imagem ' + (j + 1), 'Upload, caminho assets/ ou URL HTTPS direta.',
           inp(p + 'img' + j, im.src) +
-          '<input type="file" id="' + p + 'imgup' + j + '" accept="image/*">' +
+          '<input type="file" id="' + p + 'imgup' + j + '" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">' +
           '<button class="btn small danger" data-bl-imgrm="' + i + ':' + j + '">remover</button>') +
           fieldRow('Texto alternativo ' + (j + 1), '', inp(p + 'alt' + j, im.alt));
       }).join('') + '<button class="btn small" data-bl-imgadd="' + i + '">+ adicionar imagem</button>';
     }
     if (b.type === 'video') {
       var ehVimeo = b.mode === 'vimeo';
-      return fieldRow('Origem', 'Arquivo tem teto de 5MB. Vídeo de verdade vai para o Vimeo.',
-          selectDe(p + 'mode', b.mode || 'file', [['file', 'Arquivo no repositório'], ['vimeo', 'Vimeo']])) +
+      return fieldRow('Origem', 'Upload local até 25MB, URL HTTPS direta para MP4/WebM ou Vimeo para vídeos maiores.',
+          selectDe(p + 'mode', b.mode || 'file', [['file', 'Arquivo ou URL direta'], ['vimeo', 'Vimeo']])) +
         (ehVimeo
           ? fieldRow('Endereço do Vimeo', 'cole o link do vídeo', inp(p + 'vurl', (b.vimeo && b.vimeo.url) || '')) +
             '<div class="hint" id="' + p + 'vmsg"></div>'
-          : fieldRow('Arquivo', 'mp4 ou webm', inp(p + 'src', b.src) + '<input type="file" id="' + p + 'up" accept="video/mp4,video/webm">')) +
+          : fieldRow('Arquivo ou URL', 'Envie MP4/WebM ou cole uma URL HTTPS direta terminada em .mp4 ou .webm.', inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept="video/mp4,video/webm,.mp4,.webm">')) +
         fieldRow('Imagem de espera', 'opcional, aparece antes de o vídeo tocar', inp(p + 'poster', b.poster)) +
         fieldRow('Legenda (PT / EN)', 'opcional', inp(p + 'cpt', b.captionPt, ' ' + meio) + inp(p + 'cen', b.captionEn, ' ' + meio));
     }
@@ -1975,6 +2000,24 @@
         });
       }
       if (b.type === 'gallery') {
+        var multi = document.getElementById(p + 'multi');
+        if (multi) multi.addEventListener('change', function () {
+          var arquivos = Array.prototype.slice.call(multi.files || []);
+          /* Sequencial de propósito: cada arquivo já entra em pendingUploads
+             antes de medir o próximo, então o teto total de 32MB não sofre
+             corrida quando várias imagens são escolhidas de uma vez. */
+          arquivos.reduce(function (fila, file) {
+            return fila.then(function (paths) {
+              return uploadFile(file, slug).then(function (path) { paths.push(path); return paths; });
+            });
+          }, Promise.resolve([])).then(function (paths) {
+            paths.filter(Boolean).forEach(function (path) {
+              if (!Array.isArray(b.images)) b.images = [];
+              b.images.push({ src: path, alt: '' });
+            });
+            if (paths.some(Boolean)) { save(); rerender(); }
+          });
+        });
         (b.images || []).forEach(function (im, j) {
           campo('img' + j, function (v) { im.src = v; });
           campo('alt' + j, function (v) { im.alt = v; });
@@ -2056,6 +2099,92 @@
     });
   }
 
+  /* Renomear a URL é uma operação de arquivo, não apenas um campo de texto.
+     Índice, JSON e página HTML ficam pendentes e sobem no mesmo commit. A
+     página nova usa a antiga como molde; os assets não são movidos, porque
+     continuar referenciando a pasta anterior é válido e evita duplicação. */
+  function renomearSlugProjeto(slug, novoSlug) {
+    novoSlug = String(novoSlug || '').trim().toLowerCase();
+    if (novoSlug === slug) return;
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(novoSlug) || novoSlug.length > 60) {
+      toast('URL inválida. Use até 60 caracteres: letras minúsculas, números e hífen.', 'err');
+      return;
+    }
+
+    var cached = state.projects[slug];
+    var entrada = state.projectsIndex.projects.filter(function (x) { return x.slug === slug; })[0];
+    if (!cached || !entrada) { toast('Não foi possível localizar o projeto em edição.', 'err'); return; }
+
+    var oldJson = 'content/projects/' + slug + '.json';
+    var oldPage = 'work/' + slug + '.html';
+    var newJson = 'content/projects/' + novoSlug + '.json';
+    var newPage = 'work/' + novoSlug + '.html';
+    var paginaPendente = state.pendingPages[oldPage] || null;
+    var slugDeOrigem = paginaPendente && paginaPendente.fromSlug ? paginaPendente.fromSlug : slug;
+    var shaDeOrigem = paginaPendente && Object.prototype.hasOwnProperty.call(paginaPendente, 'fromSha')
+      ? paginaPendente.fromSha : cached.sha;
+    var voltandoAoOriginal = !!(paginaPendente && slugDeOrigem === novoSlug &&
+      state.pendingDeletes[newJson] && state.pendingDeletes[newPage]);
+
+    var duplicadoNoIndice = state.projectsIndex.projects.some(function (x) {
+      return x !== entrada && x.slug === novoSlug;
+    });
+    var destinoPublicado = state.published[newJson] !== undefined && state.published[newJson] !== null;
+    if (duplicadoNoIndice || state.projects[novoSlug] || state.pendingPages[newPage] ||
+        (destinoPublicado && !voltandoAoOriginal) ||
+        ((state.pendingDeletes[newJson] || state.pendingDeletes[newPage]) && !voltandoAoOriginal)) {
+      toast('Já existe um projeto ou uma operação pendente usando essa URL.', 'err');
+      return;
+    }
+
+    if (!confirm('Alterar a URL de /work/' + slug + '.html para /work/' + novoSlug + '.html?\n\nA troca ficará pendente e só acontecerá ao Publicar.')) return;
+
+    /* Ao voltar para a URL publicada depois de restaurar um rascunho, a linha
+       de base pode ainda não estar em memória. Carrega antes para que um
+       retorno sem outras edições seja reconhecido como realmente limpo. */
+    (voltandoAoOriginal ? ensurePublishedBaseline([newJson]) : Promise.resolve()).then(function () {
+      if (paginaPendente) {
+        delete state.pendingPages[oldPage];
+        delete state.dirty[oldJson];
+        if (state.published[oldJson] === null) delete state.published[oldJson];
+      } else {
+        delete state.dirty[oldJson];
+        state.pendingDeletes[oldJson] = 'URL antiga do projeto ' + slug;
+        state.pendingDeletes[oldPage] = 'página antiga do projeto ' + slug;
+      }
+
+      delete state.projects[slug];
+      cached.data.slug = novoSlug;
+      entrada.slug = novoSlug;
+      state.editingSlug = novoSlug;
+
+      if (voltandoAoOriginal) {
+        delete state.pendingDeletes[newJson];
+        delete state.pendingDeletes[newPage];
+        cached.sha = shaDeOrigem;
+        state.projects[novoSlug] = cached;
+        markDirty(newJson, cached.data, shaDeOrigem, 'cms: atualiza ' + newJson);
+      } else {
+        cached.sha = null;
+        state.projects[novoSlug] = cached;
+        state.published[newJson] = null;
+        markDirty(newJson, cached.data, null, 'cms: renomeia ' + slug + ' para ' + novoSlug);
+        state.pendingPages[newPage] = {
+          slug: novoSlug,
+          fromSlug: slugDeOrigem,
+          fromSha: shaDeOrigem == null ? null : shaDeOrigem
+        };
+      }
+
+      markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
+      marcarPendenteMudou();
+      schedulePreview();
+      renderProjectsList();
+      renderProjectEditor();
+      toast('Nova URL preparada: /work/' + novoSlug + '.html', 'ok');
+    }).catch(function (e) { toast(e.message || 'Não foi possível preparar a nova URL.', 'err'); });
+  }
+
   function renderProjectEditor() {
     var slug = state.editingSlug;
     var editorEl = document.getElementById('projectEditor');
@@ -2084,11 +2213,12 @@
 
     editorEl.innerHTML =
       '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
-      fieldRow('Slug', 'não muda depois de criado', '<input type="text" value="' + esc(slug) + '" disabled>') +
+      fieldRow('URL do case', 'Use letras minúsculas, números e hífen. A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">alterar URL</button></div>') +
       fieldRow('Status', '', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
       fieldRow('Ano', '', '<input type="number" id="pe_year" value="' + esc(P.year) + '" min="1990" max="2100">') +
       fieldRow('Categoria', 'Metadado do projeto e do índice.', '<input type="text" id="pe_category" value="' + esc(P.category || indexEntry.category) + '">') +
-      fieldRow('Rótulo acima do título (PT / EN)', 'Eyebrow do case.', '<input type="text" id="pe_eyebrowpt" value="' + esc(P.hero.eyebrowPt) + '" style="max-width:160px"><input type="text" id="pe_eyebrowen" value="' + esc(P.hero.eyebrowEn) + '" style="max-width:160px">') +
+      fieldRow('Rótulo acima do título (PT)', 'Eyebrow do case. Enter força uma nova linha.', ta('pe_eyebrowpt', P.hero.eyebrowPt)) +
+      fieldRow('Rótulo acima do título (EN)', 'Enter força uma nova linha.', ta('pe_eyebrowen', P.hero.eyebrowEn)) +
       fieldRow('Mostrar rótulo acima do título', 'Desligar preserva o texto e remove seu espaço.', switchControl('pe_showeyebrow', P.hero.showEyebrow !== false)) +
       fieldRow('Título (PT)', 'Enter força uma nova linha no case e no card.', '<textarea id="pe_titlept">' + esc(P.hero.titlePt) + '</textarea>') +
       fieldRow('Título (EN)', 'Enter força uma nova linha no case e no card.', '<textarea id="pe_titleen">' + esc(P.hero.titleEn) + '</textarea>') +
@@ -2098,10 +2228,12 @@
       fieldRow('Tags do card (EN)', 'Separe por vírgulas e mantenha a mesma ordem do PT.', '<input type="text" id="pe_tagsen" value="' + esc(tagsEn.join(', ')) + '">') +
       fieldRow('Tamanho do card', 'Usa as opções já declaradas no índice de projetos.', selectDe('pe_cardsize', indexEntry.cardSize || 'normal', cardSizes.map(function (s) { return [s, s]; }))) +
       fieldRow('Projeto em destaque', 'No desktop, ocupa a largura da grade sem alterar a ordem.', switchControl('pe_featured', indexEntry.featured === true)) +
-      fieldRow('Papel (PT / EN)', '', '<input type="text" id="pe_rolept" value="' + esc(P.hero.rolePt) + '" style="max-width:160px"><input type="text" id="pe_roleen" value="' + esc(P.hero.roleEn) + '" style="max-width:160px">') +
-      fieldRow('Escopo (PT / EN)', '', '<input type="text" id="pe_scopept" value="' + esc(P.hero.scopePt) + '" style="max-width:160px"><input type="text" id="pe_scopeen" value="' + esc(P.hero.scopeEn) + '" style="max-width:160px">') +
-      fieldRow('Capa', 'caminho do arquivo — envie por Mídia e cole aqui', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
-      fieldRow('Capa para celular', 'Opcional. Se estiver vazia, usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
+      fieldRow('Papel (PT)', 'Enter força uma nova linha.', ta('pe_rolept', P.hero.rolePt)) +
+      fieldRow('Papel (EN)', 'Enter força uma nova linha.', ta('pe_roleen', P.hero.roleEn)) +
+      fieldRow('Escopo (PT)', 'Enter força uma nova linha.', ta('pe_scopept', P.hero.scopePt)) +
+      fieldRow('Escopo (EN)', 'Enter força uma nova linha.', ta('pe_scopeen', P.hero.scopeEn)) +
+      fieldRow('Capa', 'Envie um arquivo, cole um caminho assets/ ou uma URL HTTPS direta.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
+      fieldRow('Capa para celular', 'Opcional. Aceita upload, caminho assets/ ou URL HTTPS; vazia usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
       fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
       '</div></details>' +
       '<details class="group"' + projectSection('cover') + '><summary>Espaçamento da capa</summary><div class="group-body">' +
@@ -2141,6 +2273,12 @@
     function save() { markDirty('content/projects/' + slug + '.json', P, cached.sha); schedulePreview(); }
     function saveIndex() { markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); schedulePreview(); }
     function tagsFrom(v) { return v.split(',').map(function (t) { return t.trim(); }).filter(Boolean); }
+    document.getElementById('pe_slug_apply').addEventListener('click', function () {
+      renomearSlugProjeto(slug, document.getElementById('pe_slug').value);
+    });
+    document.getElementById('pe_slug').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('pe_slug_apply').click(); }
+    });
     bindText('pe_eyebrowpt', function (v) { P.hero.eyebrowPt = v; save(); });
     bindText('pe_eyebrowen', function (v) { P.hero.eyebrowEn = v; save(); });
     bindSwitch('pe_showeyebrow', function (v) { if (v) delete P.hero.showEyebrow; else P.hero.showEyebrow = false; save(); });
@@ -2190,22 +2328,31 @@
      órfã no repositório, e ela podia existir sem o JSON que a referencia.
      Agora fica pendente, entra na revisão e sobe no mesmo commit do resto. */
   function uploadFile(file, slug, onDone) {
-    if (!file) return;
+    if (!file) return Promise.resolve(null);
     var nome = sanitizarNome(file.name);
-    if (!nome) { toast('Extensão não permitida. Use jpg, png, webp, gif, svg, mp4, webm ou pdf.', 'err'); return; }
+    if (!nome) { toast('Extensão não permitida. Use jpg, png, webp, avif, gif, svg, mp4, webm ou pdf.', 'err'); return Promise.resolve(null); }
     if (file.size > MAX_MIDIA_BYTES) {
-      toast('Arquivo maior que ' + Math.round(MAX_MIDIA_BYTES / 1024 / 1024) + 'MB.', 'err'); return;
+      toast('Arquivo maior que ' + Math.round(MAX_MIDIA_BYTES / 1024 / 1024) + 'MB. Para vídeo pesado, use Vimeo ou URL HTTPS direta.', 'err'); return Promise.resolve(null);
     }
     var pasta = (typeof slug === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) ? slug + '/' : '';
     var path = 'assets/uploads/' + pasta + nome;
+    var total = Object.keys(state.pendingUploads).reduce(function (soma, p) {
+      return soma + (p === path ? 0 : Number(state.pendingUploads[p].size || 0));
+    }, 0) + file.size;
+    if (total > MAX_MIDIA_POR_PUBLICACAO) {
+      toast('As mídias desta publicação passam de 32MB. Publique o lote atual ou use URL externa/Vimeo para os arquivos maiores.', 'err');
+      return Promise.resolve(null);
+    }
 
-    guardarMidia(path, file).then(function () {
+    return guardarMidia(path, file).then(function () {
       state.pendingUploads[path] = { mime: file.type || '', size: file.size, nome: nome };
       marcarPendenteMudou();
       toast('Mídia pendente. Sobe no próximo Publicar.', 'ok');
-      onDone(path);
+      if (onDone) onDone(path);
+      return path;
     }).catch(function () {
       toast('Não foi possível guardar a mídia neste navegador.', 'err');
+      return null;
     });
   }
 

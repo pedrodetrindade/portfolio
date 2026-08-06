@@ -17,20 +17,18 @@ var LIMITS = {
   gap: [0, 200]
 };
 
-var MAX_JSON_BYTES = 200 * 1024; /* 200KB por arquivo de conteúdo */
-var MAX_UPLOAD_BYTES = 5 * 1024 * 1024; /* 5MB por arquivo */
+var MAX_JSON_BYTES = 200 * 1024; /* 200KB por arquivo de conteúdo, não por mídia */
+var MAX_UPLOAD_BYTES = 25 * 1024 * 1024; /* 25MB por arquivo de mídia */
 /* .pdf entrou por causa do currículo da seção Sobre, que o painel troca sem
    passar por código. A lista continua fechada: qualquer extensão fora dela é
    recusada antes de o arquivo chegar ao GitHub. */
-/* .gif, .mp4 e .webm entraram com os blocos de mídia da página de projeto.
-   O teto de 5MB por arquivo continua valendo para todos: vídeo de verdade não
-   cabe nele e deve ir para o Vimeo, que é justamente por isso que o bloco de
-   vídeo tem os dois modos. Subir o teto encostaria no limite de blob da API do
-   GitHub e deixaria o repositório pesado para quem clona. */
-var ALLOWED_UPLOAD_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif', '.mp4', '.webm', '.pdf'];
+/* GIF, MP4 e WebM são conteúdo normal de case. AVIF entra como alternativa
+   compacta para fotografia. Arquivos maiores que 25MB continuam fora do Git:
+   vídeo pesado deve usar Vimeo ou uma URL HTTPS direta no bloco. */
+var ALLOWED_UPLOAD_EXT = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.svg', '.gif', '.mp4', '.webm', '.pdf'];
 var ALLOWED_UPLOAD_MIME = {
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-  '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+  '.png': 'image/png', '.webp': 'image/webp', '.avif': 'image/avif', '.svg': 'image/svg+xml',
   '.gif': 'image/gif', '.mp4': 'video/mp4', '.webm': 'video/webm',
   '.pdf': 'application/pdf'
 };
@@ -119,7 +117,12 @@ function bytesOf(str) { return new TextEncoder().encode(str).length; }
    com centenas de operações ou dezenas de MB chegaria a montar blobs no
    GitHub antes de qualquer recusa. */
 var MAX_OPS_POR_PUBLICACAO = 60;
-var MAX_BYTES_POR_PUBLICACAO = 25 * 1024 * 1024;
+var MAX_BYTES_POR_PUBLICACAO = 32 * 1024 * 1024;
+/* A publicação transporta binário em base64, que cresce cerca de 4/3. Este
+   teto vale para o JSON HTTP completo e é separado dos 200KB de cada arquivo
+   editorial. Sem essa separação, qualquer mídia acima de ~150KB era recusada
+   antes mesmo de chegar à validação de upload. */
+var MAX_REQUEST_BYTES_POR_PUBLICACAO = 48 * 1024 * 1024;
 
 /* ===== VÍDEO DE FUNDO DA CAPA =====
    Quatro modos. 'liquid' é o fundo animado em CSS que sempre existiu, e é o
@@ -222,17 +225,25 @@ var LARGURAS_DE_BLOCO = ['content', 'full'];
 var MODOS_DE_VIDEO_DE_BLOCO = ['file', 'vimeo'];
 var EXT_DE_VIDEO = ['.mp4', '.webm'];
 
-/* Caminho de mídia do próprio repositório. Sem URL externa de propósito: o
-   site não deve depender de arquivo hospedado em lugar que não controlamos, e
-   é justamente por aí que entraria conteúdo de terceiro. */
+/* Referência de mídia: caminho controlado dentro de assets/ ou URL HTTPS
+   direta. A URL externa permite usar R2/CDN sem engordar o repositório, mas
+   continua fechada por protocolo, credenciais, caracteres e extensão. */
 function caminhoDeMidiaValido(valor, extensoes) {
   if (typeof valor !== 'string') return false;
   var t = valor.trim();
   if (!t) return false;
   if (t.indexOf('..') !== -1 || t.indexOf('\0') !== -1) return false;
   if (/[<>"'`\\]/.test(t)) return false;
-  if (!/^assets\//.test(t)) return false;
-  var ext = t.toLowerCase().split('?')[0];
+  var caminho = t;
+  if (/^https:\/\//i.test(t)) {
+    var u;
+    try { u = new URL(t); } catch (e) { return false; }
+    if (u.protocol !== 'https:' || u.username || u.password) return false;
+    caminho = u.pathname;
+  } else if (!/^assets\//.test(t)) {
+    return false;
+  }
+  var ext = caminho.toLowerCase();
   ext = ext.slice(ext.lastIndexOf('.'));
   return extensoes.indexOf(ext) !== -1;
 }
@@ -314,7 +325,7 @@ export {
   CHAVES_DE_BLOCO, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido,
   LIMITS, MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
   UPLOAD_DIR, isPathWritable, isPagePathWritable, isUploadPathWritable,
-  MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
+  MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO, MAX_REQUEST_BYTES_POR_PUBLICACAO,
   MODOS_VIDEO, VIMEO_HOSTS, parseVimeoUrl, isVimeoConfigValido, isPosterValido,
   sanitizeUploadName, isSlugValid, clamp, bytesOf
 };

@@ -7,7 +7,7 @@
      aplica cor, borda, arredondamento e espaçamento antes de qualquer
      pintura. Precisa vir antes do <link rel="stylesheet">, para o navegador
      nunca chegar a pintar com o token antigo. Ver js/content.js. -->
-<script src="js/content.js?v=9"></script>
+<script src="js/content.js?v=10"></script>
 <title>Pedro de Trindade · Designer &amp; Diretor de Arte</title>
 <meta name="description" content="Pedro de Trindade, diretor de arte e designer sênior. Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.">
 
@@ -34,7 +34,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=105">
+<link rel="stylesheet" href="css/style.css?v=107">
 </head>
 <body>
 <a class="skip-link" href="#top" data-pt="Pular para o conteúdo" data-en="Skip to content">Pular para o conteúdo</a>
@@ -227,10 +227,24 @@
             <h2 class="about-title reveal" data-reveal="words" data-pt="Sobre mim" data-en="About me">Sobre mim</h2>
           </div>
 
-          <div class="about-copy">
+          <div class="about-text">
             <p class="about-lead reveal" data-pt="Designer com sete anos de experiência em direção criativa, direção de arte, branding e estratégia de marketing, atuando na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio." data-en="Designer with seven years of experience in creative direction, art direction, branding and marketing strategy, building brands, campaigns and communication ecosystems that connect creative vision, positioning and business objectives.">Designer com sete anos de experiência em direção criativa, direção de arte, branding e estratégia de marketing, atuando na construção de marcas, campanhas e ecossistemas de comunicação que conectam visão criativa, posicionamento e objetivos de negócio.</p>
 
             <p class="about-sub reveal" data-pt="Ao longo da minha trajetória, desenvolvi soluções visuais e estratégicas para projetos nacionais e internacionais, em contextos B2B e B2C. Também atuei em projetos ligados a serviços financeiros, produtos digitais e ativos digitais, incorporando inteligência artificial, automação e novas tecnologias ao processo criativo." data-en="Throughout my career I have developed visual and strategic solutions for national and international projects, across B2B and B2C contexts. I have also worked on projects involving financial services, digital products and digital assets, bringing artificial intelligence, automation and new technologies into the creative process.">Ao longo da minha trajetória, desenvolvi soluções visuais e estratégicas para projetos nacionais e internacionais, em contextos B2B e B2C. Também atuei em projetos ligados a serviços financeiros, produtos digitais e ativos digitais, incorporando inteligência artificial, automação e novas tecnologias ao processo criativo.</p>
+          </div>
+
+          <!-- No celular, a foto entra exatamente depois dos dois textos. A
+               partir do tablet, o grid a leva para a coluna esquerda. -->
+          <figure class="about-photo">
+            <div class="portrait mask-reveal">
+              <span class="portrait-hint" data-pt="foto" data-en="photo">foto</span>
+              <img src="assets/pedro.png" class="portrait-img" alt="Pedro de Trindade"
+                   width="1498" height="1873" decoding="async"
+                   onerror="this.remove()">
+            </div>
+          </figure>
+
+          <div class="about-details">
 
             <div class="caps">
               <span class="caps-k reveal" data-pt="Capacidades" data-en="Capabilities">Capacidades</span>
@@ -264,22 +278,6 @@
               </a>
             </div>
           </div>
-
-          <figure class="about-photo">
-            <!-- O placeholder fica por baixo de propósito: se assets/pedro.png
-                 faltar, a moldura continua legível em vez de mostrar ícone de
-                 imagem quebrada. Quando a foto carrega, ela cobre tudo. -->
-            <div class="portrait mask-reveal">
-              <span class="portrait-hint" data-pt="foto" data-en="photo">foto</span>
-              <!-- Sem loading="lazy": o carregamento preguiçoso usa as mesmas
-                   heurísticas de viewport do IntersectionObserver, que não
-                   enxergam a rolagem por transform. A foto simplesmente nunca
-                   carregava. Vale para qualquer imagem que entrar no site. -->
-              <img src="assets/pedro.png" class="portrait-img" alt="Pedro de Trindade"
-                   width="1498" height="1873" decoding="async"
-                   onerror="this.remove()">
-            </div>
-          </figure>
 
         </div>
       </div>
@@ -575,7 +573,7 @@
 <!-- Fase B do CMS: reconstrói texto e listas a partir do JSON, agora que o
      HTML da página já existe. Precisa vir antes de main.js, que é quem lê
      data-pt/data-en para decidir o idioma exibido. -->
-<script src="js/content-render.js?v=15"></script>
-<script src="js/main.js?v=91"></script>
+<script src="js/content-render.js?v=17"></script>
+<script src="js/main.js?v=93"></script>
 </body>
 </html>

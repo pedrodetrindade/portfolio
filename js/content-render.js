@@ -33,6 +33,48 @@
   function isCase() { return location.pathname.indexOf('/work/') !== -1; }
   var base = isCase() ? '../' : '';
 
+  /* Caminho do repositório recebe o prefixo da página; URL HTTPS externa fica
+     intacta. Qualquer outro esquema vira vazio mesmo durante a prévia, antes
+     de o Worker aplicar a validação definitiva na publicação. */
+  function resolveAssetUrl(valor) {
+    var t = typeof valor === 'string' ? valor.trim() : '';
+    if (/^https:\/\//i.test(t)) return t;
+    if (/^(assets|content)\//.test(t) && t.indexOf('..') === -1) return base + t;
+    return '';
+  }
+
+  /* Header/footer são compartilhados por Home e cases. Esta aplicação não
+     pode morar dentro de renderHome(): aquela função sai cedo em /work/ e os
+     cases ficavam presos ao disclaimer estático do HTML. */
+  function renderSharedChrome() {
+    var G = window.__CMS_GLOBAL__ || {};
+    if (G.social && G.social.email) {
+      var mailLink = document.querySelector('.mail-link');
+      if (mailLink) { mailLink.setAttribute('href', 'mailto:' + G.social.email); mailLink.textContent = G.social.email; }
+      var copyBtn = document.querySelector('.copy-btn');
+      if (copyBtn) copyBtn.setAttribute('data-copy', G.social.email);
+    }
+    if (G.social) {
+      var linkedinLinks = document.querySelectorAll('a[href*="linkedin.com"]');
+      var behanceLinks = document.querySelectorAll('a[href*="behance.net"]');
+      if (G.social.linkedin) for (var i = 0; i < linkedinLinks.length; i++) linkedinLinks[i].setAttribute('href', G.social.linkedin);
+      if (G.social.behance) for (var j = 0; j < behanceLinks.length; j++) behanceLinks[j].setAttribute('href', G.social.behance);
+    }
+    if (!G.footer) return;
+    var copyEl = document.querySelector('.foot-copy');
+    if (copyEl) {
+      var ano = new Date().getFullYear();
+      var comAno = function (txt) { return String(txt).replace(/\{year\}/g, ano); };
+      var pt = G.footer.copyrightPt || ('© ' + ano + ' · ' + (G.footer.disclaimerPt || ''));
+      var en = G.footer.copyrightEn || ('© ' + ano + ' · ' + (G.footer.disclaimerEn || ''));
+      setText(copyEl, comAno(pt), comAno(en));
+    }
+    if (G.footer.marqueeText) {
+      var mqBs = document.querySelectorAll('.mq-group b');
+      for (var k = 0; k < mqBs.length; k++) mqBs[k].textContent = G.footer.marqueeText;
+    }
+  }
+
   /* Declarada AQUI, acima das duas chamadas abaixo, e não junto do resto do
      código de blocos. `var` é hasteada como undefined, não como o valor: lá
      embaixo, esta lista ainda não existiria quando renderProject() rodasse, e
@@ -89,7 +131,7 @@
     /* Poster primeiro, sempre que existir: ele aparece antes do iframe, se o
        Vimeo estiver bloqueado, e é o que fica sob movimento reduzido. */
     if (poster && !/vimeo\.com/i.test(poster)) {
-      liquidBg.style.setProperty('--hero-poster', 'url("' + encodeURI(base + poster) + '")');
+      liquidBg.style.setProperty('--hero-poster', 'url("' + encodeURI(resolveAssetUrl(poster)) + '")');
       liquidBg.classList.add('has-poster');
     } else {
       liquidBg.classList.remove('has-poster');
@@ -101,8 +143,8 @@
 
     if (modo === 'file' && hero.backgroundVideo) {
       if (!video) return;
-      video.setAttribute('src', base + hero.backgroundVideo);
-      if (poster) video.setAttribute('poster', base + poster);
+      video.setAttribute('src', resolveAssetUrl(hero.backgroundVideo));
+      if (poster) video.setAttribute('poster', resolveAssetUrl(poster));
       video.hidden = false;
       liquidBg.classList.add('has-video');
       var p = video.play();
@@ -134,6 +176,7 @@
   }
 
   function renderHome(overrideHome, overrideIndex) {
+    renderSharedChrome();
     if (isCase()) return;
     var H = overrideHome || window.__CMS_HOME__;
     if (!H || !H.hero) return;
@@ -182,7 +225,7 @@
       if (resumeBtn) {
         var file = typeof A.resumeFile === 'string' ? A.resumeFile.trim() : '';
         if (file && A.showResume !== false) {
-          resumeBtn.setAttribute('href', base + file);
+      resumeBtn.setAttribute('href', resolveAssetUrl(file));
           setText(resumeBtn, A.resumeLabelPt, A.resumeLabelEn);
           resumeBtn.hidden = false;
         } else {
@@ -190,7 +233,7 @@
         }
       }
       var photo = document.querySelector('.portrait-img');
-      if (photo && A.photo) photo.setAttribute('src', base + A.photo);
+      if (photo && A.photo) photo.setAttribute('src', resolveAssetUrl(A.photo));
       var capsGrid = document.querySelector('.caps-grid');
       if (capsGrid && Array.isArray(A.capabilities)) {
         capsGrid.innerHTML = A.capabilities.map(function (item) {
@@ -254,49 +297,6 @@
       setOptionalLabel(document.querySelector('.mail-k'), H.contact.mailLabelPt, H.contact.mailLabelEn, H.contact.showMailLabel);
     }
 
-    var G = window.__CMS_GLOBAL__ || {};
-    if (G.social && G.social.email) {
-      var mailLink = document.querySelector('.mail-link');
-      if (mailLink) { mailLink.setAttribute('href', 'mailto:' + G.social.email); mailLink.textContent = G.social.email; }
-      var copyBtn = document.querySelector('.copy-btn');
-      if (copyBtn) copyBtn.setAttribute('data-copy', G.social.email);
-    }
-    if (G.social) {
-      var linkedinLinks = document.querySelectorAll('a[href*="linkedin.com"]');
-      var behanceLinks = document.querySelectorAll('a[href*="behance.net"]');
-      if (G.social.linkedin) for (var i = 0; i < linkedinLinks.length; i++) linkedinLinks[i].setAttribute('href', G.social.linkedin);
-      if (G.social.behance) for (var j = 0; j < behanceLinks.length; j++) behanceLinks[j].setAttribute('href', G.social.behance);
-    }
-    if (G.footer) {
-      /* Copyright do rodapé.
-         O bug anterior morava no seletor: era `.foot-note span:last-child`, e
-         `span:last-child` casa com QUALQUER span que seja último filho do
-         próprio pai. O `<span data-yr>` era o último filho de `.foot-yr` e vinha
-         antes no documento, então o querySelector devolvia ele, não o
-         disclaimer. O texto do disclaimer ia parar no span do ano, o setLang
-         escrevia ali, e a linha saía "© <disclaimer> · <disclaimer>", com o ano
-         perdido. Agora existe um elemento só, .foot-copy, sem ambiguidade
-         possível.
-         {year} é trocado aqui, na renderização, para o texto salvo no CMS
-         continuar editável por inteiro e nunca envelhecer. */
-      var copyEl = document.querySelector('.foot-copy');
-      if (copyEl) {
-        var ano = new Date().getFullYear();
-        var comAno = function (txt) { return String(txt).replace(/\{year\}/g, ano); };
-        /* Compatibilidade com global.json antigo, que só tem disclaimerPt/En:
-           monta "© ano · disclaimer", que é exatamente o que a marcação antiga
-           tentava exibir, sem repetir nada e sem inventar frase nova. Assim que
-           copyrightPt/En existirem, eles passam a mandar. */
-        var pt = G.footer.copyrightPt || ('© ' + ano + ' · ' + (G.footer.disclaimerPt || ''));
-        var en = G.footer.copyrightEn || ('© ' + ano + ' · ' + (G.footer.disclaimerEn || ''));
-        setText(copyEl, comAno(pt), comAno(en));
-      }
-      if (G.footer.marqueeText) {
-        var mqBs = document.querySelectorAll('.mq-group b');
-        for (var k = 0; k < mqBs.length; k++) mqBs[k].textContent = G.footer.marqueeText;
-      }
-    }
-
     /* grade de projetos: reconstruída inteira a partir de projects/index.json,
        porque ordem, visibilidade e contagem podem mudar — um "substituir no
        lugar" não cobre adicionar, remover ou reordenar cards. */
@@ -307,6 +307,7 @@
       if (!idx) {
         var xf = new XMLHttpRequest();
         xf.open('GET', 'content/projects/index.json?v=1', false);
+        xf.setRequestHeader('Cache-Control', 'no-cache');
         xf.send(null);
         if (xf.status === 200 || xf.status === 0) idx = JSON.parse(xf.responseText);
       }
@@ -374,7 +375,7 @@
     if (b.type === 'gallery') {
       var imgs = Array.isArray(b.images) ? b.images : [];
       return '<div class="case-gallery" style="' + css + '">' + imgs.map(function (img) {
-        return '<div class="thumb reveal"><div class="scene"><img src="' + esc(base + img.src) +
+        return '<div class="thumb reveal"><div class="scene"><img src="' + esc(resolveAssetUrl(img.src)) +
           '" alt="' + esc(img.alt || '') + '" onerror="this.remove()"></div></div>';
       }).join('') + '</div>';
     }
@@ -386,7 +387,7 @@
         ? '<figcaption data-pt="' + esc(b.captionPt || '') + '" data-en="' + esc(b.captionEn || '') + '">' + esc(b.captionPt || '') + '</figcaption>'
         : '';
       return '<figure class="' + cls + '" style="' + css + '">' +
-        '<div class="scene"><img src="' + esc(base + (b.src || '')) + '" alt="' + esc(b.alt || '') +
+        '<div class="scene"><img src="' + esc(resolveAssetUrl(b.src)) + '" alt="' + esc(b.alt || '') +
         '" onerror="this.remove()"></div>' + cap + '</figure>';
     }
     if (b.type === 'quote') {
@@ -407,8 +408,8 @@
          endereço colado pela pessoa entra numa string de HTML. */
       var miolo = (b.mode === 'vimeo' && b.vimeo && b.vimeo.videoId)
         ? '<div class="scene" data-vimeo="1"></div>'
-        : '<div class="scene"><video src="' + esc(base + (b.src || '')) + '"' +
-          (b.poster ? ' poster="' + esc(base + b.poster) + '"' : '') +
+        : '<div class="scene"><video src="' + esc(resolveAssetUrl(b.src)) + '"' +
+          (b.poster ? ' poster="' + esc(resolveAssetUrl(b.poster)) + '"' : '') +
           ' controls playsinline preload="metadata"></video></div>';
       return '<figure class="case-video reveal" style="' + css + '">' + miolo + capV + '</figure>';
     }
@@ -511,7 +512,7 @@
     }
 
     var coverImg = document.querySelector('.case-cover .scene img');
-    if (coverImg && P.cover) coverImg.setAttribute('src', base + P.cover);
+    if (coverImg && P.cover) coverImg.setAttribute('src', resolveAssetUrl(P.cover));
     var coverEl = document.querySelector('.case-cover');
     if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 18, 0));
 

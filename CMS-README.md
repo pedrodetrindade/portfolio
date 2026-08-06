@@ -667,8 +667,12 @@ origem (o mesmo Worker serve os dois). Se aparecer um erro de CORS, é sinal
 de que o painel está sendo aberto de um endereço diferente do Worker (por
 exemplo, um `file://` local) — abra pela URL do Worker.
 
-**Upload muito grande.** Limite de 5MB por imagem. Comprima a imagem antes
-de enviar.
+**Upload muito grande.** O limite é de 25MB por arquivo de mídia e 32MB de
+mídia em uma mesma publicação. São aceitos JPG, PNG, WebP, AVIF, SVG, GIF,
+MP4, WebM e PDF. Para arquivos maiores, use uma URL HTTPS direta no bloco de
+imagem/galeria/vídeo ou Vimeo no bloco de vídeo. O limite de 200KB vale apenas
+para cada arquivo JSON editorial; o corpo de `/api/publish`, que transporta os
+binários em base64, tem uma régua separada de 48MB.
 
 **Configuração inválida.** O painel e o Worker aplicam os mesmos limites
 (0–200px de arredondamento, 320–2560px de largura, 0–600px de espaçamento,

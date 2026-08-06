@@ -107,18 +107,18 @@
         "hrefHome": "index.html",
         "hrefWork": "index.html"
       },
-      {
-        "pt": "Sobre",
-        "en": "About",
-        "hrefHome": "index.html#about",
-        "hrefWork": "index.html#about"
-      },
-      {
-        "pt": "Trabalhos",
-        "en": "Work",
-        "hrefHome": "index.html#work",
-        "hrefWork": "index.html#work"
-      }
+    {
+      "pt": "Trabalhos",
+      "en": "Work",
+      "hrefHome": "index.html#work",
+      "hrefWork": "index.html#work"
+    },
+    {
+      "pt": "Sobre",
+      "en": "About",
+      "hrefHome": "index.html#about",
+      "hrefWork": "index.html#about"
+    }
     ]
   },
   "footer": {

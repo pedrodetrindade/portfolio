@@ -9,7 +9,7 @@ import {
 import {
   MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_MIME,
   isPathWritable, isPagePathWritable, isUploadPathWritable,
-  MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO,
+  MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO, MAX_REQUEST_BYTES_POR_PUBLICACAO,
   MODOS_VIDEO, VIMEO_HOSTS, isVimeoConfigValido, isPosterValido,
   isSlugValid, bytesOf, erroNosBlocos, erroNoSpacing
 } from './validate.js';
@@ -85,10 +85,18 @@ function errorResponse(e) {
   return json({ error: 'internal_error', message: 'Algo deu errado no Worker. Tente novamente; se persistir, veja os logs (wrangler tail).' }, 500);
 }
 
-async function readJsonBody(request) {
+async function readJsonBody(request, maxBytes) {
+  var limite = maxBytes || MAX_JSON_BYTES;
+  var rotuloLimite = limite >= 1024 * 1024
+    ? Math.round(limite / 1024 / 1024) + 'MB'
+    : Math.round(limite / 1024) + 'KB';
+  var declarado = Number(request.headers.get('content-length'));
+  if (declarado && declarado > limite) {
+    throw new GithubError('payload_too_large', 413, 'O conteúdo enviado passa do limite de ' + rotuloLimite + '.');
+  }
   var text = await request.text();
-  if (bytesOf(text) > MAX_JSON_BYTES) {
-    throw new GithubError('payload_too_large', 413, 'O conteúdo enviado passa do limite de ' + Math.round(MAX_JSON_BYTES / 1024) + 'KB.');
+  if (bytesOf(text) > limite) {
+    throw new GithubError('payload_too_large', 413, 'O conteúdo enviado passa do limite de ' + rotuloLimite + '.');
   }
   try { return JSON.parse(text); } catch (e) {
     throw new GithubError('invalid_json', 400, 'O corpo da requisição não é um JSON válido.');
@@ -317,7 +325,10 @@ async function route(request, env) {
                modelo do próprio repositório
      delete  — remoção de um caminho de qualquer uma das whitelists  */
 async function handlePublish(request, env) {
-  var body = await readJsonBody(request);
+  /* /api/publish inclui mídia em base64. Usar aqui o teto editorial de 200KB
+     era o verdadeiro bloqueio que fazia arquivos pequenos falharem antes da
+     validação específica de mídia. */
+  var body = await readJsonBody(request, MAX_REQUEST_BYTES_POR_PUBLICACAO);
   /* aceita o formato antigo ({files:[...]}) para uma aba que ficou aberta
      durante o deploy não quebrar: vira uma lista de operações json */
   var ops = body && Array.isArray(body.ops) ? body.ops
@@ -376,6 +387,14 @@ async function handlePublish(request, env) {
          com src apontando para fora do repositório não pode ser gravado só
          porque alguém montou o JSON à mão. */
       if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) {
+        var slugDoCaminho = caminho.match(/^content\/projects\/([a-z0-9-]+)\.json$/)[1];
+        if (!isSlugValid(op.data.slug) || op.data.slug !== slugDoCaminho) {
+          return json({
+            error: 'slug_mismatch',
+            message: 'O slug interno do projeto precisa ser igual ao nome do arquivo em ' + caminho + '.',
+            path: caminho
+          }, 422);
+        }
         var erroCapaSpacing = erroNoSpacing(op.data.coverSpacing, false);
         if (erroCapaSpacing) {
           return json({

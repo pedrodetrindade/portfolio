@@ -32,6 +32,10 @@
     try {
       var x = new XMLHttpRequest();
       x.open('GET', base + path, false); /* síncrono: ver nota acima */
+      /* O conteúdo é publicado pelo CMS sem mudar o nome do arquivo. A query
+         fixa sozinha não invalida uma resposta antiga; no-cache preserva a
+         cópia local, mas obriga o navegador/CDN a revalidá-la antes de usar. */
+      x.setRequestHeader('Cache-Control', 'no-cache');
       x.send(null);
       if (x.status !== 200 && x.status !== 0) return null;
       return JSON.parse(x.responseText);

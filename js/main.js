@@ -206,14 +206,16 @@
   document.body.insertAdjacentHTML('beforeend', `
     <div class="veil" aria-hidden="true"></div>
 
-    <!-- Menu enxuto: só fechar e navegação. Marca, "aberto a novos projetos" e
-         o bloco de redes saíram daqui — a marca e a disponibilidade já estão no
-         header logo acima, e as redes seguem no rodapé (os dados continuam em
-         global.json > social, nada foi apagado). -->
+    <!-- O topo repete a linguagem da pílula fechada: o painel aberto precisa
+         parecer a expansão do mesmo controle, não um segundo componente. Não
+         existe X: no desktop ele fecha ao sair com o cursor; em toque, pelo
+         próprio botão Menu, clique fora ou Escape. -->
     <div class="overlay" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
       <div class="overlay-sheet">
-        <div class="overlay-top overlay-top--bare">
-          <button class="overlay-x" data-close data-pt-label="Fechar" data-en-label="Close" aria-label="Fechar">✕</button>
+        <div class="menu-panel-head">
+          <span class="menu-panel-title"><i aria-hidden="true"></i><span data-pt="Menu" data-en="Menu">Menu</span></span>
+          <span class="menu-panel-div" aria-hidden="true"></span>
+          <span class="menu-panel-avail"><i class="avail-dot" aria-hidden="true"></i><span data-pt="Disponível para projetos" data-en="Available for projects" data-pt-short="Disponível" data-en-short="Available">Disponível para projetos</span></span>
         </div>
         <nav class="menu-list">
           ${MENU.map(i => `
@@ -442,21 +444,21 @@
      Roda em toda abertura da home, de propósito: é a assinatura de entrada e
      Pedro quer que ela seja vista sempre, não só na primeira visita. */
   /* ===== TIMELINE DA INTRO, EM UM LUGAR SÓ =====
-     Duas etapas somando exatamente 3000ms. Os números saem daqui para o CSS
+     Duas etapas somando exatamente 3600ms. Os números saem daqui para o CSS
      via variáveis, então não existe duração escrita duas vezes nem timeout
      solto que possa divergir da animação.
-       0 a 1200ms   revelação: máscara da esquerda para a direita, opacidade e
+       0 a 1440ms   revelação: máscara da esquerda para a direita, opacidade e
                     blur. O nome fica parado, centrado, em escala maior.
-       1200 a 3000  transformação: escala e posição até o lugar da capa.
-       ~2325ms      secundários começam a entrar, sobre a cauda do movimento.
-     A passagem de 2s para 3s foi proporcional: tudo multiplicado por 1,5, de
-     modo que a proporção entre revelação (40%) e movimento (60%) e o ponto de
+       1440 a 3600  transformação: escala e posição até o lugar da capa.
+       ~2790ms      secundários começam a entrar, sobre a cauda do movimento.
+     A duração atual é 20% maior que a versão de 3s. Tudo foi escalado junto,
+     de modo que a proporção entre revelação (40%) e movimento (60%) e o ponto de
      entrada dos secundários (77,5% da linha) continuam idênticos. Escalar só o
      total mudaria o ritmo interno, não a duração. */
-  const INTRO = { revelacao: 1200, movimento: 1800 };
-  const INTRO_MS = INTRO.revelacao + INTRO.movimento;   // 3000ms
-  const SECUNDARIOS_MS = 2325;
-  const VEU_MS = 2700;                                  // saída do véu, mesma escala
+  const INTRO = { revelacao: 1440, movimento: 2160 };
+  const INTRO_MS = INTRO.revelacao + INTRO.movimento;   // 3600ms
+  const SECUNDARIOS_MS = 2790;
+  const VEU_MS = 3240;                                  // saída do véu, mesma escala
   const raiz = document.documentElement.style;
   raiz.setProperty('--intro-dur', INTRO_MS + 'ms');
   raiz.setProperty('--intro-reveal', INTRO.revelacao + 'ms');
@@ -552,19 +554,21 @@
   function openOverlay(el, modal = true){
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     el.classList.add('open');
+    document.body.classList.toggle('menu-open', el === menu);
     modalOpen = modal;
     if (window.__travarTemaHeader) window.__travarTemaHeader(true);
     if (!modal) return;
     lastFocused = document.activeElement;
     document.body.classList.add('locked');
     lockBackground(true);
-    const focusTarget = el.querySelector('.overlay-x');
+    const focusTarget = el.querySelector('.overlay-x, .menu-item, input, button, a');
     if (focusTarget) focusTarget.focus();
   }
   function closeOverlays(){
     const wasOpen = document.querySelector('.overlay.open');
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     document.body.classList.remove('locked');
+    document.body.classList.remove('menu-open');
     lockBackground(false);
     if (window.__travarTemaHeader) window.__travarTemaHeader(false);
     /* devolver o foco só faz sentido se ele tiver sido movido na abertura */
