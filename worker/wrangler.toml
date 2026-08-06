@@ -9,6 +9,12 @@ directory = "./public"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
+# Endereço definitivo do painel. A Cloudflare cria e administra o DNS e o
+# certificado desta origem; o acesso é restringido separadamente pelo Access.
+[[routes]]
+pattern = "admin.pedrodetrindade.com"
+custom_domain = true
+
 # ===== Variáveis (texto simples, não secretas) =====
 # Estas aparecem no painel do Cloudflare em texto puro. Nenhuma delas é uma
 # credencial: são só identificadores de configuração. O único segredo real
