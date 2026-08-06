@@ -142,6 +142,12 @@ permanentemente, e ficava difícil de ler. O marquee, decorativo e com baixa
 opacidade, é o fim visual real da página; o bloco utilitário (voltar ao topo
 em cima, crédito embaixo) fica acima dele, os dois centralizados.
 
+**Contato e rodapé formam uma viewport exata no desktop.** `js/main.js` mede
+a altura real do `footer` com `ResizeObserver` e publica
+`--footer-block-height`; `#contact` ocupa o restante de `100svh`. Não substitua
+essa medida por uma altura fixa nem adicione espaço depois do marquee: ele
+encosta na base da página e o `.edge-blur` permanece ativo sobre essa faixa.
+
 **O indicador "continue" da hero (`.next-hint`) é sempre centralizado por
 `left:50% + translateX(-50%)`.** Qualquer regra que troque o `transform` dele
 (a entrada disparada pela intro, por exemplo) precisa manter o

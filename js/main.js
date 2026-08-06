@@ -24,6 +24,24 @@
      observador cobre esse caso, que o listener de resize não vê. */
   if (window.ResizeObserver) new ResizeObserver(medirLargura).observe(document.documentElement);
 
+  /* O encerramento da Home deve ocupar uma viewport exata: contato completa o
+     espaço que sobra depois do footer. Medir o footer é mais robusto que
+     estimar sua altura, porque disclaimer, idioma, fonte e largura podem mudar.
+     ResizeObserver cobre todas essas mudanças sem criar listener de scroll. */
+  const footerMedido = document.querySelector('footer');
+  const contatoMedido = document.getElementById('contact');
+  let ultimaAlturaFooter = -1;
+  const medirEncerramento = () => {
+    if (!footerMedido || !contatoMedido) return;
+    const altura = footerMedido.getBoundingClientRect().height;
+    if (Math.abs(altura - ultimaAlturaFooter) < .25) return;
+    ultimaAlturaFooter = altura;
+    document.documentElement.style.setProperty('--footer-block-height', altura + 'px');
+  };
+  medirEncerramento();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirEncerramento);
+  if (window.ResizeObserver && footerMedido) new ResizeObserver(medirEncerramento).observe(footerMedido);
+
   const base = location.pathname.includes('/work/') ? '../' : '';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = window.matchMedia('(pointer: fine)').matches;
@@ -1043,9 +1061,7 @@
      Nas páginas de projeto não há seção nenhuma da Home, então a lista nasce
      vazia e a função sai na primeira linha. */
   const grainEl = document.querySelector('.grain');
-  const edgeBlurEl = document.querySelector('.edge-blur');
   let grainAssinatura = '';
-  let edgeBlurClear = false;
   const pintarGrain = id => {
     if (!grainEl) return;
     let origem = document.documentElement;
@@ -1110,13 +1126,6 @@
     queued = false;
     const y = posVisual;
     const noFimDaPagina = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
-
-    /* O desfoque de borda é útil durante a leitura, mas não pode cobrir o
-       marquee quando o visitante chega ao fim real do documento. */
-    if (edgeBlurEl && noFimDaPagina !== edgeBlurClear) {
-      edgeBlurClear = noFimDaPagina;
-      edgeBlurEl.classList.toggle('is-clear', noFimDaPagina);
-    }
 
     /* Só escreve o transform quando o estado vira. Reescrever a cada quadro
        invalidava o backdrop-filter do .menu-btn, que é filho do header: o

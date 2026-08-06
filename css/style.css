@@ -288,9 +288,7 @@ html.has-custom-cursor label{cursor:auto}
   z-index:40;pointer-events:none;
   backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
   -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.65) 42%,transparent 100%);
-          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.65) 42%,transparent 100%);
-  transition:opacity var(--dur-micro) var(--ease-soft)}
-.edge-blur.is-clear{opacity:0}
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.65) 42%,transparent 100%)}
 @media(prefers-reduced-motion:reduce){.edge-blur{display:none}}
 @supports not ((mask-image:linear-gradient(#000,transparent)) or
                (-webkit-mask-image:linear-gradient(#000,transparent))){
@@ -939,7 +937,11 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 @media(min-width:900px){
   #help,#faq{min-height:100svh;display:flex;flex-direction:column;
     justify-content:center}
-  #contact{display:flex;flex-direction:column;justify-content:center}
+  /* Contato + footer formam o último capítulo e, juntos, ocupam exatamente uma
+     viewport. O JS mede a altura real do footer (inclusive idioma e CMS) e
+     publica --footer-block-height; o contato completa somente o espaço restante. */
+  #contact{display:flex;flex-direction:column;justify-content:center;
+    min-height:calc(100svh - var(--footer-block-height,22rem))}
 }
 /* faixa "tablet": 640px a 899px */
 @media(max-width:899px) and (min-width:640px){
@@ -1357,7 +1359,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 
 footer{border-top:var(--contact-divider-width,1px) solid var(--line);
   padding-top:min(var(--contact-pad-bottom-desktop,3rem),5svh);
-  padding-bottom:clamp(.75rem,2vh,1.5rem);
+  padding-bottom:0;
   font-size:.74rem;color:var(--muted-2);
   display:flex;flex-direction:column;gap:1.15rem}
 @media(max-width:899px) and (min-width:640px){
@@ -1390,7 +1392,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
 .marquee{--bleed:var(--vw,100vw);
   width:var(--bleed);position:relative;left:50%;margin-left:calc(var(--bleed) / -2);
   overflow:hidden;pointer-events:none;user-select:none;
-  padding-block:clamp(.4rem,1.4vh,1.2rem)}
+  padding-block:clamp(.4rem,1.4vh,1.2rem) 0}
 .marquee-track{display:flex;width:max-content;
   animation:marquee 32s linear infinite}
 .mq-group{display:flex;align-items:center;gap:clamp(1.2rem,2.6vw,3rem);
