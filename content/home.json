@@ -88,14 +88,14 @@
     "contact": {
       "visible": true,
       "spacingTop": {
-        "desktop": null,
-        "tablet": null,
-        "mobile": null
+        "desktop": 56,
+        "tablet": 104,
+        "mobile": 104
       },
       "spacingBottom": {
-        "desktop": null,
-        "tablet": null,
-        "mobile": null
+        "desktop": 48,
+        "tablet": 104,
+        "mobile": 104
       }
     }
   },

@@ -910,7 +910,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    mandar mais do que o min-height. */
 #help{padding-block:var(--help-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--help-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
 #faq{padding-block:var(--faq-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--faq-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
-#contact{padding-block:var(--contact-pad-top-desktop,clamp(3.5rem,9vh,6rem)) var(--contact-pad-bottom-desktop,clamp(3rem,7vh,5rem))}
+#contact{padding-block:min(var(--contact-pad-top-desktop,3.5rem),6svh) min(var(--contact-pad-bottom-desktop,3rem),5svh)}
 /* Fundo opcional por seção. Work, Help e Contact vivem dentro da `.wrap`, por
    isso o pseudo-elemento sangra até a largura útil da janela. Sem override do
    CMS, todos preservam o fundo histórico. */
@@ -1305,8 +1305,8 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    "j" de "juntos" e o par de margens negativas encavalava as linhas, o que
    lia como uma delas fora do lugar. Aqui a máscara não precisa recortar: a
    entrada é por opacidade e deslocamento, não por linha subindo de dentro. */
-.contact-big{font-size:clamp(2.8rem,10vw,8rem);font-weight:var(--w-medium);line-height:.94;
-  letter-spacing:-.055em;margin-bottom:clamp(2.5rem,5vw,3.6rem)}
+.contact-big{font-size:clamp(2.8rem,min(10vw,13svh),8rem);font-weight:var(--w-medium);line-height:.94;
+  letter-spacing:-.055em;margin-bottom:clamp(1.75rem,4svh,3.6rem)}
 .contact-big .hn-mask{overflow:visible;padding-bottom:0;margin-bottom:0}
 .contact-big .hn-line{display:block}
 .contact-big .em{color:var(--muted-2)}
@@ -1344,7 +1344,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .contact .links{justify-content:center}
 
 
-.contact .links{margin-top:2.5rem;display:flex;flex-wrap:wrap;gap:1.4rem;font-family:var(--mono);font-size:.82rem}
+.contact .links{margin-top:clamp(1.5rem,3svh,2.5rem);display:flex;flex-wrap:wrap;gap:1.4rem;font-family:var(--mono);font-size:.82rem}
 .contact .links a{padding:.7rem 1.1rem;border:1px solid var(--line-strong);border-radius:var(--radius-field,12px);color:var(--muted);
   display:inline-flex;gap:.5em;align-items:center;
   transition:color var(--dur-micro) var(--ease-out-smooth),
@@ -1356,7 +1356,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .ico{width:15px;height:15px;flex:none}
 
 footer{border-top:var(--contact-divider-width,1px) solid var(--line);
-  padding-top:var(--contact-pad-bottom-desktop,clamp(3rem,7vh,5rem));
+  padding-top:min(var(--contact-pad-bottom-desktop,3rem),5svh);
   padding-bottom:clamp(.75rem,2vh,1.5rem);
   font-size:.74rem;color:var(--muted-2);
   display:flex;flex-direction:column;gap:1.15rem}
@@ -1377,7 +1377,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
    suficiente para separar os dois blocos, sem abrir um vão que empurre o
    marquee para longe. */
 .foot-row{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:clamp(1.5rem,2.6vw,2.4rem)}
+  gap:clamp(1.25rem,3svh,2.4rem)}
 .foot-note{font-size:.82rem;font-weight:var(--w-light);line-height:1.5;
   color:var(--muted-2);opacity:.78;text-align:center}
 
@@ -1395,7 +1395,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
   animation:marquee 32s linear infinite}
 .mq-group{display:flex;align-items:center;gap:clamp(1.2rem,2.6vw,3rem);
   padding-right:clamp(1.2rem,2.6vw,3rem)}
-.mq-group b{font-weight:var(--w-medium);font-size:clamp(3rem,9vw,9rem);line-height:1.06;
+.mq-group b{font-weight:var(--w-medium);font-size:clamp(3rem,min(9vw,13svh),8rem);line-height:1.06;
   letter-spacing:-.045em;color:var(--color-hero-name);opacity:.16;white-space:nowrap}
 .mq-group i{font-style:normal;font-size:clamp(1.4rem,3.4vw,3rem);
   color:var(--accent);opacity:.22}
