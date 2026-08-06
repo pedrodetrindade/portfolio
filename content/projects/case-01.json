@@ -74,9 +74,9 @@
       ],
       "spacing": {
         "marginTop": {
-          "desktop": 18,
           "tablet": null,
-          "mobile": null
+          "mobile": null,
+          "desktop": 80
         },
         "marginBottom": {
           "desktop": 0,
