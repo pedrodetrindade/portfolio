@@ -97,6 +97,11 @@
     "durationDefault": 700,
     "durationSlow": 1000
   },
+  "effects": {
+    "grain": {
+      "opacity": 10
+    }
+  },
   "header": {
     "showLanguageSwitch": true,
     "showContactButton": true,
@@ -107,18 +112,18 @@
         "hrefHome": "index.html",
         "hrefWork": "index.html"
       },
-    {
-      "pt": "Trabalhos",
-      "en": "Work",
-      "hrefHome": "index.html#work",
-      "hrefWork": "index.html#work"
-    },
-    {
-      "pt": "Sobre",
-      "en": "About",
-      "hrefHome": "index.html#about",
-      "hrefWork": "index.html#about"
-    }
+      {
+        "pt": "Trabalhos",
+        "en": "Work",
+        "hrefHome": "index.html#work",
+        "hrefWork": "index.html#work"
+      },
+      {
+        "pt": "Sobre",
+        "en": "About",
+        "hrefHome": "index.html#about",
+        "hrefWork": "index.html#about"
+      }
     ]
   },
   "footer": {
