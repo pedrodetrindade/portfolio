@@ -1312,6 +1312,11 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .contact-big .hn-mask{overflow:visible;padding-bottom:0;margin-bottom:0}
 .contact-big .hn-line{display:block}
 .contact-big .em{color:var(--muted-2)}
+/* O bloco utilitário desce sem mudar o fluxo ou a altura do encerramento. Em
+   Full HD o avanço chega a 3.75rem; em desktops baixos ele cai rapidamente
+   para preservar distâncias equivalentes dos dois lados e o encaixe exato de
+   contato + footer. */
+@media(min-width:900px){.contact-details{transform:translateY(clamp(1rem,calc(13.8svh - 5.55rem),3.75rem))}}
 .mail-k{font-family:var(--mono);font-size:.76rem;letter-spacing:.02em;color:var(--muted-2)}
 /* justify-content:center, não só o inline-flex: o #contact virou um flex
    column para centralizar em telas curtas (min-height:100svh), e um flex item
