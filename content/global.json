@@ -3,7 +3,7 @@
   "colors": {
     "background": {
       "hex": "#0d0a0a",
-      "opacity": 65
+      "opacity": 100
     },
     "backgroundSecondary": {
       "hex": "#261b1d",
@@ -101,7 +101,7 @@
     "grain": {
       "enabled": true,
       "opacity": 12,
-      "size": 320
+      "size": 360
     }
   },
   "header": {
