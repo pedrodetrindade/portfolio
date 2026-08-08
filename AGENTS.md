@@ -191,6 +191,34 @@ por um `ResizeObserver` no `documentElement`. O observador não é redundante:
 abrir um item do FAQ numa página curta faz a barra de rolagem nascer e encolhe
 a largura útil sem disparar `resize`.
 
+## Formulário de contato
+
+**O formulário envia de verdade, por POST, não por `mailto:`.** Ele fala com o
+Worker público em `worker-contact/`, que entrega pelo Resend. A versão anterior
+montava um `mailto:` e trocava `location.href`: o botão dizia "Enviar" mas o
+que acontecia era o cliente de e-mail abrir com um rascunho por enviar, e quem
+usa webmail no celular não via nada e ia embora achando que tinha enviado.
+
+**Esse Worker é separado do de `worker/` de propósito.** O do painel está
+inteiramente atrás do Cloudflare Access, e a verificação do JWT acontece antes
+do roteamento. Abrir uma exceção de caminho lá dentro para atender visitante
+significaria mexer justamente nessa barreira. O de contato não tem token do
+GitHub nem acesso ao repositório: o pior caso é consumo de cota do Resend.
+
+**O destinatário nunca vem do pedido**, só de `MAIL_TO`. Se viesse do corpo da
+requisição, o endpoint seria um relay aberto e qualquer um mandaria e-mail com
+este domínio no remetente.
+
+A rota mora em `pedrodetrindade.com/api/contact`, no mesmo domínio do site,
+para a chamada ser same-origin: sem CORS e sem preflight em produção. Os
+cabeçalhos de CORS existem só para o desenvolvimento local (site na 5500,
+Worker na 8788) e devolvem a origem, nunca `*`.
+
+Três filtros de spam, todos baratos: armadilha invisível (`website`), tempo
+mínimo de preenchimento e lista de origens. Robô detectado recebe 200 e nada é
+enviado — dizer "recusado" ensinaria a contornar. Detalhes e o passo a passo do
+Resend estão em `worker-contact/README.md`.
+
 ## Escrita
 
 Sem travessões no corpo do texto. Sem caixa alta em texto corrido.

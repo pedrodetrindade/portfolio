@@ -133,6 +133,15 @@
   const cfgMenu = (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.header && Array.isArray(window.__CMS_GLOBAL__.header.menu) && window.__CMS_GLOBAL__.header.menu.length)
     ? window.__CMS_GLOBAL__.header.menu : [];
 
+  /* O painel de contato lê o e-mail AQUI, e não por js/content-render.js como
+     o resto do site: aquele arquivo roda antes deste, e o painel só existe
+     depois que este injeta a marcação — um seletor .mail-link ali dentro nunca
+     seria encontrado. O literal é a reserva para o caso de o global.json não
+     ter carregado, e é o mesmo endereço que já estava fixo no HTML antes. */
+  const emailDeContato =
+    (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.social && window.__CMS_GLOBAL__.social.email) ||
+    'contact@pedrodetrindade.com';
+
   /* Ícones temáticos, SVG inline (sem biblioteca, sem requisição). São
      decorativos: quem carrega o significado é o texto ao lado, então todos
      levam aria-hidden. A escolha é por rótulo normalizado, com um genérico
@@ -267,8 +276,29 @@
               <span class="k" data-pt="mensagem" data-en="message">mensagem</span>
               <textarea name="message" rows="5" required></textarea>
             </label>
+            <!-- Armadilha para robô: invisível e fora da ordem de tabulação,
+                 então pessoa nenhuma o encontra, nem com leitor de tela
+                 (aria-hidden). Robô que preenche todo campo do formulário se
+                 denuncia aqui. tabindex="-1" e autocomplete="off" existem para
+                 o preenchimento automático do navegador também não cair nela. -->
+            <div class="cform-trap" aria-hidden="true">
+              <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
             <button type="submit" class="cform-submit" data-pt="Enviar" data-en="Send">Enviar</button>
-            <p class="cform-alt" data-pt="ou escreva direto para <a href='mailto:contact@pedrodetrindade.com'>contact@pedrodetrindade.com</a>" data-en="or write directly to <a href='mailto:contact@pedrodetrindade.com'>contact@pedrodetrindade.com</a>">ou escreva direto para <a href="mailto:contact@pedrodetrindade.com">contact@pedrodetrindade.com</a></p>
+            <p class="cform-status" role="status" aria-live="polite" hidden></p>
+            <!-- O e-mail direto deixou de ser nota de rodapé: é a segunda via
+                 real de contato, e quem prefere o próprio cliente de e-mail
+                 precisa achá-la sem procurar. O rótulo continua discreto; o
+                 endereço é que ganhou corpo, cor de texto e a mesma moldura
+                 dos CTAs do site.
+                 Duas peças e não uma string com <a> dentro de data-pt: o texto
+                 e o endereço mudam por motivos diferentes (idioma x conteúdo do
+                 CMS), e misturar os dois obrigaria a repetir o endereço nas
+                 duas traduções. -->
+            <div class="cform-direct">
+              <span class="cform-direct-k" data-pt="ou escreva direto para" data-en="or write directly to">ou escreva direto para</span>
+              <a class="cform-direct-mail" href="mailto:${emailDeContato}">${emailDeContato}</a>
+            </div>
           </form>
         </div>
       </div>
@@ -719,12 +749,118 @@
   measureCta();
   window.addEventListener('resize', measureCta, { passive: true });
 
-  document.getElementById('cform').addEventListener('submit', e => {
+  /* ===== ENVIO DO FORMULÁRIO DE CONTATO =====
+     Antes isto montava um `mailto:` e trocava location.href. Funcionava, mas
+     não era o que a interface prometia: o botão dizia "Enviar" e o que
+     acontecia era o cliente de e-mail do visitante abrir com um rascunho —
+     que ele ainda precisava enviar. Quem não tem cliente configurado (a maior
+     parte de quem usa webmail no celular) via uma tela em branco ou nada, e
+     ia embora achando que tinha enviado.
+     Agora o envio é de verdade, por POST para o Worker público em
+     worker-contact/, que entrega no contact@ pelo Resend.
+
+     O caminho é relativo de propósito: a rota mora no mesmo domínio do site
+     (ver worker-contact/wrangler.toml), então a chamada é same-origin e não
+     existe CORS nem preflight para manter. */
+  /* Em produção o caminho é relativo e a rota mora no mesmo domínio. Em
+     desenvolvimento o site roda na 5500 (servidor estático) e o Worker na
+     8788, então sem esta ponte o formulário falharia sempre na máquina local e
+     não haveria como testar o caminho de sucesso. A troca vale só em
+     localhost; qualquer outro domínio usa o caminho relativo. */
+  const emDesenvolvimento = ['localhost', '127.0.0.1'].indexOf(location.hostname) !== -1;
+  const CONTATO_ENDPOINT = emDesenvolvimento
+    ? 'http://localhost:8788/api/contact'
+    : '/api/contact';
+
+  /* O idioma corrente é lido do <html lang>, que setLang mantém atualizado, e
+     não de uma variável própria: uma segunda fonte de verdade sairia de sincronia
+     no primeiro lugar que esquecesse de atualizá-la. */
+  const idiomaAtual = () => document.documentElement.lang.startsWith('en') ? 'en' : 'pt';
+
+  const cform = document.getElementById('cform');
+  const cformStatus = document.querySelector('.cform-status');
+  const cformBtn = cform.querySelector('.cform-submit');
+  /* Quando o painel foi montado. Vira "segundos de preenchimento" no envio, e
+     o Worker usa isso para descartar submissão instantânea, que é robô. */
+  const cformNasceuEm = Date.now();
+
+  function dizerStatus(pt, en, tom) {
+    if (!cformStatus) return;
+    cformStatus.hidden = false;
+    cformStatus.setAttribute('data-pt', pt);
+    cformStatus.setAttribute('data-en', en);
+    cformStatus.textContent = idiomaAtual() === 'en' ? en : pt;
+    if (tom) cformStatus.setAttribute('data-tom', tom);
+    else cformStatus.removeAttribute('data-tom');
+  }
+
+  cform.addEventListener('submit', async e => {
     e.preventDefault();
     const f = e.target;
-    const subject = encodeURIComponent(`Contato via site — ${f.name.value}`);
-    const body = encodeURIComponent(`${f.message.value}\n\n---\n${f.name.value}\n${f.email.value}`);
-    location.href = `mailto:contact@pedrodetrindade.com?subject=${subject}&body=${body}`;
+    if (cformBtn.disabled) return;             /* clique duplo não manda duas vezes */
+
+    const dados = {
+      name: f.name.value.trim(),
+      email: f.email.value.trim(),
+      message: f.message.value.trim(),
+      website: f.website ? f.website.value : '',
+      elapsed: (Date.now() - cformNasceuEm) / 1000
+    };
+
+    cformBtn.disabled = true;
+    const rotuloPt = cformBtn.getAttribute('data-pt');
+    const rotuloEn = cformBtn.getAttribute('data-en');
+    cformBtn.setAttribute('data-pt', 'Enviando…');
+    cformBtn.setAttribute('data-en', 'Sending…');
+    cformBtn.textContent = idiomaAtual() === 'en' ? 'Sending…' : 'Enviando…';
+    dizerStatus('', '', null);
+    cformStatus.hidden = true;
+
+    /* Devolve o botão ao estado normal. Precisa restaurar os data-pt/data-en
+       junto do texto, senão trocar de idioma depois de um envio traria de
+       volta o "Enviando…" que ficou gravado no atributo. */
+    const restaurarBotao = () => {
+      cformBtn.disabled = false;
+      cformBtn.setAttribute('data-pt', rotuloPt);
+      cformBtn.setAttribute('data-en', rotuloEn);
+      cformBtn.textContent = idiomaAtual() === 'en' ? rotuloEn : rotuloPt;
+    };
+
+    try {
+      const resposta = await fetch(CONTATO_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+      const corpo = await resposta.json().catch(() => ({}));
+
+      if (resposta.ok && corpo.ok) {
+        /* O formulário some e fica só a confirmação: deixar os campos
+           preenchidos na tela convida a mandar de novo achando que não foi. */
+        f.reset();
+        dizerStatus('Mensagem enviada. Respondo em breve.',
+                    'Message sent. I will reply soon.', null);
+        restaurarBotao();
+        return;
+      }
+
+      /* 422 é erro de preenchimento e vem com uma frase útil do Worker; o
+         resto é falha nossa, e nesse caso o que a pessoa precisa é do caminho
+         alternativo, não de um código de erro. */
+      if (resposta.status === 422 && corpo.message) {
+        dizerStatus(corpo.message, corpo.message, 'erro');
+      } else {
+        dizerStatus('Não consegui enviar agora. Escreva direto no e-mail abaixo.',
+                    'Could not send right now. Please use the email below.', 'erro');
+      }
+      restaurarBotao();
+    } catch (err) {
+      /* Sem rede, ou o endpoint fora do ar. Mesmo tratamento: a saída é o
+         e-mail direto, que está logo abaixo e agora tem destaque. */
+      dizerStatus('Não consegui enviar agora. Escreva direto no e-mail abaixo.',
+                  'Could not send right now. Please use the email below.', 'erro');
+      restaurarBotao();
+    }
   });
 
   /* ---- page transitions ---- */

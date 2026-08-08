@@ -1659,6 +1659,20 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   opacity:1;transform:none;
   transition:background-color var(--dur-micro) var(--ease-soft),padding-left var(--dur-micro) var(--ease-soft)}
 .overlay.dropdown.open .menu-item{opacity:1;transform:none}
+/* O painel de contato usa o MESMO material do menu: os tokens --floating-*,
+   que também vestem a pílula do header. Antes ele era o único painel flutuante
+   do site com superfície própria (rgba(38,27,29,.86) + --line-strong), e por
+   isso lia como um componente de outro sistema. Um material só para toda a UI
+   flutuante mantém menu, header e contato reconhecíveis como a mesma coisa. */
+#contact-panel .overlay-sheet{background:var(--floating-surface);
+  border-color:var(--floating-line);
+  backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
+  box-shadow:0 24px 64px var(--floating-shadow)}
+#contact-panel .overlay-top{border-bottom-color:var(--floating-line)}
+#contact-panel .cform-direct{border-top-color:var(--floating-line)}
+#contact-panel .cform input,#contact-panel .cform textarea,
+#contact-panel .cform-direct-mail{border-color:var(--floating-line-strong)}
+
 .overlay-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;
   padding:1.3rem 1.6rem;border-bottom:1px solid var(--line)}
 .overlay-note{font-family:var(--mono);font-size:.7rem;color:var(--muted-2);letter-spacing:.02em}
@@ -1778,9 +1792,37 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   background:var(--paper);border:none;border-radius:var(--radius-button,12px);padding:.95rem 1.5rem;margin-top:.4rem;
   transition:transform var(--dur-micro) var(--ease-out-smooth),opacity var(--dur-micro) var(--ease-out-smooth)}
 .cform-submit:hover{transform:translateY(-2px);opacity:.9}
-.cform-alt{font-family:var(--mono);font-size:.74rem;color:var(--muted-2);text-align:center;margin-top:.2rem}
-.cform-alt a{color:var(--muted);border-bottom:1px solid var(--line-strong)}
-.cform-alt a:hover{color:var(--paper)}
+/* Armadilha anti-robô. Fora da tela em vez de display:none ou visibility:
+   hidden, que os robôs mais espertos já sabem reconhecer e pular. Continua
+   sem participar do layout (position:absolute) e sem ser anunciada, porque o
+   HTML a marca com aria-hidden. */
+.cform-trap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+/* Retorno do envio. Nasce escondido e só aparece quando há o que dizer, para
+   não reservar espaço vazio embaixo do botão. */
+.cform-status{font-family:var(--mono);font-size:.76rem;line-height:1.5;text-align:center;
+  margin-top:.2rem;color:var(--muted)}
+.cform-status[data-tom="erro"]{color:var(--cream)}
+
+/* ===== E-MAIL DIRETO =====
+   Era uma linha de nota de rodapé em --muted-2, do mesmo tamanho de um
+   crédito. Como é a segunda via real de contato (e a única para quem prefere
+   o próprio cliente de e-mail), passou a ler como alternativa de verdade: uma
+   hairline separa do formulário, o rótulo continua discreto e o endereço
+   ganha corpo, cor de texto e a mesma moldura dos CTAs do site. */
+.cform-direct{display:flex;flex-direction:column;align-items:center;gap:.6rem;
+  margin-top:1.4rem;padding-top:1.4rem;border-top:1px solid var(--line)}
+.cform-direct-k{font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;color:var(--muted-2)}
+.cform-direct-mail{display:inline-flex;align-items:center;gap:.55em;
+  font-size:.95rem;font-weight:var(--w-medium);letter-spacing:-.005em;color:var(--paper);
+  padding:.7rem 1.2rem;border:1px solid var(--line-strong);border-radius:var(--radius-button,100px);
+  transition:transform var(--dur-micro) var(--ease-soft),
+             border-color var(--dur-micro) var(--ease-soft),
+             background-color var(--dur-micro) var(--ease-soft)}
+.cform-direct-mail::before{content:"↗";font-size:.85em;color:var(--muted)}
+.cform-direct-mail:hover{transform:translateY(-2px);border-color:var(--accent);
+  background:rgba(var(--paper-rgb),.05)}
+.cform-direct-mail:hover::before{color:var(--cream)}
 
 /* ===== CASE PAGE ===== */
 .case-hero{min-height:auto;padding-top:9rem;padding-bottom:1rem}

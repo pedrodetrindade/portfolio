@@ -1,0 +1,36 @@
+name = "portfolio-contact"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# ===== POR QUE UM WORKER SEPARADO DO ADMIN =====
+# O Worker do painel (../worker) está inteiramente atrás do Cloudflare Access:
+# a verificação do JWT acontece em fetch(), ANTES do roteamento, e é isso que
+# garante que nada ali é público. Abrir uma exceção de caminho lá dentro para
+# atender o formulário significaria mexer justamente nessa barreira — uma
+# regressão silenciosa nela exporia a API de publicação inteira.
+# Este Worker não compartilha nenhuma linha de código com aquele: é público de
+# propósito, só sabe mandar e-mail, e não tem token do GitHub nem acesso ao
+# repositório. O pior caso aqui é consumo de cota do Resend, não escrita no site.
+
+# Rota no próprio domínio do site, e não num subdomínio, para a chamada ser
+# same-origin: sem CORS, sem preflight, sem uma origem extra para manter.
+# O apex já passa pela Cloudflare (proxy laranja) na frente do GitHub Pages,
+# então esta rota intercepta só este caminho e o resto do site segue igual.
+[[routes]]
+pattern = "pedrodetrindade.com/api/contact"
+zone_name = "pedrodetrindade.com"
+
+[vars]
+# Remetente. Precisa ser de um domínio verificado no Resend (ver README).
+# Não use contact@ aqui: o destino e a origem sendo o mesmo endereço confunde
+# filtros de spam e atrapalha o "responder".
+MAIL_FROM = "site@pedrodetrindade.com"
+MAIL_FROM_NAME = "Site Pedro de Trindade"
+MAIL_TO = "contact@pedrodetrindade.com"
+# Origens autorizadas a postar no formulário, separadas por vírgula. Serve para
+# recusar de saída um envio disparado de outro site. Não é barreira de
+# segurança forte (cabeçalho é falsificável fora do navegador), é higiene.
+ALLOWED_ORIGINS = "https://pedrodetrindade.com,https://www.pedrodetrindade.com"
+
+# O único segredo é RESEND_API_KEY, que NÃO aparece aqui — entra como Secret:
+#   npx wrangler secret put RESEND_API_KEY
