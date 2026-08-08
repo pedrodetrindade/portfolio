@@ -2,6 +2,19 @@ name = "portfolio-admin"
 main = "src/index.js"
 compatibility_date = "2024-09-23"
 
+# Preserva as variáveis definidas pelo painel do Cloudflare em vez de apagá-las
+# a cada deploy. Precisa ficar AQUI, no topo, antes de qualquer tabela ([assets],
+# [[routes]], [vars]): no TOML, toda chave escrita depois de um cabeçalho de
+# tabela pertence àquela tabela, e um keep_vars solto lá embaixo vira campo da
+# rota e derruba o deploy com erro de configuração.
+#
+# Sem isto, `wrangler deploy` sobrescreve a configuração remota com a deste
+# arquivo — foi o que aconteceu em 08/08/2026: as três variáveis do Access
+# estavam declaradas aqui como "" e o deploy zerou a configuração real,
+# derrubando a validação de JWT do Worker (que falha fechada, então o painel
+# passou a recusar toda chamada com 401).
+keep_vars = true
+
 # Painel administrativo (arquivos estáticos em worker/public) e API (/api/*)
 # na mesma origem: por isso não existe configuração de CORS neste projeto.
 [assets]
@@ -24,11 +37,11 @@ custom_domain = true
 GITHUB_OWNER = "pedrodetrindade"
 GITHUB_REPO = "portfolio"
 GITHUB_BRANCH = "main"
-# Preenchidos depois de configurar o Cloudflare Access (ver README, seção F).
-# Deixar em branco DESLIGA a validação extra do Worker, mas não desliga o
-# Cloudflare Access em si (que continua sendo a primeira barreira). Ainda
-# assim, o Worker se recusa a aceitar escrita sem os três preenchidos em
-# produção — "falhar de forma fechada" (item 17 do pedido original).
-ACCESS_TEAM_DOMAIN = ""
-ACCESS_AUD = ""
-ADMIN_EMAIL = ""
+
+# ACCESS_TEAM_DOMAIN, ACCESS_AUD e ADMIN_EMAIL NÃO ficam aqui de propósito.
+# Não são segredos (são identificadores de configuração), mas ADMIN_EMAIL é um
+# e-mail pessoal e este repositório é público. Eles vivem só no painel do
+# Cloudflare (Workers & Pages → portfolio-admin → Settings → Variables), e o
+# keep_vars acima é o que garante que um deploy não os apague.
+# Sem os três preenchidos o Worker recusa qualquer requisição — "falhar de
+# forma fechada". Ver worker/src/access.js e o README, seção F.
