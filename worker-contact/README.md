@@ -12,6 +12,12 @@ e-mail com o seu domínio no remetente.
 
 ## Colocar no ar (uma vez)
 
+> **Use `npm.cmd`, e não `npm`, no PowerShell do Windows.** A política de
+> execução padrão é `Restricted` e bloqueia todo `.ps1` — inclusive os atalhos
+> `npm.ps1` e `npx.ps1` que o Node instala. O erro é "a execução de scripts foi
+> desabilitada neste sistema". Chamar o `.cmd` explicitamente resolve sem
+> precisar afrouxar a política da máquina. No Git Bash, `npm` normal funciona.
+
 ### 1. Conta no Resend e verificação do domínio
 
 1. Crie a conta em [resend.com](https://resend.com) (o plano gratuito cobre
@@ -33,19 +39,26 @@ No Resend, **API Keys → Create API Key**, com permissão de envio. Copie a cha
 (ela só aparece uma vez) e registre como Secret do Worker:
 
 ```bash
-npx --prefix worker-contact wrangler secret put RESEND_API_KEY
+npm.cmd --prefix worker-contact run secret
 ```
 
-A chave fica criptografada na Cloudflare. Ela **não** vai para o
-`wrangler.toml` nem para o Git.
+O comando pergunta a chave no terminal e você cola ali. Ela fica criptografada
+na Cloudflare, e **não** vai para o `wrangler.toml` nem para o Git.
 
 ### 3. Deploy
 
 ```bash
-npm --prefix worker-contact run deploy
+npm.cmd --prefix worker-contact run deploy
 ```
 
-Isso cria o Worker `portfolio-contact` e registra a rota
+Na primeira vez, o Wrangler pede para autorizar a conta Cloudflare no
+navegador. Se ainda não tiver feito isso:
+
+```bash
+npm.cmd --prefix worker-contact exec wrangler login
+```
+
+O deploy cria o Worker `portfolio-contact` e registra a rota
 `pedrodetrindade.com/api/contact`. O resto do site continua servido pelo GitHub
 Pages normalmente: a rota intercepta só esse caminho.
 
@@ -55,13 +68,13 @@ Envie uma mensagem pelo formulário do site e veja se ela chega em
 `contact@pedrodetrindade.com`. Para acompanhar o que o Worker está fazendo:
 
 ```bash
-npm --prefix worker-contact run tail
+npm.cmd --prefix worker-contact run tail
 ```
 
 ## Desenvolvimento local
 
 ```bash
-npm --prefix worker-contact run dev
+npm.cmd --prefix worker-contact run dev
 ```
 
 Sobe na porta **8788**. O `js/main.js` do site aponta para

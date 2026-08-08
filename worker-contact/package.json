@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev --port 8788",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "secret": "wrangler secret put RESEND_API_KEY"
   },
   "devDependencies": {
     "wrangler": "^4.119.0"
