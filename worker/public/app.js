@@ -2358,8 +2358,16 @@
       '</div>';
 
     /* schedulePreview aqui também: sem isso o editor de projeto era o único
-       lugar do painel que alterava conteúdo sem avisar a prévia. */
-    function save() { markDirty('content/projects/' + slug + '.json', P, cached.sha); schedulePreview(); }
+       lugar do painel que alterava conteúdo sem avisar a prévia.
+       P.slug é reforçado aqui, a cada save, e não só na criação: o nome do
+       arquivo (`slug`, capturado no início desta função) é quem manda sobre
+       qual é o slug do projeto, nunca o contrário. Já apareceu em produção um
+       projeto cujo `data.slug` divergia do arquivo — origem não confirmada,
+       possivelmente um rascunho restaurado de uma sessão anterior — e isso
+       derruba a publicação inteira com "slug_mismatch" (ver worker/src/
+       index.js), sem a pessoa conseguir corrigir pela interface. Fixar a
+       invariante aqui fecha essa classe de bug, seja qual for a causa. */
+    function save() { P.slug = slug; markDirty('content/projects/' + slug + '.json', P, cached.sha); schedulePreview(); }
     function saveIndex() { markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); schedulePreview(); }
     function tagsFrom(v) { return v.split(',').map(function (t) { return t.trim(); }).filter(Boolean); }
     document.getElementById('pe_slug_apply').addEventListener('click', function () {
@@ -2688,9 +2696,24 @@
 
     /* Monta as operações na ordem em que o Worker as espera. Os bytes das
        mídias só saem do IndexedDB agora, na hora de publicar — não ficam em
-       memória durante a edição. */
+       memória durante a edição.
+
+       Para content/projects/<slug>.json, o `slug` do CAMINHO é reforçado
+       dentro do próprio dado antes do envio, por mais que o `save()` do
+       editor já mantenha isso — um rascunho salvo no navegador ANTES dessa
+       correção pode ainda carregar um data.slug desalinhado, e sem este
+       reforço aqui a pessoa ficaria travada num "Publicar" que nunca
+       funciona, sem conseguir corrigir pela interface. O caminho do arquivo é
+       sempre a fonte de verdade: é ele que decide onde o conteúdo é gravado. */
     var ops = Object.keys(state.dirty).map(function (p) {
-      return { type: 'json', path: p, data: state.dirty[p].data, sha: state.dirty[p].sha || null };
+      var dado = state.dirty[p].data;
+      /* "index" bate no mesmo regex de slug ([a-z0-9-]+) — content/projects/
+         index.json não é o arquivo de um projeto, e essa exclusão explícita
+         evita gravar ali um campo `slug` que a whitelist do Worker rejeitaria. */
+      var slugDoCaminho = p !== 'content/projects/index.json'
+        ? (p.match(/^content\/projects\/([a-z0-9-]+)\.json$/) || [])[1] : null;
+      if (slugDoCaminho && dado && dado.slug !== slugDoCaminho) dado.slug = slugDoCaminho;
+      return { type: 'json', path: p, data: dado, sha: state.dirty[p].sha || null };
     });
     Object.keys(state.pendingPages).forEach(function (p) {
       ops.push({ type: 'page', slug: state.pendingPages[p].slug, fromSlug: state.pendingPages[p].fromSlug });
