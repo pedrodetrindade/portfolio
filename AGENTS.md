@@ -191,6 +191,84 @@ por um `ResizeObserver` no `documentElement`. O observador não é redundante:
 abrir um item do FAQ numa página curta faz a barra de rolagem nascer e encolhe
 a largura útil sem disparar `resize`.
 
+## CMS (painel administrativo)
+
+O site tem um CMS próprio: um Cloudflare Worker em `worker/` (código em
+`worker/src/`, painel estático em `worker/public/`), publicado em
+`https://admin.pedrodetrindade.com`, atrás de Cloudflare Access. Ele edita
+`content/*.json`, publica em `main` via GitHub API (um commit por publicação)
+e tem prévia ao vivo por `postMessage`. Ver `CMS-README.md` para o desenho
+completo e `worker/wrangler.toml` para a configuração de deploy.
+
+**Cloudflare Access é a barreira de verdade; o Worker reconfirma sozinho.**
+`worker/src/access.js` valida o JWT (`Cf-Access-Jwt-Assertion`) contra o JWKS
+do time, o `aud` e o e-mail autorizado, e falha fechado se qualquer uma das
+três variáveis (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ADMIN_EMAIL`) estiver
+vazia. Essas três **não ficam em `wrangler.toml`**: são identificadores de
+configuração, não segredos, mas `ADMIN_EMAIL` é pessoal e o repositório é
+público — vivem só no painel do Cloudflare (Workers & Pages →
+`portfolio-admin` → Settings → Variables).
+
+**`keep_vars = true` no topo de `worker/wrangler.toml` não é opcional.** Sem
+ele, `wrangler deploy` sobrescreve a configuração remota com a do arquivo —
+aconteceu em 08/08/2026: as três variáveis do Access estavam declaradas como
+`""` ali, o deploy as apagou em produção, e o painel passou a recusar toda
+chamada com 401 depois do login (o Access continuou barrando normalmente
+antes disso; não houve exposição). A chave precisa ficar no **topo** do
+arquivo, antes de `[assets]`/`[[routes]]`/`[vars]`: no TOML, uma chave escrita
+depois de um cabeçalho de tabela pertence àquela tabela, e um `keep_vars`
+solto no fim vira campo de `[[routes]]` e derruba o deploy.
+
+**`content/projects/index.json` não é o arquivo de um projeto, mas "index"
+também casa `[a-z0-9-]+`.** Qualquer trecho do Worker que precise decidir "este
+caminho é de um projeto?" tem que excluir esse arquivo explicitamente — é o
+que `slugDeProjetoNoCaminho()` em `worker/src/index.js` faz. Sem essa exclusão,
+o índice é validado como se fosse um projeto chamado "index", que exige dele
+um campo `slug` que ele nunca teve (ele tem `$schema`, `cardSizes` e
+`projects`), e toda publicação que tocar o índice — o que inclui simplesmente
+mudar o título de um projeto, que sincroniza os dois arquivos — morre com 422
+`slug_mismatch`. Isso já aconteceu em produção e passou despercebido por dias
+porque as publicações anteriores nunca tinham mexido no índice.
+
+**Windows/PowerShell: use `npm.cmd`/`npx.cmd`, nunca `npm`/`npx` puros.** A
+política de execução padrão do PowerShell é `Restricted` e bloqueia todo
+`.ps1`, inclusive os atalhos que o Node instala. O erro é "a execução de
+scripts foi desabilitada neste sistema". No Git Bash, `npm`/`npx` normais
+funcionam.
+
+### Blocos da página de projeto
+
+`content/projects/<slug>.json` descreve o corpo do case em `blocks`, uma
+lista **ordenada** — a ordem no array é a ordem real na página, renderizada
+por `renderBlocks()` em `js/content-render.js`. Cinco tipos: `text`, `image`,
+`gallery`, `quote`, `video` (arquivo ou Vimeo). Blocos de `text` vizinhos são
+agrupados numa `<section>` só (é o que reproduz o espaçamento de
+contexto/processo/resultado); qualquer outro tipo ganha a sua própria seção.
+O Worker valida cada bloco (`erroNosBlocos` em `worker/src/validate.js`): tipo
+ou campo desconhecido, ou `src` fora de `assets/`, derruba a publicação com
+422 — o painel valida de novo por conveniência, mas quem decide é sempre o
+Worker.
+
+O editor de blocos no painel (`worker/public/app.js`) reordena, duplica e
+remove sempre redesenhando a lista inteira: os ids dos campos carregam o
+índice do bloco, e remendar o DOM deixaria ids apontando para o bloco errado
+depois de mover um item.
+
+**`showLabel` (em blocos de texto) e `showEyebrow` (no hero do case) seguem a
+mesma regra:** ausência do campo = ativo; `false` = oculto, com o texto
+preservado e sem deixar espaço residual. Nunca gravar `false` a partir de uma
+UI que só desliga; reativar remove o campo, não grava `true`.
+
+### Prévia ao vivo
+
+O protocolo de `postMessage` entre painel e site (`js/content.js`) confia só
+na origem declarada por `?cmsOrigin=...` **ou pelo fragmento da URL**
+(`#cmsOrigin=...`). O fragmento existe porque um redirect canônico do servidor
+(ex.: `.html` → sem extensão) pode derrubar a query string, e sem ela o site
+não reconhece o painel como remetente válido — o listener de `postMessage`
+simplesmente nunca se instala. Nunca use `document.referrer` como alternativa
+mais frouxa, e nunca envie com `postMessage('*')`.
+
 ## Formulário de contato
 
 **O formulário envia de verdade, por POST, não por `mailto:`.** Ele fala com o
@@ -226,16 +304,21 @@ Registro premium, claro e estratégico. Evitar tom que soe gerado por IA.
 
 ## Estado atual
 
-Home e 4 páginas de case prontas e funcionando. Favicon, Open Graph e a primeira
-camada de acessibilidade (skip link, foco visível, `aria-label` bilíngue, `inert`
-no fundo com overlay aberto) já estão no lugar.
+Home e 4 páginas de case no ar em `pedrodetrindade.com` (GitHub Pages), com CMS
+próprio publicado em `admin.pedrodetrindade.com` e formulário de contato
+enviando de verdade (ver seções acima). Favicon, Open Graph e a primeira
+camada de acessibilidade (skip link, foco visível, `aria-label` bilíngue,
+`inert` no fundo com overlay aberto) já estão no lugar.
 
-O que ainda falta está listado em "Próximos passos" no brief: imagens reais dos
-projetos e do retrato, conteúdo real dos cases, deploy e performance.
+**Imagens de galeria dos cases ainda faltam** (`galeria-1.jpg`/`galeria-2.jpg`
+em `assets/projetos/case-0*/`, o `case-03` sem nenhuma). Sem o arquivo, o
+`onerror="this.remove()"` tira só a `<img>` e deixa o gradiente decorativo do
+`.scene`/`.thumb` visível — não quebra a página, não gera ícone de erro, mas
+também não mostra imagem nenhuma do trabalho ali. Capas (`cover` nos quatro
+projetos) já estão preenchidas.
 
-As prévias dos projetos são placeholders em gradiente (`<div class="scene pX">`),
-o retrato do Sobre é um placeholder `.portrait`, e o texto dos cases é genérico,
-ainda não é o conteúdo real dos trabalhos.
+O retrato do Sobre é um placeholder `.portrait`. O texto dos cases já é
+conteúdo real, gerenciado pelo CMS, não mais genérico.
 
 A seção de experiência foi removida de propósito: essa informação fica só no
 LinkedIn e no currículo. Redes sociais são apenas LinkedIn e Behance.
