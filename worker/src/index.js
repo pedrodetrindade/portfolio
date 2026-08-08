@@ -133,11 +133,32 @@ var CHAVES_DE_TOPO = {
     'seo', 'hero', 'cover', 'coverMobile', 'coverSpacing', 'blocks']
 };
 
+/* Slug do arquivo de UM projeto, ou null se o caminho não for de projeto.
+
+   A exclusão de index.json é o ponto inteiro desta função. "index" também é
+   [a-z0-9-]+, então o padrão de slug casa com content/projects/index.json — e
+   o índice não é um projeto: ele não tem campo `slug`, tem `projects`. Quem
+   testasse o caminho direto com o regex acabaria validando o índice como se
+   fosse um projeto chamado "index", exigindo dele um slug que nunca existiu.
+   Foi exatamente o que aconteceu: publicar qualquer edição que mexesse no
+   índice (mudar o título de um projeto sincroniza os dois arquivos) morria com
+   "slug_mismatch" apontando para index.json. Ninguém percebeu por dias porque
+   as publicações anteriores só tocavam global.json, home.json e o JSON de um
+   projeto — nenhuma delas encostou no índice.
+
+   Concentrar a regra aqui existe para o próximo trecho que precisar distinguir
+   "é projeto?" não repetir o regex e não repetir o mesmo engano. */
+function slugDeProjetoNoCaminho(caminho) {
+  if (caminho === 'content/projects/index.json') return null;
+  var m = /^content\/projects\/([a-z0-9-]+)\.json$/.exec(caminho);
+  return m ? m[1] : null;
+}
+
 /* O arquivo de um projeto tem slug variável, então não cabe numa chave fixa do
    mapa acima. */
 function chavesPermitidasPara(caminho) {
   if (CHAVES_DE_TOPO[caminho]) return CHAVES_DE_TOPO[caminho];
-  if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) return CHAVES_DE_TOPO.__projeto__;
+  if (slugDeProjetoNoCaminho(caminho)) return CHAVES_DE_TOPO.__projeto__;
   return null;
 }
 
@@ -429,8 +450,8 @@ async function handlePublish(request, env) {
          conveniência, o Worker é quem decide. Um bloco com tipo inventado ou
          com src apontando para fora do repositório não pode ser gravado só
          porque alguém montou o JSON à mão. */
-      if (/^content\/projects\/[a-z0-9-]+\.json$/.test(caminho)) {
-        var slugDoCaminho = caminho.match(/^content\/projects\/([a-z0-9-]+)\.json$/)[1];
+      var slugDoCaminho = slugDeProjetoNoCaminho(caminho);
+      if (slugDoCaminho) {
         if (!isSlugValid(op.data.slug) || op.data.slug !== slugDoCaminho) {
           return json({
             error: 'slug_mismatch',
