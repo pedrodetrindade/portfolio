@@ -62,8 +62,8 @@
       "featured": false,
       "cardSize": "normal",
       "order": 3,
-      "titlePt": "Ativos digitais: narrativa institucional",
-      "titleEn": "Digital assets: institutional narrative",
+      "titlePt": "KARMINE",
+      "titleEn": "KARMINE",
       "subtitlePt": "Fintech, ativos digitais",
       "subtitleEn": "Fintech, digital assets",
       "category": "direcao-criativa",
@@ -76,7 +76,7 @@
         "storytelling"
       ],
       "year": 2025,
-      "cover": "assets/projetos/case-03/capa.jpg",
+      "cover": "assets/uploads/case-03/1.png",
       "coverMobile": "",
       "coverLight": true
     },
