@@ -36,7 +36,7 @@ custom_domain = true
 [vars]
 GITHUB_OWNER = "pedrodetrindade"
 GITHUB_REPO = "portfolio"
-GITHUB_BRANCH = "main"
+GITHUB_BRANCH = "feature/portfolio-cms"
 
 # ACCESS_TEAM_DOMAIN, ACCESS_AUD e ADMIN_EMAIL NÃO ficam aqui de propósito.
 # Não são segredos (são identificadores de configuração), mas ADMIN_EMAIL é um
