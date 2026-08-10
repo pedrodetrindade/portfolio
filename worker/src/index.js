@@ -226,6 +226,21 @@ function urlAbsolutaMeta(path, base) {
 function substituirTag(html, regex, tag) {
   return regex.test(html) ? html.replace(regex, tag) : html.replace(/<\/head>/i, tag + '\n</head>');
 }
+function caminhoDeBrandingNoHtml(valor, path) {
+  if (/^https:\/\//i.test(valor || '')) return valor;
+  return (String(path || '').indexOf('work/') === 0 ? '../' : '') + String(valor || '').replace(/^\//, '');
+}
+function substituirLinksPorRel(html, rel, tag) {
+  var encontrou = false;
+  var resultado = html.replace(/<link\b[^>]*>/gi, function (link) {
+    var atributo = /\brel\s*=\s*(["'])([^"']*)\1/i.exec(link);
+    if (!atributo || atributo[2].toLowerCase().split(/\s+/).indexOf(rel) === -1) return link;
+    if (encontrou) return '';
+    encontrou = true;
+    return tag;
+  });
+  return encontrou ? resultado : resultado.replace(/<\/head>/i, tag + '\n</head>');
+}
 function aplicarMetadataNoHtml(html, globalData, projeto, path) {
   var seo = globalData.seo || {}, brand = globalData.brand || {};
   var site = brand.name || seo.siteName || 'Pedro de Trindade';
@@ -253,6 +268,13 @@ function aplicarMetadataNoHtml(html, globalData, projeto, path) {
     [/<link\s+rel="canonical"[^>]*>/i, '<link rel="canonical" href="' + escapeHtmlMeta(canonical) + '">']
   ];
   for (var i = 0; i < tags.length; i++) html = substituirTag(html, tags[i][0], tags[i][1]);
+  var extensoesBranding = ['.jpg','.jpeg','.png','.webp','.avif','.gif','.svg'];
+  if (brand.favicon && caminhoDeMidiaValido(brand.favicon, extensoesBranding)) {
+    html = substituirLinksPorRel(html, 'icon', '<link rel="icon" href="' + escapeHtmlMeta(caminhoDeBrandingNoHtml(brand.favicon, path)) + '">');
+  }
+  if (brand.appleTouchIcon && caminhoDeMidiaValido(brand.appleTouchIcon, extensoesBranding)) {
+    html = substituirLinksPorRel(html, 'apple-touch-icon', '<link rel="apple-touch-icon" href="' + escapeHtmlMeta(caminhoDeBrandingNoHtml(brand.appleTouchIcon, path)) + '">');
+  }
   return html;
 }
 

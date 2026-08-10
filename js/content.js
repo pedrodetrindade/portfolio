@@ -217,6 +217,31 @@
     if (/^https?:\/\//i.test(path)) return path;
     return String(canonicalBase || 'https://pedrodetrindade.com').replace(/\/$/, '') + '/' + String(path).replace(/^\.\.\//, '').replace(/^\//, '');
   }
+  function safeBrandUrl(path) {
+    if (typeof path !== 'string' || !path || /[<>"'`\\]/.test(path)) return '';
+    if (/^https:\/\//i.test(path)) {
+      try {
+        var url = new URL(path);
+        return (!url.username && !url.password) ? path : '';
+      } catch (e) { return ''; }
+    }
+    return /^assets\/[a-zA-Z0-9._\/-]+$/.test(path) && path.indexOf('..') === -1 ? base + path : '';
+  }
+  function setBrandLink(rel, path) {
+    var href = safeBrandUrl(path);
+    if (!href) return;
+    var links = Array.prototype.slice.call(document.head.querySelectorAll('link[rel~="' + rel + '"]'));
+    var link = links.shift();
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = rel;
+      document.head.appendChild(link);
+    }
+    link.removeAttribute('sizes');
+    link.removeAttribute('type');
+    link.href = href;
+    links.forEach(function (duplicada) { duplicada.remove(); });
+  }
   function applyMetadata(g, project) {
     var seo = g.seo || {}, brand = g.brand || {};
     var siteName = brand.name || seo.siteName || 'Pedro de Trindade';
@@ -241,10 +266,8 @@
     setMeta('meta[name="twitter:image"]', 'content', absoluteUrl(image, canonicalBase));
     setMeta('link[rel="canonical"]', 'href', canonical);
     if (seo.themeColor) setMeta('meta[name="theme-color"]', 'content', seo.themeColor);
-    var fav = brand.favicon;
-    if (fav) { var f = document.head.querySelector('link[rel="icon"]'); if (f) f.href = /^https?:\/\//i.test(fav) ? fav : base + fav; }
-    var apple = brand.appleTouchIcon;
-    if (apple) { var a = document.head.querySelector('link[rel="apple-touch-icon"]'); if (a) a.href = /^https?:\/\//i.test(apple) ? apple : base + apple; }
+    setBrandLink('icon', brand.favicon);
+    setBrandLink('apple-touch-icon', brand.appleTouchIcon);
   }
   /* Este script roda no início do <head>, antes das tags estáticas serem
      parseadas. Aplicar agora criaria uma segunda cópia de cada meta tag.
