@@ -32,6 +32,7 @@
        só o registro do que existe. */
     pendingUploads: {},   /* path -> {mime, size, nome} */
     pendingPages: {},     /* path da página -> {slug, fromSlug} */
+    pendingMetadata: {},  /* HTML confiável a atualizar no Worker, sem HTML vindo do painel */
     pendingDeletes: {}    /* path -> motivo, para a revisão explicar */
   };
 
@@ -112,7 +113,7 @@
 
   function updateDirtyIndicators() {
     var groups = {
-      'content/global.json': ['appearance', 'layout', 'headerfooter'],
+      'content/global.json': ['appearance', 'layout', 'headerfooter', 'branding', 'seo'],
       'content/home.json': ['home', 'layout'],
       'content/projects/index.json': ['projects']
     };
@@ -262,6 +263,7 @@
            sobrevive ao fechamento da aba por conta própria */
         uploads: state.pendingUploads,
         pages: state.pendingPages,
+        metadata: state.pendingMetadata,
         deletes: state.pendingDeletes
       }));
       state.draftSavedAt = agora;
@@ -293,6 +295,7 @@
       var temAlgo = (d.files && Object.keys(d.files).length) ||
         (d.uploads && Object.keys(d.uploads).length) ||
         (d.pages && Object.keys(d.pages).length) ||
+        (d.metadata && Object.keys(d.metadata).length) ||
         (d.deletes && Object.keys(d.deletes).length);
       if (!temAlgo) return null;
       return d;
@@ -309,7 +312,7 @@
   }
   function descartarTudoPendente() {
     return limparTodaMidiaPendente().then(function () {
-      state.pendingPages = {}; state.pendingDeletes = {}; state.dirty = {};
+      state.pendingPages = {}; state.pendingMetadata = {}; state.pendingDeletes = {}; state.dirty = {};
       clearDraft();
     });
   }
@@ -335,6 +338,7 @@
        basta reencaixar o registro. Uma mídia cujo blob sumiu (navegador
        limpou o IndexedDB) é descartada aqui em vez de quebrar na publicação. */
     state.pendingPages = d.pages || {};
+    state.pendingMetadata = d.metadata || {};
     state.pendingDeletes = d.deletes || {};
     var uploads = d.uploads || {};
     state.pendingUploads = {};
@@ -454,6 +458,7 @@
       itens.push({ path: path, tipo: state.published[path] === null ? 'novo' : 'alterado' });
     });
     Object.keys(state.pendingPages).forEach(function (path) { itens.push({ path: path, tipo: 'novo' }); });
+    Object.keys(state.pendingMetadata).forEach(function (path) { if (!state.pendingPages[path] && !state.pendingDeletes[path]) itens.push({ path: path, tipo: 'alterado' }); });
     Object.keys(state.pendingUploads).forEach(function (path) {
       itens.push({ path: path, tipo: 'novo', size: state.pendingUploads[path].size || 0, midia: true });
     });
@@ -999,7 +1004,7 @@
      número e o texto por extenso. */
   function atualizarSeloPrevia() {
     var n = Object.keys(state.dirty).length + Object.keys(state.pendingUploads).length +
-      Object.keys(state.pendingPages).length + Object.keys(state.pendingDeletes).length;
+      Object.keys(state.pendingPages).length + Object.keys(state.pendingMetadata).length + Object.keys(state.pendingDeletes).length;
     document.querySelectorAll('[data-pv-badge]').forEach(function (el) {
       el.hidden = n === 0;
       el.textContent = n === 0 ? '' :
@@ -1182,6 +1187,27 @@
   function setStatus(ok, msg) {
     document.getElementById('statusDot').className = 'dot ' + (ok ? 'ok' : 'err');
     document.getElementById('statusText').textContent = ok ? 'CMS conectado' : ('erro: ' + msg);
+  }
+  function bindUrl(id, onChange) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function () {
+      var v = el.value.trim(), ok = !v;
+      try { var u = new URL(v); ok = u.protocol === 'http:' || u.protocol === 'https:'; } catch (e) { ok = !v; }
+      el.setCustomValidity(ok ? '' : 'Use um endereço iniciado por http:// ou https://');
+      if (!ok) { el.reportValidity(); return; }
+      onChange(v);
+    });
+  }
+  function bindEmail(id, onChange) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function () {
+      var v = el.value.trim(), ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      el.setCustomValidity(ok ? '' : 'Informe um e-mail válido.');
+      if (!ok) { el.reportValidity(); return; }
+      onChange(v);
+    });
   }
 
   /* ---------- Aparência global ---------- */
@@ -1595,7 +1621,8 @@
             '<select id="menu_' + i + '_sec">' + SECOES_PAINEL.map(function (s) {
               return '<option value="' + s[0] + '"' + (secaoDoItemPainel(item) === s[0] ? ' selected' : '') +
                 '>' + esc(s[1]) + '</option>';
-            }).join('') + '</select>');
+            }).join('') + '</select>') +
+          fieldRow('Mostrar item', '', switchControl('menu_' + i + '_visible', item.visible !== false));
       }).join('');
     bindSwitch('hdr_lang', function (v) { state.global.header.showLanguageSwitch = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('hdr_contact', function (v) { state.global.header.showContactButton = v; markDirty('content/global.json', state.global, state.globalSha); });
@@ -1612,6 +1639,11 @@
         alvo.hrefHome = alvo.hrefWork = hrefDaSecaoPainel(e.target.value);
         markDirty('content/global.json', state.global, state.globalSha);
       });
+      bindSwitch('menu_' + i + '_visible', function (v) {
+        if (v) delete state.global.header.menu[i].visible;
+        else state.global.header.menu[i].visible = false;
+        markDirty('content/global.json', state.global, state.globalSha);
+      });
     });
 
     var f = state.global.footer, s = state.global.social;
@@ -1619,23 +1651,144 @@
        copyright nascem com o texto que o site já monta nesse caso, e passam a
        mandar assim que forem salvos. Nada do footer é apagado no caminho. */
     var anoAtual = new Date().getFullYear();
-    if (f.copyrightPt == null) f.copyrightPt = '© {year} · ' + (f.disclaimerPt || '');
-    if (f.copyrightEn == null) f.copyrightEn = '© {year} · ' + (f.disclaimerEn || '');
+    var copyrightPt = f.copyrightPt == null ? '© {year} · ' + (f.disclaimerPt || '') : f.copyrightPt;
+    var copyrightEn = f.copyrightEn == null ? '© {year} · ' + (f.disclaimerEn || '') : f.copyrightEn;
     document.getElementById('footerBody').innerHTML =
-      fieldRow('Copyright (PT)', 'Escreva {year} onde o ano deve aparecer — vira ' + anoAtual + ' sozinho, e continua certo no ano que vem.', '<textarea id="foot_cpt">' + esc(f.copyrightPt) + '</textarea>') +
-      fieldRow('Copyright (EN)', 'Mesma coisa: {year} vira o ano atual.', '<textarea id="foot_cen">' + esc(f.copyrightEn) + '</textarea>') +
+      fieldRow('Copyright (PT)', 'Escreva {year} onde o ano deve aparecer — vira ' + anoAtual + ' sozinho, e continua certo no ano que vem.', '<textarea id="foot_cpt">' + esc(copyrightPt) + '</textarea>') +
+      fieldRow('Copyright (EN)', 'Mesma coisa: {year} vira o ano atual.', '<textarea id="foot_cen">' + esc(copyrightEn) + '</textarea>') +
       fieldRow('Disclaimer (PT)', 'Texto antigo, mantido só como reserva. O site usa o campo de copyright acima.', '<textarea id="foot_pt">' + esc(f.disclaimerPt) + '</textarea>') +
       fieldRow('Disclaimer (EN)', '', '<textarea id="foot_en">' + esc(f.disclaimerEn) + '</textarea>') +
-      fieldRow('LinkedIn', '', '<input type="url" id="soc_li" value="' + esc(s.linkedin) + '">') +
-      fieldRow('Behance', '', '<input type="url" id="soc_be" value="' + esc(s.behance) + '">') +
+      fieldRow('LinkedIn', 'Aceita somente http:// ou https://', '<input type="url" id="soc_li" value="' + esc(s.linkedin) + '">') +
+      fieldRow('Mostrar LinkedIn', '', switchControl('soc_li_active', s.linkedinActive !== false)) +
+      fieldRow('Behance', 'Aceita somente http:// ou https://', '<input type="url" id="soc_be" value="' + esc(s.behance) + '">') +
+      fieldRow('Mostrar Behance', '', switchControl('soc_be_active', s.behanceActive !== false)) +
       fieldRow('E-mail de contato', '', '<input type="email" id="soc_em" value="' + esc(s.email) + '">');
     bindText('foot_cpt', function (v) { state.global.footer.copyrightPt = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_cen', function (v) { state.global.footer.copyrightEn = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_pt', function (v) { state.global.footer.disclaimerPt = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_en', function (v) { state.global.footer.disclaimerEn = v; markDirty('content/global.json', state.global, state.globalSha); });
-    bindText('soc_li', function (v) { state.global.social.linkedin = v; markDirty('content/global.json', state.global, state.globalSha); });
-    bindText('soc_be', function (v) { state.global.social.behance = v; markDirty('content/global.json', state.global, state.globalSha); });
-    bindText('soc_em', function (v) { state.global.social.email = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindUrl('soc_li', function (v) { state.global.social.linkedin = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindUrl('soc_be', function (v) { state.global.social.behance = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindEmail('soc_em', function (v) { state.global.social.email = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindSwitch('soc_li_active', function (v) { if (v) delete s.linkedinActive; else s.linkedinActive = false; markDirty('content/global.json', state.global, state.globalSha); });
+    bindSwitch('soc_be_active', function (v) { if (v) delete s.behanceActive; else s.behanceActive = false; markDirty('content/global.json', state.global, state.globalSha); });
+  }
+
+  function caminhoPublico(path) {
+    var p = String(path || '').trim();
+    if (!p) return '';
+    if (/^https?:\/\//i.test(p)) return p;
+    if (!/^assets\//.test(p)) return '';
+    return 'https://raw.githubusercontent.com/' + String(state.repo || '').split('/').map(encodeURIComponent).join('/') + '/' +
+      encodeURIComponent(state.branch || 'main') + '/' + p.split('/').map(encodeURIComponent).join('/');
+  }
+  function enfileirarMetadataProjeto(slug) {
+    var path = 'work/' + slug + '.html';
+    var projetoSujo = !!state.dirty['content/projects/' + slug + '.json'];
+    var globalSujo = !!state.dirty['content/global.json'];
+    if (!projetoSujo && !globalSujo) delete state.pendingMetadata[path];
+    else if (!state.pendingPages[path] && !state.pendingDeletes[path]) state.pendingMetadata[path] = { slug: slug };
+    marcarPendenteMudou();
+  }
+  function enfileirarMetadataGlobal() {
+    if (state.dirty['content/global.json']) state.pendingMetadata['index.html'] = { slug: null };
+    else delete state.pendingMetadata['index.html'];
+    ((state.projectsIndex && state.projectsIndex.projects) || []).forEach(function (p) { enfileirarMetadataProjeto(p.slug); });
+    marcarPendenteMudou();
+  }
+
+  function mediaCard(path, label, opts) {
+    opts = opts || {};
+    var src = caminhoPublico(path);
+    return '<div class="media-admin" data-media-card>' +
+      (src ? '<img src="' + esc(src) + '" alt="" data-media-img>' : '<div class="media-empty">Sem arquivo</div>') +
+      '<div><b>' + esc(label) + '</b><code>' + esc(path || 'nenhum arquivo definido') + '</code>' +
+      '<span class="media-missing" hidden>Arquivo não encontrado</span>' +
+      (src ? '<a class="btn small" href="' + esc(src) + '" target="_blank" rel="noopener">visualizar</a>' : '') +
+      (opts.remove ? '<button class="btn small danger" type="button" id="' + esc(opts.remove) + '">remover referência</button>' : '') +
+      '</div></div>';
+  }
+
+  function wireMediaErrors(root) {
+    (root || document).querySelectorAll('[data-media-img]').forEach(function (img) {
+      img.addEventListener('error', function () {
+        img.hidden = true;
+        var aviso = img.closest('[data-media-card]').querySelector('.media-missing');
+        if (aviso) aviso.hidden = false;
+      });
+    });
+  }
+
+  function renderBranding() {
+    var g = state.global, b = g.brand || {}, seo = g.seo || {};
+    var nome = b.name || seo.siteName || 'Pedro de Trindade';
+    document.getElementById('brandingPreview').innerHTML = '<div class="identity-preview">' +
+      mediaCard(b.logo || '', 'Logo principal') + mediaCard(b.symbol || '', 'Símbolo') +
+      mediaCard(b.favicon || 'assets/favicon.svg', 'Favicon') + mediaCard(b.shareImage || seo.ogImage || 'assets/og-image.png', 'Imagem de compartilhamento') + '</div>';
+    document.getElementById('brandingBody').innerHTML =
+      fieldRow('Nome da marca', 'Fallback atual: nome do site.', inp('brand_name', b.name || seo.siteName || '')) +
+      fieldRow('Nome curto', 'Opcional.', inp('brand_short', b.shortName || '')) +
+      fieldRow('Texto alternativo da logo', 'Usado por leitores de tela.', inp('brand_alt', b.alt || nome)) +
+      brandingMediaField('brand_logo', 'Logo principal', b.logo || '', 'logo') +
+      brandingMediaField('brand_symbol', 'Símbolo', b.symbol || '', 'simbolo') +
+      brandingMediaField('brand_light', 'Logo para fundo claro', b.logoLight || '', 'logo-claro') +
+      brandingMediaField('brand_dark', 'Logo para fundo escuro', b.logoDark || '', 'logo-escuro') +
+      brandingMediaField('brand_favicon', 'Favicon', b.favicon || 'assets/favicon.svg', 'favicon') +
+      '<p class="hint">Recomendado: imagem quadrada. O formato não bloqueia a publicação.</p>' +
+      brandingMediaField('brand_apple', 'Ícone para iPhone/iPad', b.appleTouchIcon || 'assets/apple-touch-icon.png', 'apple-icon') +
+      '<p class="hint">Recomendado: imagem quadrada.</p>' +
+      brandingMediaField('brand_share', 'Imagem de compartilhamento', b.shareImage || seo.ogImage || 'assets/og-image.png', 'compartilhamento') +
+      '<p class="hint">Recomendado: 1200 × 630 px.</p>' +
+      fieldRow('Cor do navegador', 'Theme color em hexadecimal.', inp('brand_theme', seo.themeColor || '#0D0A0A'));
+    function touch(key, value) {
+      if (!g.brand) g.brand = {};
+      if (value) g.brand[key] = value; else delete g.brand[key];
+      if (key === 'shareImage' && g.seo) delete g.seo.ogImage;
+      if (!Object.keys(g.brand).length) delete g.brand;
+      markDirty('content/global.json', g, state.globalSha);
+      enfileirarMetadataGlobal();
+    }
+    [['brand_name','name'],['brand_short','shortName'],['brand_alt','alt'],['brand_logo','logo'],['brand_symbol','symbol'],['brand_light','logoLight'],['brand_dark','logoDark'],['brand_favicon','favicon'],['brand_apple','appleTouchIcon'],['brand_share','shareImage']].forEach(function (m) {
+      bindText(m[0], function (v) { touch(m[1], v.trim()); });
+      var up = document.getElementById(m[0] + '_upload');
+      if (up) up.addEventListener('change', function () { uploadFile(up.files[0], 'branding', function (path) { touch(m[1], path); }); });
+    });
+    bindText('brand_theme', function (v) { if (!g.seo) g.seo = {}; g.seo.themeColor = v.trim(); markDirty('content/global.json', g, state.globalSha); enfileirarMetadataGlobal(); });
+    wireMediaErrors(document.getElementById('brandingPreview'));
+  }
+
+  function brandingMediaField(id, label, value, slug) {
+    return fieldRow(label, 'Caminho assets/ ou upload.', inp(id, value) + '<input type="file" id="' + id + '_upload" accept="image/*,.svg">');
+  }
+
+  function renderSeo() {
+    var seo = state.global.seo || {};
+    document.getElementById('seoBody').innerHTML =
+      fieldRow('Título para buscadores', 'Aviso acima de 60 caracteres.', inp('seo_title', seo.title || '')) +
+      fieldRow('Descrição para buscadores', 'Aviso acima de 160 caracteres.', ta('seo_desc', seo.description || '')) +
+      fieldRow('Título da prévia do link', 'Opcional; vazio usa o título.', inp('seo_ogtitle', seo.ogTitle || '')) +
+      fieldRow('Descrição da prévia do link', 'Opcional; vazia usa a descrição.', ta('seo_ogdesc', seo.ogDescription || '')) +
+      fieldRow('Domínio canônico', 'Produção, sem barra final.', inp('seo_canonical', seo.canonicalBase || 'https://pedrodetrindade.com'));
+    function refreshPreview() {
+      var atual = state.global.seo || {}, marca = state.global.brand || {};
+      var t = atual.title || atual.siteName || marca.name || 'Pedro de Trindade';
+      var d = atual.description || atual.defaultDescriptionPt || '';
+      var ot = atual.ogTitle || t, od = atual.ogDescription || d;
+      document.getElementById('seoPreview').innerHTML = '<div class="seo-preview"><b>' + esc(ot) + '</b><p>' + esc(od) + '</p>' +
+        '<small>' + t.length + ' caracteres no título · ' + d.length + ' na descrição</small>' +
+        (t.length > 60 ? '<span class="field-warning">Título possivelmente longo.</span>' : '') +
+        (d.length > 160 ? '<span class="field-warning">Descrição possivelmente longa.</span>' : '') + '</div>';
+    }
+    refreshPreview();
+    [['seo_title','title'],['seo_desc','description'],['seo_ogtitle','ogTitle'],['seo_ogdesc','ogDescription'],['seo_canonical','canonicalBase']].forEach(function (m) {
+      bindText(m[0], function (v) {
+        if (!state.global.seo) state.global.seo = {};
+        if (v.trim()) state.global.seo[m[1]] = v.trim(); else delete state.global.seo[m[1]];
+        markDirty('content/global.json', state.global, state.globalSha);
+        enfileirarMetadataGlobal();
+        refreshPreview();
+      });
+    });
   }
 
   /* ---------- Home ---------- */
@@ -2138,7 +2291,8 @@
         fieldRow('Autor (PT / EN)', 'opcional', inp(p + 'apt', b.authorPt, ' ' + meio) + inp(p + 'aen', b.authorEn, ' ' + meio));
     }
     if (b.type === 'image') {
-      return fieldRow('Imagem', 'Envie um arquivo de até 25MB ou cole um caminho assets/ ou URL HTTPS direta.', inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
+      return mediaCard(b.src, 'Imagem atual', { remove: p + 'remove' }) +
+        fieldRow('Substituir imagem', 'Envie um arquivo de até 25MB ou cole um caminho assets/ ou URL HTTPS direta.', inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
         fieldRow('Texto alternativo', 'descreve a imagem para quem não a vê', inp(p + 'alt', b.alt)) +
         fieldRow('Enquadramento', 'Recortada mantém 16/9; proporção livre deixa a imagem mandar na altura (peça vertical, captura de tela, GIF).',
           selectDe(p + 'fit', b.fit || 'cover', [['cover', 'Recortada em 16/9'], ['auto', 'Proporção livre']])) +
@@ -2149,9 +2303,11 @@
       var imgs = b.images || [];
       return fieldRow('Adicionar várias imagens', 'Selecione várias de uma vez. JPG, PNG, WebP, AVIF, GIF ou SVG; até 25MB por arquivo e 32MB por publicação.',
         '<input type="file" id="' + p + 'multi" multiple accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') + imgs.map(function (im, j) {
-        return fieldRow('Imagem ' + (j + 1), 'Upload, caminho assets/ ou URL HTTPS direta.',
+        return mediaCard(im.src, 'Imagem ' + (j + 1)) + fieldRow('Imagem ' + (j + 1), 'Upload, caminho assets/ ou URL HTTPS direta.',
           inp(p + 'img' + j, im.src) +
           '<input type="file" id="' + p + 'imgup' + j + '" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">' +
+          '<button class="btn small" data-bl-imgup="' + i + ':' + j + '"' + (j === 0 ? ' disabled' : '') + '>↑ subir</button>' +
+          '<button class="btn small" data-bl-imgdown="' + i + ':' + j + '"' + (j === imgs.length - 1 ? ' disabled' : '') + '>↓ descer</button>' +
           '<button class="btn small danger" data-bl-imgrm="' + i + ':' + j + '">remover</button>') +
           fieldRow('Texto alternativo ' + (j + 1), '', inp(p + 'alt' + j, im.alt));
       }).join('') + '<button class="btn small" data-bl-imgadd="' + i + '">+ adicionar imagem</button>';
@@ -2206,6 +2362,8 @@
         if (up) up.addEventListener('change', function () {
           uploadFile(up.files[0], slug, function (path) { b.src = path; save(); rerender(); });
         });
+        var removeImage = document.getElementById(p + 'remove');
+        if (removeImage) removeImage.addEventListener('click', function () { b.src = ''; save(); rerender(); });
       }
       if (b.type === 'gallery') {
         var multi = document.getElementById(p + 'multi');
@@ -2296,6 +2454,17 @@
         blocos[Number(par[0])].images.splice(Number(par[1]), 1); save(); rerender();
       });
     });
+    function moverImagem(el, delta) {
+      var attr = delta < 0 ? 'data-bl-imgup' : 'data-bl-imgdown';
+      var par = el.getAttribute(attr).split(':');
+      var arr = blocos[Number(par[0])].images;
+      var i = Number(par[1]), j = i + delta;
+      if (j < 0 || j >= arr.length) return;
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      save(); rerender();
+    }
+    q('[data-bl-imgup]').forEach(function (el) { el.addEventListener('click', function () { moverImagem(el, -1); }); });
+    q('[data-bl-imgdown]').forEach(function (el) { el.addEventListener('click', function () { moverImagem(el, 1); }); });
     var add = document.getElementById('pe_bl_add');
     if (add) add.addEventListener('click', function () {
       var novo = blocoNovo(document.getElementById('pe_bl_tipo').value);
@@ -2445,9 +2614,18 @@
       fieldRow('Papel (EN)', 'Enter força uma nova linha.', ta('pe_roleen', P.hero.roleEn)) +
       fieldRow('Escopo (PT)', 'Enter força uma nova linha.', ta('pe_scopept', P.hero.scopePt)) +
       fieldRow('Escopo (EN)', 'Enter força uma nova linha.', ta('pe_scopeen', P.hero.scopeEn)) +
-      fieldRow('Capa', 'Envie um arquivo, cole um caminho assets/ ou uma URL HTTPS direta.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
-      fieldRow('Capa para celular', 'Opcional. Aceita upload, caminho assets/ ou URL HTTPS; vazia usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
+      mediaCard(P.cover, 'Capa desktop atual') +
+      fieldRow('Substituir capa', 'Envie um arquivo, cole um caminho assets/ ou uma URL HTTPS direta.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
+      mediaCard(P.coverMobile || indexEntry.coverMobile, 'Capa mobile atual', { remove: 'pe_covermobile_remove' }) +
+      fieldRow('Substituir capa mobile', 'Opcional. Vazia usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
       fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
+      '</div></details>' +
+      '<details class="group"' + projectSection('seo') + '><summary>SEO do projeto</summary><div class="group-body">' +
+      fieldRow('Título para buscadores', 'Opcional; vazio usa o título do projeto.', inp('pe_seotitle', (P.seo && P.seo.title) || '')) +
+      fieldRow('Descrição para buscadores', 'Opcional; vazia usa o subtítulo.', ta('pe_seodesc', (P.seo && P.seo.description) || '')) +
+      fieldRow('Título da prévia do link', 'Opcional.', inp('pe_seoogtitle', (P.seo && P.seo.ogTitle) || '')) +
+      fieldRow('Descrição da prévia do link', 'Opcional.', ta('pe_seoogdesc', (P.seo && P.seo.ogDescription) || '')) +
+      fieldRow('Imagem da prévia do link', 'Vazia usa a capa e depois a imagem global.', inp('pe_seoogimage', (P.seo && P.seo.ogImage) || '') + '<input type="file" id="pe_seoogimage_upload" accept="image/*">') +
       '</div></details>' +
       '<details class="group"' + projectSection('cover') + '><summary>Espaçamento da capa</summary><div class="group-body">' +
       deviceTabsHtml('cover-spacing') +
@@ -2503,9 +2681,9 @@
     bindText('pe_eyebrowpt', function (v) { P.hero.eyebrowPt = v; save(); });
     bindText('pe_eyebrowen', function (v) { P.hero.eyebrowEn = v; save(); });
     bindSwitch('pe_showeyebrow', function (v) { if (v) delete P.hero.showEyebrow; else P.hero.showEyebrow = false; save(); });
-    bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); saveIndex(); });
+    bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_titleen', function (v) { P.hero.titleEn = v; indexEntry.titleEn = v; save(); saveIndex(); });
-    bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; indexEntry.subtitlePt = v; save(); saveIndex(); });
+    bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; indexEntry.subtitlePt = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_suben', function (v) { P.hero.subtitleEn = v; indexEntry.subtitleEn = v; save(); saveIndex(); });
     bindText('pe_category', function (v) { P.category = v; indexEntry.category = v; save(); saveIndex(); });
     bindText('pe_tagspt', function (v) { indexEntry.tagsPt = tagsFrom(v); saveIndex(); });
@@ -2517,8 +2695,22 @@
     bindText('pe_scopept', function (v) { P.hero.scopePt = v; save(); });
     bindText('pe_scopeen', function (v) { P.hero.scopeEn = v; save(); });
     bindSwitch('pe_coverlight', function (v) { indexEntry.coverLight = v; saveIndex(); });
-    bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); saveIndex(); });
+    bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_covermobile', function (v) { P.coverMobile = v; indexEntry.coverMobile = v; save(); saveIndex(); });
+    var removeMobile = document.getElementById('pe_covermobile_remove');
+    if (removeMobile) removeMobile.addEventListener('click', function () {
+      delete P.coverMobile; delete indexEntry.coverMobile; save(); saveIndex(); renderProjectEditor();
+    });
+    function setProjectSeo(key, value) {
+      if (!P.seo) P.seo = {};
+      if (value.trim()) P.seo[key] = value.trim(); else delete P.seo[key];
+      if (!Object.keys(P.seo).length) delete P.seo;
+      save();
+      enfileirarMetadataProjeto(slug);
+    }
+    [['pe_seotitle','title'],['pe_seodesc','description'],['pe_seoogtitle','ogTitle'],['pe_seoogdesc','ogDescription'],['pe_seoogimage','ogImage']].forEach(function (m) {
+      bindText(m[0], function (v) { setProjectSeo(m[1], v); });
+    });
     document.getElementById('pe_cardsize').addEventListener('change', function (e) { indexEntry.cardSize = e.target.value; saveIndex(); });
     document.getElementById('pe_status').addEventListener('change', function (e) {
       P.status = e.target.value;
@@ -2536,13 +2728,19 @@
     var coverUpload = document.getElementById('pe_cover_upload');
     if (coverUpload) coverUpload.addEventListener('change', function () { uploadFile(coverUpload.files[0], slug, function (path) {
       P.cover = path; indexEntry.cover = path; save(); saveIndex(); renderProjectEditor();
+      enfileirarMetadataProjeto(slug);
     }); });
     var coverMobileUpload = document.getElementById('pe_covermobile_upload');
     if (coverMobileUpload) coverMobileUpload.addEventListener('change', function () { uploadFile(coverMobileUpload.files[0], slug, function (path) {
       P.coverMobile = path; indexEntry.coverMobile = path; save(); saveIndex(); renderProjectEditor();
     }); });
+    var seoUpload = document.getElementById('pe_seoogimage_upload');
+    if (seoUpload) seoUpload.addEventListener('change', function () { uploadFile(seoUpload.files[0], slug, function (path) {
+      setProjectSeo('ogImage', path); renderProjectEditor();
+    }); });
 
     wireTieredFields();
+    wireMediaErrors(editorEl);
     wireDeviceTabs(editorEl, renderProjectEditor);
     editorEl.querySelectorAll('details[data-sec]').forEach(function (d) {
       d.addEventListener('toggle', function () { projectSectionOpen[d.getAttribute('data-sec')] = d.open; });
@@ -2729,6 +2927,7 @@
     return Object.keys(state.dirty).length > 0 ||
       Object.keys(state.pendingUploads).length > 0 ||
       Object.keys(state.pendingPages).length > 0 ||
+      Object.keys(state.pendingMetadata).length > 0 ||
       Object.keys(state.pendingDeletes).length > 0;
   }
 
@@ -2832,6 +3031,12 @@
     Object.keys(state.pendingPages).forEach(function (p) {
       ops.push({ type: 'page', slug: state.pendingPages[p].slug, fromSlug: state.pendingPages[p].fromSlug });
     });
+    Object.keys(state.pendingMetadata).forEach(function (p) {
+      if (!state.pendingPages[p]) empilhar('SEO', { tipo: 'alterado', texto: 'Metadados atualizados no HTML: ' + esc(p), caminho: p });
+    });
+    Object.keys(state.pendingMetadata).forEach(function (p) {
+      if (!state.pendingPages[p] && !state.pendingDeletes[p]) ops.push({ type: 'metadata', path: p, slug: state.pendingMetadata[p].slug });
+    });
     Object.keys(state.pendingDeletes).forEach(function (p) {
       ops.push({ type: 'delete', path: p });
     });
@@ -2884,6 +3089,7 @@
 
       state.dirty = {};
       state.pendingPages = {};
+      state.pendingMetadata = {};
       state.pendingDeletes = {};
       return limparTodaMidiaPendente().then(function () {
         localStorage.setItem('cms_last_publish', JSON.stringify({
@@ -2949,7 +3155,7 @@
   }
 
   function montarPaineis() {
-    renderOverview(); renderAppearance(); renderLayout(); renderHeaderFooter();
+    renderOverview(); renderAppearance(); renderLayout(); renderHeaderFooter(); renderBranding(); renderSeo();
     renderHome(); renderProjects(); renderLastPublish(); renderPublishPanel();
     updateDirtyIndicators(); atualizarSeloPrevia();
   }

@@ -196,6 +196,7 @@
     const vistos = {};
     const itens = [];
     cfgMenu.forEach(i => {
+      if (i.visible === false) return;
       const id = secaoDoItem(i);
       if (!id || vistos[id]) return;            /* item sem destino ou repetido */
       vistos[id] = true;

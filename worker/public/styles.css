@@ -275,3 +275,17 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 /* O texto de retorno do Vimeo mora fora de .field, então não herda o .hint
    de label; repete o mesmo tamanho e cor para ler como um. */
 .group-body>.hint{display:block;font-size:.74rem;color:var(--muted-2);margin:-.4rem 0 .8rem}
+/* CMS 5.1: previews administrativos de mídia, identidade e SEO. */
+.media-admin{display:grid;grid-template-columns:120px minmax(0,1fr);gap:1rem;align-items:center;padding:.8rem;margin:.65rem 0;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.media-admin img,.media-empty{width:120px;height:84px;object-fit:cover;border-radius:9px;background:rgba(255,255,255,.05)}
+.media-empty{display:grid;place-items:center;color:var(--muted);font-size:.78rem;text-align:center}
+.media-admin>div:last-child{display:flex;align-items:flex-start;gap:.55rem;flex-wrap:wrap;min-width:0}
+.media-admin b,.media-admin code{display:block;width:100%;overflow-wrap:anywhere}
+.media-admin code{color:var(--muted);font-size:.75rem}
+.media-missing,.field-warning{display:block;color:var(--err);font-size:.78rem;font-weight:600}
+.identity-preview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin-bottom:1rem}
+.identity-preview .media-admin{grid-template-columns:72px minmax(0,1fr);margin:0}
+.identity-preview .media-admin img,.identity-preview .media-empty{width:72px;height:58px}
+.seo-preview{padding:1.1rem;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.seo-preview b{font-size:1.05rem}.seo-preview p{color:var(--muted);margin:.45rem 0}.seo-preview small{display:block;color:var(--muted)}
+@media(max-width:700px){.media-admin,.identity-preview{grid-template-columns:1fr}.media-admin img,.media-empty{width:100%;height:160px}}

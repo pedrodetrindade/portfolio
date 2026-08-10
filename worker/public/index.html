@@ -33,6 +33,8 @@
     <button data-panel="appearance">Aparência global<span class="dirty-flag"></span></button>
     <button data-panel="layout">Layout e espaçamentos<span class="dirty-flag"></span></button>
     <button data-panel="headerfooter">Header e footer<span class="dirty-flag"></span></button>
+    <button data-panel="branding">Identidade visual<span class="dirty-flag"></span></button>
+    <button data-panel="seo">SEO<span class="dirty-flag"></span></button>
     <button data-panel="home">Home<span class="dirty-flag"></span></button>
     <button data-panel="projects">Projetos<span class="dirty-flag"></span></button>
     <button data-panel="publish">Publicação</button>
@@ -60,6 +62,20 @@
       <div class="group" open>
         <div class="group-body" id="overviewBody">Carregando…</div>
       </div>
+    </section>
+
+    <section class="panel" data-panel="branding">
+      <h1>Identidade visual</h1>
+      <p class="lead">Nome da marca e arquivos usados no header, na aba do navegador e no compartilhamento.</p>
+      <div id="brandingPreview"></div>
+      <details class="group" open><summary>Marca</summary><div class="group-body" id="brandingBody"></div></details>
+    </section>
+
+    <section class="panel" data-panel="seo">
+      <h1>SEO</h1>
+      <p class="lead">Textos para buscadores e para a prévia de links. Campos vazios usam os fallbacks indicados.</p>
+      <details class="group" open><summary>SEO global</summary><div class="group-body" id="seoBody"></div></details>
+      <details class="group" open><summary>Prévia</summary><div class="group-body" id="seoPreview"></div></details>
     </section>
 
     <section class="panel" data-panel="appearance">
@@ -180,6 +196,6 @@
   </div>
 </div>
 
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

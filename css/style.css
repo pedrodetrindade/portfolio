@@ -2088,3 +2088,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
    preserva a hierarquia entre os dois. */
 .about-sub{margin-top:1.3rem;font-size:.98rem;font-weight:var(--w-light);color:var(--muted);
   max-width:56ch;line-height:1.68;letter-spacing:-.005em}
+.brand-logo{display:block;max-width:180px;max-height:32px;width:auto;height:auto;object-fit:contain}
+.brand-logo--light{display:none}
+header[data-theme="light"] .brand-logo--dark{display:none}
+header[data-theme="light"] .brand-logo--light{display:block}

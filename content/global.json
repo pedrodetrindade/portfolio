@@ -125,6 +125,27 @@
         "en": "About",
         "hrefHome": "index.html#about",
         "hrefWork": "index.html#about"
+      },
+      {
+        "pt": "O que eu faço",
+        "en": "What I do",
+        "section": "help",
+        "hrefHome": "index.html#help",
+        "hrefWork": "index.html#help"
+      },
+      {
+        "pt": "FAQ",
+        "en": "FAQ",
+        "section": "faq",
+        "hrefHome": "index.html#faq",
+        "hrefWork": "index.html#faq"
+      },
+      {
+        "pt": "Contato",
+        "en": "Contact",
+        "section": "contact",
+        "hrefHome": "index.html#contact",
+        "hrefWork": "index.html#contact"
       }
     ]
   },
@@ -140,11 +161,21 @@
     "behance": "https://www.behance.net/trind9de",
     "email": "contact@pedrodetrindade.com"
   },
+  "brand": {
+    "name": "Pedro de Trindade",
+    "shortName": "Pedro",
+    "alt": "Pedro de Trindade",
+    "favicon": "assets/favicon.svg",
+    "appleTouchIcon": "assets/apple-touch-icon.png",
+    "shareImage": "assets/og-image.png"
+  },
   "seo": {
     "siteName": "Pedro de Trindade",
+    "title": "Pedro de Trindade · Direção de Arte e Design Sênior",
     "titleSuffix": " · Pedro de Trindade",
+    "description": "Pedro de Trindade, diretor de arte e designer sênior. Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.",
     "defaultDescriptionPt": "Pedro de Trindade, diretor de arte e designer sênior. Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.",
-    "ogImage": "assets/og-image.png",
-    "themeColor": "#0D0A0A"
+    "themeColor": "#0D0A0A",
+    "canonicalBase": "https://pedrodetrindade.com"
   }
 }

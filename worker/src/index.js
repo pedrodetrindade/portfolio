@@ -11,7 +11,7 @@ import {
   isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO, MAX_REQUEST_BYTES_POR_PUBLICACAO,
   MODOS_VIDEO, VIMEO_HOSTS, isVimeoConfigValido, isPosterValido,
-  isSlugValid, bytesOf, erroNosBlocos, erroNoSpacing
+  isSlugValid, bytesOf, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido
 } from './validate.js';
 
 /* Cabeçalhos de segurança em toda resposta do Worker — painel (HTML/JS/CSS
@@ -122,7 +122,7 @@ function reordenarChaves(obj, ordem) {
    uma ordem diferente da que os arquivos já têm produz um diff cosmético
    gigante. $schema vem primeiro porque é onde ele está nos arquivos hoje. */
 var CHAVES_DE_TOPO = {
-  'content/global.json': ['$schema', 'colors', 'typography', 'borders', 'layout', 'motion', 'effects', 'header', 'footer', 'social', 'seo'],
+  'content/global.json': ['$schema', 'colors', 'typography', 'borders', 'layout', 'motion', 'effects', 'header', 'footer', 'social', 'brand', 'seo'],
   'content/home.json': ['$schema', 'hero', 'sections', 'work', 'about', 'help', 'faq', 'contact'],
   /* cardSizes antes de projects: é a ordem que o arquivo tem hoje. Trocar
      produziria um diff cosmético de 14 linhas na primeira publicação. */
@@ -176,6 +176,84 @@ function erroNosEfeitosGlobais(effects) {
     return 'effects.grain.size precisa estar entre 100 e 360px.';
   }
   return null;
+}
+
+function urlEditorialValida(valor, aceitaVazio) {
+  if (valor == null || valor === '') return aceitaVazio;
+  if (typeof valor !== 'string' || /[<>"'`\\]/.test(valor)) return false;
+  try {
+    var u = new URL(valor);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && !u.username && !u.password;
+  } catch (e) { return false; }
+}
+
+function erroNasConfiguracoesGlobais(data) {
+  var social = data.social || {};
+  for (var i = 0; i < ['linkedin', 'behance'].length; i++) {
+    var key = ['linkedin', 'behance'][i];
+    if (social[key] && !urlEditorialValida(social[key], true)) return 'social.' + key + ' precisa usar http:// ou https://.';
+  }
+  if (social.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(social.email)) return 'social.email não é um e-mail válido.';
+  if (Array.isArray(data.header && data.header.menu)) {
+    for (var m = 0; m < data.header.menu.length; m++) {
+      var item = data.header.menu[m];
+      if (item.visible != null && typeof item.visible !== 'boolean') return 'header.menu[' + m + '].visible precisa ser verdadeiro ou falso.';
+    }
+  }
+  var seo = data.seo || {};
+  if (seo.canonicalBase && !urlEditorialValida(seo.canonicalBase, true)) return 'seo.canonicalBase precisa usar http:// ou https://.';
+  var brand = data.brand || {};
+  var brandKeys = ['name','shortName','alt','logo','symbol','logoLight','logoDark','favicon','appleTouchIcon','shareImage'];
+  var brandExtra = Object.keys(brand).filter(function (k) { return brandKeys.indexOf(k) === -1; });
+  if (brandExtra.length) return 'brand tem campo desconhecido: ' + brandExtra.join(', ') + '.';
+  var imagens = ['.jpg','.jpeg','.png','.webp','.avif','.gif','.svg'];
+  for (var b = 0; b < ['logo','symbol','logoLight','logoDark','favicon','appleTouchIcon','shareImage'].length; b++) {
+    var mediaKey = ['logo','symbol','logoLight','logoDark','favicon','appleTouchIcon','shareImage'][b];
+    if (brand[mediaKey] && !caminhoDeMidiaValido(brand[mediaKey], imagens)) return 'brand.' + mediaKey + ' aponta para uma imagem inválida.';
+  }
+  return null;
+}
+
+function escapeHtmlMeta(valor) {
+  return String(valor == null ? '' : valor).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function urlAbsolutaMeta(path, base) {
+  if (/^https?:\/\//i.test(path || '')) return path;
+  return String(base || 'https://pedrodetrindade.com').replace(/\/$/, '') + '/' + String(path || '').replace(/^\.\.\//, '').replace(/^\//, '');
+}
+function substituirTag(html, regex, tag) {
+  return regex.test(html) ? html.replace(regex, tag) : html.replace(/<\/head>/i, tag + '\n</head>');
+}
+function aplicarMetadataNoHtml(html, globalData, projeto, path) {
+  var seo = globalData.seo || {}, brand = globalData.brand || {};
+  var site = brand.name || seo.siteName || 'Pedro de Trindade';
+  var ps = projeto && projeto.seo || {}, hero = projeto && projeto.hero || {};
+  var title = projeto ? (ps.title || ((hero.titlePt || '') + (seo.titleSuffix || (' · ' + site)))) : (seo.title || seo.siteName || site);
+  var desc = projeto ? (ps.description || hero.subtitlePt || seo.description || seo.defaultDescriptionPt || '') : (seo.description || seo.defaultDescriptionPt || '');
+  var ogTitle = projeto ? (ps.ogTitle || title) : (seo.ogTitle || title);
+  var ogDesc = projeto ? (ps.ogDescription || desc) : (seo.ogDescription || desc);
+  var fallback = brand.shareImage || seo.ogImage || 'assets/og-image.png';
+  var image = projeto ? (ps.ogImage || projeto.cover || fallback) : fallback;
+  var base = seo.canonicalBase || 'https://pedrodetrindade.com';
+  var canonical = base.replace(/\/$/, '') + (projeto ? '/work/' + encodeURIComponent(projeto.slug) + '.html' : '/');
+  var tags = [
+    [/<title>[\s\S]*?<\/title>/i, '<title>' + escapeHtmlMeta(title) + '</title>'],
+    [/<meta\s+name="description"[^>]*>/i, '<meta name="description" content="' + escapeHtmlMeta(desc) + '">'],
+    [/<meta\s+property="og:title"[^>]*>/i, '<meta property="og:title" content="' + escapeHtmlMeta(ogTitle) + '">'],
+    [/<meta\s+property="og:description"[^>]*>/i, '<meta property="og:description" content="' + escapeHtmlMeta(ogDesc) + '">'],
+    [/<meta\s+property="og:image"[^>]*>/i, '<meta property="og:image" content="' + escapeHtmlMeta(urlAbsolutaMeta(image, base)) + '">'],
+    [/<meta\s+property="og:type"[^>]*>/i, '<meta property="og:type" content="' + (projeto ? 'article' : 'website') + '">'],
+    [/<meta\s+property="og:url"[^>]*>/i, '<meta property="og:url" content="' + escapeHtmlMeta(canonical) + '">'],
+    [/<meta\s+name="twitter:title"[^>]*>/i, '<meta name="twitter:title" content="' + escapeHtmlMeta(ogTitle) + '">'],
+    [/<meta\s+name="twitter:description"[^>]*>/i, '<meta name="twitter:description" content="' + escapeHtmlMeta(ogDesc) + '">'],
+    [/<meta\s+name="twitter:image"[^>]*>/i, '<meta name="twitter:image" content="' + escapeHtmlMeta(urlAbsolutaMeta(image, base)) + '">'],
+    [/<meta\s+name="theme-color"[^>]*>/i, '<meta name="theme-color" content="' + escapeHtmlMeta(seo.themeColor || '#0D0A0A') + '">'],
+    [/<link\s+rel="canonical"[^>]*>/i, '<link rel="canonical" href="' + escapeHtmlMeta(canonical) + '">']
+  ];
+  for (var i = 0; i < tags.length; i++) html = substituirTag(html, tags[i][0], tags[i][1]);
+  return html;
 }
 
 function erroNaAparenciaDaHome(home) {
@@ -419,6 +497,10 @@ async function handlePublish(request, env) {
       if (op.fromSlug != null && !isSlugValid(op.fromSlug)) return json({ error: 'invalid_slug', message: 'Slug de origem inválido.' }, 400);
       caminho = 'work/' + op.slug + '.html';
       if (!isPagePathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'Caminho de página não autorizado.' }, 403);
+    } else if (tipo === 'metadata') {
+      if (caminho !== 'index.html' && !isPagePathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'HTML não autorizado para metadata.' }, 403);
+      if (caminho === 'index.html' && op.slug != null) return json({ error: 'invalid_metadata', message: 'A Home não aceita slug.' }, 400);
+      if (caminho !== 'index.html' && (!isSlugValid(op.slug) || caminho !== 'work/' + op.slug + '.html')) return json({ error: 'invalid_metadata', message: 'Slug e caminho de metadata não correspondem.' }, 400);
     } else if (tipo === 'json') {
       if (!isPathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'Caminho não autorizado: ' + caminho }, 403);
       if (!op.data || typeof op.data !== 'object') {
@@ -466,6 +548,17 @@ async function handlePublish(request, env) {
             path: caminho
           }, 422);
         }
+        if (op.data.seo !== undefined) {
+          if (!op.data.seo || typeof op.data.seo !== 'object' || Array.isArray(op.data.seo)) {
+            return json({ error: 'invalid_seo', message: 'seo precisa ser um objeto em ' + caminho + '.', path: caminho }, 422);
+          }
+          var seoKeys = ['title','description','ogTitle','ogDescription','ogImage'];
+          var seoExtra = Object.keys(op.data.seo).filter(function (k) { return seoKeys.indexOf(k) === -1; });
+          if (seoExtra.length) return json({ error: 'invalid_seo', message: 'Campo SEO desconhecido em ' + caminho + ': ' + seoExtra.join(', '), path: caminho }, 422);
+          if (op.data.seo.ogImage && !caminhoDeMidiaValido(op.data.seo.ogImage, ['.jpg','.jpeg','.png','.webp','.avif','.gif','.svg'])) {
+            return json({ error: 'invalid_seo', message: 'Imagem Open Graph inválida em ' + caminho + '.', path: caminho }, 422);
+          }
+        }
         var erroCapaSpacing = erroNoSpacing(op.data.coverSpacing, false);
         if (erroCapaSpacing) {
           return json({
@@ -493,6 +586,8 @@ async function handlePublish(request, env) {
       if (caminho === 'content/global.json') {
         var erroEfeitos = erroNosEfeitosGlobais(op.data.effects);
         if (erroEfeitos) return json({ error: 'invalid_effects', message: erroEfeitos + ' Nada foi publicado.', path: caminho }, 422);
+        var erroConfig = erroNasConfiguracoesGlobais(op.data);
+        if (erroConfig) return json({ error: 'invalid_global_settings', message: erroConfig + ' Nada foi publicado.', path: caminho }, 422);
       }
       var texto = JSON.stringify(permitidas ? reordenarChaves(op.data, permitidas) : op.data, null, 2) + '\n';
       var b = bytesOf(texto);
@@ -567,6 +662,14 @@ async function handlePublish(request, env) {
     }
 
     /* ---- 3. blobs ---- */
+    async function dadosDaPublicacao(path) {
+      for (var di = 0; di < preparadas.length; di++) {
+        if (preparadas[di].type === 'json' && preparadas[di].__path === path) return preparadas[di].data;
+      }
+      var arquivo = await readFile(env, path);
+      if (!arquivo) return null;
+      try { return JSON.parse(arquivo.content); } catch (e) { return null; }
+    }
     var entradas = [], publicadas = [];
     for (var p = 0; p < preparadas.length; p++) {
       var o = preparadas[p];
@@ -581,13 +684,24 @@ async function handlePublish(request, env) {
         blobSha = await createBlob(env, o.__texto, 'utf-8');
       } else if (o.type === 'binary') {
         blobSha = await createBlob(env, o.contentBase64, 'base64');
+      } else if (o.type === 'metadata') {
+        var htmlAtual = await readFile(env, o.__path);
+        if (!htmlAtual) return json({ error: 'page_missing', message: 'Página não encontrada para atualizar metadata: ' + o.__path }, 404);
+        var globalMeta = await dadosDaPublicacao('content/global.json');
+        var projetoMeta = o.slug ? await dadosDaPublicacao('content/projects/' + o.slug + '.json') : null;
+        if (!globalMeta || (o.slug && !projetoMeta)) return json({ error: 'metadata_data_missing', message: 'Dados editoriais ausentes para ' + o.__path }, 500);
+        var htmlMeta = aplicarMetadataNoHtml(htmlAtual.content, globalMeta, projetoMeta, o.__path);
+        blobSha = await createBlob(env, htmlMeta, 'utf-8');
       } else { /* page */
         /* o HTML nunca vem do cliente: é lido de um modelo já versionado e
            testado, e o cliente só escolhe o slug */
         var modeloPath = 'work/' + (o.fromSlug || 'case-01') + '.html';
         var modelo = await readFile(env, modeloPath);
         if (!modelo) return json({ error: 'template_missing', message: 'Modelo de página não encontrado: ' + modeloPath }, 500);
-        blobSha = await createBlob(env, modelo.content, 'utf-8');
+        var globalPagina = await dadosDaPublicacao('content/global.json');
+        var projetoPagina = await dadosDaPublicacao('content/projects/' + o.slug + '.json');
+        var paginaHtml = (globalPagina && projetoPagina) ? aplicarMetadataNoHtml(modelo.content, globalPagina, projetoPagina, o.__path) : modelo.content;
+        blobSha = await createBlob(env, paginaHtml, 'utf-8');
       }
       if (o.type !== 'page' && o.__shaAtual === blobSha) continue;
       entradas.push({ path: o.__path, mode: '100644', type: 'blob', sha: blobSha });
@@ -632,6 +746,8 @@ async function handlePublish(request, env) {
     return json({ error: kind, message: detalhe + ' Nada foi publicado.' }, kind === 'conflict' ? 409 : 502);
   }
 }
+
+export { aplicarMetadataNoHtml, erroNasConfiguracoesGlobais };
 
 export default {
   async fetch(request, env, ctx) {
