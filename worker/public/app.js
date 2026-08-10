@@ -703,6 +703,11 @@
     Object.keys(state.pendingPages).forEach(function (p) {
       empilhar('Projetos', { tipo: 'adicionado', texto: 'Página criada a partir do modelo: ' + esc(p), caminho: p });
     });
+    Object.keys(state.pendingMetadata).forEach(function (p) {
+      if (!state.pendingPages[p] && !state.pendingDeletes[p]) {
+        empilhar('SEO', { tipo: 'alterado', texto: 'Metadados atualizados no HTML: ' + esc(p), caminho: p });
+      }
+    });
     Object.keys(state.pendingUploads).forEach(function (p) {
       var kb = Math.round((state.pendingUploads[p].size || 0) / 1024);
       empilhar('Mídia', { tipo: 'imagem', texto: 'Arquivo enviado: ' + esc(p) + ' (' + kb + ' KB)', caminho: p });
@@ -3018,6 +3023,10 @@
        reforço aqui a pessoa ficaria travada num "Publicar" que nunca
        funciona, sem conseguir corrigir pela interface. O caminho do arquivo é
        sempre a fonte de verdade: é ele que decide onde o conteúdo é gravado. */
+    /* Começa a cadeia ANTES de montar o payload. Assim, qualquer erro
+       síncrono nesta preparação também chega ao catch/finally abaixo e nunca
+       deixa a interface presa em "Publicando…". */
+    Promise.resolve().then(function () {
     var ops = Object.keys(state.dirty).map(function (p) {
       var dado = state.dirty[p].data;
       /* "index" bate no mesmo regex de slug ([a-z0-9-]+) — content/projects/
@@ -3032,9 +3041,6 @@
       ops.push({ type: 'page', slug: state.pendingPages[p].slug, fromSlug: state.pendingPages[p].fromSlug });
     });
     Object.keys(state.pendingMetadata).forEach(function (p) {
-      if (!state.pendingPages[p]) empilhar('SEO', { tipo: 'alterado', texto: 'Metadados atualizados no HTML: ' + esc(p), caminho: p });
-    });
-    Object.keys(state.pendingMetadata).forEach(function (p) {
       if (!state.pendingPages[p] && !state.pendingDeletes[p]) ops.push({ type: 'metadata', path: p, slug: state.pendingMetadata[p].slug });
     });
     Object.keys(state.pendingDeletes).forEach(function (p) {
@@ -3042,7 +3048,7 @@
     });
 
     var caminhosMidia = Object.keys(state.pendingUploads);
-    Promise.all(caminhosMidia.map(function (p) {
+    return Promise.all(caminhosMidia.map(function (p) {
       return lerMidia(p).then(function (blob) {
         if (!blob) throw new Error('A mídia pendente ' + p + ' não está mais neste navegador.');
         return midiaParaBase64(blob).then(function (b64) {
@@ -3054,6 +3060,7 @@
         method: 'POST',
         body: { message: mensagemCustom || null, ops: ops.concat(opsMidia) }
       });
+    });
     }).then(function (res) {
       /* Chegou aqui: o Worker moveu a branch. Não existe publicação parcial —
          ou o commit único foi criado, ou caímos no catch. */
@@ -3107,6 +3114,7 @@
          desfeito. O rascunho e as mídias pendentes ficam intactos para a
          pessoa tentar de novo sem perder trabalho. */
       var msg = e && e.message ? e.message : 'Falha ao publicar.';
+      if (window.console && console.error) console.error('[CMS] Falha ao preparar ou publicar:', e);
       var erro = e && e.body && e.body.error;
       var conflito = erro === 'conflict';
       var camposDesconhecidos = erro === 'unknown_fields';
