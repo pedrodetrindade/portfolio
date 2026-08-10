@@ -547,10 +547,16 @@ async function handlePublish(request, env) {
     var conflitos = [];
     for (var c = 0; c < preparadas.length; c++) {
       var pc = preparadas[c];
-      if (pc.type === 'page' || pc.sha === undefined) continue;  /* página nova não tem base */
+      if (pc.type === 'page') continue;  /* página nova não tem base */
       var atual = await getFileSha(env, pc.__path);
-      var esperado = pc.sha || null;
-      if ((atual || null) !== esperado) conflitos.push(pc.__path);
+      pc.__shaAtual = atual || null;
+      /* Operações sem sha (mídia e delete) ainda guardam o estado atual para
+         detectar no passo seguinte se produziriam uma árvore idêntica. Só JSON
+         editorial participa da trava otimista de concorrência. */
+      if (pc.sha !== undefined) {
+        var esperado = pc.sha || null;
+        if ((atual || null) !== esperado) conflitos.push(pc.__path);
+      }
     }
     if (conflitos.length) {
       return json({
@@ -561,11 +567,13 @@ async function handlePublish(request, env) {
     }
 
     /* ---- 3. blobs ---- */
-    var entradas = [];
+    var entradas = [], publicadas = [];
     for (var p = 0; p < preparadas.length; p++) {
       var o = preparadas[p];
       if (o.type === 'delete') {
+        if (!o.__shaAtual) continue; /* remover algo já ausente não muda a árvore */
         entradas.push({ path: o.__path, mode: '100644', type: 'blob', sha: null });
+        publicadas.push(o);
         continue;
       }
       var blobSha;
@@ -581,28 +589,39 @@ async function handlePublish(request, env) {
         if (!modelo) return json({ error: 'template_missing', message: 'Modelo de página não encontrado: ' + modeloPath }, 500);
         blobSha = await createBlob(env, modelo.content, 'utf-8');
       }
+      if (o.type !== 'page' && o.__shaAtual === blobSha) continue;
       entradas.push({ path: o.__path, mode: '100644', type: 'blob', sha: blobSha });
+      publicadas.push(o);
+    }
+
+    if (!entradas.length) {
+      return json({ error: 'nothing_to_publish', message: 'Os arquivos enviados são idênticos ao conteúdo publicado. Nenhum commit foi criado.' }, 400);
     }
 
     /* ---- 4. uma árvore, um commit, um movimento da branch ---- */
     var refSha = await getRef(env, env.GITHUB_BRANCH);
     var commitBase = await getCommit(env, refSha);
     var treeSha = await createTree(env, commitBase.tree.sha, entradas);
-    var mensagem = (typeof body.message === 'string' && body.message.trim()) || ('cms: publica ' + preparadas.length + ' alteração(ões)');
+    var mensagem = (typeof body.message === 'string' && body.message.trim()) || ('cms: publica ' + publicadas.length + ' alteração(ões)');
     var novoCommit = await createCommit(env, mensagem, treeSha, refSha);
     await updateRef(env, env.GITHUB_BRANCH, novoCommit);
 
     /* SHAs novos, para o painel seguir detectando conflito na próxima vez */
     var shasFinais = {};
-    for (var s = 0; s < preparadas.length; s++) {
-      var ps = preparadas[s];
+    for (var s = 0; s < publicadas.length; s++) {
+      var ps = publicadas[s];
       if (ps.type === 'delete') continue;
       shasFinais[ps.__path] = await getFileSha(env, ps.__path);
     }
 
+    var commitUrl = 'https://github.com/' + encodeURIComponent(env.GITHUB_OWNER) + '/' +
+      encodeURIComponent(env.GITHUB_REPO) + '/commit/' + novoCommit;
+
     return json({
       ok: true, commit: novoCommit, publishedAt: new Date().toISOString(),
-      paths: preparadas.map(function (x) { return x.__path; }), shas: shasFinais
+      branch: env.GITHUB_BRANCH, message: mensagem, fileCount: publicadas.length,
+      commitUrl: commitUrl,
+      paths: publicadas.map(function (x) { return x.__path; }), shas: shasFinais
     });
   } catch (e) {
     /* Falhou em qualquer ponto: a branch não foi movida, então não existe

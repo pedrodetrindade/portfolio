@@ -17,6 +17,7 @@
   <div class="topbar">
     <span class="brand">Painel · Pedro de Trindade</span>
     <span class="topbar-right">
+      <span id="branchTarget" class="branch-target" hidden></span>
       <!-- Estado do trabalho: publicado, pendente, rascunho salvo, publicando,
            concluído ou falha. Sempre por extenso, nunca só por cor. -->
       <span id="draftState" class="draft-state" hidden></span>
@@ -129,7 +130,7 @@
 
     <section class="panel" data-panel="publish">
       <h1>Publicação</h1>
-      <p class="lead">Revise o que vai mudar no site público antes de confirmar.</p>
+      <p class="lead">Revise os arquivos e a branch de destino antes de confirmar.</p>
       <div class="group" open>
         <div class="group-body">
           <div id="publishSummary">Nenhuma alteração pendente.</div>
@@ -159,6 +160,7 @@
       <p class="lead">O que muda no site público, em linguagem simples.</p>
     </div>
     <div class="review-scroll">
+      <div id="reviewContext"></div>
       <div id="reviewBody"></div>
       <details class="group review-advanced">
         <summary>Ver diferenças técnicas (avançado)</summary>
@@ -178,6 +180,6 @@
   </div>
 </div>
 
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

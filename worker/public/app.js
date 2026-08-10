@@ -48,6 +48,28 @@
   }
   function clamp(v, range) { return Math.min(range[1], Math.max(range[0], Number(v) || 0)); }
 
+  function branchInfo(branch) {
+    var nome = String(branch || 'indisponível');
+    var principal = nome === 'main';
+    return {
+      nome: nome,
+      principal: principal,
+      classe: principal ? 'is-main' : 'is-dev',
+      ambiente: principal ? 'branch principal' : 'desenvolvimento / teste',
+      aviso: principal
+        ? 'Esta publicação altera a branch principal usada em produção.'
+        : 'Esta publicação fica isolada da branch principal.'
+    };
+  }
+
+  function branchCalloutHtml(branch) {
+    var info = branchInfo(branch);
+    return '<div class="branch-callout ' + info.classe + '">' +
+      '<strong>Branch de publicação · ' + esc(info.ambiente) + '</strong>' +
+      '<code>' + esc(info.nome) + '</code>' +
+      '<p>' + esc(info.aviso) + '</p></div>';
+  }
+
   /* ---------- chamadas à API ---------- */
   function api(path, opts) {
     opts = opts || {};
@@ -85,6 +107,7 @@
     renderPublishPanel();
     atualizarSeloPrevia();
     scheduleDraftSave();
+    schedulePreview();
   }
 
   function updateDirtyIndicators() {
@@ -403,6 +426,66 @@
     }));
   }
 
+  /* Um rascunho restaurado pode trazer um arquivo marcado como pendente que,
+     depois de comparado com o GitHub, é idêntico ao publicado. Retirá-lo aqui
+     evita revisão falsa e, principalmente, impede commit vazio. Arquivo novo
+     usa baseline null e nunca é removido por esta limpeza. */
+  function removerDirtyIdentico() {
+    var removeu = false;
+    Object.keys(state.dirty).forEach(function (path) {
+      var publicado = state.published[path];
+      if (publicado !== undefined && publicado !== null &&
+          JSON.stringify(state.dirty[path].data) === JSON.stringify(publicado)) {
+        delete state.dirty[path];
+        removeu = true;
+      }
+    });
+    if (removeu) {
+      updateDirtyIndicators();
+      atualizarSeloPrevia();
+      scheduleDraftSave();
+    }
+    return removeu;
+  }
+
+  function operacoesPendentes() {
+    var itens = [];
+    Object.keys(state.dirty).forEach(function (path) {
+      itens.push({ path: path, tipo: state.published[path] === null ? 'novo' : 'alterado' });
+    });
+    Object.keys(state.pendingPages).forEach(function (path) { itens.push({ path: path, tipo: 'novo' }); });
+    Object.keys(state.pendingUploads).forEach(function (path) {
+      itens.push({ path: path, tipo: 'novo', size: state.pendingUploads[path].size || 0, midia: true });
+    });
+    Object.keys(state.pendingDeletes).forEach(function (path) { itens.push({ path: path, tipo: 'removido' }); });
+    return itens;
+  }
+
+  function contagensPendentes(itens) {
+    var c = { total: itens.length, alterado: 0, novo: 0, removido: 0 };
+    itens.forEach(function (item) { if (c[item.tipo] !== undefined) c[item.tipo]++; });
+    return c;
+  }
+
+  function contagensHtml(c) {
+    return '<div class="publish-counts">' +
+      '<span class="badge default">' + c.total + (c.total === 1 ? ' arquivo' : ' arquivos') + '</span>' +
+      (c.alterado ? '<span class="badge custom">' + c.alterado + ' alterado(s)</span>' : '') +
+      (c.novo ? '<span class="badge default">' + c.novo + ' novo(s)</span>' : '') +
+      (c.removido ? '<span class="badge danger">' + c.removido + ' removido(s)</span>' : '') +
+      '</div>';
+  }
+
+  function listaOperacoesHtml(itens) {
+    var rotulos = { alterado: 'alterado', novo: 'novo', removido: 'remover' };
+    var classes = { alterado: 'custom', novo: 'default', removido: 'danger' };
+    return '<ul class="summary-list">' + itens.map(function (item) {
+      var detalhe = item.midia ? ' · ' + Math.round(item.size / 1024) + ' KB' : '';
+      return '<li><span>' + esc(item.path) + '</span><span class="badge ' + classes[item.tipo] + '">' +
+        esc(rotulos[item.tipo] + detalhe) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+
   /* ---- motor de diff ----
      Genérico o bastante para cobrir os quatro JSONs sem precisar de um mapa
      de campo por campo, mas com rótulos legíveis para as chaves conhecidas.
@@ -663,13 +746,33 @@
     var paths = Object.keys(state.dirty);
     var modal = document.getElementById('reviewModal');
     document.getElementById('reviewBody').innerHTML = '<p class="lead">Carregando comparação…</p>';
+    document.getElementById('reviewContext').innerHTML = '';
     document.getElementById('reviewTecnico').textContent = '';
+    document.getElementById('btnReviewConfirm').disabled = true;
     modal.hidden = false;
     return ensurePublishedBaseline(paths).then(function () {
+      removerDirtyIdentico();
+      renderPublishPanel();
+      var itens = operacoesPendentes();
+      var contagens = contagensPendentes(itens);
+      var branch = branchInfo(state.branch);
       var grupos = calcularRevisao();
+      document.getElementById('reviewContext').innerHTML =
+        '<div class="review-context">' + branchCalloutHtml(state.branch) +
+        (itens.length
+          ? '<p><b>Você está prestes a publicar ' + contagens.total +
+            (contagens.total === 1 ? ' arquivo em:' : ' arquivos em:') +
+            ' <code>' + esc(state.branch) + '</code></b></p>' + contagensHtml(contagens) + listaOperacoesHtml(itens)
+          : '<p class="lead">Nenhum arquivo realmente mudou. Nenhum commit será criado.</p>') +
+        '</div>';
       document.getElementById('reviewBody').innerHTML = renderRevisaoHtml(grupos);
       document.getElementById('reviewTecnico').textContent = renderRevisaoTecnica(grupos);
       document.getElementById('reviewMessage').value = '';
+      var confirmar = document.getElementById('btnReviewConfirm');
+      confirmar.disabled = !itens.length;
+      confirmar.classList.toggle('danger', branch.principal);
+      confirmar.classList.toggle('primary', !branch.principal);
+      confirmar.textContent = branch.principal ? 'Confirmar publicação na main' : 'Confirmar e publicar';
     });
   }
 
@@ -1060,9 +1163,16 @@
   function renderOverview() {
     var s = state.status;
     if (!s) { setStatus(false, 'status indisponível'); return; }
+    var branch = branchInfo(s.branch);
+    var branchEl = document.getElementById('branchTarget');
+    branchEl.hidden = false;
+    branchEl.className = 'branch-target ' + branch.classe;
+    branchEl.innerHTML = '<span>Branch</span><b>' + esc(branch.nome) + '</b>';
     document.getElementById('overviewBody').innerHTML =
+      fieldRow('CMS', '', '<span class="badge default">conectado</span>') +
       fieldRow('Repositório', '', esc(s.repo)) +
-      fieldRow('Branch', '', esc(s.branch)) +
+      fieldRow('Branch de publicação', branch.aviso,
+        '<span class="badge ' + (branch.principal ? 'danger' : 'custom') + '">' + esc(branch.nome) + '</span>') +
       fieldRow('Autenticação', '', s.authMode === 'local-bypass' ?
         '<span class="badge custom">bypass local (DEV_AUTH_BYPASS)</span>' : '<span class="badge default">Cloudflare Access</span>') +
       fieldRow('Cloudflare Access', '', s.accessConfigured ?
@@ -1071,7 +1181,7 @@
   }
   function setStatus(ok, msg) {
     document.getElementById('statusDot').className = 'dot ' + (ok ? 'ok' : 'err');
-    document.getElementById('statusText').textContent = ok ? 'conectado' : ('erro: ' + msg);
+    document.getElementById('statusText').textContent = ok ? 'CMS conectado' : ('erro: ' + msg);
   }
 
   /* ---------- Aparência global ---------- */
@@ -1827,9 +1937,14 @@
     document.getElementById('projectsList').innerHTML = list.map(function (p, i) {
       var capa = String(p.cover || '').trim();
       var capaPainel = /^https:\/\//i.test(capa) ? capa : '../' + capa;
+      var carregado = state.projects[p.slug] && state.projects[p.slug].data;
+      var statusEditorial = carregado && carregado.status === 'draft' ? 'rascunho' :
+        carregado && carregado.status === 'published' ? 'publicado' : '';
       return '<div class="list-row' + (p.visible === false ? ' hidden-project' : '') + '" data-slug="' + esc(p.slug) + '">' +
         '<div class="thumb" style="background-image:url(\'' + esc(capaPainel) + '\')"></div>' +
-        '<div class="info"><b>' + esc(p.titlePt) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year) + (p.visible === false ? ' · oculto' : '') + '</span></div>' +
+        '<div class="info"><b>' + esc(p.titlePt) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year) +
+          ' · ' + (p.visible === false ? 'oculto na Home' : 'visível na Home') +
+          (statusEditorial ? ' · ' + statusEditorial : '') + '</span></div>' +
         '<div class="actions">' +
         '<button class="btn small" data-act="up">↑</button>' +
         '<button class="btn small" data-act="down">↓</button>' +
@@ -1867,6 +1982,10 @@
        (JSON do projeto, índice e página) antes de qualquer revisão. Agora o
        clone é montado aqui, entra como pendente e sobe no commit do Publicar. */
     if (action === 'duplicate') {
+      var newTitle = prompt('Título do projeto duplicado:', (p.titlePt || slug) + ' (cópia)');
+      if (!newTitle) return;
+      newTitle = String(newTitle).trim();
+      if (!newTitle) { toast('Informe um título para o projeto duplicado.', 'err'); return; }
       var newSlug = prompt('Slug do projeto duplicado:', slug + '-copia');
       if (!newSlug) return;
       newSlug = String(newSlug).trim().toLowerCase();
@@ -1878,7 +1997,7 @@
         copia.slug = newSlug;
         copia.status = 'draft';
         if (copia.hero) {
-          copia.hero.titlePt = (copia.hero.titlePt || slug) + ' (cópia)';
+          copia.hero.titlePt = newTitle;
           copia.hero.titleEn = (copia.hero.titleEn || slug) + ' (copy)';
         }
         var caminho = 'content/projects/' + newSlug + '.json';
@@ -1899,7 +2018,7 @@
         state.pendingPages['work/' + newSlug + '.html'] = { slug: newSlug, fromSlug: slug };
         marcarPendenteMudou();
         renderProjectsList();
-        toast('Duplicado como "' + newSlug + '". Sobe no próximo Publicar.', 'ok');
+        toast('Duplicado como "' + newSlug + '". As mídias continuam compartilhadas por caminho; nada foi copiado fisicamente.', 'ok');
       }).catch(function (e) { toast(e.message, 'err'); });
       return;
     }
@@ -1923,6 +2042,10 @@
         delete state.pendingPages[pathPagina];
         delete state.dirty[pathJson];
       } else {
+        /* Se o projeto foi editado antes de ser excluído, a exclusão substitui
+           a atualização. Enviar json + delete para o mesmo caminho faria o
+           Worker recusar a publicação como duplicate_path. */
+        delete state.dirty[pathJson];
         state.pendingDeletes[pathJson] = 'conteúdo do projeto ' + slug;
         state.pendingDeletes[pathPagina] = 'página do projeto ' + slug;
       }
@@ -2299,7 +2422,8 @@
     editorEl.innerHTML =
       '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
       fieldRow('URL do case', 'Use letras minúsculas, números e hífen. A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">alterar URL</button></div>') +
-      fieldRow('Status', '', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
+      fieldRow('Status', 'Estado editorial do conteúdo. Não altera sozinho a presença do card na Home.', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
+      fieldRow('Visível na Home', 'Controle independente do status. Desligado remove somente o card da listagem da Home.', switchControl('pe_visible', indexEntry.visible !== false)) +
       fieldRow('Grain neste case', 'Herdar acompanha o controle global do site.', selectDe('pe_grain',
         typeof P.grainEnabled === 'boolean' ? (P.grainEnabled ? 'on' : 'off') : 'inherit', [
           ['inherit', 'Herdar do global'], ['on', 'Ligado'], ['off', 'Desligado']
@@ -2386,6 +2510,7 @@
     bindText('pe_category', function (v) { P.category = v; indexEntry.category = v; save(); saveIndex(); });
     bindText('pe_tagspt', function (v) { indexEntry.tagsPt = tagsFrom(v); saveIndex(); });
     bindText('pe_tagsen', function (v) { indexEntry.tagsEn = tagsFrom(v); saveIndex(); });
+    bindSwitch('pe_visible', function (v) { indexEntry.visible = v; saveIndex(); });
     bindSwitch('pe_featured', function (v) { indexEntry.featured = v; saveIndex(); });
     bindText('pe_rolept', function (v) { P.hero.rolePt = v; save(); });
     bindText('pe_roleen', function (v) { P.hero.roleEn = v; save(); });
@@ -2397,9 +2522,8 @@
     document.getElementById('pe_cardsize').addEventListener('change', function (e) { indexEntry.cardSize = e.target.value; saveIndex(); });
     document.getElementById('pe_status').addEventListener('change', function (e) {
       P.status = e.target.value;
-      /* `visible` continua sendo a autoridade da Home. Tornar rascunho apenas
-         força a opção segura; publicar não mostra sozinho. */
-      if (P.status === 'draft') { indexEntry.visible = false; saveIndex(); }
+      /* `visible` é uma decisão separada e continua sendo a única autoridade
+         da Home. Nem draft oculta, nem published mostra automaticamente. */
       save();
     });
     document.getElementById('pe_grain').addEventListener('change', function (e) {
@@ -2597,6 +2721,7 @@
     renderPublishPanel();
     atualizarSeloPrevia();
     scheduleDraftSave();
+    schedulePreview();
   }
 
   /* Existe pendência de qualquer tipo, não só JSON alterado? */
@@ -2618,6 +2743,8 @@
     document.getElementById('btnNewProject').addEventListener('click', function () {
       var titlePt = prompt('Título do novo projeto (português):');
       if (!titlePt) return;
+      titlePt = String(titlePt).trim();
+      if (!titlePt) { toast('Informe um título para o novo projeto.', 'err'); return; }
       var sugestao = titlePt.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
       var slug = prompt('Slug (ex: campanha-2027):', sugestao);
@@ -2658,28 +2785,15 @@
   function renderPublishPanel() {
     var el = document.getElementById('publishSummary');
     var btn = document.getElementById('btnPublish');
+    var branchHtml = branchCalloutHtml(state.branch);
     if (!haPendencias()) {
-      el.innerHTML = 'Nenhuma alteração pendente.';
+      el.innerHTML = branchHtml + '<p>Nenhuma alteração pendente.</p>';
       btn.disabled = true;
       return;
     }
-    var linhas = [];
-    Object.keys(state.dirty).forEach(function (p) {
-      linhas.push({ path: p, rotulo: state.published[p] === null ? 'novo' : 'alterado', classe: 'custom' });
-    });
-    Object.keys(state.pendingPages).forEach(function (p) {
-      linhas.push({ path: p, rotulo: 'página nova', classe: 'custom' });
-    });
-    Object.keys(state.pendingUploads).forEach(function (p) {
-      var kb = Math.round((state.pendingUploads[p].size || 0) / 1024);
-      linhas.push({ path: p, rotulo: 'mídia · ' + kb + ' KB', classe: 'custom' });
-    });
-    Object.keys(state.pendingDeletes).forEach(function (p) {
-      linhas.push({ path: p, rotulo: 'remover', classe: 'danger' });
-    });
-    el.innerHTML = '<ul class="summary-list">' + linhas.map(function (l) {
-      return '<li><span>' + esc(l.path) + '</span><span class="badge ' + l.classe + '">' + esc(l.rotulo) + '</span></li>';
-    }).join('') + '</ul>' +
+    var itens = operacoesPendentes();
+    var contagens = contagensPendentes(itens);
+    el.innerHTML = branchHtml + contagensHtml(contagens) + listaOperacoesHtml(itens) +
       '<p class="hint" style="margin-top:.6rem">Tudo isso entra em um único commit.</p>';
     btn.disabled = false;
   }
@@ -2739,8 +2853,18 @@
       /* Chegou aqui: o Worker moveu a branch. Não existe publicação parcial —
          ou o commit único foi criado, ou caímos no catch. */
       var curto = String(res.commit || '').slice(0, 7);
+      var branchUsada = res.branch || state.branch;
+      var qtdPublicada = Number(res.fileCount) || (res.paths || []).length;
+      var linkCommit = res.commitUrl
+        ? '<a class="btn small" href="' + esc(res.commitUrl) + '" target="_blank" rel="noopener">Ver commit no GitHub</a>'
+        : '';
       document.getElementById('publishResult').innerHTML =
-        '<div class="badge default">Publicado em um commit · ' + esc(curto) + '</div>' +
+        '<div class="publish-success"><h3>Publicado com sucesso</h3><dl>' +
+        '<dt>Branch</dt><dd><code>' + esc(branchUsada) + '</code></dd>' +
+        '<dt>Commit</dt><dd><code>' + esc(curto) + '</code></dd>' +
+        '<dt>Mensagem</dt><dd>' + esc(res.message || mensagemCustom || 'Publicação do CMS') + '</dd>' +
+        '<dt>Arquivos</dt><dd>' + qtdPublicada + (qtdPublicada === 1 ? ' arquivo atualizado' : ' arquivos atualizados') + '</dd>' +
+        '</dl>' + linkCommit + '</div>' +
         '<ul class="summary-list" style="margin-top:.6rem">' + (res.paths || []).map(function (p) {
           return '<li><span>' + esc(p) + '</span><span>ok</span></li>';
         }).join('') + '</ul>';
@@ -2762,7 +2886,10 @@
       state.pendingPages = {};
       state.pendingDeletes = {};
       return limparTodaMidiaPendente().then(function () {
-        localStorage.setItem('cms_last_publish', JSON.stringify({ at: res.publishedAt, commit: res.commit, files: (res.paths || []).length }));
+        localStorage.setItem('cms_last_publish', JSON.stringify({
+          at: res.publishedAt, commit: res.commit, files: qtdPublicada,
+          branch: branchUsada, message: res.message || mensagemCustom || '', commitUrl: res.commitUrl || ''
+        }));
         renderLastPublish();
         clearDraft();                /* só aqui o rascunho morre */
         setDraftState('concluido');
@@ -2808,7 +2935,11 @@
     var el = document.getElementById('lastPublishInfo');
     if (!raw) { el.textContent = 'Nenhuma publicação registrada nesta máquina ainda.'; return; }
     var info = JSON.parse(raw);
-    el.textContent = new Date(info.at).toLocaleString('pt-BR') + ' · ' + info.files + ' arquivo(s)';
+    el.innerHTML = '<p style="margin:0">' + esc(new Date(info.at).toLocaleString('pt-BR')) +
+      ' · ' + esc(info.files) + ' arquivo(s)' + (info.branch ? ' · <code>' + esc(info.branch) + '</code>' : '') + '</p>' +
+      (info.commit ? '<p class="hint" style="margin:.35rem 0 0">Commit <code>' + esc(String(info.commit).slice(0, 7)) + '</code>' +
+        (info.message ? ' · ' + esc(info.message) : '') + '</p>' : '') +
+      (info.commitUrl ? '<a href="' + esc(info.commitUrl) + '" target="_blank" rel="noopener">Ver commit no GitHub</a>' : '');
   }
 
   /* ---------- navegação entre painéis ---------- */
@@ -2833,11 +2964,12 @@
        (mensagem) ou cancela (null) — nada é publicado antes disso. */
     document.getElementById('btnPublish').addEventListener('click', function () {
       if (!haPendencias()) return;
-      revisaoResolver = null;
-      abrirRevisao().then(function () {
-        return new Promise(function (resolve) { revisaoResolver = resolve; });
-      }).then(function (resultado) {
+      var escolha = new Promise(function (resolve) { revisaoResolver = resolve; });
+      abrirRevisao().then(function () { return escolha; }).then(function (resultado) {
         if (resultado.confirmado) doPublish(resultado.mensagem || null);
+      }).catch(function (e) {
+        fecharRevisao(false);
+        toast(e && e.message ? e.message : 'Não foi possível montar a revisão.', 'err');
       });
     });
     document.getElementById('btnReviewCancel').addEventListener('click', function () { fecharRevisao(false); });
