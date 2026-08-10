@@ -24,6 +24,13 @@ a{color:var(--accent)}
 .topbar .brand{font-weight:600;letter-spacing:-.01em}
 .topbar-right{display:flex;align-items:center;gap:.9rem}
 
+.branch-target{display:inline-flex;align-items:center;gap:.45rem;padding:.28rem .65rem;
+  border:1px solid var(--line-strong);border-radius:100px;font-size:.76rem;color:var(--muted)}
+.branch-target[hidden]{display:none}
+.branch-target b{font-weight:600;color:var(--paper)}
+.branch-target.is-dev{border-color:var(--warn);color:var(--warn);background:rgba(217,161,92,.08)}
+.branch-target.is-main{border-color:var(--err);color:var(--err);background:rgba(217,124,124,.09)}
+
 /* Estado do trabalho. Cada estado tem cor E texto próprio: quem não distingue
    as cores continua lendo o que está acontecendo. */
 .draft-state{display:inline-flex;align-items:center;gap:.45em;font-size:.78rem;color:var(--muted)}
@@ -108,6 +115,24 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 .badge{font-size:.72rem;padding:.15rem .55rem;border-radius:100px;border:1px solid var(--line-strong);color:var(--muted)}
 .badge.custom{color:var(--warn);border-color:var(--warn)}
 .badge.default{color:var(--muted-2)}
+.badge.danger{color:var(--err);border-color:var(--err)}
+
+.branch-callout{border:1px solid var(--line-strong);border-radius:12px;padding:.9rem 1rem;
+  background:rgba(162,149,149,.06);margin-bottom:1rem}
+.branch-callout.is-dev{border-color:var(--warn);background:rgba(217,161,92,.07)}
+.branch-callout.is-main{border-color:var(--err);background:rgba(217,124,124,.08)}
+.branch-callout strong{display:block;font-size:.78rem;color:var(--muted);margin-bottom:.18rem}
+.branch-callout code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  color:var(--paper);font-size:.92rem}
+.branch-callout p{margin:.35rem 0 0;color:var(--muted);font-size:.8rem}
+.publish-counts{display:flex;gap:.45rem;flex-wrap:wrap;margin:.8rem 0}
+.publish-success{border:1px solid var(--ok);background:rgba(143,191,143,.07);
+  border-radius:12px;padding:1rem}
+.publish-success h3{margin:0 0 .8rem;font-size:1rem;color:var(--ok)}
+.publish-success dl{display:grid;grid-template-columns:110px 1fr;gap:.35rem .8rem;margin:0}
+.publish-success dt{color:var(--muted-2);font-size:.8rem}
+.publish-success dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.publish-success a{display:inline-flex;margin-top:.85rem}
 
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;gap:1rem;flex-wrap:wrap}
 .search{max-width:280px}
@@ -205,6 +230,7 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 .review-head{padding:1.4rem 1.6rem 0}
 .review-head h2{margin:0 0 .3rem;font-size:1.15rem}
 .review-scroll{padding:1rem 1.6rem;overflow-y:auto;flex:1}
+.review-context{margin-bottom:1rem}
 .review-group{margin-bottom:1.2rem}
 .review-group h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;
   color:var(--muted-2);margin:0 0 .5rem}
@@ -249,3 +275,17 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 /* O texto de retorno do Vimeo mora fora de .field, então não herda o .hint
    de label; repete o mesmo tamanho e cor para ler como um. */
 .group-body>.hint{display:block;font-size:.74rem;color:var(--muted-2);margin:-.4rem 0 .8rem}
+/* CMS 5.1: previews administrativos de mídia, identidade e SEO. */
+.media-admin{display:grid;grid-template-columns:120px minmax(0,1fr);gap:1rem;align-items:center;padding:.8rem;margin:.65rem 0;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.media-admin img,.media-empty{width:120px;height:84px;object-fit:cover;border-radius:9px;background:rgba(255,255,255,.05)}
+.media-empty{display:grid;place-items:center;color:var(--muted);font-size:.78rem;text-align:center}
+.media-admin>div:last-child{display:flex;align-items:flex-start;gap:.55rem;flex-wrap:wrap;min-width:0}
+.media-admin b,.media-admin code{display:block;width:100%;overflow-wrap:anywhere}
+.media-admin code{color:var(--muted);font-size:.75rem}
+.media-missing,.field-warning{display:block;color:var(--err);font-size:.78rem;font-weight:600}
+.identity-preview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin-bottom:1rem}
+.identity-preview .media-admin{grid-template-columns:72px minmax(0,1fr);margin:0}
+.identity-preview .media-admin img,.identity-preview .media-empty{width:72px;height:58px}
+.seo-preview{padding:1.1rem;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.seo-preview b{font-size:1.05rem}.seo-preview p{color:var(--muted);margin:.45rem 0}.seo-preview small{display:block;color:var(--muted)}
+@media(max-width:700px){.media-admin,.identity-preview{grid-template-columns:1fr}.media-admin img,.media-empty{width:100%;height:160px}}

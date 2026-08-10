@@ -118,6 +118,19 @@
      cases ficavam presos ao disclaimer estático do HTML. */
   function renderSharedChrome() {
     var G = window.__CMS_GLOBAL__ || {};
+    var brand = G.brand || {};
+    function brandSrc(path) { return /^https?:\/\//i.test(path || '') ? path : (isCase() ? '../' : '') + path; }
+    var brandLinks = document.querySelectorAll('a.brand');
+    for (var bi = 0; bi < brandLinks.length; bi++) {
+      if (brand.logo) {
+        var logoEscuro = brand.logoDark || brand.logo;
+        var logoClaro = brand.logoLight || brand.logo;
+        brandLinks[bi].innerHTML = '<img class="brand-logo brand-logo--dark" src="' + esc(brandSrc(logoEscuro)) + '" alt="' + esc(brand.alt || brand.name || '') + '">' +
+          '<img class="brand-logo brand-logo--light" src="' + esc(brandSrc(logoClaro)) + '" alt="">';
+      } else if (brand.name) {
+        brandLinks[bi].textContent = brand.name;
+      }
+    }
     if (G.social && G.social.email) {
       var mailLink = document.querySelector('.mail-link');
       if (mailLink) { mailLink.setAttribute('href', 'mailto:' + G.social.email); mailLink.textContent = G.social.email; }
@@ -129,6 +142,8 @@
       var behanceLinks = document.querySelectorAll('a[href*="behance.net"]');
       if (G.social.linkedin) for (var i = 0; i < linkedinLinks.length; i++) linkedinLinks[i].setAttribute('href', G.social.linkedin);
       if (G.social.behance) for (var j = 0; j < behanceLinks.length; j++) behanceLinks[j].setAttribute('href', G.social.behance);
+      if (G.social.linkedinActive === false) for (var li = 0; li < linkedinLinks.length; li++) linkedinLinks[li].hidden = true;
+      if (G.social.behanceActive === false) for (var be = 0; be < behanceLinks.length; be++) behanceLinks[be].hidden = true;
     }
     if (!G.footer) return;
     var copyEl = document.querySelector('.foot-copy');

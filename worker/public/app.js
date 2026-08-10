@@ -32,6 +32,7 @@
        só o registro do que existe. */
     pendingUploads: {},   /* path -> {mime, size, nome} */
     pendingPages: {},     /* path da página -> {slug, fromSlug} */
+    pendingMetadata: {},  /* HTML confiável a atualizar no Worker, sem HTML vindo do painel */
     pendingDeletes: {}    /* path -> motivo, para a revisão explicar */
   };
 
@@ -47,6 +48,28 @@
     });
   }
   function clamp(v, range) { return Math.min(range[1], Math.max(range[0], Number(v) || 0)); }
+
+  function branchInfo(branch) {
+    var nome = String(branch || 'indisponível');
+    var principal = nome === 'main';
+    return {
+      nome: nome,
+      principal: principal,
+      classe: principal ? 'is-main' : 'is-dev',
+      ambiente: principal ? 'branch principal' : 'desenvolvimento / teste',
+      aviso: principal
+        ? 'Esta publicação altera a branch principal usada em produção.'
+        : 'Esta publicação fica isolada da branch principal.'
+    };
+  }
+
+  function branchCalloutHtml(branch) {
+    var info = branchInfo(branch);
+    return '<div class="branch-callout ' + info.classe + '">' +
+      '<strong>Branch de publicação · ' + esc(info.ambiente) + '</strong>' +
+      '<code>' + esc(info.nome) + '</code>' +
+      '<p>' + esc(info.aviso) + '</p></div>';
+  }
 
   /* ---------- chamadas à API ---------- */
   function api(path, opts) {
@@ -85,11 +108,12 @@
     renderPublishPanel();
     atualizarSeloPrevia();
     scheduleDraftSave();
+    schedulePreview();
   }
 
   function updateDirtyIndicators() {
     var groups = {
-      'content/global.json': ['appearance', 'layout', 'headerfooter'],
+      'content/global.json': ['appearance', 'layout', 'headerfooter', 'branding', 'seo'],
       'content/home.json': ['home', 'layout'],
       'content/projects/index.json': ['projects']
     };
@@ -239,6 +263,7 @@
            sobrevive ao fechamento da aba por conta própria */
         uploads: state.pendingUploads,
         pages: state.pendingPages,
+        metadata: state.pendingMetadata,
         deletes: state.pendingDeletes
       }));
       state.draftSavedAt = agora;
@@ -270,6 +295,7 @@
       var temAlgo = (d.files && Object.keys(d.files).length) ||
         (d.uploads && Object.keys(d.uploads).length) ||
         (d.pages && Object.keys(d.pages).length) ||
+        (d.metadata && Object.keys(d.metadata).length) ||
         (d.deletes && Object.keys(d.deletes).length);
       if (!temAlgo) return null;
       return d;
@@ -286,7 +312,7 @@
   }
   function descartarTudoPendente() {
     return limparTodaMidiaPendente().then(function () {
-      state.pendingPages = {}; state.pendingDeletes = {}; state.dirty = {};
+      state.pendingPages = {}; state.pendingMetadata = {}; state.pendingDeletes = {}; state.dirty = {};
       clearDraft();
     });
   }
@@ -312,6 +338,7 @@
        basta reencaixar o registro. Uma mídia cujo blob sumiu (navegador
        limpou o IndexedDB) é descartada aqui em vez de quebrar na publicação. */
     state.pendingPages = d.pages || {};
+    state.pendingMetadata = d.metadata || {};
     state.pendingDeletes = d.deletes || {};
     var uploads = d.uploads || {};
     state.pendingUploads = {};
@@ -401,6 +428,67 @@
       return api(apiPath).then(function (res) { snapshotPublished(p, res.data); })
         .catch(function () { snapshotPublished(p, null); }); // arquivo novo: nunca existiu publicado
     }));
+  }
+
+  /* Um rascunho restaurado pode trazer um arquivo marcado como pendente que,
+     depois de comparado com o GitHub, é idêntico ao publicado. Retirá-lo aqui
+     evita revisão falsa e, principalmente, impede commit vazio. Arquivo novo
+     usa baseline null e nunca é removido por esta limpeza. */
+  function removerDirtyIdentico() {
+    var removeu = false;
+    Object.keys(state.dirty).forEach(function (path) {
+      var publicado = state.published[path];
+      if (publicado !== undefined && publicado !== null &&
+          JSON.stringify(state.dirty[path].data) === JSON.stringify(publicado)) {
+        delete state.dirty[path];
+        removeu = true;
+      }
+    });
+    if (removeu) {
+      updateDirtyIndicators();
+      atualizarSeloPrevia();
+      scheduleDraftSave();
+    }
+    return removeu;
+  }
+
+  function operacoesPendentes() {
+    var itens = [];
+    Object.keys(state.dirty).forEach(function (path) {
+      itens.push({ path: path, tipo: state.published[path] === null ? 'novo' : 'alterado' });
+    });
+    Object.keys(state.pendingPages).forEach(function (path) { itens.push({ path: path, tipo: 'novo' }); });
+    Object.keys(state.pendingMetadata).forEach(function (path) { if (!state.pendingPages[path] && !state.pendingDeletes[path]) itens.push({ path: path, tipo: 'alterado' }); });
+    Object.keys(state.pendingUploads).forEach(function (path) {
+      itens.push({ path: path, tipo: 'novo', size: state.pendingUploads[path].size || 0, midia: true });
+    });
+    Object.keys(state.pendingDeletes).forEach(function (path) { itens.push({ path: path, tipo: 'removido' }); });
+    return itens;
+  }
+
+  function contagensPendentes(itens) {
+    var c = { total: itens.length, alterado: 0, novo: 0, removido: 0 };
+    itens.forEach(function (item) { if (c[item.tipo] !== undefined) c[item.tipo]++; });
+    return c;
+  }
+
+  function contagensHtml(c) {
+    return '<div class="publish-counts">' +
+      '<span class="badge default">' + c.total + (c.total === 1 ? ' arquivo' : ' arquivos') + '</span>' +
+      (c.alterado ? '<span class="badge custom">' + c.alterado + ' alterado(s)</span>' : '') +
+      (c.novo ? '<span class="badge default">' + c.novo + ' novo(s)</span>' : '') +
+      (c.removido ? '<span class="badge danger">' + c.removido + ' removido(s)</span>' : '') +
+      '</div>';
+  }
+
+  function listaOperacoesHtml(itens) {
+    var rotulos = { alterado: 'alterado', novo: 'novo', removido: 'remover' };
+    var classes = { alterado: 'custom', novo: 'default', removido: 'danger' };
+    return '<ul class="summary-list">' + itens.map(function (item) {
+      var detalhe = item.midia ? ' · ' + Math.round(item.size / 1024) + ' KB' : '';
+      return '<li><span>' + esc(item.path) + '</span><span class="badge ' + classes[item.tipo] + '">' +
+        esc(rotulos[item.tipo] + detalhe) + '</span></li>';
+    }).join('') + '</ul>';
   }
 
   /* ---- motor de diff ----
@@ -615,6 +703,11 @@
     Object.keys(state.pendingPages).forEach(function (p) {
       empilhar('Projetos', { tipo: 'adicionado', texto: 'Página criada a partir do modelo: ' + esc(p), caminho: p });
     });
+    Object.keys(state.pendingMetadata).forEach(function (p) {
+      if (!state.pendingPages[p] && !state.pendingDeletes[p]) {
+        empilhar('SEO', { tipo: 'alterado', texto: 'Metadados atualizados no HTML: ' + esc(p), caminho: p });
+      }
+    });
     Object.keys(state.pendingUploads).forEach(function (p) {
       var kb = Math.round((state.pendingUploads[p].size || 0) / 1024);
       empilhar('Mídia', { tipo: 'imagem', texto: 'Arquivo enviado: ' + esc(p) + ' (' + kb + ' KB)', caminho: p });
@@ -663,13 +756,33 @@
     var paths = Object.keys(state.dirty);
     var modal = document.getElementById('reviewModal');
     document.getElementById('reviewBody').innerHTML = '<p class="lead">Carregando comparação…</p>';
+    document.getElementById('reviewContext').innerHTML = '';
     document.getElementById('reviewTecnico').textContent = '';
+    document.getElementById('btnReviewConfirm').disabled = true;
     modal.hidden = false;
     return ensurePublishedBaseline(paths).then(function () {
+      removerDirtyIdentico();
+      renderPublishPanel();
+      var itens = operacoesPendentes();
+      var contagens = contagensPendentes(itens);
+      var branch = branchInfo(state.branch);
       var grupos = calcularRevisao();
+      document.getElementById('reviewContext').innerHTML =
+        '<div class="review-context">' + branchCalloutHtml(state.branch) +
+        (itens.length
+          ? '<p><b>Você está prestes a publicar ' + contagens.total +
+            (contagens.total === 1 ? ' arquivo em:' : ' arquivos em:') +
+            ' <code>' + esc(state.branch) + '</code></b></p>' + contagensHtml(contagens) + listaOperacoesHtml(itens)
+          : '<p class="lead">Nenhum arquivo realmente mudou. Nenhum commit será criado.</p>') +
+        '</div>';
       document.getElementById('reviewBody').innerHTML = renderRevisaoHtml(grupos);
       document.getElementById('reviewTecnico').textContent = renderRevisaoTecnica(grupos);
       document.getElementById('reviewMessage').value = '';
+      var confirmar = document.getElementById('btnReviewConfirm');
+      confirmar.disabled = !itens.length;
+      confirmar.classList.toggle('danger', branch.principal);
+      confirmar.classList.toggle('primary', !branch.principal);
+      confirmar.textContent = branch.principal ? 'Confirmar publicação na main' : 'Confirmar e publicar';
     });
   }
 
@@ -896,7 +1009,7 @@
      número e o texto por extenso. */
   function atualizarSeloPrevia() {
     var n = Object.keys(state.dirty).length + Object.keys(state.pendingUploads).length +
-      Object.keys(state.pendingPages).length + Object.keys(state.pendingDeletes).length;
+      Object.keys(state.pendingPages).length + Object.keys(state.pendingMetadata).length + Object.keys(state.pendingDeletes).length;
     document.querySelectorAll('[data-pv-badge]').forEach(function (el) {
       el.hidden = n === 0;
       el.textContent = n === 0 ? '' :
@@ -1060,9 +1173,16 @@
   function renderOverview() {
     var s = state.status;
     if (!s) { setStatus(false, 'status indisponível'); return; }
+    var branch = branchInfo(s.branch);
+    var branchEl = document.getElementById('branchTarget');
+    branchEl.hidden = false;
+    branchEl.className = 'branch-target ' + branch.classe;
+    branchEl.innerHTML = '<span>Branch</span><b>' + esc(branch.nome) + '</b>';
     document.getElementById('overviewBody').innerHTML =
+      fieldRow('CMS', '', '<span class="badge default">conectado</span>') +
       fieldRow('Repositório', '', esc(s.repo)) +
-      fieldRow('Branch', '', esc(s.branch)) +
+      fieldRow('Branch de publicação', branch.aviso,
+        '<span class="badge ' + (branch.principal ? 'danger' : 'custom') + '">' + esc(branch.nome) + '</span>') +
       fieldRow('Autenticação', '', s.authMode === 'local-bypass' ?
         '<span class="badge custom">bypass local (DEV_AUTH_BYPASS)</span>' : '<span class="badge default">Cloudflare Access</span>') +
       fieldRow('Cloudflare Access', '', s.accessConfigured ?
@@ -1071,7 +1191,28 @@
   }
   function setStatus(ok, msg) {
     document.getElementById('statusDot').className = 'dot ' + (ok ? 'ok' : 'err');
-    document.getElementById('statusText').textContent = ok ? 'conectado' : ('erro: ' + msg);
+    document.getElementById('statusText').textContent = ok ? 'CMS conectado' : ('erro: ' + msg);
+  }
+  function bindUrl(id, onChange) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function () {
+      var v = el.value.trim(), ok = !v;
+      try { var u = new URL(v); ok = u.protocol === 'http:' || u.protocol === 'https:'; } catch (e) { ok = !v; }
+      el.setCustomValidity(ok ? '' : 'Use um endereço iniciado por http:// ou https://');
+      if (!ok) { el.reportValidity(); return; }
+      onChange(v);
+    });
+  }
+  function bindEmail(id, onChange) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function () {
+      var v = el.value.trim(), ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      el.setCustomValidity(ok ? '' : 'Informe um e-mail válido.');
+      if (!ok) { el.reportValidity(); return; }
+      onChange(v);
+    });
   }
 
   /* ---------- Aparência global ---------- */
@@ -1485,7 +1626,8 @@
             '<select id="menu_' + i + '_sec">' + SECOES_PAINEL.map(function (s) {
               return '<option value="' + s[0] + '"' + (secaoDoItemPainel(item) === s[0] ? ' selected' : '') +
                 '>' + esc(s[1]) + '</option>';
-            }).join('') + '</select>');
+            }).join('') + '</select>') +
+          fieldRow('Mostrar item', '', switchControl('menu_' + i + '_visible', item.visible !== false));
       }).join('');
     bindSwitch('hdr_lang', function (v) { state.global.header.showLanguageSwitch = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('hdr_contact', function (v) { state.global.header.showContactButton = v; markDirty('content/global.json', state.global, state.globalSha); });
@@ -1502,6 +1644,11 @@
         alvo.hrefHome = alvo.hrefWork = hrefDaSecaoPainel(e.target.value);
         markDirty('content/global.json', state.global, state.globalSha);
       });
+      bindSwitch('menu_' + i + '_visible', function (v) {
+        if (v) delete state.global.header.menu[i].visible;
+        else state.global.header.menu[i].visible = false;
+        markDirty('content/global.json', state.global, state.globalSha);
+      });
     });
 
     var f = state.global.footer, s = state.global.social;
@@ -1509,23 +1656,144 @@
        copyright nascem com o texto que o site já monta nesse caso, e passam a
        mandar assim que forem salvos. Nada do footer é apagado no caminho. */
     var anoAtual = new Date().getFullYear();
-    if (f.copyrightPt == null) f.copyrightPt = '© {year} · ' + (f.disclaimerPt || '');
-    if (f.copyrightEn == null) f.copyrightEn = '© {year} · ' + (f.disclaimerEn || '');
+    var copyrightPt = f.copyrightPt == null ? '© {year} · ' + (f.disclaimerPt || '') : f.copyrightPt;
+    var copyrightEn = f.copyrightEn == null ? '© {year} · ' + (f.disclaimerEn || '') : f.copyrightEn;
     document.getElementById('footerBody').innerHTML =
-      fieldRow('Copyright (PT)', 'Escreva {year} onde o ano deve aparecer — vira ' + anoAtual + ' sozinho, e continua certo no ano que vem.', '<textarea id="foot_cpt">' + esc(f.copyrightPt) + '</textarea>') +
-      fieldRow('Copyright (EN)', 'Mesma coisa: {year} vira o ano atual.', '<textarea id="foot_cen">' + esc(f.copyrightEn) + '</textarea>') +
+      fieldRow('Copyright (PT)', 'Escreva {year} onde o ano deve aparecer — vira ' + anoAtual + ' sozinho, e continua certo no ano que vem.', '<textarea id="foot_cpt">' + esc(copyrightPt) + '</textarea>') +
+      fieldRow('Copyright (EN)', 'Mesma coisa: {year} vira o ano atual.', '<textarea id="foot_cen">' + esc(copyrightEn) + '</textarea>') +
       fieldRow('Disclaimer (PT)', 'Texto antigo, mantido só como reserva. O site usa o campo de copyright acima.', '<textarea id="foot_pt">' + esc(f.disclaimerPt) + '</textarea>') +
       fieldRow('Disclaimer (EN)', '', '<textarea id="foot_en">' + esc(f.disclaimerEn) + '</textarea>') +
-      fieldRow('LinkedIn', '', '<input type="url" id="soc_li" value="' + esc(s.linkedin) + '">') +
-      fieldRow('Behance', '', '<input type="url" id="soc_be" value="' + esc(s.behance) + '">') +
+      fieldRow('LinkedIn', 'Aceita somente http:// ou https://', '<input type="url" id="soc_li" value="' + esc(s.linkedin) + '">') +
+      fieldRow('Mostrar LinkedIn', '', switchControl('soc_li_active', s.linkedinActive !== false)) +
+      fieldRow('Behance', 'Aceita somente http:// ou https://', '<input type="url" id="soc_be" value="' + esc(s.behance) + '">') +
+      fieldRow('Mostrar Behance', '', switchControl('soc_be_active', s.behanceActive !== false)) +
       fieldRow('E-mail de contato', '', '<input type="email" id="soc_em" value="' + esc(s.email) + '">');
     bindText('foot_cpt', function (v) { state.global.footer.copyrightPt = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_cen', function (v) { state.global.footer.copyrightEn = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_pt', function (v) { state.global.footer.disclaimerPt = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_en', function (v) { state.global.footer.disclaimerEn = v; markDirty('content/global.json', state.global, state.globalSha); });
-    bindText('soc_li', function (v) { state.global.social.linkedin = v; markDirty('content/global.json', state.global, state.globalSha); });
-    bindText('soc_be', function (v) { state.global.social.behance = v; markDirty('content/global.json', state.global, state.globalSha); });
-    bindText('soc_em', function (v) { state.global.social.email = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindUrl('soc_li', function (v) { state.global.social.linkedin = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindUrl('soc_be', function (v) { state.global.social.behance = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindEmail('soc_em', function (v) { state.global.social.email = v; markDirty('content/global.json', state.global, state.globalSha); });
+    bindSwitch('soc_li_active', function (v) { if (v) delete s.linkedinActive; else s.linkedinActive = false; markDirty('content/global.json', state.global, state.globalSha); });
+    bindSwitch('soc_be_active', function (v) { if (v) delete s.behanceActive; else s.behanceActive = false; markDirty('content/global.json', state.global, state.globalSha); });
+  }
+
+  function caminhoPublico(path) {
+    var p = String(path || '').trim();
+    if (!p) return '';
+    if (/^https?:\/\//i.test(p)) return p;
+    if (!/^assets\//.test(p)) return '';
+    return 'https://raw.githubusercontent.com/' + String(state.repo || '').split('/').map(encodeURIComponent).join('/') + '/' +
+      encodeURIComponent(state.branch || 'main') + '/' + p.split('/').map(encodeURIComponent).join('/');
+  }
+  function enfileirarMetadataProjeto(slug) {
+    var path = 'work/' + slug + '.html';
+    var projetoSujo = !!state.dirty['content/projects/' + slug + '.json'];
+    var globalSujo = !!state.dirty['content/global.json'];
+    if (!projetoSujo && !globalSujo) delete state.pendingMetadata[path];
+    else if (!state.pendingPages[path] && !state.pendingDeletes[path]) state.pendingMetadata[path] = { slug: slug };
+    marcarPendenteMudou();
+  }
+  function enfileirarMetadataGlobal() {
+    if (state.dirty['content/global.json']) state.pendingMetadata['index.html'] = { slug: null };
+    else delete state.pendingMetadata['index.html'];
+    ((state.projectsIndex && state.projectsIndex.projects) || []).forEach(function (p) { enfileirarMetadataProjeto(p.slug); });
+    marcarPendenteMudou();
+  }
+
+  function mediaCard(path, label, opts) {
+    opts = opts || {};
+    var src = caminhoPublico(path);
+    return '<div class="media-admin" data-media-card>' +
+      (src ? '<img src="' + esc(src) + '" alt="" data-media-img>' : '<div class="media-empty">Sem arquivo</div>') +
+      '<div><b>' + esc(label) + '</b><code>' + esc(path || 'nenhum arquivo definido') + '</code>' +
+      '<span class="media-missing" hidden>Arquivo não encontrado</span>' +
+      (src ? '<a class="btn small" href="' + esc(src) + '" target="_blank" rel="noopener">visualizar</a>' : '') +
+      (opts.remove ? '<button class="btn small danger" type="button" id="' + esc(opts.remove) + '">remover referência</button>' : '') +
+      '</div></div>';
+  }
+
+  function wireMediaErrors(root) {
+    (root || document).querySelectorAll('[data-media-img]').forEach(function (img) {
+      img.addEventListener('error', function () {
+        img.hidden = true;
+        var aviso = img.closest('[data-media-card]').querySelector('.media-missing');
+        if (aviso) aviso.hidden = false;
+      });
+    });
+  }
+
+  function renderBranding() {
+    var g = state.global, b = g.brand || {}, seo = g.seo || {};
+    var nome = b.name || seo.siteName || 'Pedro de Trindade';
+    document.getElementById('brandingPreview').innerHTML = '<div class="identity-preview">' +
+      mediaCard(b.logo || '', 'Logo principal') + mediaCard(b.symbol || '', 'Símbolo') +
+      mediaCard(b.favicon || 'assets/favicon.svg', 'Favicon') + mediaCard(b.shareImage || seo.ogImage || 'assets/og-image.png', 'Imagem de compartilhamento') + '</div>';
+    document.getElementById('brandingBody').innerHTML =
+      fieldRow('Nome da marca', 'Fallback atual: nome do site.', inp('brand_name', b.name || seo.siteName || '')) +
+      fieldRow('Nome curto', 'Opcional.', inp('brand_short', b.shortName || '')) +
+      fieldRow('Texto alternativo da logo', 'Usado por leitores de tela.', inp('brand_alt', b.alt || nome)) +
+      brandingMediaField('brand_logo', 'Logo principal', b.logo || '', 'logo') +
+      brandingMediaField('brand_symbol', 'Símbolo', b.symbol || '', 'simbolo') +
+      brandingMediaField('brand_light', 'Logo para fundo claro', b.logoLight || '', 'logo-claro') +
+      brandingMediaField('brand_dark', 'Logo para fundo escuro', b.logoDark || '', 'logo-escuro') +
+      brandingMediaField('brand_favicon', 'Favicon', b.favicon || 'assets/favicon.svg', 'favicon') +
+      '<p class="hint">Recomendado: imagem quadrada. O formato não bloqueia a publicação.</p>' +
+      brandingMediaField('brand_apple', 'Ícone para iPhone/iPad', b.appleTouchIcon || 'assets/apple-touch-icon.png', 'apple-icon') +
+      '<p class="hint">Recomendado: imagem quadrada.</p>' +
+      brandingMediaField('brand_share', 'Imagem de compartilhamento', b.shareImage || seo.ogImage || 'assets/og-image.png', 'compartilhamento') +
+      '<p class="hint">Recomendado: 1200 × 630 px.</p>' +
+      fieldRow('Cor do navegador', 'Theme color em hexadecimal.', inp('brand_theme', seo.themeColor || '#0D0A0A'));
+    function touch(key, value) {
+      if (!g.brand) g.brand = {};
+      if (value) g.brand[key] = value; else delete g.brand[key];
+      if (key === 'shareImage' && g.seo) delete g.seo.ogImage;
+      if (!Object.keys(g.brand).length) delete g.brand;
+      markDirty('content/global.json', g, state.globalSha);
+      enfileirarMetadataGlobal();
+    }
+    [['brand_name','name'],['brand_short','shortName'],['brand_alt','alt'],['brand_logo','logo'],['brand_symbol','symbol'],['brand_light','logoLight'],['brand_dark','logoDark'],['brand_favicon','favicon'],['brand_apple','appleTouchIcon'],['brand_share','shareImage']].forEach(function (m) {
+      bindText(m[0], function (v) { touch(m[1], v.trim()); });
+      var up = document.getElementById(m[0] + '_upload');
+      if (up) up.addEventListener('change', function () { uploadFile(up.files[0], 'branding', function (path) { touch(m[1], path); }); });
+    });
+    bindText('brand_theme', function (v) { if (!g.seo) g.seo = {}; g.seo.themeColor = v.trim(); markDirty('content/global.json', g, state.globalSha); enfileirarMetadataGlobal(); });
+    wireMediaErrors(document.getElementById('brandingPreview'));
+  }
+
+  function brandingMediaField(id, label, value, slug) {
+    return fieldRow(label, 'Caminho assets/ ou upload.', inp(id, value) + '<input type="file" id="' + id + '_upload" accept="image/*,.svg">');
+  }
+
+  function renderSeo() {
+    var seo = state.global.seo || {};
+    document.getElementById('seoBody').innerHTML =
+      fieldRow('Título para buscadores', 'Aviso acima de 60 caracteres.', inp('seo_title', seo.title || '')) +
+      fieldRow('Descrição para buscadores', 'Aviso acima de 160 caracteres.', ta('seo_desc', seo.description || '')) +
+      fieldRow('Título da prévia do link', 'Opcional; vazio usa o título.', inp('seo_ogtitle', seo.ogTitle || '')) +
+      fieldRow('Descrição da prévia do link', 'Opcional; vazia usa a descrição.', ta('seo_ogdesc', seo.ogDescription || '')) +
+      fieldRow('Domínio canônico', 'Produção, sem barra final.', inp('seo_canonical', seo.canonicalBase || 'https://pedrodetrindade.com'));
+    function refreshPreview() {
+      var atual = state.global.seo || {}, marca = state.global.brand || {};
+      var t = atual.title || atual.siteName || marca.name || 'Pedro de Trindade';
+      var d = atual.description || atual.defaultDescriptionPt || '';
+      var ot = atual.ogTitle || t, od = atual.ogDescription || d;
+      document.getElementById('seoPreview').innerHTML = '<div class="seo-preview"><b>' + esc(ot) + '</b><p>' + esc(od) + '</p>' +
+        '<small>' + t.length + ' caracteres no título · ' + d.length + ' na descrição</small>' +
+        (t.length > 60 ? '<span class="field-warning">Título possivelmente longo.</span>' : '') +
+        (d.length > 160 ? '<span class="field-warning">Descrição possivelmente longa.</span>' : '') + '</div>';
+    }
+    refreshPreview();
+    [['seo_title','title'],['seo_desc','description'],['seo_ogtitle','ogTitle'],['seo_ogdesc','ogDescription'],['seo_canonical','canonicalBase']].forEach(function (m) {
+      bindText(m[0], function (v) {
+        if (!state.global.seo) state.global.seo = {};
+        if (v.trim()) state.global.seo[m[1]] = v.trim(); else delete state.global.seo[m[1]];
+        markDirty('content/global.json', state.global, state.globalSha);
+        enfileirarMetadataGlobal();
+        refreshPreview();
+      });
+    });
   }
 
   /* ---------- Home ---------- */
@@ -1827,9 +2095,14 @@
     document.getElementById('projectsList').innerHTML = list.map(function (p, i) {
       var capa = String(p.cover || '').trim();
       var capaPainel = /^https:\/\//i.test(capa) ? capa : '../' + capa;
+      var carregado = state.projects[p.slug] && state.projects[p.slug].data;
+      var statusEditorial = carregado && carregado.status === 'draft' ? 'rascunho' :
+        carregado && carregado.status === 'published' ? 'publicado' : '';
       return '<div class="list-row' + (p.visible === false ? ' hidden-project' : '') + '" data-slug="' + esc(p.slug) + '">' +
         '<div class="thumb" style="background-image:url(\'' + esc(capaPainel) + '\')"></div>' +
-        '<div class="info"><b>' + esc(p.titlePt) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year) + (p.visible === false ? ' · oculto' : '') + '</span></div>' +
+        '<div class="info"><b>' + esc(p.titlePt) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year) +
+          ' · ' + (p.visible === false ? 'oculto na Home' : 'visível na Home') +
+          (statusEditorial ? ' · ' + statusEditorial : '') + '</span></div>' +
         '<div class="actions">' +
         '<button class="btn small" data-act="up">↑</button>' +
         '<button class="btn small" data-act="down">↓</button>' +
@@ -1867,6 +2140,10 @@
        (JSON do projeto, índice e página) antes de qualquer revisão. Agora o
        clone é montado aqui, entra como pendente e sobe no commit do Publicar. */
     if (action === 'duplicate') {
+      var newTitle = prompt('Título do projeto duplicado:', (p.titlePt || slug) + ' (cópia)');
+      if (!newTitle) return;
+      newTitle = String(newTitle).trim();
+      if (!newTitle) { toast('Informe um título para o projeto duplicado.', 'err'); return; }
       var newSlug = prompt('Slug do projeto duplicado:', slug + '-copia');
       if (!newSlug) return;
       newSlug = String(newSlug).trim().toLowerCase();
@@ -1878,7 +2155,7 @@
         copia.slug = newSlug;
         copia.status = 'draft';
         if (copia.hero) {
-          copia.hero.titlePt = (copia.hero.titlePt || slug) + ' (cópia)';
+          copia.hero.titlePt = newTitle;
           copia.hero.titleEn = (copia.hero.titleEn || slug) + ' (copy)';
         }
         var caminho = 'content/projects/' + newSlug + '.json';
@@ -1899,7 +2176,7 @@
         state.pendingPages['work/' + newSlug + '.html'] = { slug: newSlug, fromSlug: slug };
         marcarPendenteMudou();
         renderProjectsList();
-        toast('Duplicado como "' + newSlug + '". Sobe no próximo Publicar.', 'ok');
+        toast('Duplicado como "' + newSlug + '". As mídias continuam compartilhadas por caminho; nada foi copiado fisicamente.', 'ok');
       }).catch(function (e) { toast(e.message, 'err'); });
       return;
     }
@@ -1923,6 +2200,10 @@
         delete state.pendingPages[pathPagina];
         delete state.dirty[pathJson];
       } else {
+        /* Se o projeto foi editado antes de ser excluído, a exclusão substitui
+           a atualização. Enviar json + delete para o mesmo caminho faria o
+           Worker recusar a publicação como duplicate_path. */
+        delete state.dirty[pathJson];
         state.pendingDeletes[pathJson] = 'conteúdo do projeto ' + slug;
         state.pendingDeletes[pathPagina] = 'página do projeto ' + slug;
       }
@@ -2015,7 +2296,8 @@
         fieldRow('Autor (PT / EN)', 'opcional', inp(p + 'apt', b.authorPt, ' ' + meio) + inp(p + 'aen', b.authorEn, ' ' + meio));
     }
     if (b.type === 'image') {
-      return fieldRow('Imagem', 'Envie um arquivo de até 25MB ou cole um caminho assets/ ou URL HTTPS direta.', inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
+      return mediaCard(b.src, 'Imagem atual', { remove: p + 'remove' }) +
+        fieldRow('Substituir imagem', 'Envie um arquivo de até 25MB ou cole um caminho assets/ ou URL HTTPS direta.', inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
         fieldRow('Texto alternativo', 'descreve a imagem para quem não a vê', inp(p + 'alt', b.alt)) +
         fieldRow('Enquadramento', 'Recortada mantém 16/9; proporção livre deixa a imagem mandar na altura (peça vertical, captura de tela, GIF).',
           selectDe(p + 'fit', b.fit || 'cover', [['cover', 'Recortada em 16/9'], ['auto', 'Proporção livre']])) +
@@ -2026,9 +2308,11 @@
       var imgs = b.images || [];
       return fieldRow('Adicionar várias imagens', 'Selecione várias de uma vez. JPG, PNG, WebP, AVIF, GIF ou SVG; até 25MB por arquivo e 32MB por publicação.',
         '<input type="file" id="' + p + 'multi" multiple accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') + imgs.map(function (im, j) {
-        return fieldRow('Imagem ' + (j + 1), 'Upload, caminho assets/ ou URL HTTPS direta.',
+        return mediaCard(im.src, 'Imagem ' + (j + 1)) + fieldRow('Imagem ' + (j + 1), 'Upload, caminho assets/ ou URL HTTPS direta.',
           inp(p + 'img' + j, im.src) +
           '<input type="file" id="' + p + 'imgup' + j + '" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">' +
+          '<button class="btn small" data-bl-imgup="' + i + ':' + j + '"' + (j === 0 ? ' disabled' : '') + '>↑ subir</button>' +
+          '<button class="btn small" data-bl-imgdown="' + i + ':' + j + '"' + (j === imgs.length - 1 ? ' disabled' : '') + '>↓ descer</button>' +
           '<button class="btn small danger" data-bl-imgrm="' + i + ':' + j + '">remover</button>') +
           fieldRow('Texto alternativo ' + (j + 1), '', inp(p + 'alt' + j, im.alt));
       }).join('') + '<button class="btn small" data-bl-imgadd="' + i + '">+ adicionar imagem</button>';
@@ -2083,6 +2367,8 @@
         if (up) up.addEventListener('change', function () {
           uploadFile(up.files[0], slug, function (path) { b.src = path; save(); rerender(); });
         });
+        var removeImage = document.getElementById(p + 'remove');
+        if (removeImage) removeImage.addEventListener('click', function () { b.src = ''; save(); rerender(); });
       }
       if (b.type === 'gallery') {
         var multi = document.getElementById(p + 'multi');
@@ -2173,6 +2459,17 @@
         blocos[Number(par[0])].images.splice(Number(par[1]), 1); save(); rerender();
       });
     });
+    function moverImagem(el, delta) {
+      var attr = delta < 0 ? 'data-bl-imgup' : 'data-bl-imgdown';
+      var par = el.getAttribute(attr).split(':');
+      var arr = blocos[Number(par[0])].images;
+      var i = Number(par[1]), j = i + delta;
+      if (j < 0 || j >= arr.length) return;
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      save(); rerender();
+    }
+    q('[data-bl-imgup]').forEach(function (el) { el.addEventListener('click', function () { moverImagem(el, -1); }); });
+    q('[data-bl-imgdown]').forEach(function (el) { el.addEventListener('click', function () { moverImagem(el, 1); }); });
     var add = document.getElementById('pe_bl_add');
     if (add) add.addEventListener('click', function () {
       var novo = blocoNovo(document.getElementById('pe_bl_tipo').value);
@@ -2299,7 +2596,8 @@
     editorEl.innerHTML =
       '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
       fieldRow('URL do case', 'Use letras minúsculas, números e hífen. A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">alterar URL</button></div>') +
-      fieldRow('Status', '', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
+      fieldRow('Status', 'Estado editorial do conteúdo. Não altera sozinho a presença do card na Home.', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
+      fieldRow('Visível na Home', 'Controle independente do status. Desligado remove somente o card da listagem da Home.', switchControl('pe_visible', indexEntry.visible !== false)) +
       fieldRow('Grain neste case', 'Herdar acompanha o controle global do site.', selectDe('pe_grain',
         typeof P.grainEnabled === 'boolean' ? (P.grainEnabled ? 'on' : 'off') : 'inherit', [
           ['inherit', 'Herdar do global'], ['on', 'Ligado'], ['off', 'Desligado']
@@ -2321,9 +2619,18 @@
       fieldRow('Papel (EN)', 'Enter força uma nova linha.', ta('pe_roleen', P.hero.roleEn)) +
       fieldRow('Escopo (PT)', 'Enter força uma nova linha.', ta('pe_scopept', P.hero.scopePt)) +
       fieldRow('Escopo (EN)', 'Enter força uma nova linha.', ta('pe_scopeen', P.hero.scopeEn)) +
-      fieldRow('Capa', 'Envie um arquivo, cole um caminho assets/ ou uma URL HTTPS direta.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
-      fieldRow('Capa para celular', 'Opcional. Aceita upload, caminho assets/ ou URL HTTPS; vazia usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
+      mediaCard(P.cover, 'Capa desktop atual') +
+      fieldRow('Substituir capa', 'Envie um arquivo, cole um caminho assets/ ou uma URL HTTPS direta.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
+      mediaCard(P.coverMobile || indexEntry.coverMobile, 'Capa mobile atual', { remove: 'pe_covermobile_remove' }) +
+      fieldRow('Substituir capa mobile', 'Opcional. Vazia usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
       fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
+      '</div></details>' +
+      '<details class="group"' + projectSection('seo') + '><summary>SEO do projeto</summary><div class="group-body">' +
+      fieldRow('Título para buscadores', 'Opcional; vazio usa o título do projeto.', inp('pe_seotitle', (P.seo && P.seo.title) || '')) +
+      fieldRow('Descrição para buscadores', 'Opcional; vazia usa o subtítulo.', ta('pe_seodesc', (P.seo && P.seo.description) || '')) +
+      fieldRow('Título da prévia do link', 'Opcional.', inp('pe_seoogtitle', (P.seo && P.seo.ogTitle) || '')) +
+      fieldRow('Descrição da prévia do link', 'Opcional.', ta('pe_seoogdesc', (P.seo && P.seo.ogDescription) || '')) +
+      fieldRow('Imagem da prévia do link', 'Vazia usa a capa e depois a imagem global.', inp('pe_seoogimage', (P.seo && P.seo.ogImage) || '') + '<input type="file" id="pe_seoogimage_upload" accept="image/*">') +
       '</div></details>' +
       '<details class="group"' + projectSection('cover') + '><summary>Espaçamento da capa</summary><div class="group-body">' +
       deviceTabsHtml('cover-spacing') +
@@ -2379,27 +2686,41 @@
     bindText('pe_eyebrowpt', function (v) { P.hero.eyebrowPt = v; save(); });
     bindText('pe_eyebrowen', function (v) { P.hero.eyebrowEn = v; save(); });
     bindSwitch('pe_showeyebrow', function (v) { if (v) delete P.hero.showEyebrow; else P.hero.showEyebrow = false; save(); });
-    bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); saveIndex(); });
+    bindText('pe_titlept', function (v) { P.hero.titlePt = v; indexEntry.titlePt = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_titleen', function (v) { P.hero.titleEn = v; indexEntry.titleEn = v; save(); saveIndex(); });
-    bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; indexEntry.subtitlePt = v; save(); saveIndex(); });
+    bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; indexEntry.subtitlePt = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_suben', function (v) { P.hero.subtitleEn = v; indexEntry.subtitleEn = v; save(); saveIndex(); });
     bindText('pe_category', function (v) { P.category = v; indexEntry.category = v; save(); saveIndex(); });
     bindText('pe_tagspt', function (v) { indexEntry.tagsPt = tagsFrom(v); saveIndex(); });
     bindText('pe_tagsen', function (v) { indexEntry.tagsEn = tagsFrom(v); saveIndex(); });
+    bindSwitch('pe_visible', function (v) { indexEntry.visible = v; saveIndex(); });
     bindSwitch('pe_featured', function (v) { indexEntry.featured = v; saveIndex(); });
     bindText('pe_rolept', function (v) { P.hero.rolePt = v; save(); });
     bindText('pe_roleen', function (v) { P.hero.roleEn = v; save(); });
     bindText('pe_scopept', function (v) { P.hero.scopePt = v; save(); });
     bindText('pe_scopeen', function (v) { P.hero.scopeEn = v; save(); });
     bindSwitch('pe_coverlight', function (v) { indexEntry.coverLight = v; saveIndex(); });
-    bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); saveIndex(); });
+    bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_covermobile', function (v) { P.coverMobile = v; indexEntry.coverMobile = v; save(); saveIndex(); });
+    var removeMobile = document.getElementById('pe_covermobile_remove');
+    if (removeMobile) removeMobile.addEventListener('click', function () {
+      delete P.coverMobile; delete indexEntry.coverMobile; save(); saveIndex(); renderProjectEditor();
+    });
+    function setProjectSeo(key, value) {
+      if (!P.seo) P.seo = {};
+      if (value.trim()) P.seo[key] = value.trim(); else delete P.seo[key];
+      if (!Object.keys(P.seo).length) delete P.seo;
+      save();
+      enfileirarMetadataProjeto(slug);
+    }
+    [['pe_seotitle','title'],['pe_seodesc','description'],['pe_seoogtitle','ogTitle'],['pe_seoogdesc','ogDescription'],['pe_seoogimage','ogImage']].forEach(function (m) {
+      bindText(m[0], function (v) { setProjectSeo(m[1], v); });
+    });
     document.getElementById('pe_cardsize').addEventListener('change', function (e) { indexEntry.cardSize = e.target.value; saveIndex(); });
     document.getElementById('pe_status').addEventListener('change', function (e) {
       P.status = e.target.value;
-      /* `visible` continua sendo a autoridade da Home. Tornar rascunho apenas
-         força a opção segura; publicar não mostra sozinho. */
-      if (P.status === 'draft') { indexEntry.visible = false; saveIndex(); }
+      /* `visible` é uma decisão separada e continua sendo a única autoridade
+         da Home. Nem draft oculta, nem published mostra automaticamente. */
       save();
     });
     document.getElementById('pe_grain').addEventListener('change', function (e) {
@@ -2412,13 +2733,19 @@
     var coverUpload = document.getElementById('pe_cover_upload');
     if (coverUpload) coverUpload.addEventListener('change', function () { uploadFile(coverUpload.files[0], slug, function (path) {
       P.cover = path; indexEntry.cover = path; save(); saveIndex(); renderProjectEditor();
+      enfileirarMetadataProjeto(slug);
     }); });
     var coverMobileUpload = document.getElementById('pe_covermobile_upload');
     if (coverMobileUpload) coverMobileUpload.addEventListener('change', function () { uploadFile(coverMobileUpload.files[0], slug, function (path) {
       P.coverMobile = path; indexEntry.coverMobile = path; save(); saveIndex(); renderProjectEditor();
     }); });
+    var seoUpload = document.getElementById('pe_seoogimage_upload');
+    if (seoUpload) seoUpload.addEventListener('change', function () { uploadFile(seoUpload.files[0], slug, function (path) {
+      setProjectSeo('ogImage', path); renderProjectEditor();
+    }); });
 
     wireTieredFields();
+    wireMediaErrors(editorEl);
     wireDeviceTabs(editorEl, renderProjectEditor);
     editorEl.querySelectorAll('details[data-sec]').forEach(function (d) {
       d.addEventListener('toggle', function () { projectSectionOpen[d.getAttribute('data-sec')] = d.open; });
@@ -2597,6 +2924,7 @@
     renderPublishPanel();
     atualizarSeloPrevia();
     scheduleDraftSave();
+    schedulePreview();
   }
 
   /* Existe pendência de qualquer tipo, não só JSON alterado? */
@@ -2604,6 +2932,7 @@
     return Object.keys(state.dirty).length > 0 ||
       Object.keys(state.pendingUploads).length > 0 ||
       Object.keys(state.pendingPages).length > 0 ||
+      Object.keys(state.pendingMetadata).length > 0 ||
       Object.keys(state.pendingDeletes).length > 0;
   }
 
@@ -2618,6 +2947,8 @@
     document.getElementById('btnNewProject').addEventListener('click', function () {
       var titlePt = prompt('Título do novo projeto (português):');
       if (!titlePt) return;
+      titlePt = String(titlePt).trim();
+      if (!titlePt) { toast('Informe um título para o novo projeto.', 'err'); return; }
       var sugestao = titlePt.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
       var slug = prompt('Slug (ex: campanha-2027):', sugestao);
@@ -2658,28 +2989,15 @@
   function renderPublishPanel() {
     var el = document.getElementById('publishSummary');
     var btn = document.getElementById('btnPublish');
+    var branchHtml = branchCalloutHtml(state.branch);
     if (!haPendencias()) {
-      el.innerHTML = 'Nenhuma alteração pendente.';
+      el.innerHTML = branchHtml + '<p>Nenhuma alteração pendente.</p>';
       btn.disabled = true;
       return;
     }
-    var linhas = [];
-    Object.keys(state.dirty).forEach(function (p) {
-      linhas.push({ path: p, rotulo: state.published[p] === null ? 'novo' : 'alterado', classe: 'custom' });
-    });
-    Object.keys(state.pendingPages).forEach(function (p) {
-      linhas.push({ path: p, rotulo: 'página nova', classe: 'custom' });
-    });
-    Object.keys(state.pendingUploads).forEach(function (p) {
-      var kb = Math.round((state.pendingUploads[p].size || 0) / 1024);
-      linhas.push({ path: p, rotulo: 'mídia · ' + kb + ' KB', classe: 'custom' });
-    });
-    Object.keys(state.pendingDeletes).forEach(function (p) {
-      linhas.push({ path: p, rotulo: 'remover', classe: 'danger' });
-    });
-    el.innerHTML = '<ul class="summary-list">' + linhas.map(function (l) {
-      return '<li><span>' + esc(l.path) + '</span><span class="badge ' + l.classe + '">' + esc(l.rotulo) + '</span></li>';
-    }).join('') + '</ul>' +
+    var itens = operacoesPendentes();
+    var contagens = contagensPendentes(itens);
+    el.innerHTML = branchHtml + contagensHtml(contagens) + listaOperacoesHtml(itens) +
       '<p class="hint" style="margin-top:.6rem">Tudo isso entra em um único commit.</p>';
     btn.disabled = false;
   }
@@ -2705,6 +3023,10 @@
        reforço aqui a pessoa ficaria travada num "Publicar" que nunca
        funciona, sem conseguir corrigir pela interface. O caminho do arquivo é
        sempre a fonte de verdade: é ele que decide onde o conteúdo é gravado. */
+    /* Começa a cadeia ANTES de montar o payload. Assim, qualquer erro
+       síncrono nesta preparação também chega ao catch/finally abaixo e nunca
+       deixa a interface presa em "Publicando…". */
+    Promise.resolve().then(function () {
     var ops = Object.keys(state.dirty).map(function (p) {
       var dado = state.dirty[p].data;
       /* "index" bate no mesmo regex de slug ([a-z0-9-]+) — content/projects/
@@ -2718,12 +3040,15 @@
     Object.keys(state.pendingPages).forEach(function (p) {
       ops.push({ type: 'page', slug: state.pendingPages[p].slug, fromSlug: state.pendingPages[p].fromSlug });
     });
+    Object.keys(state.pendingMetadata).forEach(function (p) {
+      if (!state.pendingPages[p] && !state.pendingDeletes[p]) ops.push({ type: 'metadata', path: p, slug: state.pendingMetadata[p].slug });
+    });
     Object.keys(state.pendingDeletes).forEach(function (p) {
       ops.push({ type: 'delete', path: p });
     });
 
     var caminhosMidia = Object.keys(state.pendingUploads);
-    Promise.all(caminhosMidia.map(function (p) {
+    return Promise.all(caminhosMidia.map(function (p) {
       return lerMidia(p).then(function (blob) {
         if (!blob) throw new Error('A mídia pendente ' + p + ' não está mais neste navegador.');
         return midiaParaBase64(blob).then(function (b64) {
@@ -2735,12 +3060,23 @@
         method: 'POST',
         body: { message: mensagemCustom || null, ops: ops.concat(opsMidia) }
       });
+    });
     }).then(function (res) {
       /* Chegou aqui: o Worker moveu a branch. Não existe publicação parcial —
          ou o commit único foi criado, ou caímos no catch. */
       var curto = String(res.commit || '').slice(0, 7);
+      var branchUsada = res.branch || state.branch;
+      var qtdPublicada = Number(res.fileCount) || (res.paths || []).length;
+      var linkCommit = res.commitUrl
+        ? '<a class="btn small" href="' + esc(res.commitUrl) + '" target="_blank" rel="noopener">Ver commit no GitHub</a>'
+        : '';
       document.getElementById('publishResult').innerHTML =
-        '<div class="badge default">Publicado em um commit · ' + esc(curto) + '</div>' +
+        '<div class="publish-success"><h3>Publicado com sucesso</h3><dl>' +
+        '<dt>Branch</dt><dd><code>' + esc(branchUsada) + '</code></dd>' +
+        '<dt>Commit</dt><dd><code>' + esc(curto) + '</code></dd>' +
+        '<dt>Mensagem</dt><dd>' + esc(res.message || mensagemCustom || 'Publicação do CMS') + '</dd>' +
+        '<dt>Arquivos</dt><dd>' + qtdPublicada + (qtdPublicada === 1 ? ' arquivo atualizado' : ' arquivos atualizados') + '</dd>' +
+        '</dl>' + linkCommit + '</div>' +
         '<ul class="summary-list" style="margin-top:.6rem">' + (res.paths || []).map(function (p) {
           return '<li><span>' + esc(p) + '</span><span>ok</span></li>';
         }).join('') + '</ul>';
@@ -2760,9 +3096,13 @@
 
       state.dirty = {};
       state.pendingPages = {};
+      state.pendingMetadata = {};
       state.pendingDeletes = {};
       return limparTodaMidiaPendente().then(function () {
-        localStorage.setItem('cms_last_publish', JSON.stringify({ at: res.publishedAt, commit: res.commit, files: (res.paths || []).length }));
+        localStorage.setItem('cms_last_publish', JSON.stringify({
+          at: res.publishedAt, commit: res.commit, files: qtdPublicada,
+          branch: branchUsada, message: res.message || mensagemCustom || '', commitUrl: res.commitUrl || ''
+        }));
         renderLastPublish();
         clearDraft();                /* só aqui o rascunho morre */
         setDraftState('concluido');
@@ -2774,6 +3114,7 @@
          desfeito. O rascunho e as mídias pendentes ficam intactos para a
          pessoa tentar de novo sem perder trabalho. */
       var msg = e && e.message ? e.message : 'Falha ao publicar.';
+      if (window.console && console.error) console.error('[CMS] Falha ao preparar ou publicar:', e);
       var erro = e && e.body && e.body.error;
       var conflito = erro === 'conflict';
       var camposDesconhecidos = erro === 'unknown_fields';
@@ -2808,7 +3149,11 @@
     var el = document.getElementById('lastPublishInfo');
     if (!raw) { el.textContent = 'Nenhuma publicação registrada nesta máquina ainda.'; return; }
     var info = JSON.parse(raw);
-    el.textContent = new Date(info.at).toLocaleString('pt-BR') + ' · ' + info.files + ' arquivo(s)';
+    el.innerHTML = '<p style="margin:0">' + esc(new Date(info.at).toLocaleString('pt-BR')) +
+      ' · ' + esc(info.files) + ' arquivo(s)' + (info.branch ? ' · <code>' + esc(info.branch) + '</code>' : '') + '</p>' +
+      (info.commit ? '<p class="hint" style="margin:.35rem 0 0">Commit <code>' + esc(String(info.commit).slice(0, 7)) + '</code>' +
+        (info.message ? ' · ' + esc(info.message) : '') + '</p>' : '') +
+      (info.commitUrl ? '<a href="' + esc(info.commitUrl) + '" target="_blank" rel="noopener">Ver commit no GitHub</a>' : '');
   }
 
   /* ---------- navegação entre painéis ---------- */
@@ -2818,7 +3163,7 @@
   }
 
   function montarPaineis() {
-    renderOverview(); renderAppearance(); renderLayout(); renderHeaderFooter();
+    renderOverview(); renderAppearance(); renderLayout(); renderHeaderFooter(); renderBranding(); renderSeo();
     renderHome(); renderProjects(); renderLastPublish(); renderPublishPanel();
     updateDirtyIndicators(); atualizarSeloPrevia();
   }
@@ -2833,11 +3178,12 @@
        (mensagem) ou cancela (null) — nada é publicado antes disso. */
     document.getElementById('btnPublish').addEventListener('click', function () {
       if (!haPendencias()) return;
-      revisaoResolver = null;
-      abrirRevisao().then(function () {
-        return new Promise(function (resolve) { revisaoResolver = resolve; });
-      }).then(function (resultado) {
+      var escolha = new Promise(function (resolve) { revisaoResolver = resolve; });
+      abrirRevisao().then(function () { return escolha; }).then(function (resultado) {
         if (resultado.confirmado) doPublish(resultado.mensagem || null);
+      }).catch(function (e) {
+        fecharRevisao(false);
+        toast(e && e.message ? e.message : 'Não foi possível montar a revisão.', 'err');
       });
     });
     document.getElementById('btnReviewCancel').addEventListener('click', function () { fecharRevisao(false); });

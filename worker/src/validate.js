@@ -307,7 +307,7 @@ function erroNosBlocos(blocks) {
       }
     }
     if (b.type === 'image') {
-      if (!caminhoDeMidiaValido(b.src, EXT_DE_IMAGEM)) return onde + ': caminho de imagem inválido.';
+      if (b.src && !caminhoDeMidiaValido(b.src, EXT_DE_IMAGEM)) return onde + ': caminho de imagem inválido.';
       if (b.fit != null && AJUSTES_DE_IMAGEM.indexOf(b.fit) === -1) return onde + ': fit precisa ser cover ou auto.';
       if (b.width != null && LARGURAS_DE_BLOCO.indexOf(b.width) === -1) return onde + ': width precisa ser content ou full.';
     }

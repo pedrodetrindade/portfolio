@@ -204,6 +204,78 @@
     window.__CMS_PROJECTS_INDEX__ = xhrJSON('content/projects/index.json?v=1') || {};
   }
 
+  function setMeta(selector, attr, value) {
+    var el = document.head.querySelector(selector);
+    if (!el) { el = document.createElement(selector.indexOf('link') === 0 ? 'link' : 'meta'); document.head.appendChild(el); }
+    if (selector.indexOf('property=') !== -1) el.setAttribute('property', selector.match(/property="([^"]+)/)[1]);
+    else if (selector.indexOf('name=') !== -1) el.setAttribute('name', selector.match(/name="([^"]+)/)[1]);
+    else if (selector.indexOf('rel=') !== -1) el.setAttribute('rel', selector.match(/rel="([^"]+)/)[1]);
+    el.setAttribute(attr, String(value || ''));
+  }
+  function absoluteUrl(path, canonicalBase) {
+    if (!path) return '';
+    if (/^https?:\/\//i.test(path)) return path;
+    return String(canonicalBase || 'https://pedrodetrindade.com').replace(/\/$/, '') + '/' + String(path).replace(/^\.\.\//, '').replace(/^\//, '');
+  }
+  function safeBrandUrl(path) {
+    if (typeof path !== 'string' || !path || /[<>"'`\\]/.test(path)) return '';
+    if (/^https:\/\//i.test(path)) {
+      try {
+        var url = new URL(path);
+        return (!url.username && !url.password) ? path : '';
+      } catch (e) { return ''; }
+    }
+    return /^assets\/[a-zA-Z0-9._\/-]+$/.test(path) && path.indexOf('..') === -1 ? base + path : '';
+  }
+  function setBrandLink(rel, path) {
+    var href = safeBrandUrl(path);
+    if (!href) return;
+    var links = Array.prototype.slice.call(document.head.querySelectorAll('link[rel~="' + rel + '"]'));
+    var link = links.shift();
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = rel;
+      document.head.appendChild(link);
+    }
+    link.removeAttribute('sizes');
+    link.removeAttribute('type');
+    link.href = href;
+    links.forEach(function (duplicada) { duplicada.remove(); });
+  }
+  function applyMetadata(g, project) {
+    var seo = g.seo || {}, brand = g.brand || {};
+    var siteName = brand.name || seo.siteName || 'Pedro de Trindade';
+    var pseo = project && project.seo || {}, hero = project && project.hero || {};
+    var title = project ? (pseo.title || ((hero.titlePt || '') + (seo.titleSuffix || (' — ' + siteName)))) : (seo.title || seo.siteName || siteName);
+    var description = project ? (pseo.description || hero.subtitlePt || seo.description || seo.defaultDescriptionPt || '') : (seo.description || seo.defaultDescriptionPt || '');
+    var ogTitle = project ? (pseo.ogTitle || title) : (seo.ogTitle || title);
+    var ogDescription = project ? (pseo.ogDescription || description) : (seo.ogDescription || description);
+    var share = brand.shareImage || seo.ogImage || 'assets/og-image.png';
+    var image = project ? (pseo.ogImage || project.cover || share) : share;
+    var canonicalBase = seo.canonicalBase || 'https://pedrodetrindade.com';
+    var canonical = canonicalBase.replace(/\/$/, '') + (project ? '/work/' + encodeURIComponent(project.slug || '') + '.html' : '/');
+    document.title = title;
+    setMeta('meta[name="description"]', 'content', description);
+    setMeta('meta[property="og:title"]', 'content', ogTitle);
+    setMeta('meta[property="og:description"]', 'content', ogDescription);
+    setMeta('meta[property="og:image"]', 'content', absoluteUrl(image, canonicalBase));
+    setMeta('meta[property="og:type"]', 'content', project ? 'article' : 'website');
+    setMeta('meta[property="og:url"]', 'content', canonical);
+    setMeta('meta[name="twitter:title"]', 'content', ogTitle);
+    setMeta('meta[name="twitter:description"]', 'content', ogDescription);
+    setMeta('meta[name="twitter:image"]', 'content', absoluteUrl(image, canonicalBase));
+    setMeta('link[rel="canonical"]', 'href', canonical);
+    if (seo.themeColor) setMeta('meta[name="theme-color"]', 'content', seo.themeColor);
+    setBrandLink('icon', brand.favicon);
+    setBrandLink('apple-touch-icon', brand.appleTouchIcon);
+  }
+  /* Este script roda no início do <head>, antes das tags estáticas serem
+     parseadas. Aplicar agora criaria uma segunda cópia de cada meta tag.
+     Esperar o DOM terminar permite atualizar as tags existentes sem duplicá-las. */
+  document.addEventListener('DOMContentLoaded', function () {
+    applyMetadata(GLOBAL, isCase ? window.__CMS_PROJECT__ : null);
+  }, { once: true });
+
   /* Aplica as sobreposições de espaçamento por seção da Home (hierarquia:
      global -> seção). Só faz sentido na Home; nas páginas de projeto não há
      seções desse tipo ainda. */
@@ -360,6 +432,7 @@
         }
         if (d.project && typeof d.project === 'object') window.__CMS_PROJECT__ = d.project;
         if (d.projectsIndex && typeof d.projectsIndex === 'object') window.__CMS_PROJECTS_INDEX__ = d.projectsIndex;
+        if (d.global || d.project) applyMetadata(window.__CMS_GLOBAL__, isCase ? window.__CMS_PROJECT__ : null);
 
         var R = window.__CMS_RENDER__;
         var mexeuNoTexto = false;
