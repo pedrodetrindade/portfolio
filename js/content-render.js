@@ -459,7 +459,7 @@
     if (b.type === 'gallery') {
       var imgs = Array.isArray(b.images) ? b.images : [];
       return '<div class="case-gallery" style="' + css + '">' + imgs.map(function (img) {
-        return '<div class="thumb reveal"><div class="scene"><img src="' + esc(resolveAssetUrl(img.src)) +
+        return '<div class="thumb reveal" data-case-media><div class="scene"><img src="' + esc(resolveAssetUrl(img.src)) +
           '" alt="' + esc(img.alt || '') + '" onerror="this.remove()"></div></div>';
       }).join('') + '</div>';
     }
@@ -470,7 +470,7 @@
       var cap = (b.captionPt || b.captionEn)
         ? '<figcaption data-pt="' + esc(b.captionPt || '') + '" data-en="' + esc(b.captionEn || '') + '">' + esc(b.captionPt || '') + '</figcaption>'
         : '';
-      return '<figure class="' + cls + '" style="' + css + '">' +
+      return '<figure class="' + cls + '" data-case-media style="' + css + '">' +
         '<div class="scene"><img src="' + esc(resolveAssetUrl(b.src)) + '" alt="' + esc(b.alt || '') +
         '" onerror="this.remove()"></div>' + cap + '</figure>';
     }
@@ -495,7 +495,7 @@
         : '<div class="scene"><video src="' + esc(resolveAssetUrl(b.src)) + '"' +
           (b.poster ? ' poster="' + esc(resolveAssetUrl(b.poster)) + '"' : '') +
           ' controls playsinline preload="metadata"></video></div>';
-      return '<figure class="case-video reveal" style="' + css + '">' + miolo + capV + '</figure>';
+      return '<figure class="case-video reveal" data-case-media style="' + css + '">' + miolo + capV + '</figure>';
     }
     return '';
   }
@@ -531,13 +531,13 @@
             '<p class="reveal" data-pt="' + esc(b.textPt) + '" data-en="' + esc(b.textEn) + '">' + esc(b.textPt) + '</p>' +
             '</div>';
         }).join('');
-        return '<section class="case-block-group"><div class="case-body">' + corpo + '</div></section>';
+        return '<section class="case-block-group case-block-group--text" data-case-block="text"><div class="case-body">' + corpo + '</div></section>';
       }
       var b = g[0];
       var gap = b.type === 'gallery' ? 18 : null;
       var css = blockStyleCss(b.spacing, 18, 0, gap);
       if (b.type === 'video' && b.mode === 'vimeo' && b.vimeo && b.vimeo.videoId) vimeos.push(b.vimeo);
-      return '<section class="case-block-group">' + htmlDoBloco(b, css) + '</section>';
+      return '<section class="case-block-group case-block-group--' + esc(b.type) + '" data-case-block="' + esc(b.type) + '">' + htmlDoBloco(b, css) + '</section>';
     }).join('');
 
     host.querySelectorAll('.case-video .scene[data-vimeo]').forEach(function (slot, i) {

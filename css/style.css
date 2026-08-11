@@ -1850,6 +1850,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .case-cover{aspect-ratio:16/9;border-radius:var(--radius-image,16px);overflow:hidden;position:relative;
   border:1px solid var(--line-strong);background:var(--ink-2);
   margin-top:var(--block-mt-desktop,18px);margin-bottom:var(--block-mb-desktop,0px)}
+.case-cover-group{padding-block:0;min-height:0}
 .case-cover .scene{filter:none;transform:none}
 
 /* .case-body não usa mais gap: precisava de um valor só para todos os
@@ -1974,6 +1975,50 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 @media(max-width:639px){
   .case-nav{grid-template-columns:1fr}
   .case-nav a{min-height:92px}
+}
+
+/* ===== MOTION EDITORIAL DOS CASES =====
+   Ã‰ uma especializaÃ§Ã£o do reveal compartilhado, nÃ£o um segundo sistema.
+   A classe .js continua sendo a trava de progressive enhancement e o mesmo
+   laÃ§o medirAlvos/pintarEntradas revela tudo uma Ãºnica vez. */
+.js .case-hero .eyebrow.reveal{--rv-y:8px;--rv-dur:var(--dur-fast)}
+.js .case-hero h1.reveal[data-reveal="words"] .rv-w{
+  --rv-w-dur:700ms;filter:none;transform:translateY(12px)}
+.js .case-hero .sub.reveal[data-reveal="soft"]{
+  --rv-y:12px;--rv-dur:760ms;filter:none}
+.js .case-meta.reveal{--rv-y:10px;--rv-dur:var(--dur-default)}
+.js .case-cover.reveal{--rv-y:22px;--rv-dur:var(--dur-slow)}
+
+/* A moldura faz o reveal; a mÃ­dia apenas assenta 1,5%. O tamanho do container
+   nunca muda, portanto nÃ£o hÃ¡ CLS nem perda de nitidez no estado final. */
+.js .case-cover.reveal .scene img,
+.js .case-figure.reveal .scene img,
+.js .case-gallery .thumb.reveal .scene img{
+  transform:scale(1.015);
+  transition:transform var(--dur-slow) var(--ease-soft)}
+.js .case-cover.reveal.in .scene img,
+.js .case-figure.reveal.in .scene img,
+.js .case-gallery .thumb.reveal.in .scene img{transform:none}
+
+.js .case-section .k.reveal{--rv-y:8px;--rv-dur:var(--dur-fast)}
+.js .case-section p.reveal{--rv-y:12px;--rv-dur:760ms}
+.js .case-figure.reveal,.js .case-gallery .thumb.reveal,
+.js .case-video.reveal{--rv-y:22px;--rv-dur:900ms}
+.js .case-quote.reveal{--rv-y:14px;--rv-dur:800ms}
+.js .case-nav.reveal{--rv-y:12px;--rv-dur:760ms}
+
+@media(max-width:639px){
+  .js .case-cover.reveal,.js .case-figure.reveal,
+  .js .case-gallery .thumb.reveal,.js .case-video.reveal{--rv-y:12px;--rv-dur:760ms}
+  .js .case-section p.reveal,.js .case-quote.reveal,
+  .js .case-nav.reveal{--rv-y:9px;--rv-dur:var(--dur-default)}
+  .js .case-hero h1.reveal[data-reveal="words"] .rv-w{transform:translateY(8px)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .js .case-cover.reveal .scene img,
+  .js .case-figure.reveal .scene img,
+  .js .case-gallery .thumb.reveal .scene img{transform:none!important;transition:none!important}
 }
 
 /* ===== ENTRADAS POR BLOCO (coreografia via .in do observador) =====

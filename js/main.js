@@ -904,12 +904,26 @@
      espera mais os 1248ms da própria palavra. */
   const PALAVRA_PASSO = 88, PALAVRA_TETO = 14;
   const aplicarAtrasoPalavras = el => {
+    /* O tÃ­tulo do case precisa liberar a leitura quase imediatamente. MantÃ©m
+       a entrada por palavras que jÃ¡ existe, mas com uma cauda curta e limitada;
+       os destaques da Home preservam a coreografia original. */
+    const tituloDeCase = !!el.closest('.case-hero');
+    const passo = tituloDeCase ? 36 : PALAVRA_PASSO;
+    const teto = tituloDeCase ? 4 : PALAVRA_TETO;
     el.querySelectorAll('.rv-w').forEach((w, i) => {
-      w.style.transitionDelay = Math.min(i, PALAVRA_TETO) * PALAVRA_PASSO + 'ms';
+      w.style.transitionDelay = Math.min(i, teto) * passo + 'ms';
     });
   };
 
   const entrar = el => {
+    if (el.matches('.case-gallery .thumb')) {
+      const indice = [...el.parentElement.children].indexOf(el);
+      /* 0/50/100ms e depois estabiliza: galerias longas nÃ£o criam uma cauda
+         crescente que atrasa imagens no mesmo campo visual. */
+      el.style.setProperty('--d', Math.min(indice, 2) * 50 + 'ms');
+      el.classList.add('in');
+      return;
+    }
     if (el.dataset.reveal === 'words') {
       aplicarAtrasoPalavras(el);
       el.classList.add('in');
