@@ -25,8 +25,11 @@
 (function () {
   'use strict';
 
-  var isCase = location.pathname.indexOf('/work/') !== -1;
-  var base = isCase ? '../' : '';
+  var isWorkPath = location.pathname.indexOf('/work/') !== -1;
+  var workLeaf = isWorkPath ? location.pathname.split('/').pop() : '';
+  var isWorkIndex = isWorkPath && (!workLeaf || workLeaf === 'index.html');
+  var isCase = isWorkPath && !isWorkIndex;
+  var base = isWorkPath ? '../' : '';
 
   function xhrJSON(path) {
     try {
@@ -53,7 +56,7 @@
   }
 
   /* ---------- FASE A: tokens visuais ---------- */
-  var GLOBAL = xhrJSON('content/global.json?v=1') || {};
+  var GLOBAL = xhrJSON('content/global.json?v=5') || {};
   window.__CMS_GLOBAL__ = GLOBAL;
 
   function applyGlobalTokens(g) {
@@ -178,10 +181,9 @@
     if (typeof m.durationHover === 'number') root.setProperty('--dur-hover', clampNum(m.durationHover, 0, 3000) + 'ms');
     if (typeof m.durationMicro === 'number') root.setProperty('--dur-micro', clampNum(m.durationMicro, 0, 3000) + 'ms');
 
-    /* O grain vivo usa uma textura pequena que se move apenas por transform.
-       O CMS controla aqui a intensidade global; cada seção decide depois se
-       herda, liga ou desliga o efeito. Campos ausentes mantêm o padrão visual
-       e preservam compatibilidade com arquivos antigos. */
+    /* O ruído é uma textura monocromática estática. O CMS controla ativação
+       global, intensidade e escala; capa e rodapé podem desligá-lo sem mudar
+       a configuração do restante. Campos ausentes mantêm compatibilidade. */
     var grain = g.effects && g.effects.grain ? g.effects.grain : {};
     var grainOpacity = clampNum(grain.opacity, 0, 12);
     var grainSize = clampNum(grain.size, 100, 360);
@@ -197,11 +199,13 @@
   /* O estado de disponibilidade mora na Home, mas o header é compartilhado
      com os cases. Carregar home.json também em /work/ elimina a segunda fonte
      da verdade que deixava o status diferente entre páginas. */
-  window.__CMS_HOME__ = xhrJSON('content/home.json?v=1') || {};
+  window.__CMS_HOME__ = xhrJSON('content/home.json?v=4') || {};
+  if (isWorkPath) {
+    window.__CMS_PROJECTS_INDEX__ = xhrJSON('content/projects/index.json?v=2') || {};
+  }
   if (isCase) {
     var slug = location.pathname.split('/').pop().replace('.html', '');
-    window.__CMS_PROJECT__ = xhrJSON('content/projects/' + slug + '.json?v=1') || {};
-    window.__CMS_PROJECTS_INDEX__ = xhrJSON('content/projects/index.json?v=1') || {};
+    window.__CMS_PROJECT__ = xhrJSON('content/projects/' + slug + '.json?v=2') || {};
   }
 
   function setMeta(selector, attr, value) {
@@ -269,11 +273,18 @@
     setBrandLink('icon', brand.favicon);
     setBrandLink('apple-touch-icon', brand.appleTouchIcon);
   }
+  function applyWorkIndexBranding(g) {
+    var seo = g.seo || {}, brand = g.brand || {};
+    if (seo.themeColor) setMeta('meta[name="theme-color"]', 'content', seo.themeColor);
+    setBrandLink('icon', brand.favicon);
+    setBrandLink('apple-touch-icon', brand.appleTouchIcon);
+  }
   /* Este script roda no início do <head>, antes das tags estáticas serem
      parseadas. Aplicar agora criaria uma segunda cópia de cada meta tag.
      Esperar o DOM terminar permite atualizar as tags existentes sem duplicá-las. */
   document.addEventListener('DOMContentLoaded', function () {
-    applyMetadata(GLOBAL, isCase ? window.__CMS_PROJECT__ : null);
+    if (isWorkIndex) applyWorkIndexBranding(GLOBAL);
+    else applyMetadata(GLOBAL, isCase ? window.__CMS_PROJECT__ : null);
   }, { once: true });
 
   /* Aplica as sobreposições de espaçamento por seção da Home (hierarquia:
@@ -432,18 +443,23 @@
         }
         if (d.project && typeof d.project === 'object') window.__CMS_PROJECT__ = d.project;
         if (d.projectsIndex && typeof d.projectsIndex === 'object') window.__CMS_PROJECTS_INDEX__ = d.projectsIndex;
-        if (d.global || d.project) applyMetadata(window.__CMS_GLOBAL__, isCase ? window.__CMS_PROJECT__ : null);
+        if (d.global || d.project) {
+          if (isWorkIndex) applyWorkIndexBranding(window.__CMS_GLOBAL__);
+          else applyMetadata(window.__CMS_GLOBAL__, isCase ? window.__CMS_PROJECT__ : null);
+        }
 
         var R = window.__CMS_RENDER__;
         var mexeuNoTexto = false;
         if (R) {
           try {
+            if (d.global && typeof d.global === 'object' && R.shared) { R.shared(); mexeuNoTexto = true; }
             if (d.home && typeof d.home === 'object') { R.home(d.home, d.projectsIndex || null); mexeuNoTexto = true; }
             if (d.project && typeof d.project === 'object') { R.project(d.project, d.projectsIndex || null); mexeuNoTexto = true; }
             /* índice sozinho (reordenar, ocultar, renomear projeto) também
                reconstrói a grade da home */
             if (!d.home && d.projectsIndex && typeof d.projectsIndex === 'object') {
               R.home(window.__CMS_HOME__, d.projectsIndex); mexeuNoTexto = true;
+              if (R.work) R.work(d.projectsIndex);
             }
           } catch (e) { /* HTML já renderizado continua valendo */ }
         }

@@ -83,8 +83,7 @@
         "desktop": 80,
         "tablet": null,
         "mobile": null
-      },
-      "grainEnabled": false
+      }
     },
     "contact": {
       "visible": true,

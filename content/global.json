@@ -150,11 +150,27 @@
     ]
   },
   "footer": {
+    "kickerPt": "Contato",
+    "kickerEn": "Contact",
+    "headlinePt": "Projetos, colaborações e novas conversas.",
+    "headlineEn": "Projects, collaborations and new conversations.",
+    "supportPt": "Se você tem uma ideia, uma marca ou um desafio que pede direção criativa, vamos conversar.",
+    "supportEn": "If you have an idea, a brand or a challenge that needs creative direction, let's talk.",
     "copyrightPt": "© {year} Pedro de Trindade. Pensado, dirigido e desenvolvido por mim. Movido a playlists e só mais um ajustezinho.",
     "copyrightEn": "© {year} Pedro de Trindade. Designed, directed and built by me. Powered by playlists and one last little adjustment.",
     "disclaimerPt": "",
     "disclaimerEn": "",
-    "marqueeText": "Pedro de Trindade."
+    "marqueeText": "Pedro de Trindade.",
+    "emailOffset": 12,
+    "legalOffset": -12,
+    "grainEnabled": false,
+    "background": {
+      "type": "video",
+      "color": "#151111",
+      "video": "https://vimeo.com/1216667576",
+      "poster": "",
+      "overlayOpacity": 62
+    }
   },
   "social": {
     "linkedin": "https://www.linkedin.com/in/pedrodetrindade",

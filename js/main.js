@@ -688,6 +688,23 @@
 
   const menu = document.getElementById('menu');
   const contactPanel = document.getElementById('contact-panel');
+  /* Âncoras conhecidas continuam com a cadência longa que já faz parte do
+     site. O motor adaptativo usa este destino para não confundir uma navegação
+     intencional com um salto direto da barra ou do teclado. Sem smooth scroll,
+     continua sendo apenas window.scrollTo normal. */
+  let destinoScrollProgramatico = null;
+  const rolarProgramaticamente = y => {
+    destinoScrollProgramatico = y;
+    window.scrollTo(0, y);
+  };
+  const cancelarScrollProgramatico = () => { destinoScrollProgramatico = null; };
+  const teclasScrollNativo = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
+  window.addEventListener('wheel', cancelarScrollProgramatico, { passive: true });
+  window.addEventListener('touchstart', cancelarScrollProgramatico, { passive: true });
+  window.addEventListener('pointerdown', cancelarScrollProgramatico, { passive: true });
+  document.addEventListener('keydown', e => {
+    if (teclasScrollNativo.includes(e.key)) cancelarScrollProgramatico();
+  });
 
   document.addEventListener('click', e => {
     const openMenu = e.target.closest('[data-menu]');
@@ -700,7 +717,7 @@
        direto, que é o comportamento desejado nesse modo. */
     if (e.target.closest('[data-top]')) {
       e.preventDefault();
-      window.scrollTo(0, 0);
+      rolarProgramaticamente(0);
       return;
     }
     if (openMenu) {
@@ -1429,11 +1446,15 @@
                        && document.querySelector('main');
 
   if (podeSuavizar) {
-    /* Quanto menor o lerp, mais longa a cauda em que a imagem ainda desliza
-       depois que a roda para, que é a continuidade do midu.design. .1 é o
-       padrão do Lenis. Ajustável sem editar arquivo: ?lerp=0.08 na URL. */
-    const LERP = Math.min(.4, Math.max(.02,
+    /* LERP_60 é a resposta equivalente por quadro a 60Hz. O alpha aplicado
+       abaixo deriva do tempo real entre frames, então 90/120/144Hz percorrem
+       a mesma proporção no mesmo intervalo. O valor segue ajustável sem editar
+       arquivo pela chave de diagnóstico existente: ?lerp=0.08. */
+    const LERP_60 = Math.min(.4, Math.max(.02,
       parseFloat(new URLSearchParams(location.search).get('lerp')) || .04));
+    const LERP_CATCHUP_60 = Math.max(LERP_60, .32);
+    const DT_MAX = 1 / 30;
+    const EPSILON = .08;
 
     suavizando = true;
     const holder = document.createElement('div');
@@ -1445,7 +1466,8 @@
     if (footEl) holder.appendChild(footEl);
     document.documentElement.classList.add('smooth');
 
-    let curr = window.scrollY, raf = 0, altura = 0;
+    let curr = window.scrollY, raf = 0, altura = 0, ultimoFrame = 0;
+    let lerpCatchupAtual = LERP_60;
 
     /* o corpo precisa ter a altura do conteúdo para a barra de rolagem nativa
        existir e o scroll do sistema funcionar como sempre */
@@ -1459,16 +1481,63 @@
       medirSpy();
     };
 
-    const aplicar = () => {
+    const aplicar = agora => {
       const alvo = window.scrollY;
-      curr += (alvo - curr) * LERP;
-      if (Math.abs(alvo - curr) < .08) curr = alvo;
+      const diferenca = alvo - curr;
+      const distancia = Math.abs(diferenca);
+      const intencional = destinoScrollProgramatico !== null;
+
+      /* Um frame inicial equivale a 60Hz. Depois disso, o dt é limitado a 33ms:
+         voltar de uma aba em background ou de uma pausa do DevTools não injeta
+         um passo matemático enorme no primeiro quadro. */
+      const dt = ultimoFrame
+        ? Math.min(DT_MAX, Math.max(0, (agora - ultimoFrame) / 1000))
+        : 1 / 60;
+      ultimoFrame = agora;
+
+      /* Até meia viewport, preserva o caráter do lerp antigo a 60Hz. Entre meia
+         e duas viewports, acelera continuamente por smoothstep e conserva o
+         catch-up conquistado até alinhar, evitando uma cauda lenta no fim de
+         Page Up/Down ou clique na track. A partir de 2,5 viewports, saltos
+         diretos como scrollbar e Home/End alinham no mesmo quadro. Âncoras
+         intencionais ficam fora dessa adaptação. */
+      const vh = Math.max(1, window.innerHeight);
+      const inicioCatchup = vh * .5;
+      const fimCatchup = vh * 2;
+      const sincronizar = !intencional && distancia >= vh * 2.5;
+
+      if (sincronizar) {
+        curr = alvo;
+        lerpCatchupAtual = LERP_60;
+      } else {
+        let lerp60 = LERP_60;
+        if (!intencional && distancia > inicioCatchup) {
+          const t = Math.min(1, (distancia - inicioCatchup) / (fimCatchup - inicioCatchup));
+          const suave = t * t * (3 - 2 * t);
+          lerpCatchupAtual = Math.max(lerpCatchupAtual,
+            LERP_60 + (LERP_CATCHUP_60 - LERP_60) * suave);
+        }
+        if (!intencional) lerp60 = lerpCatchupAtual;
+        const alpha = 1 - Math.pow(1 - lerp60, dt * 60);
+        curr += diferenca * alpha;
+      }
+
+      if (Math.abs(alvo - curr) < EPSILON) curr = alvo;
       /* arredonda para pixel inteiro: posição fracionária obriga o navegador a
          rasterizar o texto de novo a cada quadro e produz tremor */
       holder.style.transform = 'translate3d(0,' + (-Math.round(curr * 100) / 100) + 'px,0)';
       posVisual = curr;
       readScroll();
-      raf = (curr === alvo) ? 0 : requestAnimationFrame(aplicar);
+      if (curr === alvo) {
+        raf = 0;
+        ultimoFrame = 0;
+        lerpCatchupAtual = LERP_60;
+        if (intencional && Math.abs(alvo - destinoScrollProgramatico) < 1) {
+          destinoScrollProgramatico = null;
+        }
+      } else {
+        raf = requestAnimationFrame(aplicar);
+      }
     };
 
     const acordar = () => { if (!raf) raf = requestAnimationFrame(aplicar); };
@@ -1498,12 +1567,24 @@
         (parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0);
       const pos = alvo.getBoundingClientRect().top + curr - recuo;
       const limite = Math.max(0, altura - window.innerHeight);
-      window.scrollTo(0, Math.max(0, Math.min(pos, limite)));
+      rolarProgramaticamente(Math.max(0, Math.min(pos, limite)));
     });
 
     medir();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(medir);
-    window.addEventListener('resize', medir, { passive: true });
+    window.addEventListener('resize', () => {
+      medir();
+      /* Resize pode limitar window.scrollY ao novo fim do documento. Sincroniza
+         a representação visual nesse evento raro para não carregar uma grande
+         divergência para o primeiro scroll após a mudança de viewport. */
+      curr = window.scrollY;
+      posVisual = curr;
+      destinoScrollProgramatico = null;
+      ultimoFrame = 0;
+      lerpCatchupAtual = LERP_60;
+      holder.style.transform = 'translate3d(0,' + (-Math.round(curr * 100) / 100) + 'px,0)';
+      readScroll();
+    }, { passive: true });
     if (window.ResizeObserver) new ResizeObserver(medir).observe(holder);
     acordar();
   }

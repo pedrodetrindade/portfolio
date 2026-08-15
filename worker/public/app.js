@@ -527,7 +527,8 @@
     titleLine1Pt: 'Título linha 1 (PT)', titleLine1En: 'Título linha 1 (EN)',
     titleLine2Pt: 'Título linha 2 (PT)', titleLine2En: 'Título linha 2 (EN)',
     mailLabelPt: 'Rótulo do e-mail (PT)', mailLabelEn: 'Rótulo do e-mail (EN)',
-    visible: 'Visibilidade', order: 'Ordem', cover: 'Capa', coverLight: 'Capa clara',
+    visible: 'Visibilidade', featured: 'Destaque na Home', availability: 'Disponibilidade',
+    order: 'Ordem', cover: 'Capa', coverLight: 'Capa clara',
     year: 'Ano', slug: 'Slug', status: 'Status', rolePt: 'Papel (PT)', roleEn: 'Papel (EN)',
     scopePt: 'Escopo (PT)', scopeEn: 'Escopo (EN)', subtitlePt: 'Subtítulo (PT)', subtitleEn: 'Subtítulo (EN)',
     src: 'Imagem', alt: 'Texto alternativo', pt: 'Texto (PT)', en: 'Texto (EN)'
@@ -1436,9 +1437,9 @@
       fieldRow('Largura máxima do conteúdo', 'contentMaxWidth · px', sliderControl('lay_maxw', l.contentMaxWidth, LIMITS.contentWidth[0], LIMITS.contentWidth[1], 'px')) +
       fieldRow('Margem lateral (telas grandes)', 'pageGutterDesktop · px', sliderControl('lay_gutd', l.pageGutterDesktop, 0, 200, 'px')) +
       fieldRow('Margem lateral (celular)', 'pageGutterMobile · px', sliderControl('lay_gutm', l.pageGutterMobile, 0, 100, 'px')) +
-      fieldRow('Grain vivo global', 'Textura leve animada por composição. Cada seção pode herdar, ligar ou desligar.', switchControl('lay_grain', grain.enabled !== false)) +
-      fieldRow('Intensidade do grain', 'Percentual de opacidade. O FAQ reduz automaticamente essa intensidade para preservar o branco.', sliderControl('lay_grain_op', grain.opacity == null ? 10 : grain.opacity, 0, 12, '%', .5)) +
-      fieldRow('Tamanho do grain', 'Escala da textura monocromática. Valores maiores deixam os grãos mais amplos e perceptíveis.', sliderControl('lay_grain_size', grain.size == null ? 220 : grain.size, 100, 360, 'px', 10)) +
+      fieldRow('Ruído estático monocromático', 'Padrão do site. Capa e rodapé possuem controles próprios para desligá-lo.', switchControl('lay_grain', grain.enabled !== false)) +
+      fieldRow('Força do ruído', 'Percentual de opacidade aplicado igualmente nas áreas em que o ruído está ligado.', sliderControl('lay_grain_op', grain.opacity == null ? 10 : grain.opacity, 0, 12, '%', .5)) +
+      fieldRow('Escala do ruído', 'Valores maiores deixam os grãos mais amplos e perceptíveis.', sliderControl('lay_grain_size', grain.size == null ? 220 : grain.size, 100, 360, 'px', 10)) +
       deviceTabsHtml('global') +
       tieredSpacingField('Espaço antes da seção', 'sectionSpacingTop · padrão para as seções que não têm valor próprio', l.sectionSpacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
         function (dev, v) { l.sectionSpacingTop[dev] = v; markDirty('content/global.json', state.global, state.globalSha); schedulePreview(); },
@@ -1504,7 +1505,7 @@
       schedulePreview();
     }
     document.getElementById('layoutSectionsBody').innerHTML =
-      '<p class="hint">Cada seção pode usar cor e imagem próprias ou herdar o fundo original. O grain pode seguir o padrão global, ser ligado ou desligado só naquela seção. "Divisórias" controla somente as linhas estruturais.</p>' +
+      '<p class="hint">Cada seção pode usar cor e imagem próprias ou herdar o fundo original. O ruído permanece contínuo e é controlado globalmente em Layout. "Divisórias" controla somente as linhas estruturais.</p>' +
       deviceTabsHtml('sections') +
       Object.keys(labels).map(function (key) {
         var s = sections[key] || {};
@@ -1531,10 +1532,6 @@
           fieldRow('Posição da imagem', '', selectDe('sec_' + key + '_image_position', s.backgroundPosition || 'center', [
             ['center', 'Centro'], ['top', 'Topo'], ['bottom', 'Base']
           ])) +
-          fieldRow('Grain nesta seção', 'Herdar acompanha o controle global.', selectDe('sec_' + key + '_grain',
-            typeof s.grainEnabled === 'boolean' ? (s.grainEnabled ? 'on' : 'off') : 'inherit', [
-              ['inherit', 'Herdar do global'], ['on', 'Ligado'], ['off', 'Desligado']
-            ])) +
           (key === 'hero' || key === 'work' ? '' : fieldRow('Mostrar divisórias', 'Remove ou restaura as linhas estruturais desta seção.',
             switchControl('sec_' + key + '_dividers', s.showDividers !== false))) +
           (key === 'hero' ? '' : tieredSpacingField('Espaço antes da seção', '', spacingTop, LIMITS.spacing[0], LIMITS.spacing[1],
@@ -1584,13 +1581,6 @@
         var target = sectionTarget(key);
         if (e.target.value === 'center') delete target.backgroundPosition;
         else target.backgroundPosition = e.target.value;
-        cleanEmptySection(key);
-        saveSection();
-      });
-      document.getElementById('sec_' + key + '_grain').addEventListener('change', function (e) {
-        var target = sectionTarget(key);
-        if (e.target.value === 'inherit') delete target.grainEnabled;
-        else target.grainEnabled = e.target.value === 'on';
         cleanEmptySection(key);
         saveSection();
       });
@@ -1651,23 +1641,62 @@
       });
     });
 
-    var f = state.global.footer, s = state.global.social;
+    var f = state.global.footer || {}, s = state.global.social;
     /* Arquivo antigo (só disclaimerPt/En) abre normalmente: os campos de
        copyright nascem com o texto que o site já monta nesse caso, e passam a
        mandar assim que forem salvos. Nada do footer é apagado no caminho. */
     var anoAtual = new Date().getFullYear();
     var copyrightPt = f.copyrightPt == null ? '© {year} · ' + (f.disclaimerPt || '') : f.copyrightPt;
     var copyrightEn = f.copyrightEn == null ? '© {year} · ' + (f.disclaimerEn || '') : f.copyrightEn;
+    var bg = f.background && typeof f.background === 'object' ? f.background : {};
+    var bgType = ['solid', 'image', 'video'].indexOf(bg.type) !== -1 ? bg.type : 'solid';
     document.getElementById('footerBody').innerHTML =
+      '<p class="hint">O mesmo footer aparece na Home, em Todos os Trabalhos e em todos os cases. Campos opcionais vazios usam o fallback seguro do site.</p>' +
+      fieldRow('Chamada curta (PT)', '', inp('foot_kpt', f.kickerPt || 'Contato')) +
+      fieldRow('Chamada curta (EN)', '', inp('foot_ken', f.kickerEn || 'Contact')) +
+      fieldRow('Headline (PT)', '', ta('foot_hpt', f.headlinePt || 'Projetos, colaborações e novas conversas.')) +
+      fieldRow('Headline (EN)', '', ta('foot_hen', f.headlineEn || 'Projects, collaborations and new conversations.')) +
+      fieldRow('Apoio (PT)', 'Opcional.', ta('foot_spt', f.supportPt || '')) +
+      fieldRow('Apoio (EN)', 'Opcional.', ta('foot_sen', f.supportEn || '')) +
+      fieldRow('Texto em looping', 'Assinatura em caixa alta que atravessa o footer horizontalmente.', inp('foot_signature', f.marqueeText || '')) +
       fieldRow('Copyright (PT)', 'Escreva {year} onde o ano deve aparecer — vira ' + anoAtual + ' sozinho, e continua certo no ano que vem.', '<textarea id="foot_cpt">' + esc(copyrightPt) + '</textarea>') +
       fieldRow('Copyright (EN)', 'Mesma coisa: {year} vira o ano atual.', '<textarea id="foot_cen">' + esc(copyrightEn) + '</textarea>') +
       fieldRow('Disclaimer (PT)', 'Texto antigo, mantido só como reserva. O site usa o campo de copyright acima.', '<textarea id="foot_pt">' + esc(f.disclaimerPt) + '</textarea>') +
       fieldRow('Disclaimer (EN)', '', '<textarea id="foot_en">' + esc(f.disclaimerEn) + '</textarea>') +
+      fieldRow('Mostrar e-mail', 'Desligar oculta apenas o e-mail do footer.', switchControl('foot_show_email', f.showEmail !== false)) +
+      fieldRow('Mostrar botão de copiar', 'Aparece ao lado do e-mail.', switchControl('foot_show_copy', f.showCopyEmail !== false)) +
+      fieldRow('Mostrar navegação', '', switchControl('foot_show_nav', f.showNavigation !== false)) +
+      fieldRow('Mostrar redes', '', switchControl('foot_show_social', f.showSocial !== false)) +
+      fieldRow('Mostrar assinatura', '', switchControl('foot_show_signature', f.showSignature !== false)) +
+      fieldRow('Mostrar ruído no rodapé', 'Desligado remove apenas o ruído; imagem ou vídeo continuam ativos.', switchControl('foot_grain', f.grainEnabled !== false)) +
+      fieldRow('Respiro superior (desktop)', 'Distância entre o topo da viewport e os três blocos principais.', sliderControl('foot_top_spacing', f.topSpacing == null ? 86 : f.topSpacing, 48, 120, 'px')) +
+      fieldRow('Posição vertical do e-mail', 'Não altera a altura do footer. Valor positivo desce; negativo sobe.', sliderControl('foot_email_offset', f.emailOffset == null ? 12 : f.emailOffset, -40, 60, 'px')) +
+      fieldRow('Posição vertical do copyright', 'Não altera a altura do footer. Valor negativo sobe e afasta do texto em looping.', sliderControl('foot_legal_offset', f.legalOffset == null ? -12 : f.legalOffset, -60, 40, 'px')) +
+      '<div style="border-top:1px solid var(--line);padding-top:1rem;margin-top:1rem"><b>Background do footer</b></div>' +
+      fieldRow('Tipo', 'Sólido é o fallback quando não há configuração.', selectDe('foot_bg_type', bgType, [
+        ['solid', 'Cor sólida'], ['image', 'Imagem'], ['video', 'Vídeo']
+      ])) +
+      fieldRow('Cor de base', 'Permanece visível enquanto a mídia não carrega ou se ela falhar.', '<input type="color" id="foot_bg_color" value="' + esc(/^#[0-9a-f]{6}$/i.test(bg.color || '') ? bg.color : '#151111') + '">') +
+      fieldRow('Imagem', 'Caminho assets/, URL HTTPS ou upload.', inp('foot_bg_image', bg.image || '') + '<input type="file" id="foot_bg_image_upload" accept="image/*,.svg">') +
+      fieldRow('Vídeo', 'MP4, WebM ou URL do Vimeo. O site só inicia o carregamento perto do footer.', inp('foot_bg_video', bg.video || '') + '<input type="file" id="foot_bg_video_upload" accept="video/mp4,video/webm,.mp4,.webm">') +
+      fieldRow('Poster do vídeo', 'Imagem exibida antes do vídeo e no modo de movimento reduzido.', inp('foot_bg_poster', bg.poster || '') + '<input type="file" id="foot_bg_poster_upload" accept="image/*,.svg">') +
+      fieldRow('Overlay', 'Escurece imagem ou vídeo para preservar contraste.', sliderControl('foot_bg_overlay', bg.overlayOpacity == null ? (bgType === 'solid' ? 0 : 62) : bg.overlayOpacity, 0, 100, '%')) +
+      '<button class="btn small danger" type="button" id="foot_bg_reset">usar background padrão</button>' +
       fieldRow('LinkedIn', 'Aceita somente http:// ou https://', '<input type="url" id="soc_li" value="' + esc(s.linkedin) + '">') +
       fieldRow('Mostrar LinkedIn', '', switchControl('soc_li_active', s.linkedinActive !== false)) +
       fieldRow('Behance', 'Aceita somente http:// ou https://', '<input type="url" id="soc_be" value="' + esc(s.behance) + '">') +
       fieldRow('Mostrar Behance', '', switchControl('soc_be_active', s.behanceActive !== false)) +
       fieldRow('E-mail de contato', '', '<input type="email" id="soc_em" value="' + esc(s.email) + '">');
+    function saveFooter() { if (!state.global.footer) state.global.footer = f; markDirty('content/global.json', state.global, state.globalSha); }
+    function optionalFooterText(key, value) { if (value.trim()) f[key] = value; else delete f[key]; saveFooter(); }
+    function footerBackground() { if (!f.background || typeof f.background !== 'object') f.background = {}; return f.background; }
+    bindText('foot_kpt', function (v) { optionalFooterText('kickerPt', v); });
+    bindText('foot_ken', function (v) { optionalFooterText('kickerEn', v); });
+    bindText('foot_hpt', function (v) { optionalFooterText('headlinePt', v); });
+    bindText('foot_hen', function (v) { optionalFooterText('headlineEn', v); });
+    bindText('foot_spt', function (v) { optionalFooterText('supportPt', v); });
+    bindText('foot_sen', function (v) { optionalFooterText('supportEn', v); });
+    bindText('foot_signature', function (v) { optionalFooterText('marqueeText', v); });
     bindText('foot_cpt', function (v) { state.global.footer.copyrightPt = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_cen', function (v) { state.global.footer.copyrightEn = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindText('foot_pt', function (v) { state.global.footer.disclaimerPt = v; markDirty('content/global.json', state.global, state.globalSha); });
@@ -1677,6 +1706,28 @@
     bindEmail('soc_em', function (v) { state.global.social.email = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('soc_li_active', function (v) { if (v) delete s.linkedinActive; else s.linkedinActive = false; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('soc_be_active', function (v) { if (v) delete s.behanceActive; else s.behanceActive = false; markDirty('content/global.json', state.global, state.globalSha); });
+    [['foot_show_email','showEmail'],['foot_show_copy','showCopyEmail'],['foot_show_nav','showNavigation'],['foot_show_social','showSocial'],['foot_show_signature','showSignature']].forEach(function (entry) {
+      bindSwitch(entry[0], function (enabled) { if (enabled) delete f[entry[1]]; else f[entry[1]] = false; saveFooter(); });
+    });
+    bindSwitch('foot_grain', function (enabled) { if (enabled) delete f.grainEnabled; else f.grainEnabled = false; saveFooter(); renderHeaderFooter(); });
+    bindSlider('foot_top_spacing', 48, 120, function (v) { f.topSpacing = v; saveFooter(); });
+    bindSlider('foot_email_offset', -40, 60, function (v) { f.emailOffset = v; saveFooter(); });
+    bindSlider('foot_legal_offset', -60, 40, function (v) { f.legalOffset = v; saveFooter(); });
+    document.getElementById('foot_bg_type').addEventListener('change', function (e) {
+      footerBackground().type = e.target.value;
+      saveFooter(); renderHeaderFooter();
+    });
+    document.getElementById('foot_bg_color').addEventListener('input', function (e) { footerBackground().color = e.target.value; saveFooter(); });
+    [['foot_bg_image','image'],['foot_bg_video','video'],['foot_bg_poster','poster']].forEach(function (entry) {
+      bindText(entry[0], function (v) { var target = footerBackground(); if (v.trim()) target[entry[1]] = v.trim(); else delete target[entry[1]]; saveFooter(); });
+    });
+    bindSlider('foot_bg_overlay', 0, 100, function (v) { footerBackground().overlayOpacity = v; saveFooter(); });
+    [['foot_bg_image_upload','image','footer-imagem'],['foot_bg_video_upload','video','footer-video'],['foot_bg_poster_upload','poster','footer-poster']].forEach(function (entry) {
+      document.getElementById(entry[0]).addEventListener('change', function (e) {
+        uploadFile(e.target.files[0], entry[2], function (path) { footerBackground()[entry[1]] = path; saveFooter(); renderHeaderFooter(); });
+      });
+    });
+    document.getElementById('foot_bg_reset').addEventListener('click', function () { delete f.background; saveFooter(); renderHeaderFooter(); });
   }
 
   function caminhoPublico(path) {
@@ -1804,6 +1855,7 @@
     var half = ' style="max-width:200px"';
 
     var hero = H.hero;
+    var heroSection = H.sections && H.sections.hero ? H.sections.hero : {};
     var availabilityStatus = ['available', 'unavailable', 'hidden'].indexOf(hero.availabilityStatus) !== -1
       ? hero.availabilityStatus : (hero.showAvailability === false ? 'hidden' : 'available');
     document.getElementById('heroBody').innerHTML =
@@ -1832,6 +1884,7 @@
         '<select id="hero_videomode">' + MODOS_CAPA.map(function (m) {
           return '<option value="' + m[0] + '"' + (modoDaCapa(hero) === m[0] ? ' selected' : '') + '>' + esc(m[1]) + '</option>';
         }).join('') + '</select>') +
+      fieldRow('Mostrar ruído na capa', 'Desligado remove apenas o ruído; o vídeo continua ativo.', switchControl('hero_grain', heroSection.grainEnabled !== false)) +
       /* os dois campos abaixo aparecem conforme o modo: mostrar caminho de
          arquivo e URL do Vimeo ao mesmo tempo convida a preencher o errado */
       '<div data-modo-capa="file">' +
@@ -1873,6 +1926,13 @@
       /* Compatibilidade com versões anteriores do site/CMS. O campo legado
          continua coerente, mas o estado de três opções é quem manda. */
       hero.showAvailability = e.target.value !== 'hidden';
+      touch();
+    });
+    bindSwitch('hero_grain', function (enabled) {
+      if (!H.sections) H.sections = {};
+      if (!H.sections.hero) H.sections.hero = {};
+      if (enabled) delete H.sections.hero.grainEnabled;
+      else H.sections.hero.grainEnabled = false;
       touch();
     });
 
@@ -2098,10 +2158,13 @@
       var carregado = state.projects[p.slug] && state.projects[p.slug].data;
       var statusEditorial = carregado && carregado.status === 'draft' ? 'rascunho' :
         carregado && carregado.status === 'published' ? 'publicado' : '';
+      var disponibilidade = p.availability === 'coming-soon' ? 'em breve' : 'case publicado';
       return '<div class="list-row' + (p.visible === false ? ' hidden-project' : '') + '" data-slug="' + esc(p.slug) + '">' +
         '<div class="thumb" style="background-image:url(\'' + esc(capaPainel) + '\')"></div>' +
         '<div class="info"><b>' + esc(p.titlePt) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year) +
-          ' · ' + (p.visible === false ? 'oculto na Home' : 'visível na Home') +
+          ' · ' + (p.visible === false ? 'oculto do site' : 'público') +
+          ' · ' + (p.featured === true ? 'destaque na Home' : 'fora da Home') +
+          ' · ' + disponibilidade +
           (statusEditorial ? ' · ' + statusEditorial : '') + '</span></div>' +
         '<div class="actions">' +
         '<button class="btn small" data-act="up">↑</button>' +
@@ -2596,12 +2659,11 @@
     editorEl.innerHTML =
       '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
       fieldRow('URL do case', 'Use letras minúsculas, números e hífen. A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">alterar URL</button></div>') +
-      fieldRow('Status', 'Estado editorial do conteúdo. Não altera sozinho a presença do card na Home.', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
-      fieldRow('Visível na Home', 'Controle independente do status. Desligado remove somente o card da listagem da Home.', switchControl('pe_visible', indexEntry.visible !== false)) +
-      fieldRow('Grain neste case', 'Herdar acompanha o controle global do site.', selectDe('pe_grain',
-        typeof P.grainEnabled === 'boolean' ? (P.grainEnabled ? 'on' : 'off') : 'inherit', [
-          ['inherit', 'Herdar do global'], ['on', 'Ligado'], ['off', 'Desligado']
-        ])) +
+      fieldRow('Status', 'Estado editorial do conteúdo no CMS. Não controla sozinho a visibilidade nem a disponibilidade pública.', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
+      fieldRow('Visibilidade', 'Público aparece em Todos os Trabalhos. Oculto não aparece no site.', switchControl('pe_visible', indexEntry.visible !== false)) +
+      fieldRow('Disponibilidade', 'Publicado abre o case. Em breve aparece na galeria sem link. Projetos antigos sem este campo continuam publicados.', selectDe('pe_availability', indexEntry.availability === 'coming-soon' ? 'coming-soon' : 'published', [
+        ['published', 'Publicado'], ['coming-soon', 'Em breve']
+      ])) +
       fieldRow('Ano', '', '<input type="number" id="pe_year" value="' + esc(P.year) + '" min="1990" max="2100">') +
       fieldRow('Categoria', 'Metadado do projeto e do índice.', '<input type="text" id="pe_category" value="' + esc(P.category || indexEntry.category) + '">') +
       fieldRow('Rótulo acima do título (PT)', 'Eyebrow do case. Enter força uma nova linha.', ta('pe_eyebrowpt', P.hero.eyebrowPt)) +
@@ -2613,8 +2675,8 @@
       fieldRow('Subtítulo (EN)', '', '<textarea id="pe_suben">' + esc(P.hero.subtitleEn) + '</textarea>') +
       fieldRow('Tags do card (PT)', 'Separe por vírgulas.', '<input type="text" id="pe_tagspt" value="' + esc(tagsPt.join(', ')) + '">') +
       fieldRow('Tags do card (EN)', 'Separe por vírgulas e mantenha a mesma ordem do PT.', '<input type="text" id="pe_tagsen" value="' + esc(tagsEn.join(', ')) + '">') +
-      fieldRow('Tamanho do card', 'Usa as opções já declaradas no índice de projetos.', selectDe('pe_cardsize', indexEntry.cardSize || 'normal', cardSizes.map(function (s) { return [s, s]; }))) +
-      fieldRow('Projeto em destaque', 'No desktop, ocupa a largura da grade sem alterar a ordem.', switchControl('pe_featured', indexEntry.featured === true)) +
+      fieldRow('Tamanho do card', 'Controla somente a composição visual dos destaques da Home.', selectDe('pe_cardsize', indexEntry.cardSize || 'normal', cardSizes.map(function (s) { return [s, s]; }))) +
+      fieldRow('Home', 'Destacar na Home. A Home mostra no máximo quatro projetos públicos, seguindo a ordem do índice.', switchControl('pe_featured', indexEntry.featured === true)) +
       fieldRow('Papel (PT)', 'Enter força uma nova linha.', ta('pe_rolept', P.hero.rolePt)) +
       fieldRow('Papel (EN)', 'Enter força uma nova linha.', ta('pe_roleen', P.hero.roleEn)) +
       fieldRow('Escopo (PT)', 'Enter força uma nova linha.', ta('pe_scopept', P.hero.scopePt)) +
@@ -2695,6 +2757,11 @@
     bindText('pe_tagsen', function (v) { indexEntry.tagsEn = tagsFrom(v); saveIndex(); });
     bindSwitch('pe_visible', function (v) { indexEntry.visible = v; saveIndex(); });
     bindSwitch('pe_featured', function (v) { indexEntry.featured = v; saveIndex(); });
+    document.getElementById('pe_availability').addEventListener('change', function (e) {
+      if (e.target.value === 'coming-soon') indexEntry.availability = 'coming-soon';
+      else delete indexEntry.availability;
+      saveIndex();
+    });
     bindText('pe_rolept', function (v) { P.hero.rolePt = v; save(); });
     bindText('pe_roleen', function (v) { P.hero.roleEn = v; save(); });
     bindText('pe_scopept', function (v) { P.hero.scopePt = v; save(); });
@@ -2719,13 +2786,8 @@
     document.getElementById('pe_cardsize').addEventListener('change', function (e) { indexEntry.cardSize = e.target.value; saveIndex(); });
     document.getElementById('pe_status').addEventListener('change', function (e) {
       P.status = e.target.value;
-      /* `visible` é uma decisão separada e continua sendo a única autoridade
-         da Home. Nem draft oculta, nem published mostra automaticamente. */
-      save();
-    });
-    document.getElementById('pe_grain').addEventListener('change', function (e) {
-      if (e.target.value === 'inherit') delete P.grainEnabled;
-      else P.grainEnabled = e.target.value === 'on';
+      /* Status editorial, visibilidade, destaque e disponibilidade continuam
+         independentes. Mudar draft/published não reescreve o índice. */
       save();
     });
     document.getElementById('pe_year').addEventListener('change', function (e) { P.year = Number(e.target.value); indexEntry.year = P.year; save(); saveIndex(); });

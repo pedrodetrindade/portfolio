@@ -30,8 +30,31 @@
     var hasText = String(pt || '').trim() || String(en || '').trim();
     el.hidden = show === false || !hasText;
   }
-  function isCase() { return location.pathname.indexOf('/work/') !== -1; }
-  var base = isCase() ? '../' : '';
+  function isWorkPath() { return location.pathname.indexOf('/work/') !== -1; }
+  function isWorkIndex() {
+    if (!isWorkPath()) return false;
+    var leaf = location.pathname.split('/').pop();
+    return !leaf || leaf === 'index.html';
+  }
+  function isProjectPage() { return isWorkPath() && !isWorkIndex(); }
+  var base = isWorkPath() ? '../' : '';
+
+  function slugValido(slug) {
+    return typeof slug === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug);
+  }
+  function projetosPublicos(idx) {
+    return ((idx && idx.projects) || []).filter(function (p) {
+      return p && p.visible !== false && slugValido(p.slug);
+    }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+  }
+  function emBreve(p) { return p && p.availability === 'coming-soon'; }
+  function projectMedia(p, breakpoint) {
+    var cover = resolveAssetUrl(p && p.cover);
+    var coverMobile = resolveAssetUrl(p && p.coverMobile);
+    if (!cover) return '';
+    var source = coverMobile ? '<source media="(max-width:' + breakpoint + 'px)" srcset="' + esc(coverMobile) + '">' : '';
+    return '<picture>' + source + '<img src="' + esc(cover) + '" alt="" onerror="this.remove()"></picture>';
+  }
 
   /* Caminho do repositório recebe o prefixo da página; URL HTTPS externa fica
      intacta. Qualquer outro esquema vira vazio mesmo durante a prévia, antes
@@ -52,26 +75,38 @@
     return '';
   }
 
-  /* ===== APARÊNCIA DE FUNDO E GRAIN =====
+  /* ===== APARÊNCIA DE FUNDO E RUÍDO =====
      A imagem é uma camada de fundo da seção, nunca conteúdo: o CSS usa um
-     pseudo-elemento e mantém texto, links e mídia no fluxo normal. O grain é
-     uma única textura fixa para a página inteira; cada seção apenas publica
-     se o efeito deve estar ligado quando ela ocupa a linha de leitura. Assim
-     não existem seis animações de ruído concorrendo entre si. */
+     pseudo-elemento e mantém texto, links e mídia no fluxo normal. O ruído é
+     uma única textura fixa para a página inteira. O padrão global permanece
+     contínuo no conteúdo; capa e rodapé podem desligá-lo individualmente. */
   function grainGlobalLigado() {
     var G = window.__CMS_GLOBAL__ || {};
     return !(G.effects && G.effects.grain && G.effects.grain.enabled === false);
   }
 
-  function grainOpacityDaSecao(key) {
+  function grainOpacityGlobal() {
     var G = window.__CMS_GLOBAL__ || {};
     var valor = G.effects && G.effects.grain ? Number(G.effects.grain.opacity) : 10;
     if (!isFinite(valor)) valor = 10;
-    valor = Math.max(0, Math.min(12, valor)) / 100;
-    /* No FAQ claro a mesma textura precisa ser mais quieta para não sujar o
-       branco. A redução é automática e continua proporcional ao controle
-       global de intensidade. */
-    return key === 'faq' ? valor * .58 : valor;
+    return Math.max(0, Math.min(12, valor)) / 100;
+  }
+
+  function aplicarGrainNaSuperficie(el, ligado) {
+    if (!el) return;
+    var layer = null;
+    for (var i = 0; i < el.children.length; i++) {
+      if (el.children[i].classList && el.children[i].classList.contains('cms-section-grain')) { layer = el.children[i]; break; }
+    }
+    if (ligado && !layer) {
+      layer = document.createElement('span');
+      layer.className = 'cms-section-grain';
+      layer.setAttribute('aria-hidden', 'true');
+      el.insertBefore(layer, el.firstChild);
+    }
+    if (layer) layer.hidden = !ligado;
+    el.classList.toggle('has-section-grain', !!ligado);
+    el.style.setProperty('--section-grain-opacity', String(grainOpacityGlobal()));
   }
 
   function aplicarFundoDaSecao(el, key, visual) {
@@ -89,9 +124,10 @@
     var posicoes = { center: '50% 50%', top: '50% 0%', bottom: '50% 100%' };
     el.style.setProperty('--section-image-position', posicoes[visual.backgroundPosition] || posicoes.center);
 
-    var grainLigado = typeof visual.grainEnabled === 'boolean' ? visual.grainEnabled : grainGlobalLigado();
+    var grainLigado = grainGlobalLigado() && visual.grainEnabled !== false;
     el.setAttribute('data-grain-enabled', grainLigado ? 'true' : 'false');
-    el.setAttribute('data-grain-opacity', String(grainOpacityDaSecao(key)));
+    el.setAttribute('data-grain-opacity', String(grainOpacityGlobal()));
+    aplicarGrainNaSuperficie(el, grainLigado);
   }
 
   function aplicarAparenciaHome(H) {
@@ -101,16 +137,236 @@
       work: document.getElementById('work'),
       about: document.querySelector('.about-break'),
       help: document.getElementById('help'),
-      faq: document.getElementById('faq'),
-      contact: document.getElementById('contact')
+      faq: document.getElementById('faq')
     };
     Object.keys(mapa).forEach(function (key) { aplicarFundoDaSecao(mapa[key], key, sections[key]); });
   }
 
-  function aplicarAparenciaProjeto(P) {
-    var ligado = typeof P.grainEnabled === 'boolean' ? P.grainEnabled : grainGlobalLigado();
+  function aplicarAparenciaPagina() {
+    var ligado = grainGlobalLigado();
     document.documentElement.setAttribute('data-grain-page', ligado ? 'true' : 'false');
-    document.documentElement.setAttribute('data-grain-page-opacity', String(grainOpacityDaSecao('project')));
+    document.documentElement.setAttribute('data-grain-page-opacity', String(grainOpacityGlobal()));
+    var main = document.querySelector('main');
+    if (main) {
+      main.classList.add('cms-section-surface');
+      main.setAttribute('data-grain-enabled', ligado ? 'true' : 'false');
+      aplicarGrainNaSuperficie(main, ligado);
+    }
+  }
+
+  function footerExternalUrl(value) {
+    var t = typeof value === 'string' ? value.trim() : '';
+    if (!/^https?:\/\//i.test(t)) return '';
+    try {
+      var u = new URL(t);
+      return (u.protocol === 'http:' || u.protocol === 'https:') && !u.username && !u.password ? u.href : '';
+    } catch (e) { return ''; }
+  }
+
+  function footerNavHref(section) {
+    if (section === 'contact') return '#site-footer';
+    if (!isWorkPath()) return section === 'top' ? '#top' : '#' + section;
+    if (section === 'work') return isWorkIndex() ? './' : './index.html';
+    return '../index.html' + (section === 'top' ? '' : '#' + section);
+  }
+
+  function footerSection(item) {
+    var allowed = ['top', 'work', 'about', 'help', 'faq', 'contact'];
+    if (item && allowed.indexOf(item.section) !== -1) return item.section;
+    var href = String(item && (item.hrefHome || item.href) || '');
+    var hash = href.indexOf('#') !== -1 ? href.split('#').pop() : 'top';
+    return allowed.indexOf(hash) !== -1 ? hash : 'top';
+  }
+
+  function footerVimeoConfig(value) {
+    if (typeof value !== 'string' || /[<>"'`\\]/.test(value)) return null;
+    var u;
+    try { u = new URL(value.trim()); } catch (e) { return null; }
+    var host = u.hostname.toLowerCase();
+    if (u.protocol !== 'https:' || ['vimeo.com', 'www.vimeo.com', 'player.vimeo.com'].indexOf(host) === -1 || u.username || u.password) return null;
+    var parts = u.pathname.split('/').filter(Boolean), id = '', hash = null;
+    if (host === 'player.vimeo.com') {
+      if (parts[0] !== 'video') return null;
+      id = parts[1] || '';
+      hash = u.searchParams.get('h');
+    } else {
+      id = parts[0] || '';
+      hash = parts[1] || null;
+    }
+    if (!/^[0-9]{6,12}$/.test(id) || (hash && !/^[a-zA-Z0-9]{6,20}$/.test(hash))) return null;
+    return { videoId: id, hash: hash };
+  }
+
+  function footerMediaHtml(background) {
+    background = background && typeof background === 'object' ? background : {};
+    var type = ['solid', 'image', 'video'].indexOf(background.type) !== -1 ? background.type : 'solid';
+    var image = resolveAssetUrl(background.image);
+    var vimeo = footerVimeoConfig(background.video);
+    var video = vimeo ? '' : resolveAssetUrl(background.video);
+    var poster = resolveAssetUrl(background.poster);
+    var media = '';
+    if (type === 'image' && image) {
+      media = '<picture class="site-footer-picture"><img data-footer-lazy data-src="' + esc(image) + '" alt="" onerror="this.remove()"></picture>';
+    } else if (type === 'video' && (video || vimeo)) {
+      if (poster) media += '<picture class="site-footer-picture"><img src="' + esc(poster) + '" alt="" onerror="this.remove()"></picture>';
+      if (vimeo) {
+        media += '<iframe class="site-footer-video site-footer-vimeo" title="" aria-hidden="true" tabindex="-1" allow="autoplay; fullscreen; picture-in-picture" data-footer-vimeo data-src="' + esc(urlDoPlayerVimeo(vimeo)) + '"></iframe>';
+      } else {
+        media += '<video class="site-footer-video" muted loop playsinline aria-hidden="true" tabindex="-1" preload="none" data-footer-video data-src="' + esc(video) + '"></video>';
+      }
+    }
+    return { type: type, html: media };
+  }
+
+  function initFooterMedia(footer, mediaType) {
+    if (window.__CMS_FOOTER_MEDIA_OBSERVER__) window.__CMS_FOOTER_MEDIA_OBSERVER__.disconnect();
+    var trigger = footer.querySelector('[data-footer-media-trigger]');
+    if (!trigger || mediaType === 'solid') return;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function activate() {
+      if (mediaType === 'video' && reduce) {
+        if (window.__CMS_FOOTER_MEDIA_OBSERVER__) window.__CMS_FOOTER_MEDIA_OBSERVER__.disconnect();
+        return;
+      }
+      var image = footer.querySelector('[data-footer-lazy]');
+      if (image && image.dataset.src && !image.src) image.src = image.dataset.src;
+      var video = footer.querySelector('[data-footer-video]');
+      if (video && video.dataset.src && !video.src) {
+        video.src = video.dataset.src;
+        video.preload = 'metadata';
+        video.addEventListener('playing', function () { footer.classList.add('is-footer-video-playing'); }, { once: true });
+        video.load();
+        var play = video.play();
+        if (play && play.catch) play.catch(function () { /* poster/fundo sólido permanecem */ });
+      }
+      var vimeo = footer.querySelector('[data-footer-vimeo]');
+      if (vimeo && vimeo.dataset.src && !vimeo.src) {
+        vimeo.addEventListener('load', function () { footer.classList.add('is-footer-video-playing'); }, { once: true });
+        vimeo.src = vimeo.dataset.src;
+      }
+      if (window.__CMS_FOOTER_MEDIA_OBSERVER__) window.__CMS_FOOTER_MEDIA_OBSERVER__.disconnect();
+    }
+    if (trigger.classList.contains('in')) { activate(); return; }
+    var observer = new MutationObserver(function () {
+      if (trigger.classList.contains('in')) activate();
+    });
+    observer.observe(trigger, { attributes: true, attributeFilter: ['class'] });
+    window.__CMS_FOOTER_MEDIA_OBSERVER__ = observer;
+  }
+
+  function initFooterCopy(footer) {
+    var button = footer.querySelector('[data-footer-copy]');
+    if (!button) return;
+    var flash = footer.querySelector('[data-footer-copy-status]');
+    var timer = null;
+    button.addEventListener('click', function () {
+      var text = button.getAttribute('data-copy') || '';
+      var task;
+      if (navigator.clipboard && window.isSecureContext) task = navigator.clipboard.writeText(text);
+      else {
+        task = new Promise(function (resolve, reject) {
+          var area = document.createElement('textarea');
+          area.value = text;
+          area.setAttribute('readonly', '');
+          area.style.cssText = 'position:fixed;top:-999px;opacity:0';
+          document.body.appendChild(area);
+          area.select();
+          var ok = document.execCommand('copy');
+          area.remove();
+          ok ? resolve() : reject(new Error('copy_failed'));
+        });
+      }
+      task.then(function () {
+        var pt = (document.documentElement.lang || 'pt').indexOf('pt') === 0;
+        button.classList.add('done');
+        if (flash) flash.textContent = pt ? 'Copiado' : 'Copied';
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          button.classList.remove('done');
+          if (flash) flash.textContent = '';
+        }, 2100);
+      }).catch(function () {
+        var pt = (document.documentElement.lang || 'pt').indexOf('pt') === 0;
+        if (flash) flash.textContent = pt ? 'Selecione e copie' : 'Select and copy';
+      });
+    });
+  }
+
+  function renderGlobalFooter(G) {
+    var footer = document.querySelector('footer');
+    if (!footer) return;
+    var f = G.footer || {}, social = G.social || {}, brand = G.brand || {};
+    var background = f.background && typeof f.background === 'object' ? f.background : {};
+    var media = footerMediaHtml(background);
+    var solid = /^#[0-9a-f]{6}$/i.test(background.color || '') ? background.color : '#151111';
+    var overlay = Number(background.overlayOpacity);
+    if (!isFinite(overlay)) overlay = media.type === 'solid' ? 0 : 62;
+    overlay = Math.max(0, Math.min(100, overlay));
+    var email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(social.email || '') ? social.email.trim() : '';
+    var menu = G.header && Array.isArray(G.header.menu) ? G.header.menu : [];
+    var nav = menu.filter(function (item) { return item && item.visible !== false; }).map(function (item) {
+      var section = footerSection(item);
+      var current = section === 'work' && isWorkIndex() ? ' aria-current="page"' : '';
+      return '<a href="' + esc(footerNavHref(section)) + '"' + current + ' data-pt="' + esc(item.pt || '') + '" data-en="' + esc(item.en || item.pt || '') + '">' + esc(item.pt || '') + '</a>';
+    }).join('');
+    var socials = [];
+    var linkedin = social.linkedinActive === false ? '' : footerExternalUrl(social.linkedin);
+    var behance = social.behanceActive === false ? '' : footerExternalUrl(social.behance);
+    if (linkedin) socials.push('<a href="' + esc(linkedin) + '" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>');
+    if (behance) socials.push('<a href="' + esc(behance) + '" target="_blank" rel="noopener noreferrer">Behance <span aria-hidden="true">↗</span></a>');
+    var year = new Date().getFullYear();
+    function withYear(value) { return String(value || '').replace(/\{year\}/g, year); }
+    var copyPt = withYear(f.copyrightPt || ('© ' + year + ' · ' + (f.disclaimerPt || '')));
+    var copyEn = withYear(f.copyrightEn || ('© ' + year + ' · ' + (f.disclaimerEn || '')));
+    var signature = f.marqueeText || brand.name || 'Pedro de Trindade.';
+    var showEmail = f.showEmail !== false && email;
+    var showCopyEmail = f.showCopyEmail !== false;
+    var showNav = f.showNavigation !== false && nav;
+    var showSocial = f.showSocial !== false && socials.length;
+    var showSignature = f.showSignature !== false && signature;
+    var footerGrainLigado = grainGlobalLigado() && f.grainEnabled !== false;
+    footer.id = 'site-footer';
+    footer.className = 'site-footer';
+    if (showNav) footer.classList.add('has-footer-nav');
+    if (showSocial) footer.classList.add('has-footer-social');
+    footer.style.setProperty('--site-footer-bg', solid);
+    footer.style.setProperty('--site-footer-overlay', String(overlay / 100));
+    var topSpacing = Number(f.topSpacing);
+    if (isFinite(topSpacing)) footer.style.setProperty('--site-footer-pad-top', Math.max(48, Math.min(120, topSpacing)) + 'px');
+    else footer.style.removeProperty('--site-footer-pad-top');
+    var emailOffset = Number(f.emailOffset);
+    if (isFinite(emailOffset)) footer.style.setProperty('--site-footer-email-offset', Math.max(-40, Math.min(60, emailOffset)) + 'px');
+    else footer.style.removeProperty('--site-footer-email-offset');
+    var legalOffset = Number(f.legalOffset);
+    if (isFinite(legalOffset)) footer.style.setProperty('--site-footer-legal-offset', Math.max(-60, Math.min(40, legalOffset)) + 'px');
+    else footer.style.removeProperty('--site-footer-legal-offset');
+    footer.innerHTML =
+      '<span class="site-footer-media-trigger reveal" data-footer-media-trigger aria-hidden="true"></span>' +
+      '<span class="site-footer-contact-anchor" id="contact" aria-hidden="true" data-grain-enabled="' + (footerGrainLigado ? 'true' : 'false') + '" data-grain-opacity="' + grainOpacityGlobal() + '"></span>' +
+      '<div class="site-footer-media" aria-hidden="true">' + media.html + '</div>' +
+      '<div class="site-footer-overlay" aria-hidden="true"></div>' +
+      '<div class="site-footer-inner wrap">' +
+        '<div class="site-footer-grid">' +
+          '<section class="site-footer-contact" aria-labelledby="site-footer-title">' +
+            '<p class="site-footer-kicker" data-pt="' + esc(f.kickerPt || 'Contato') + '" data-en="' + esc(f.kickerEn || 'Contact') + '">' + esc(f.kickerPt || 'Contato') + '</p>' +
+            '<h2 id="site-footer-title" data-pt="' + esc(f.headlinePt || 'Projetos, colaborações e novas conversas.') + '" data-en="' + esc(f.headlineEn || 'Projects, collaborations and new conversations.') + '">' + esc(f.headlinePt || 'Projetos, colaborações e novas conversas.') + '</h2>' +
+            '<p class="site-footer-support" data-pt="' + esc(f.supportPt || '') + '" data-en="' + esc(f.supportEn || '') + '">' + esc(f.supportPt || '') + '</p>' +
+            (showEmail ? '<div class="site-footer-email-row"><a class="site-footer-email" href="mailto:' + esc(email) + '">' + esc(email) + ' <span aria-hidden="true">↗</span></a>' +
+              (showCopyEmail ? '<button class="site-footer-copy" type="button" data-footer-copy data-copy="' + esc(email) + '" data-pt-label="Copiar endereço de e-mail" data-en-label="Copy email address" aria-label="Copiar endereço de e-mail"><svg class="ico-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 5.2A2.7 2.7 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3c0 1.2.8 2.2 1.9 2.5"/></svg><svg class="ico-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 12.6l4.6 4.6L19.2 7.4"/></svg></button><span class="site-footer-copy-status" data-footer-copy-status role="status" aria-live="polite"></span>' : '') + '</div>' : '') +
+          '</section>' +
+          (showNav ? '<nav class="site-footer-nav" aria-label="Footer"><p data-pt="Navegação" data-en="Navigation">Navegação</p>' + nav + '</nav>' : '') +
+          (showSocial ? '<div class="site-footer-social"><p data-pt="Redes" data-en="Social">Redes</p>' + socials.join('') + '</div>' : '') +
+        '</div>' +
+        '<div class="site-footer-bottom"><p class="foot-copy" data-pt="' + esc(copyPt) + '" data-en="' + esc(copyEn) + '">' + esc(copyPt) + '</p>' +
+          '<button class="site-footer-top" type="button" data-top data-pt-label="Voltar ao topo da página" data-en-label="Back to the top of the page" aria-label="Voltar ao topo da página"><span data-pt="Voltar ao topo" data-en="Back to top">Voltar ao topo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5.6"/><path d="M5.8 11.8L12 5.6l6.2 6.2"/></svg></button></div>' +
+        (showSignature ? '<div class="site-footer-marquee" aria-hidden="true"><div class="site-footer-marquee-track">' +
+          '<span class="site-footer-marquee-group"><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i></span>' +
+          '<span class="site-footer-marquee-group"><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i></span>' +
+        '</div></div>' : '') +
+      '</div>';
+    aplicarGrainNaSuperficie(footer, footerGrainLigado);
+    initFooterMedia(footer, media.type);
+    initFooterCopy(footer);
   }
 
   /* Header/footer são compartilhados por Home e cases. Esta aplicação não
@@ -118,8 +374,9 @@
      cases ficavam presos ao disclaimer estático do HTML. */
   function renderSharedChrome() {
     var G = window.__CMS_GLOBAL__ || {};
+    renderGlobalFooter(G);
     var brand = G.brand || {};
-    function brandSrc(path) { return /^https?:\/\//i.test(path || '') ? path : (isCase() ? '../' : '') + path; }
+    function brandSrc(path) { return /^https?:\/\//i.test(path || '') ? path : (isWorkPath() ? '../' : '') + path; }
     var brandLinks = document.querySelectorAll('a.brand');
     for (var bi = 0; bi < brandLinks.length; bi++) {
       if (brand.logo) {
@@ -145,19 +402,6 @@
       if (G.social.linkedinActive === false) for (var li = 0; li < linkedinLinks.length; li++) linkedinLinks[li].hidden = true;
       if (G.social.behanceActive === false) for (var be = 0; be < behanceLinks.length; be++) behanceLinks[be].hidden = true;
     }
-    if (!G.footer) return;
-    var copyEl = document.querySelector('.foot-copy');
-    if (copyEl) {
-      var ano = new Date().getFullYear();
-      var comAno = function (txt) { return String(txt).replace(/\{year\}/g, ano); };
-      var pt = G.footer.copyrightPt || ('© ' + ano + ' · ' + (G.footer.disclaimerPt || ''));
-      var en = G.footer.copyrightEn || ('© ' + ano + ' · ' + (G.footer.disclaimerEn || ''));
-      setText(copyEl, comAno(pt), comAno(en));
-    }
-    if (G.footer.marqueeText) {
-      var mqBs = document.querySelectorAll('.mq-group b');
-      for (var k = 0; k < mqBs.length; k++) mqBs[k].textContent = G.footer.marqueeText;
-    }
   }
 
   /* Declarada AQUI, acima das duas chamadas abaixo, e não junto do resto do
@@ -168,7 +412,14 @@
      armadilha que já custou caro com measureCta em js/main.js. */
   var TIPOS_DE_BLOCO = ['text', 'gallery', 'image', 'quote', 'video'];
 
+  /* A ponte precisa existir mesmo quando um renderer de conteúdo cai no
+     fallback estático. As funções abaixo são declarações hasteadas, então a
+     exposição pode acontecer antes das primeiras renderizações sem duplicar
+     lógica nem depender do restante da inicialização. */
+  window.__CMS_RENDER__ = { home: renderHome, work: renderWorkIndex, project: renderProject, shared: renderSharedChrome };
+
   try { renderHome(); } catch (e) { /* mantém o HTML estático */ }
+  try { renderWorkIndex(); } catch (e) { /* mantém a introdução estática */ }
   try { renderProject(); } catch (e) { /* mantém o HTML estático */ }
 
   /* ===== FUNDO DA CAPA =====
@@ -262,7 +513,7 @@
 
   function renderHome(overrideHome, overrideIndex) {
     renderSharedChrome();
-    if (isCase()) return;
+    if (isWorkPath()) return;
     var H = overrideHome || window.__CMS_HOME__;
     if (!H || !H.hero) return;
     aplicarAparenciaHome(H);
@@ -396,10 +647,9 @@
         if (xf.status === 200 || xf.status === 0) idx = JSON.parse(xf.responseText);
       }
       if (idx) {
-        var list = (idx.projects || []).filter(function (p) {
-          return p.visible !== false && typeof p.slug === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(p.slug);
-        })
-          .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+        var list = projetosPublicos(idx).filter(function (p) {
+          return p.featured === true;
+        }).slice(0, 4);
         var cardsEl = document.querySelector('.cards');
         if (cardsEl) {
           cardsEl.innerHTML = list.map(function (p, cardIndex) {
@@ -409,12 +659,12 @@
             }).join('');
             var sizes = ['normal', 'largo', 'alto', 'grande', 'largura-completa'];
             var size = sizes.indexOf(p.cardSize) !== -1 ? p.cardSize : 'normal';
-            var cover = String(p.cover || '').trim();
-            var coverMobile = String(p.coverMobile || '').trim();
-            var media = cover ? ((coverMobile ? '<picture><source media="(max-width:639px)" srcset="' + esc(coverMobile) + '">' : '') +
-              '<img src="' + esc(cover) + '" alt="" onerror="this.remove()">' + (coverMobile ? '</picture>' : '')) : '';
+            var media = projectMedia(p, 639);
+            var coming = emBreve(p);
+            var tag = coming ? 'article' : 'a';
+            var href = coming ? '' : ' href="work/' + esc(p.slug) + '.html"';
             return '' +
-              '<a class="card reveal card--' + esc(size) + (p.featured ? ' card--featured' : '') + (p.coverLight ? ' card--light' : '') + '" href="work/' + esc(p.slug) + '.html">' +
+              '<' + tag + ' class="' + (coming ? 'home-teaser' : 'card') + ' reveal card--' + esc(size) + (coming ? ' home-teaser--coming' : '') + (p.coverLight ? ' card--light' : '') + '"' + href + '>' +
               '  <div class="scene p' + ((cardIndex % 4) + 1) + '">' + media + '</div>' +
               '  <div class="card-tags">' + tagsHtml + '</div>' +
               '  <div class="card-foot">' +
@@ -422,9 +672,9 @@
               '      <h3 data-pt="' + esc(p.titlePt) + '" data-en="' + esc(p.titleEn) + '">' + esc(p.titlePt) + '</h3>' +
               '      <div class="sub" data-pt="' + esc(p.subtitlePt) + '" data-en="' + esc(p.subtitleEn) + '">' + esc(p.subtitlePt) + '</div>' +
               '    </div>' +
-              '    <div class="yr">' + esc(p.year) + '</div>' +
+              '    <div class="yr">' + (coming ? '<span class="coming-label" data-pt="Em breve" data-en="Coming soon">Em breve</span> · ' : '') + esc(p.year) + '</div>' +
               '  </div>' +
-              '</a>';
+              '</' + tag + '>';
           }).join('');
         }
       }
@@ -448,6 +698,47 @@
      recusado na publicação pelo Worker, que é quem decide.
      TIPOS_DE_BLOCO fica lá em cima, junto das chamadas, pelo motivo explicado
      ali. */
+  function renderWorkIndex(overrideIndex) {
+    if (!isWorkIndex()) return;
+    aplicarAparenciaPagina();
+    renderSharedChrome();
+    var idx = overrideIndex || window.__CMS_PROJECTS_INDEX__;
+    if (!idx) return;
+    var list = projetosPublicos(idx);
+    var count = document.querySelector('[data-work-count]');
+    if (count) {
+      var pt = list.length === 1 ? '1 PROJETO' : list.length + ' PROJETOS';
+      var en = list.length === 1 ? '1 PROJECT' : list.length + ' PROJECTS';
+      setText(count, pt, en);
+      count.textContent = pt;
+    }
+    var grid = document.querySelector('.work-archive-grid');
+    if (!grid) return;
+    grid.innerHTML = list.map(function (p, i) {
+      var number = String(i + 1).padStart(2, '0');
+      var coming = emBreve(p);
+      var tag = coming ? 'article' : 'a';
+      var href = coming ? '' : ' href="' + esc(p.slug) + '.html"';
+      var titleId = 'work-title-' + number;
+      var tagsPt = Array.isArray(p.tagsPt) ? p.tagsPt : [];
+      var tagsEn = Array.isArray(p.tagsEn) ? p.tagsEn : [];
+      var tags = tagsPt.map(function (item, tagIndex) {
+        return '<span data-pt="' + esc(item) + '" data-en="' + esc(tagsEn[tagIndex] || item) + '">' + esc(item) + '</span>';
+      }).join('<i aria-hidden="true">·</i>');
+      return '<' + tag + ' class="work-archive-card reveal' + (coming ? ' work-archive-card--coming' : '') +
+        (p.coverLight ? ' card--light' : '') + '"' + href + (coming ? ' aria-labelledby="' + titleId + '"' : '') + '>' +
+        '<div class="work-archive-card-top"><span>' + number + '</span><span>' + esc(p.year) + '</span></div>' +
+        '<div class="work-archive-media"><div class="scene p' + ((i % 4) + 1) + '">' + projectMedia(p, 639) + '</div></div>' +
+        '<div class="work-archive-info">' +
+          '<div><h2 id="' + titleId + '" data-pt="' + esc(p.titlePt) + '" data-en="' + esc(p.titleEn) + '">' + esc(p.titlePt) + '</h2>' +
+          '<p data-pt="' + esc(p.subtitlePt || p.category || '') + '" data-en="' + esc(p.subtitleEn || p.category || '') + '">' + esc(p.subtitlePt || p.category || '') + '</p></div>' +
+          (coming ? '<span class="work-archive-state" data-pt="Em breve" data-en="Coming soon">Em breve</span>' : '') +
+        '</div>' +
+        (tags ? '<div class="work-archive-tags">' + tags + '</div>' : '') +
+        '</' + tag + '>';
+    }).join('');
+  }
+
   function urlDoVimeoDeBloco(cfg) {
     var u = 'https://player.vimeo.com/video/' + encodeURIComponent(cfg.videoId) +
       '?autopause=0&dnt=1';
@@ -553,10 +844,10 @@
   }
 
   function renderProject(overrideProject, overrideIndex) {
-    if (!isCase()) return;
+    if (!isProjectPage()) return;
     var P = overrideProject || window.__CMS_PROJECT__;
     if (!P || !P.hero) return;
-    aplicarAparenciaProjeto(P);
+    aplicarAparenciaPagina();
     var h = P.hero;
     setOptionalLabel(document.querySelector('.case-hero .eyebrow'), h.eyebrowPt, h.eyebrowEn, h.showEyebrow);
     setText(document.querySelector('.case-hero h1'), h.titlePt, h.titleEn);
@@ -616,8 +907,7 @@
       var idx = overrideIndex || window.__CMS_PROJECTS_INDEX__;
       var navEl = document.querySelector('.case-nav');
       if (navEl && idx && Array.isArray(idx.projects)) {
-        var visible = idx.projects.filter(function (p) { return p.visible !== false; })
-          .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+        var visible = projetosPublicos(idx).filter(function (p) { return !emBreve(p); });
         var myPos = -1;
         for (var vi = 0; vi < visible.length; vi++) if (visible[vi].slug === P.slug) { myPos = vi; break; }
         var prevP = myPos !== -1 && visible.length > 1 ? visible[(myPos - 1 + visible.length) % visible.length] : null;
@@ -655,5 +945,4 @@
      reconstruídos de FAQ e "O que eu faço" perdiam o clique, e as entradas
      não eram remedidas. Quem cuida disso agora é window.__CMS_REINIT__, em
      js/main.js, que reaproveita o setLang de verdade em vez de imitá-lo. */
-  window.__CMS_RENDER__ = { home: renderHome, project: renderProject };
 })();

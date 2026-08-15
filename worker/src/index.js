@@ -10,7 +10,7 @@ import {
   MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_MIME,
   isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO, MAX_REQUEST_BYTES_POR_PUBLICACAO,
-  MODOS_VIDEO, VIMEO_HOSTS, isVimeoConfigValido, isPosterValido,
+  MODOS_VIDEO, VIMEO_HOSTS, parseVimeoUrl, isVimeoConfigValido, isPosterValido,
   isSlugValid, bytesOf, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido
 } from './validate.js';
 
@@ -200,6 +200,37 @@ function erroNasConfiguracoesGlobais(data) {
       if (item.visible != null && typeof item.visible !== 'boolean') return 'header.menu[' + m + '].visible precisa ser verdadeiro ou falso.';
     }
   }
+  var footer = data.footer || {};
+  var footerKeys = ['kickerPt','kickerEn','headlinePt','headlineEn','supportPt','supportEn','copyrightPt','copyrightEn','disclaimerPt','disclaimerEn','marqueeText','showEmail','showCopyEmail','showNavigation','showSocial','showSignature','grainEnabled','topSpacing','emailOffset','legalOffset','background'];
+  var footerExtra = Object.keys(footer).filter(function (k) { return footerKeys.indexOf(k) === -1; });
+  if (footerExtra.length) return 'footer tem campo desconhecido: ' + footerExtra.join(', ') + '.';
+  for (var ft = 0; ft < footerKeys.length; ft++) {
+    var footerKey = footerKeys[ft];
+    if (footerKey === 'background' || footerKey === 'grainEnabled' || ['topSpacing','emailOffset','legalOffset'].indexOf(footerKey) !== -1 || footerKey.indexOf('show') === 0 || footer[footerKey] === undefined) continue;
+    if (typeof footer[footerKey] !== 'string') return 'footer.' + footerKey + ' precisa ser texto.';
+  }
+  for (var fb = 0; fb < ['showEmail','showCopyEmail','showNavigation','showSocial','showSignature'].length; fb++) {
+    var booleanKey = ['showEmail','showCopyEmail','showNavigation','showSocial','showSignature'][fb];
+    if (footer[booleanKey] !== undefined && typeof footer[booleanKey] !== 'boolean') return 'footer.' + booleanKey + ' precisa ser verdadeiro ou falso.';
+  }
+  if (footer.grainEnabled !== undefined && typeof footer.grainEnabled !== 'boolean') return 'footer.grainEnabled precisa ser verdadeiro ou falso.';
+  if (footer.topSpacing !== undefined && (typeof footer.topSpacing !== 'number' || !isFinite(footer.topSpacing) || footer.topSpacing < 48 || footer.topSpacing > 120)) return 'footer.topSpacing precisa ficar entre 48 e 120.';
+  if (footer.emailOffset !== undefined && (typeof footer.emailOffset !== 'number' || !isFinite(footer.emailOffset) || footer.emailOffset < -40 || footer.emailOffset > 60)) return 'footer.emailOffset precisa ficar entre -40 e 60.';
+  if (footer.legalOffset !== undefined && (typeof footer.legalOffset !== 'number' || !isFinite(footer.legalOffset) || footer.legalOffset < -60 || footer.legalOffset > 40)) return 'footer.legalOffset precisa ficar entre -60 e 40.';
+  if (footer.background !== undefined) {
+    var footerBg = footer.background;
+    if (!footerBg || typeof footerBg !== 'object' || Array.isArray(footerBg)) return 'footer.background precisa ser um objeto.';
+    var footerBgKeys = ['type','color','image','video','poster','overlayOpacity'];
+    var footerBgExtra = Object.keys(footerBg).filter(function (k) { return footerBgKeys.indexOf(k) === -1; });
+    if (footerBgExtra.length) return 'footer.background tem campo desconhecido: ' + footerBgExtra.join(', ') + '.';
+    if (footerBg.type !== undefined && ['solid','image','video'].indexOf(footerBg.type) === -1) return 'footer.background.type precisa ser solid, image ou video.';
+    if (footerBg.color !== undefined && (typeof footerBg.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(footerBg.color))) return 'footer.background.color precisa usar hexadecimal com 6 dígitos.';
+    var footerImages = ['.jpg','.jpeg','.png','.webp','.avif','.gif','.svg'];
+    if (footerBg.image && !caminhoDeMidiaValido(footerBg.image, footerImages)) return 'footer.background.image aponta para uma imagem inválida.';
+    if (footerBg.poster && !caminhoDeMidiaValido(footerBg.poster, footerImages)) return 'footer.background.poster aponta para uma imagem inválida.';
+    if (footerBg.video && !caminhoDeMidiaValido(footerBg.video, ['.mp4','.webm']) && !parseVimeoUrl(footerBg.video)) return 'footer.background.video precisa ser MP4, WebM ou uma URL válida do Vimeo.';
+    if (footerBg.overlayOpacity !== undefined && (typeof footerBg.overlayOpacity !== 'number' || !isFinite(footerBg.overlayOpacity) || footerBg.overlayOpacity < 0 || footerBg.overlayOpacity > 100)) return 'footer.background.overlayOpacity precisa ficar entre 0 e 100.';
+  }
   var seo = data.seo || {};
   if (seo.canonicalBase && !urlEditorialValida(seo.canonicalBase, true)) return 'seo.canonicalBase precisa usar http:// ou https://.';
   var brand = data.brand || {};
@@ -276,6 +307,24 @@ function aplicarMetadataNoHtml(html, globalData, projeto, path) {
     html = substituirLinksPorRel(html, 'apple-touch-icon', '<link rel="apple-touch-icon" href="' + escapeHtmlMeta(caminhoDeBrandingNoHtml(brand.appleTouchIcon, path)) + '">');
   }
   return html;
+}
+
+function erroNoIndiceProjetos(data) {
+  if (!data || !Array.isArray(data.projects)) return 'projects precisa ser uma lista.';
+  var slugs = {};
+  for (var i = 0; i < data.projects.length; i++) {
+    var p = data.projects[i];
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return 'projects[' + i + '] precisa ser um objeto.';
+    if (!isSlugValid(p.slug)) return 'projects[' + i + '].slug é inválido.';
+    if (slugs[p.slug]) return 'O slug ' + p.slug + ' está duplicado no índice.';
+    slugs[p.slug] = true;
+    if (p.visible !== undefined && typeof p.visible !== 'boolean') return 'projects[' + i + '].visible precisa ser verdadeiro ou falso.';
+    if (p.featured !== undefined && typeof p.featured !== 'boolean') return 'projects[' + i + '].featured precisa ser verdadeiro ou falso.';
+    if (p.availability !== undefined && ['published', 'coming-soon'].indexOf(p.availability) === -1) {
+      return 'projects[' + i + '].availability precisa ser published ou coming-soon.';
+    }
+  }
+  return null;
 }
 
 function erroNaAparenciaDaHome(home) {
@@ -604,6 +653,10 @@ async function handlePublish(request, env) {
         var erroVideo = validarVideoDaCapa(op.data.hero);
         if (erroVideo) return json(erroVideo.corpo, erroVideo.status);
         op.__conferirVimeo = op.data.hero && op.data.hero.videoMode === 'vimeo' ? op.data.hero.vimeo : null;
+      }
+      if (caminho === 'content/projects/index.json') {
+        var erroIndice = erroNoIndiceProjetos(op.data);
+        if (erroIndice) return json({ error: 'invalid_projects_index', message: erroIndice + ' Nada foi publicado.', path: caminho }, 422);
       }
       if (caminho === 'content/global.json') {
         var erroEfeitos = erroNosEfeitosGlobais(op.data.effects);
