@@ -332,9 +332,29 @@ function erroNaAparenciaDaHome(home) {
   if (status !== undefined && ['available', 'unavailable', 'hidden'].indexOf(status) === -1) {
     return 'hero.availabilityStatus precisa ser available, unavailable ou hidden.';
   }
+  /* Capa: descida da frase de efeito e liga/desliga do indicador de rolagem.
+     null e ausência valem como "usar o padrão do site", igual aos campos do
+     botão de trabalhos mais abaixo. */
+  var hero = home && home.hero;
+  if (hero && typeof hero === 'object' && !Array.isArray(hero)) {
+    var off = hero.claimOffset;
+    if (off !== undefined && off !== null &&
+        (typeof off !== 'number' || !Number.isFinite(off) || off < 0 || off > 120)) {
+      return 'hero.claimOffset (a descida da frase de efeito) precisa ser um número entre 0 e 120.';
+    }
+    if (hero.showNextHint !== undefined && typeof hero.showNextHint !== 'boolean') {
+      return 'hero.showNextHint precisa ser verdadeiro ou falso.';
+    }
+  }
+  /* Sem `sections` só pulamos o laço das seções, e não o resto da função.
+     Antes aqui havia um `return null`, e como as regras do botão de trabalhos
+     ficam depois dele, um envio sem `sections` passava por cima delas inteiras:
+     ctaScale e os dois espaçamentos entravam sem faixa nenhuma. O painel
+     sempre manda `sections`, então nunca apareceu — mas quem decide precisa ser
+     o Worker, e ele não estava decidindo nesse caminho. */
   var sections = home && home.sections;
-  if (!sections || typeof sections !== 'object' || Array.isArray(sections)) return null;
-  var ids = ['hero', 'work', 'about', 'help', 'faq', 'contact'];
+  var ids = (sections && typeof sections === 'object' && !Array.isArray(sections))
+    ? ['hero', 'work', 'about', 'help', 'faq', 'contact'] : [];
   for (var i = 0; i < ids.length; i++) {
     var id = ids[i], s = sections[id];
     if (!s || typeof s !== 'object' || Array.isArray(s)) continue;

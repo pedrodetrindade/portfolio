@@ -1865,6 +1865,8 @@
       fieldRow('Localização (EN)', 'Enter força uma nova linha.', ta('hero_locen', hero.locationEn)) +
       fieldRow('Frase de efeito (PT)', '', ta('hero_claimpt', hero.claimPt)) +
       fieldRow('Frase de efeito (EN)', '', ta('hero_claimen', hero.claimEn)) +
+      fieldRow('Descer a frase de efeito', 'Move só a frase para baixo. O nome fica onde está.',
+        sliderControl('hero_claimoffset', hero.claimOffset == null ? 0 : hero.claimOffset, 0, 120, 'px')) +
       fieldRow('Status de disponibilidade', 'O estado aparece igual no header e dentro do menu, inclusive nos cases.', selectDe('hero_availstatus', availabilityStatus, [
         ['available', 'Disponível · luz verde'], ['unavailable', 'Indisponível · luz vermelha'], ['hidden', 'Não mostrar status']
       ])) +
@@ -1876,7 +1878,8 @@
       fieldRow('Texto de indisponibilidade (EN)', '', ta('hero_unavailen', hero.unavailabilityEn || 'Unavailable for projects')) +
       fieldRow('Versão curta indisponível (PT)', 'Usada quando o header encolhe.', ta('hero_unavailspt', hero.unavailabilityShortPt || 'Indisponível')) +
       fieldRow('Versão curta indisponível (EN)', '', ta('hero_unavailsen', hero.unavailabilityShortEn || 'Unavailable')) +
-      fieldRow('Indicador de rolagem — rótulo (PT)', '"Continue para ver os projetos"', ta('hero_nhlpt', hero.nextHintLabelPt)) +
+      fieldRow('Mostrar indicador de rolagem', 'O bloco no pé da capa: rótulo, destino e a seta que rola até os projetos.', switchControl('hero_shownexthint', hero.showNextHint !== false)) +
+      fieldRow('Indicador de rolagem — rótulo (PT)', 'Deixe em branco para mostrar só o destino e a seta.', ta('hero_nhlpt', hero.nextHintLabelPt)) +
       fieldRow('Indicador de rolagem — rótulo (EN)', '', ta('hero_nhlen', hero.nextHintLabelEn)) +
       fieldRow('Indicador de rolagem — destino (PT)', '"Projetos"', ta('hero_nhnpt', hero.nextHintNamePt)) +
       fieldRow('Indicador de rolagem — destino (EN)', '', ta('hero_nhnen', hero.nextHintNameEn)) +
@@ -1926,6 +1929,15 @@
       /* Compatibilidade com versões anteriores do site/CMS. O campo legado
          continua coerente, mas o estado de três opções é quem manda. */
       hero.showAvailability = e.target.value !== 'hidden';
+      touch();
+    });
+    bindSlider('hero_claimoffset', 0, 120, function (v) { hero.claimOffset = v; touch(); });
+    /* Ligado apaga o campo em vez de gravar true: ausência já significa ativo,
+       e é a mesma regra de showLabel e showEyebrow. Gravar true encheria o
+       JSON de campos que não decidem nada. */
+    bindSwitch('hero_shownexthint', function (enabled) {
+      if (enabled) delete hero.showNextHint;
+      else hero.showNextHint = false;
       touch();
     });
     bindSwitch('hero_grain', function (enabled) {

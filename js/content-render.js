@@ -461,7 +461,7 @@
     var iframeAntigo = liquidBg.querySelector('.hero-vimeo');
     if (iframeAntigo) iframeAntigo.remove();
     if (video) { video.hidden = true; video.removeAttribute('src'); }
-    liquidBg.classList.remove('has-video');
+    liquidBg.classList.remove('has-video', 'video-pronto');
     liquidBg.style.removeProperty('--hero-poster');
 
     /* Poster primeiro, sempre que existir: ele aparece antes do iframe, se o
@@ -483,6 +483,13 @@
       if (poster) video.setAttribute('poster', resolveAssetUrl(poster));
       video.hidden = false;
       liquidBg.classList.add('has-video');
+      /* Mesmo fundido cruzado do Vimeo. loadeddata e não o src: com as massas
+         agora saindo por opacidade em vez de display:none, elas continuariam
+         cobrindo um vídeo que ainda não tem quadro para mostrar. */
+      if (video.readyState >= 2) liquidBg.classList.add('video-pronto');
+      else video.addEventListener('loadeddata', function () {
+        liquidBg.classList.add('video-pronto');
+      }, { once: true });
       var p = video.play();
       if (p && p.catch) p.catch(function () { /* autoplay recusado: fica o poster */ });
       return;
@@ -505,7 +512,15 @@
          erro (o Vimeo responde 200 com a própria tela de "vídeo não existe"),
          então quem impede um vídeo quebrado de ir ao ar é a validação na
          publicação — ver validarVideoDaCapa no Worker. */
-      frame.addEventListener('load', function () { frame.classList.add('is-pronto'); });
+      /* video-pronto vai no .liquid-bg, e não só no iframe, porque quem some
+         é irmão do iframe: são as massas de gradiente que precisam saber que
+         chegou a hora de sair. As duas classes entram no mesmo quadro, então o
+         fundido é cruzado de verdade — uma camada entra enquanto a outra sai,
+         sem intervalo em que a capa fique sem fundo. */
+      frame.addEventListener('load', function () {
+        frame.classList.add('is-pronto');
+        liquidBg.classList.add('video-pronto');
+      });
       liquidBg.appendChild(frame);
       liquidBg.classList.add('has-video');
     }
@@ -529,10 +544,18 @@
       if (hero.availabilityShortPt) availSpan.setAttribute('data-pt-short', hero.availabilityShortPt);
       if (hero.availabilityShortEn) availSpan.setAttribute('data-en-short', hero.availabilityShortEn);
     }
-    var nhLabel = document.querySelector('.hero .next-hint .nh-label');
-    var nhName = document.querySelector('.hero .next-hint .nh-name');
-    setText(nhLabel, hero.nextHintLabelPt, hero.nextHintLabelEn);
-    setText(nhName, hero.nextHintNamePt, hero.nextHintNameEn);
+    /* O elemento é criado por main.js, que roda depois deste arquivo: na carga
+       inicial estes seletores são null e é o próprio main.js quem aplica o
+       dado. Aqui o caminho que importa é o da prévia ao vivo, quando o painel
+       reenvia o conteúdo e o indicador já existe no DOM.
+       setOptionalLabel e não setText: texto vazio precisa esconder a linha, em
+       vez de deixar um span sem conteúdo ocupando o gap da coluna. */
+    var nextHint = document.querySelector('.hero .next-hint');
+    if (nextHint) {
+      setOptionalLabel(nextHint.querySelector('.nh-label'), hero.nextHintLabelPt, hero.nextHintLabelEn);
+      setOptionalLabel(nextHint.querySelector('.nh-name'), hero.nextHintNamePt, hero.nextHintNameEn);
+      nextHint.hidden = hero.showNextHint === false;
+    }
 
     aplicarVideoDaCapa(hero);
 

@@ -461,3 +461,77 @@ do site", e o JS remove a variável em vez de escrever um valor — cuidado com
 `clampNum(null)`, que devolveria 0 porque `Number(null)` é 0. A faixa é
 repetida no painel e no Worker de propósito: o painel é conveniência, quem
 decide é o Worker.
+
+**Quem monta um elemento é quem precisa ler o dado do CMS.** `content-render.js`
+carrega antes de `js/main.js`, e é o `main.js` que injeta o `.next-hint`, o
+menu, o painel de contato e o véu. Quando o render tentava escrever o texto
+publicado no indicador, o elemento ainda não existia, `querySelector` devolvia
+`null` e o literal do `main.js` continuava valendo: apagar o rótulo no painel
+gravava `""` no JSON, publicava, e o site seguia mostrando o texto antigo.
+Passou despercebido por dias porque o valor de reserva era idêntico ao
+publicado. Agora o `main.js` lê `window.__CMS_HOME__.hero` ao montar, e o
+`content-render.js` reaplica depois — esse segundo caminho é o que a prévia ao
+vivo usa a cada tecla. Qualquer campo novo de um elemento injetado precisa dos
+dois lados. Cuidado com `||` para escolher a reserva: texto vazio é uma escolha
+legítima e cairia nela; teste o tipo (`typeof v === 'string'`).
+
+**Texto do CMS dentro de `innerHTML` precisa ser escapado.** Enquanto os rótulos
+do `main.js` eram literais do arquivo isso não importava. Assim que passam a vir
+do painel, uma aspa no texto fecha o atributo no meio e o resto da frase vira
+marcação. `content-render.js` já tinha um `esc()`; o `main.js` ganhou o mesmo.
+
+**`[hidden]` perde para qualquer `display` declarado em componente.** O atributo
+só vale pelo `display:none` da folha de estilo do usuário, que tem a menor
+precedência de todas. `.next-hint` é `display:flex`, então marcar `hidden` não
+escondia nada. Todo componente que possa ser desligado pelo painel precisa da
+sua própria regra `[hidden]{display:none}`.
+
+**Em `@keyframes`, o easing vale para cada trecho entre keyframes, não para a
+animação inteira.** Era o defeito do blur da intro: `acende-nome` tinha três
+keyframes (blur 8 → 3 → 0) com `--ease-smooth`, e cada metade ganhava a sua
+própria saída rápida. O blur caía a ~3 nos primeiros 20% do primeiro trecho,
+estacionava até a metade, e então um segundo arranco o levava a zero. Duas
+saídas emendadas com um platô no meio leem como um blur que para e depois some
+de uma vez. O arquivo já registrava a regra certa para a transformação do nome
+("a interpolação é linear de propósito; um easing forte resolveria quase tudo no
+começo"), mas ela não tinha sido aplicada aqui. Curva desenhada nos keyframes,
+interpolação linear: a queda fica monótona e desacelera pelo espaçamento.
+
+**A capa fica ACIMA do véu da intro** (z-index 95 contra 90), então o preto do
+começo não é o véu: é o próprio fundo da capa, vazio. Isso importa porque
+`.liquid-bg.has-video .lq` usava `display:none`, aplicado no instante em que o
+vídeo era *anexado*, enquanto o iframe só aparece no evento `load`. Sem poster
+configurado, o intervalo entre uma coisa e outra era um retângulo preto, e o
+vídeo entrava por cima dele de estalo. As massas agora saem por fundido cruzado
+(`.video-pronto` no `.liquid-bg`, posta junto com `.is-pronto` no iframe), no
+mesmo intervalo em que o vídeo entra. Nunca volte a usar `display:none` aí.
+
+**Fundido longo pede curva linear, não `--ease-soft`.** Medido: `.16,1,.3,1`
+resolve 49% da opacidade em 10% do tempo e 75% em 20%. Num fundido de 1s isso é
+um pulo de ~300ms com uma cauda invisível de 700ms — foi o que fazia o vídeo da
+capa aparecer de repente. Os easings do projeto são para movimento curto de
+interface; para dissolver uma camada grande, use `linear` e mais tempo
+(`--hero-video-fade`, 2200ms).
+
+**A frase de efeito da capa desce por `position/top`, nunca por margem ou
+transform** (`--hero-claim-offset`, campo `hero.claimOffset`, 0-120px). Margem
+mudaria a altura do `.hero-stack`, que é centrado: descer a frase 60px empurra o
+nome 30px para cima junto e obriga a remedir `--nome-dy`. Transform já pertence
+à entrada (`.h-step` vai de `translateY(18px)` a `none`) e seria sobrescrito
+quando os secundários entram, o mesmo tropeço já registrado para o `.next-hint`.
+O teto de 120px é medido: a 1280x800 sobram 141px entre o fim da frase e o topo
+do indicador, e em 200px a frase passava por cima dele.
+
+**O indicador de rolagem da capa liga e desliga pelo painel**
+(`hero.showNextHint`). Ausência do campo é "ligado", só `false` desliga, e
+religar apaga o campo em vez de gravar `true` — mesma convenção de `showLabel` e
+`showEyebrow`. As duas linhas internas somem sozinhas quando ficam sem texto nos
+dois idiomas, senão um span vazio ainda ocuparia o `gap` da coluna.
+
+**`erroNaAparenciaDaHome` não pode ter `return` antecipado no meio.** Havia um
+`if (!sections) return null` antes das regras do botão de trabalhos, então um
+envio sem `sections` pulava a validação de `ctaScale` e dos dois espaçamentos
+por inteiro. O painel sempre manda `sections`, por isso nunca apareceu — mas a
+promessa do projeto é que quem decide é o Worker, e nesse caminho ele não
+decidia. Ao acrescentar regra nova, ponha-a antes de qualquer saída antecipada
+ou torne a saída condicional.

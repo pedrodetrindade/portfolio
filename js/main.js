@@ -221,13 +221,42 @@
       nomePt:'Projetos',        nomeEn:'Projects' }
   ];
 
+  /* O texto do indicador vem do CMS, com os valores acima como reserva.
+     Isto não é conveniência: este arquivo roda DEPOIS de content-render.js, e
+     era ele quem injetava o elemento. Quando o render tentava escrever o texto
+     publicado, o .next-hint ainda não existia, o querySelector devolvia null e
+     o valor fixo daqui ficava valendo — apagar o rótulo no painel salvava no
+     JSON e não mudava nada no site. Quem monta o elemento tem que ler o dado.
+     content-render.js continua reaplicando, e aí sim o elemento existe: é esse
+     caminho que a prévia ao vivo usa a cada tecla digitada. */
+  const heroCms = (window.__CMS_HOME__ && window.__CMS_HOME__.hero) || {};
+  /* Ausência do campo mantém o padrão, só false desliga: mesma convenção de
+     showLabel e showEyebrow. Cadeia de || não serve aqui, porque texto vazio
+     é uma escolha legítima ("não quero rótulo") e cairia na reserva. */
+  const ouEntao = (v, reserva) => (typeof v === 'string' ? v : reserva);
+  /* Escapa porque estes valores deixaram de ser literais deste arquivo e
+     passaram a vir do painel: uma aspa no texto fecharia o atributo no meio e
+     o resto da frase viraria marcação. */
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
   PROXIMA.forEach(p => {
     const secao = document.querySelector(p.de);
     if (!secao || !document.querySelector(p.alvo)) return;
+    if (p.de === '.hero' && heroCms.showNextHint === false) return;
+
+    const rotuloPt = p.de === '.hero' ? ouEntao(heroCms.nextHintLabelPt, p.rotuloPt) : p.rotuloPt;
+    const rotuloEn = p.de === '.hero' ? ouEntao(heroCms.nextHintLabelEn, p.rotuloEn) : p.rotuloEn;
+    const nomePt   = p.de === '.hero' ? ouEntao(heroCms.nextHintNamePt,  p.nomePt)   : p.nomePt;
+    const nomeEn   = p.de === '.hero' ? ouEntao(heroCms.nextHintNameEn,  p.nomeEn)   : p.nomeEn;
+    /* Cada linha some sozinha quando fica sem texto nos dois idiomas: um span
+       vazio ainda ocuparia o gap da coluna e abriria um degrau no lugar dele. */
+    const vazio = (pt, en) => !String(pt || '').trim() && !String(en || '').trim();
+
     secao.insertAdjacentHTML('beforeend', `
       <a class="next-hint reveal" href="${p.alvo}">
-        <span class="nh-label" data-pt="${p.rotuloPt}" data-en="${p.rotuloEn}">${p.rotuloPt}</span>
-        <span class="nh-name" data-pt="${p.nomePt}" data-en="${p.nomeEn}">${p.nomePt}</span>
+        <span class="nh-label"${vazio(rotuloPt, rotuloEn) ? ' hidden' : ''} data-pt="${esc(rotuloPt)}" data-en="${esc(rotuloEn)}">${esc(rotuloPt)}</span>
+        <span class="nh-name"${vazio(nomePt, nomeEn) ? ' hidden' : ''} data-pt="${esc(nomePt)}" data-en="${esc(nomeEn)}">${esc(nomePt)}</span>
         <span class="nh-arrow" aria-hidden="true">↓</span>
       </a>`);
   });

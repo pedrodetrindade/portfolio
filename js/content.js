@@ -389,6 +389,14 @@
     ctaVar('--work-cta-scale', w.ctaScale, 80, 160, '', 100);
     ctaVar('--work-cta-space-top', w.ctaSpacingTop, 0, 200, 'px');
     ctaVar('--work-cta-space-bottom', w.ctaSpacingBottom, 0, 200, 'px');
+
+    /* Descida da frase de impacto da capa. Mesmo tratamento de ausência: sem o
+       campo a variável sai e o CSS volta a 0px por conta própria.
+       Teto de 120px e não 200: medido a 1280x800, sobram 141px entre o fim da
+       frase e o topo do indicador de rolagem, e em 200 a frase passava por
+       cima dele. 120 deixa folga e ainda é bem mais do que "descer um pouco". */
+    var hr = (home && home.hero) || {};
+    ctaVar('--hero-claim-offset', hr.claimOffset, 0, 120, 'px');
   }
   if (!isCase) applySectionSpacing(window.__CMS_HOME__);
 

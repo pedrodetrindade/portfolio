@@ -370,15 +370,35 @@ body.intro-mode{overflow:hidden}
   0%  {clip-path:inset(0 100% 0 0)}
   100%{clip-path:inset(0 0 0 0)}
 }
+/* Interpolação linear e curva desenhada nos próprios keyframes, pelo mesmo
+   motivo já registrado para a transformação do nome logo acima: um easing de
+   saída forte resolve quase tudo no começo e deixa o resto parado.
+
+   Era esse o defeito aqui. Com var(--ease-smooth) o easing valia para CADA
+   trecho entre keyframes, não para a animação inteira: o blur caía de 8 a ~3
+   nos primeiros 20% do primeiro trecho, estacionava em 3 até a metade, e então
+   um segundo easing recomeçava e o levava a 0 em mais um arranco. Duas saídas
+   rápidas emendadas, com um platô no meio: a leitura era de um blur que parava
+   e depois sumia de uma vez, em vez de dissolver.
+
+   Agora a queda é monótona e desacelera sozinha pelo espaçamento dos
+   keyframes, chegando a zero no fim da revelação, junto com a máscara. */
 @keyframes acende-nome{
   0%  {opacity:.10; filter:blur(8px)}
-  50% {opacity:.58; filter:blur(3px)}
+  25% {opacity:.42; filter:blur(5.1px)}
+  50% {opacity:.68; filter:blur(2.9px)}
+  70% {opacity:.85; filter:blur(1.5px)}
+  86% {opacity:.95; filter:blur(.6px)}
   100%{opacity:1;   filter:blur(0)}
 }
+/* A máscara acompanha em linear pelo mesmo motivo: com ease-smooth ela cobria
+   67% do texto nos primeiros 20% do tempo e depois se arrastava, descolando da
+   dissolução do blur. As duas precisam andar juntas para lerem como um
+   movimento só. */
 .js body.intro-mode.name-in .hero-name .hn-line{
-  animation:revela-nome var(--intro-reveal,800ms) var(--ease-smooth) forwards}
+  animation:revela-nome var(--intro-reveal,800ms) linear forwards}
 .js body.intro-mode.name-in .hero-name{
-  animation:acende-nome var(--intro-reveal,800ms) var(--ease-smooth) forwards,
+  animation:acende-nome var(--intro-reveal,800ms) linear forwards,
             assenta-nome var(--intro-move,1200ms) var(--ease-soft) var(--intro-reveal,800ms) forwards}
 
 /* ETAPA 2, 800 a 2000ms: escala e posição caminham juntas, num movimento só.
@@ -622,7 +642,17 @@ body.menu-open header .ctrl-group{opacity:0}
    continua por cima protegendo o contraste. Com vídeo ativo (.has-video),
    as massas somem para não brigar visualmente com a imagem em movimento. */
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.liquid-bg.has-video .lq{display:none}
+/* As massas saem por fundido cruzado com o vídeo, não por display:none.
+   Antes elas eram removidas no instante em que o vídeo era ANEXADO, mas o
+   vídeo só fica visível no evento load. Entre um momento e outro a capa ficava
+   sem fundo nenhum — e ela fica ACIMA do véu da intro (z-index 95 contra 90),
+   então esse vazio era exatamente o preto chapado que se via antes de o vídeo
+   entrar de estalo. Sem poster configurado, não havia nada cobrindo o buraco.
+   Agora as massas seguram o fundo e se dissolvem no mesmo intervalo em que o
+   vídeo aparece: não existe mais quadro sem fundo, e a passagem é um
+   cruzamento em vez de um corte. */
+.liquid-bg.has-video .lq{transition:opacity var(--hero-video-fade,2200ms) linear}
+.liquid-bg.has-video.video-pronto .lq{opacity:0}
 
 /* Poster da capa: fica ATRÁS do vídeo e do iframe, então aparece antes de
    qualquer um deles carregar, e continua sendo o que se vê se o Vimeo estiver
@@ -648,7 +678,13 @@ body.menu-open header .ctrl-group{opacity:0}
   width:100vw;height:56.25vw;min-width:177.78vh;min-height:100vh;
   transform:translate(-50%,-50%);
   pointer-events:none;
-  opacity:0;transition:opacity var(--dur-slow) var(--ease-soft)}
+  /* Fundido longo e linear, não --dur-slow com --ease-soft. Aquela curva
+     resolve 75% da opacidade nos primeiros 200ms de 1s: na prática o vídeo
+     aparecia num pulo de ~300ms e depois tinha uma cauda invisível. Como a
+     chegada não é sincronizada com nada (depende do load do iframe), o pulo
+     caía em qualquer ponto da intro. Linear e mais longo dissolve de verdade,
+     e é o mesmo intervalo em que as massas de gradiente saem. */
+  opacity:0;transition:opacity var(--hero-video-fade,2200ms) linear}
 .hero-vimeo.is-pronto{opacity:1}
 /* decorativo: não captura clique nem foco, e o conteúdo da capa segue acima */
 .liquid-bg .lq-veil{z-index:2}
@@ -736,7 +772,16 @@ body.menu-open header .ctrl-group{opacity:0}
    para cima, que é exatamente o efeito desejado: mais ar embaixo, nome mais
    alto. O --nome-dy é remedido pelo JS, então a intro continua nascendo no
    centro exato mesmo com a composição deslocada. */
-.hero-claim{max-width:min(40ch,900px);margin:clamp(3.2rem,7vh,5.6rem) auto 0;
+/* O deslocamento da frase é `top`, não margem e não transform, e a escolha
+   importa nos dois sentidos. Margem mudaria a altura do .hero-stack, que é
+   centrado: descer a frase 60px empurraria o nome 30px para cima junto, e
+   ainda obrigaria a remedir --nome-dy. Transform já é usado pela entrada
+   (.h-step vai de translateY(18px) a none) e seria sobrescrito na hora em que
+   os secundários entram, exatamente como já aconteceu com o .next-hint.
+   Com position/top só a frase se move, o nome fica onde está e a intro
+   continua intacta. Editável pelo painel (campo "Descer a frase de impacto"). */
+.hero-claim{position:relative;top:var(--hero-claim-offset,0px);
+  max-width:min(40ch,900px);margin:clamp(3.2rem,7vh,5.6rem) auto 0;
   font-size:clamp(1.3rem,2.1vw,2.3rem);font-weight:var(--w-medium);line-height:1.28;
   letter-spacing:-.02em;color:var(--cream)}
 
@@ -1434,6 +1479,11 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
    Um componente só, injetado pelo JS no fim de cada seção a partir da tabela
    PROXIMA. No desktop encosta à direita, sem sobrepor conteúdo; no estreito
    volta ao fluxo, centrado no fim da seção. Editorial, nunca botão. */
+/* display:flex vence o [hidden] do navegador, que só declara display:none no
+   estilo de usuário. Sem esta linha, desligar o indicador pelo painel marcaria
+   o atributo e não esconderia nada. Vale para as duas linhas internas também:
+   apagar só o rótulo no CMS não pode deixar um vão de .3rem no lugar dele. */
+.next-hint[hidden],.next-hint [hidden]{display:none}
 .next-hint{display:flex;flex-direction:column;gap:.3rem;width:max-content;
   margin-top:clamp(3rem,6vw,5rem);
   font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;color:var(--muted-2);
