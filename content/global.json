@@ -163,7 +163,7 @@
     "marqueeText": "Pedro de Trindade.",
     "showSignature": false,
     "emailOffset": 22,
-    "legalOffset": -30,
+    "legalOffset": 0,
     "grainEnabled": false,
     "background": {
       "type": "video",
