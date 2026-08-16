@@ -36,7 +36,20 @@ custom_domain = true
 [vars]
 GITHUB_OWNER = "pedrodetrindade"
 GITHUB_REPO = "portfolio"
-GITHUB_BRANCH = "feature/portfolio-cms"
+# O valor que vale é o do painel do Cloudflare, não este. Com keep_vars = true
+# a configuração remota é preservada e as chaves daqui não são reaplicadas —
+# é a mesma proteção que salva as três variáveis do Access, e ela vale para
+# TODAS as vars, inclusive as que estão escritas neste arquivo.
+#
+# Isto já custou uma conclusão errada: o arquivo dizia feature/portfolio-cms,
+# o output de `wrangler deploy` e `wrangler versions view` repetiam esse valor
+# (os dois imprimem a configuração local, não a remota), e a leitura natural
+# foi "o CMS publica numa branch que o site não serve". O histórico provava o
+# contrário — uma publicação do painel mudou nextHintNamePt e a mudança
+# apareceu no site, que é servido da main. Alinhado aqui para o arquivo parar
+# de contradizer a realidade, e para que remover keep_vars um dia não aponte
+# o CMS para uma branch morta.
+GITHUB_BRANCH = "main"
 
 # ACCESS_TEAM_DOMAIN, ACCESS_AUD e ADMIN_EMAIL NÃO ficam aqui de propósito.
 # Não são segredos (são identificadores de configuração), mas ADMIN_EMAIL é um
