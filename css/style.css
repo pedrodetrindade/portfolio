@@ -270,7 +270,13 @@ html.has-custom-cursor label{cursor:auto}
    É o único backdrop-filter em área larga do site: fica no rodapé, tem altura
    contida e não recebe transform, então não é reavaliado a cada quadro.
    Desligado em movimento reduzido e onde não há suporte a máscara. */
-.edge-blur{position:fixed;left:0;right:0;bottom:0;height:clamp(4.5rem,9vh,8rem);
+/* A altura vira token porque o rodapé precisa dela: o bloco de crédito e
+   "voltar ao topo" tem que terminar ACIMA desta faixa, senão fica borrado de
+   forma permanente. Enquanto o marquee existia, era ele que ocupava a faixa e
+   protegia o bloco. Sem token, as duas medidas andariam separadas e a proteção
+   se perderia na primeira vez que uma delas mudasse. */
+:root{--edge-blur-h:clamp(4.5rem,9vh,8rem)}
+.edge-blur{position:fixed;left:0;right:0;bottom:0;height:var(--edge-blur-h);
   z-index:40;pointer-events:none;
   backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
   -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.65) 42%,transparent 100%);
@@ -1429,8 +1435,14 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
    sem breakpoint novo. 1,5rem no celular, 2,4rem no desktop largo — folga
    suficiente para separar os dois blocos, sem abrir um vão que empurre o
    marquee para longe. */
+/* padding-bottom pelo token do desfoque: sem o marquee, este bloco virou o
+   último da página e encostaria na faixa fixa que borra a base da janela.
+   Crédito é texto pequeno, e perder nitidez permanentemente ali já foi
+   problema uma vez. Vale para o rodapé de reserva, o que aparece sem JS; o
+   rodapé do CMS resolve o mesmo em .site-footer-inner. */
 .foot-row{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:clamp(1.25rem,3svh,2.4rem)}
+  gap:clamp(1.25rem,3svh,2.4rem);
+  padding-bottom:calc(var(--edge-blur-h) + clamp(.5rem,1.5vh,1.1rem))}
 .foot-note{font-size:.82rem;font-weight:var(--w-light);line-height:1.5;
   color:var(--muted-2);opacity:.78;text-align:center}
 
@@ -2254,7 +2266,26 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   height:auto;min-height:42rem;
   padding-top:var(--site-footer-pad-top,clamp(4.5rem,9vh,6rem));padding-bottom:0;
   display:flex;flex-direction:column}
+/* Com marquee o padding de baixo é zero: a faixa de texto encosta na base e é
+   ela quem atravessa o desfoque, de propósito, porque é decorativa e já tem
+   opacidade baixa. Sem marquee quem encostaria na base é o crédito, texto
+   pequeno e utilitário — o pior candidato possível a ficar borrado para
+   sempre. Este padding é o que o mantém acima da faixa; o respiro extra evita
+   que ele fique lambendo a borda do desfoque, onde a máscara já começa. */
+.site-footer:not(.has-footer-marquee) .site-footer-inner{
+  padding-bottom:calc(var(--edge-blur-h) + clamp(.5rem,1.5vh,1.1rem))}
 .site-footer-grid{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;flex:none;gap:clamp(2rem,4vw,4rem)}
+/* Sem o marquee o rodapé perde o bloco que ocupava seu terço inferior, e o
+   conteúdo ficava preso no topo com um vão morto logo abaixo.
+   margin-block:auto, e não só margin-bottom: duas margens automáticas de
+   frente uma para a outra (a de baixo do grid contra a de cima do crédito)
+   apenas repartem o mesmo vão, e o grid não sai do lugar — medido, 50px acima
+   contra 214px abaixo. Com a de cima também automática são três frações
+   iguais, uma acima do grid e duas abaixo, e o conteúdo passa a ocupar o
+   centro óptico do rodapé com o crédito ancorado na base.
+   Só vale sem marquee: com ele o grid tem que continuar no topo, senão
+   esbarra na faixa de texto. */
+.site-footer:not(.has-footer-marquee) .site-footer-grid{margin-block:auto}
 .site-footer.has-footer-nav .site-footer-grid{grid-template-columns:minmax(0,1fr) minmax(9rem,13rem)}
 .site-footer.has-footer-nav.has-footer-social .site-footer-grid{grid-template-columns:minmax(0,1fr) minmax(9rem,13rem) minmax(9rem,12rem)}
 .site-footer-contact{max-width:60rem;padding:0}

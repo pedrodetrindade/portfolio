@@ -535,3 +535,28 @@ por inteiro. O painel sempre manda `sections`, por isso nunca apareceu — mas a
 promessa do projeto é que quem decide é o Worker, e nesse caminho ele não
 decidia. Ao acrescentar regra nova, ponha-a antes de qualquer saída antecipada
 ou torne a saída condicional.
+
+**O texto em looping do rodapé saiu, e ele estava segurando duas coisas.** A
+faixa era decorativa, mas ocupava a altura do `.edge-blur` e por isso mantinha
+o bloco de crédito fora do borrão — o disclaimer já tinha morado naquela faixa
+antes e foi movido justamente por ficar ilegível. Removê-la devolvia o
+problema. Quem protege agora é `padding-bottom:calc(var(--edge-blur-h) + ...)`,
+no `.site-footer-inner` (rodapé do CMS) e no `.foot-row` (rodapé de reserva,
+o que aparece sem JS — o `.edge-blur` está no HTML estático, então existe
+mesmo com o JS fora). A altura do desfoque virou o token `--edge-blur-h`
+para as duas medidas não andarem separadas.
+
+**Desligar é `footer.showSignature:false` no CMS, não apagar código.** O
+interruptor "Mostrar assinatura" já existia no painel, e `marqueeText` continua
+gravado: religar devolve o texto. O `content-render.js` põe
+`has-footer-marquee` no `<footer>` quando ele está ligado, e é essa classe que
+o CSS usa para escolher entre os dois layouts. O marquee estático foi removido
+das seis páginas porque era o que aparecia sem JS.
+
+**Duas margens `auto` de frente uma para a outra não centralizam nada.** Ao
+tirar o marquee, o conteúdo do rodapé ficou preso em cima com um vão morto
+embaixo. `margin-bottom:auto` no grid contra o `margin-top:auto` do bloco de
+crédito só reparte o mesmo vão: medido, 50px acima contra 214px abaixo, o grid
+não saiu do lugar. Com `margin-block:auto` são três frações iguais (uma acima
+do grid, duas abaixo) e o conteúdo passa a ocupar o centro óptico — medido,
+132px de cada lado a 1280x720, com o crédito ancorado na base.

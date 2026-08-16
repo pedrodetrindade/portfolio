@@ -329,6 +329,10 @@
     footer.className = 'site-footer';
     if (showNav) footer.classList.add('has-footer-nav');
     if (showSocial) footer.classList.add('has-footer-social');
+    /* O CSS precisa saber que o marquee saiu: sem ele o bloco de crédito passa
+       a ser o último e cairia dentro do desfoque fixo da base da janela, além
+       de deixar um vão morto no meio do rodapé. Ver .has-footer-marquee. */
+    if (showSignature) footer.classList.add('has-footer-marquee');
     footer.style.setProperty('--site-footer-bg', solid);
     footer.style.setProperty('--site-footer-overlay', String(overlay / 100));
     var topSpacing = Number(f.topSpacing);

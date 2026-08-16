@@ -161,6 +161,7 @@
     "disclaimerPt": "",
     "disclaimerEn": "",
     "marqueeText": "Pedro de Trindade.",
+    "showSignature": false,
     "emailOffset": 22,
     "legalOffset": -30,
     "grainEnabled": false,

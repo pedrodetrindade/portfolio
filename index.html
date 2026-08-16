@@ -7,7 +7,7 @@
      aplica cor, borda, arredondamento e espaçamento antes de qualquer
      pintura. Precisa vir antes do <link rel="stylesheet">, para o navegador
      nunca chegar a pintar com o token antigo. Ver js/content.js. -->
-<script src="js/content.js?v=23"></script>
+<script src="js/content.js?v=24"></script>
 <title>Pedro de Trindade · Direção de Arte e Design Sênior</title>
 <meta name="description" content="Pedro de Trindade, diretor de arte e designer sênior. Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.">
 
@@ -32,7 +32,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=131">
+<link rel="stylesheet" href="css/style.css?v=132">
 <link rel="canonical" href="https://pedrodetrindade.com/">
 </head>
 <body>
@@ -515,10 +515,12 @@
 </main>
 
 <footer class="wrap">
-  <!-- Botão e disclaimer na mesma linha, os dois centrados: o disclaimer
-       morava sozinho depois do marquee, na faixa que .edge-blur borra
-       permanentemente, e ficava difícil de ler. Aqui ele sobe para cima do
-       marquee, fora dessa faixa. -->
+  <!-- Rodapé de reserva: o que se vê se o JS falhar. Com o CMS ativo, o
+       content-render.js substitui este <footer> inteiro.
+       Botão e crédito empilhados, os dois centrados. A faixa de texto em
+       looping que fechava a página foi removida; era ela que ocupava a altura
+       do .edge-blur e mantinha o crédito fora do borrão. Agora quem faz isso
+       é o padding-bottom de .foot-row, medido pelo mesmo token. -->
   <div class="foot-row">
     <button class="to-top reveal" data-top
             data-pt-label="Voltar ao topo da página" data-en-label="Back to the top of the page"
@@ -530,26 +532,13 @@
       <span class="foot-copy" data-pt="© 2026 Pedro de Trindade. Site inteiramente planejado e desenvolvido por Pedro de Trindade. Todos os direitos reservados." data-en="© 2026 Pedro de Trindade. Website fully planned and developed by Pedro de Trindade. All rights reserved.">© 2026 Pedro de Trindade. Site inteiramente planejado e desenvolvido por Pedro de Trindade. Todos os direitos reservados.</span>
     </p>
   </div>
-
-  <!-- Faixa de encerramento. Decorativa: o nome já existe semanticamente na
-       hero, então aqui tudo é aria-hidden e sem foco. -->
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee-track">
-      <span class="mq-group">
-        <b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i>
-      </span>
-      <span class="mq-group">
-        <b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i><b>Pedro de Trindade.</b><i>·</i>
-      </span>
-    </div>
-  </div>
 </footer>
 
 
 <!-- Fase B do CMS: reconstrói texto e listas a partir do JSON, agora que o
      HTML da página já existe. Precisa vir antes de main.js, que é quem lê
      data-pt/data-en para decidir o idioma exibido. -->
-<script src="js/content-render.js?v=33"></script>
+<script src="js/content-render.js?v=34"></script>
 <script src="js/main.js?v=102"></script>
 </body>
 </html>

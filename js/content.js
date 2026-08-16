@@ -56,7 +56,7 @@
   }
 
   /* ---------- FASE A: tokens visuais ---------- */
-  var GLOBAL = xhrJSON('content/global.json?v=5') || {};
+  var GLOBAL = xhrJSON('content/global.json?v=6') || {};
   window.__CMS_GLOBAL__ = GLOBAL;
 
   function applyGlobalTokens(g) {
