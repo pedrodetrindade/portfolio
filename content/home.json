@@ -41,9 +41,9 @@
         "mobile": null
       },
       "spacingBottom": {
-        "desktop": null,
-        "tablet": null,
-        "mobile": null
+        "desktop": 70,
+        "tablet": 70,
+        "mobile": 70
       }
     },
     "about": {
@@ -112,7 +112,7 @@
     "columnsDesktop": 2,
     "gap": 25.6,
     "ctaScale": 118,
-    "ctaSpacingTop": 30,
+    "ctaSpacingTop": 70,
     "ctaSpacingBottom": 0
   },
   "about": {
