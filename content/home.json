@@ -110,7 +110,10 @@
     "asidePt": "Explore projetos de branding, campanhas, experiências digitais e comunicação.",
     "asideEn": "Explore branding, campaigns, digital experiences, and communication projects.",
     "columnsDesktop": 2,
-    "gap": 25.6
+    "gap": 25.6,
+    "ctaScale": 118,
+    "ctaSpacingTop": 30,
+    "ctaSpacingBottom": 0
   },
   "about": {
     "kickerPt": "Sobre",

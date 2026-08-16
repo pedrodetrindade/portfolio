@@ -1233,8 +1233,17 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   background:var(--faq-section-bg,#F2EEEE);color:#0D0A0A;
   padding-inline:var(--gutter)}
 /* título numa coluna lateral e as perguntas ocupando a maior parte da largura:
-   o accordion deixa de ser uma coluna estreita no meio da tela */
-.faq-inner{max-width:var(--content-max);margin-inline:auto}
+   o accordion deixa de ser uma coluna estreita no meio da tela.
+   width:100% é necessário e não decorativo: .faq é display:flex (para
+   centralizar o conteúdo verticalmente na seção via .cms-section-surface),
+   e um grid filho de um flex column não estica de forma confiável no
+   eixo cruzado quando as colunas são em fr — o Chrome encolhe a caixa
+   para o tamanho do próprio conteúdo. Com texto longo (PT) isso passava
+   despercebido, porque o conteúdo por acaso quase preenchia a largura;
+   com texto mais curto (EN) a caixa encolhia visivelmente e centralizava,
+   quebrando o grid de duas colunas. Comprovado ao vivo: align-items:stretch
+   não resolve, só width explícito. */
+.faq-inner{width:100%;max-width:var(--content-max);margin-inline:auto}
 @media(min-width:1000px){
   .faq-inner{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
     column-gap:clamp(1.4rem,2.4vw,3rem);align-items:start}
@@ -1663,7 +1672,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 #contact-panel .overlay-top{border-bottom-color:var(--floating-line)}
 #contact-panel .cform-direct{border-top-color:var(--floating-line)}
 #contact-panel .cform input,#contact-panel .cform textarea,
-#contact-panel .cform-direct-mail{border-color:var(--floating-line-strong)}
+#contact-panel .cform-direct-mail,#contact-panel .cform-direct-copy{border-color:var(--floating-line-strong)}
 
 .overlay-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;
   padding:1.3rem 1.6rem;border-bottom:1px solid var(--line)}
@@ -1723,6 +1732,16 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .overlay-sheet{max-height:calc(100svh - 2.8rem);display:flex;flex-direction:column}
 .overlay-sheet .menu-list{overflow-y:auto;overscroll-behavior:contain;
   padding-bottom:env(safe-area-inset-bottom,0px)}
+/* O painel de contato precisa do mesmo tratamento que a lista do menu, e pelo
+   mesmo motivo: o sheet tem teto de altura e overflow:hidden, então tudo que
+   passa disso é cortado e fica inalcançável. Faltava só o corpo poder rolar.
+   Em notebook (768px de altura) sobravam 78px para fora, e era justamente o
+   fim do formulário: o e-mail direto e o botão de copiar. Só apareciam com
+   zoom em 80%, que encolhe o conteúdo até caber.
+   Não precisa de min-height:0 explícito: pela spec, um item flexível com
+   overflow diferente de visible já tem tamanho mínimo automático zero. */
+.overlay-sheet .cform{overflow-y:auto;overscroll-behavior:contain;
+  padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))}
 /* o topo com o botão fechar nunca rola junto: continua alcançável */
 .overlay-sheet .overlay-top{flex:none}
 @media(max-width:640px){
@@ -1805,6 +1824,9 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .cform-direct{display:flex;flex-direction:column;align-items:center;gap:.6rem;
   margin-top:1.4rem;padding-top:1.4rem;border-top:1px solid var(--line)}
 .cform-direct-k{font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;color:var(--muted-2)}
+/* linha com o endereço e o botão de copiar; position:relative é a âncora do
+   aviso "Copiado", que é absoluto para não empurrar o link ao aparecer */
+.cform-direct-row{position:relative;display:flex;align-items:center;gap:.65rem}
 .cform-direct-mail{display:inline-flex;align-items:center;gap:.55em;
   font-size:.95rem;font-weight:var(--w-medium);letter-spacing:-.005em;color:var(--paper);
   padding:.7rem 1.2rem;border:1px solid var(--line-strong);border-radius:var(--radius-button,100px);
@@ -1815,6 +1837,22 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .cform-direct-mail:hover{transform:translateY(-2px);border-color:var(--accent);
   background:rgba(var(--paper-rgb),.05)}
 .cform-direct-mail:hover::before{color:var(--cream)}
+/* mesmo botão do rodapé (site-footer-copy): mesmo tamanho, mesmo crossfade
+   de ícone por opacidade. Cores adaptadas ao vidro flutuante do modal. */
+.cform-direct-copy{position:relative;display:grid;place-items:center;flex:none;width:2.35rem;height:2.35rem;
+  border:1px solid var(--line-strong);border-radius:var(--radius-field,12px);background:rgba(var(--paper-rgb),.04);
+  color:var(--muted);cursor:pointer;transition:color var(--dur-micro) var(--ease-soft),
+  border-color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft),
+  background-color var(--dur-micro) var(--ease-soft)}
+.cform-direct-copy:hover{color:var(--paper);border-color:var(--accent);transform:translateY(-2px)}
+.cform-direct-copy svg{position:absolute;width:15px;height:15px;
+  transition:opacity var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
+.cform-direct-copy .ico-done{opacity:0;transform:scale(.72)}
+.cform-direct-copy.done{color:var(--paper);border-color:var(--accent)}
+.cform-direct-copy.done .ico-copy{opacity:0;transform:scale(.72)}
+.cform-direct-copy.done .ico-done{opacity:1;transform:none}
+.cform-direct-copy-status{position:absolute;left:0;top:calc(100% + .5rem);
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.02em;color:var(--muted-2);white-space:nowrap}
 
 /* ===== CASE PAGE ===== */
 .case-hero{min-height:auto;padding-top:9rem;padding-bottom:1rem}
@@ -2016,15 +2054,40 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 /* ===== TODOS OS TRABALHOS =====
    A Home continua com previews de grande escala. /work/ usa uma grade regular,
    mais silenciosa, derivada do mesmo índice editorial. */
-.work-all-cta{display:flex;align-items:center;justify-content:flex-end;gap:.8rem;
-  margin-top:clamp(2.8rem,5vw,4.8rem);font-size:clamp(1.05rem,1.45vw,1.3rem);
-  font-weight:var(--w-medium);letter-spacing:-.015em}
-.work-all-cta a{border-bottom:1px solid var(--line-strong);padding-bottom:.3rem;
-  transition:color var(--dur-micro) var(--ease-soft),border-color var(--dur-micro) var(--ease-soft)}
-.work-all-cta span{color:var(--muted);transition:transform var(--dur-micro) var(--ease-soft)}
+/* Era um link sublinhado discreto; virou o mesmo pill de borda usado no
+   "Vamos conversar" do Sobre (.ghost-cta), ~30% mais peso visual sem sair
+   da linguagem do site: nada de botão chapado, só a borda e o fundo em
+   vidro que já são o vocabulário de CTA secundário daqui. */
+/* Espaçamento e tamanho vêm do CMS (content/home.json > work). Os fallbacks
+   aqui são o padrão do site: se o JSON não trouxer os campos, nada muda.
+   --work-cta-scale multiplica fonte e padding juntos, para o botão crescer
+   inteiro em vez de só engordar o texto dentro de uma caixa fixa. */
+.work-all-cta{display:flex;justify-content:center;
+  margin-top:var(--work-cta-space-top,2rem);
+  margin-bottom:var(--work-cta-space-bottom,0px)}
+.work-all-cta .ghost-cta{--k:var(--work-cta-scale,1);margin-top:0;
+  font-size:calc(clamp(1.06rem,1.34vw,1.16rem) * var(--k));
+  padding:calc(.92rem * var(--k)) calc(1.8rem * var(--k));gap:.7em}
+/* O "mais" é desenhado com dois gradientes, não com o glifo "+": o glifo é
+   centrado no eixo matemático da fonte, não no meio da caixa, e girar isso
+   faz o símbolo bambear fora do próprio centro. Duas faixas num quadrado
+   giram redondas.
+   90 graus e não 45: em 45 o mais vira um "x", que lê como fechar/cancelar,
+   e o botão é de abrir. Em 90 o símbolo volta a parecer o mesmo no fim, e é
+   esse o efeito: ele gira e assenta, sem trocar de significado.
+   A rotação usa --dur-fast enquanto o resto do botão fica em --dur-micro: o
+   estado responde no tempo de sempre, só o floreio do ícone demora um tempo
+   a mais para a volta ser percebida. */
+.work-all-cta .ghost-cta::after{content:"";width:.74em;height:.74em;flex:none;
+  background:linear-gradient(currentColor,currentColor) center/100% 1.5px no-repeat,
+             linear-gradient(currentColor,currentColor) center/1.5px 100% no-repeat;
+  transition:transform var(--dur-fast) var(--ease-soft)}
 @media(hover:hover){
-  .work-all-cta:hover a{color:var(--cream);border-color:var(--accent)}
-  .work-all-cta:hover span{transform:translateX(4px)}
+  .work-all-cta .ghost-cta:hover::after{transform:rotate(90deg)}
+}
+@media(prefers-reduced-motion:reduce){
+  .work-all-cta .ghost-cta::after{transition:none}
+  .work-all-cta .ghost-cta:hover::after{transform:none}
 }
 
 /* Teaser de projeto ainda indisponível na Home. Não usa .card para o cursor
@@ -2111,7 +2174,9 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .work-archive-intro h1{margin-top:2rem}
   .work-archive-grid{grid-template-columns:1fr;row-gap:4rem}
   .work-archive-media{aspect-ratio:4/3.35}
-  .work-all-cta{justify-content:flex-start}
+  /* o botão fica centralizado em toda largura; no estreito ele estica para a
+     linha inteira, que dá alvo de toque confortável sem virar bloco solto */
+  .work-all-cta .ghost-cta{width:100%;justify-content:center}
 }
 
 /* ===== FOOTER GLOBAL EDITORIAL =====

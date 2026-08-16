@@ -2000,12 +2000,21 @@
       fieldRow('Contexto (PT)', '', ta('wi_ctxpt', w.contextPt)) +
       fieldRow('Contexto (EN)', '', ta('wi_ctxen', w.contextEn)) +
       fieldRow('Texto lateral (PT)', 'a linha menor ao lado do título', ta('wi_asidept', w.asidePt)) +
-      fieldRow('Texto lateral (EN)', '', ta('wi_asideen', w.asideEn));
+      fieldRow('Texto lateral (EN)', '', ta('wi_asideen', w.asideEn)) +
+      fieldRow('Tamanho do botão "ver todos"', '100% é o tamanho padrão. Aumenta texto e caixa juntos.',
+        sliderControl('wi_ctascale', w.ctaScale == null ? 100 : w.ctaScale, 80, 160, '%')) +
+      fieldRow('Espaço acima do botão', 'entre a grade de projetos e o botão',
+        sliderControl('wi_ctatop', w.ctaSpacingTop == null ? 32 : w.ctaSpacingTop, 0, 200, 'px')) +
+      fieldRow('Espaço abaixo do botão', 'somado ao espaçamento da seção, definido em Layout',
+        sliderControl('wi_ctabottom', w.ctaSpacingBottom == null ? 0 : w.ctaSpacingBottom, 0, 200, 'px'));
     bindAll([
       ['wi_titlept', function (v) { w.titlePt = v; }], ['wi_titleen', function (v) { w.titleEn = v; }],
       ['wi_ctxpt', function (v) { w.contextPt = v; }], ['wi_ctxen', function (v) { w.contextEn = v; }],
       ['wi_asidept', function (v) { w.asidePt = v; }], ['wi_asideen', function (v) { w.asideEn = v; }]
     ], touch);
+    bindSlider('wi_ctascale', 80, 160, function (v) { w.ctaScale = v; touch(); });
+    bindSlider('wi_ctatop', 0, 200, function (v) { w.ctaSpacingTop = v; touch(); });
+    bindSlider('wi_ctabottom', 0, 200, function (v) { w.ctaSpacingBottom = v; touch(); });
 
     var a = H.about;
     if (!Array.isArray(a.capabilities)) a.capabilities = [];

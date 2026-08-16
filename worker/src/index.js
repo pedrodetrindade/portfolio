@@ -351,6 +351,25 @@ function erroNaAparenciaDaHome(home) {
       return 'sections.' + id + '.grainEnabled precisa ser verdadeiro ou falso.';
     }
   }
+  /* Botão "ver todos os trabalhos". Os limites repetem os do painel e os do
+     site de propósito: o painel é conveniência, quem decide é o Worker.
+     null é aceito e significa "usar o padrão do site". */
+  var w = home && home.work;
+  if (w && typeof w === 'object' && !Array.isArray(w)) {
+    var faixas = [
+      ['ctaScale', 80, 160, 'o tamanho do botão de trabalhos'],
+      ['ctaSpacingTop', 0, 200, 'o espaço acima do botão de trabalhos'],
+      ['ctaSpacingBottom', 0, 200, 'o espaço abaixo do botão de trabalhos']
+    ];
+    for (var j = 0; j < faixas.length; j++) {
+      var campo = faixas[j][0], min = faixas[j][1], max = faixas[j][2], nome = faixas[j][3];
+      var valor = w[campo];
+      if (valor === undefined || valor === null) continue;
+      if (typeof valor !== 'number' || !Number.isFinite(valor) || valor < min || valor > max) {
+        return 'work.' + campo + ' (' + nome + ') precisa ser um número entre ' + min + ' e ' + max + '.';
+      }
+    }
+  }
   return null;
 }
 

@@ -298,7 +298,16 @@
                  duas traduções. -->
             <div class="cform-direct">
               <span class="cform-direct-k" data-pt="ou escreva direto para" data-en="or write directly to">ou escreva direto para</span>
-              <a class="cform-direct-mail" href="mailto:${emailDeContato}">${emailDeContato}</a>
+              <div class="cform-direct-row">
+                <a class="cform-direct-mail" href="mailto:${emailDeContato}">${emailDeContato}</a>
+                <button type="button" class="cform-direct-copy" data-copy="${emailDeContato}"
+                        data-pt-label="Copiar endereço de e-mail" data-en-label="Copy email address"
+                        aria-label="Copiar endereço de e-mail">
+                  <svg class="ico-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 5.2A2.7 2.7 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3c0 1.2.8 2.2 1.9 2.5"/></svg>
+                  <svg class="ico-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 12.6l4.6 4.6L19.2 7.4"/></svg>
+                </button>
+              </div>
+              <span class="cform-direct-copy-status" role="status" aria-live="polite"></span>
             </div>
           </form>
         </div>
@@ -1078,11 +1087,16 @@
     requestAnimationFrame(passo);
   }
 
-  /* ---- copiar e-mail ----
-     Layout preservado: o aviso é absoluto e o ícone troca por opacidade. */
-  const copyBtn = document.querySelector('.copy-btn');
+  /* ---- copiar e-mail (painel de contato) ----
+     Mesmo comportamento do botão do rodapé (initFooterCopy, em
+     content-render.js): Clipboard API com fallback de textarea+execCommand
+     para file:// e contextos sem a API, ícone trocado por opacidade e aviso
+     posicionado em absoluto para não empurrar o link ao aparecer. Duplicado
+     em vez de importado porque o painel de contato é montado aqui mesmo, e
+     content-render.js não expõe a função para outro módulo chamar. */
+  const copyBtn = document.querySelector('.cform-direct-copy');
   if (copyBtn) {
-    const flash = document.querySelector('.copy-flash');
+    const flash = document.querySelector('.cform-direct-copy-status');
     let resetTimer = null;
     copyBtn.addEventListener('click', async () => {
       const txt = copyBtn.dataset.copy;
@@ -1104,16 +1118,13 @@
       } catch (err) { ok = false; }
 
       const pt = document.documentElement.lang !== 'en';
-      if (flash) {
-        flash.textContent = ok ? (pt ? 'Copiado' : 'Copied')
-                               : (pt ? 'Selecione e copie' : 'Select and copy');
-        flash.classList.add('on');
-      }
+      if (flash) flash.textContent = ok ? (pt ? 'Copiado' : 'Copied')
+                                        : (pt ? 'Selecione e copie' : 'Select and copy');
       copyBtn.classList.toggle('done', ok);
       clearTimeout(resetTimer);
       resetTimer = setTimeout(() => {
         copyBtn.classList.remove('done');
-        if (flash) flash.classList.remove('on');
+        if (flash) flash.textContent = '';
       }, 2100);
     });
   }

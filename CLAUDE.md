@@ -429,3 +429,35 @@ fica comentado no HTML, não publicado.
 
 **Peso tipográfico vai até 600.** A fonte só carrega 300/400/500/600, então
 qualquer 700 vira falso-negrito.
+
+**Um grid filho de `display:flex` não estica de forma confiável no eixo
+cruzado quando as colunas são em `fr`.** É o caso de `.faq-inner`: `.faq` é
+`display:flex;flex-direction:column` (para centralizar o conteúdo
+verticalmente via `.cms-section-surface`), e o Chrome encolhia o grid de 12
+colunas para o tamanho do próprio conteúdo em vez de esticar para a largura
+disponível — comprovado ao vivo, `align-items:stretch` explícito não resolve,
+só `width:100%` no próprio grid. Com texto longo (PT) o conteúdo por acaso
+quase preenchia a largura toda e o bug não aparecia; com texto mais curto (EN)
+a caixa encolhia e centralizava, quebrando as duas colunas. Qualquer novo
+grid de largura total dentro de uma seção `display:flex` precisa do mesmo
+`width:100%` explícito, não só `max-width` + `margin-inline:auto`.
+
+**O painel de preview não tem foco de documento** (`document.hasFocus()` é
+`false`), então `navigator.clipboard.writeText` sempre rejeita ali com
+"Document is not focused", mesmo em `localhost` (contexto seguro). Isso é
+específico da automação, não do navegador de quem usa o site: não tome uma
+falha de clipboard nesse painel como sinal de bug real no botão de copiar.
+
+**O corpo dos painéis flutuantes precisa rolar por dentro.** `.overlay-sheet`
+tem teto de altura e `overflow:hidden`: o que passar disso é cortado e fica
+inalcançável. `.menu-list` e `.cform` já têm `overflow-y:auto`; qualquer
+painel novo precisa do mesmo. Foi o que escondia o e-mail e o botão de copiar
+do formulário em notebook (768px de altura), e só aparecia com zoom em 80%.
+
+**O botão "ver todos os trabalhos" é configurável pelo CMS**
+(`content/home.json > work`): `ctaScale` 80-160%, `ctaSpacingTop` e
+`ctaSpacingBottom` 0-200px. Campo ausente ou `null` significa "usar o padrão
+do site", e o JS remove a variável em vez de escrever um valor — cuidado com
+`clampNum(null)`, que devolveria 0 porque `Number(null)` é 0. A faixa é
+repetida no painel e no Worker de propósito: o painel é conveniência, quem
+decide é o Worker.
