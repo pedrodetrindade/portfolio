@@ -162,7 +162,7 @@
     "disclaimerEn": "",
     "marqueeText": "Pedro de Trindade.",
     "emailOffset": 22,
-    "legalOffset": 0,
+    "legalOffset": -30,
     "grainEnabled": false,
     "background": {
       "type": "video",
