@@ -162,16 +162,17 @@
     "disclaimerEn": "",
     "marqueeText": "Pedro de Trindade.",
     "showSignature": false,
-    "emailOffset": 22,
-    "legalOffset": 0,
+    "emailOffset": 30,
+    "legalOffset": 40,
     "grainEnabled": false,
     "background": {
       "type": "video",
       "color": "#151111",
       "video": "https://vimeo.com/1218774319?fl=tl&fe=ec",
       "poster": "",
-      "overlayOpacity": 62
-    }
+      "overlayOpacity": 0
+    },
+    "topSpacing": 48
   },
   "social": {
     "linkedin": "https://www.linkedin.com/in/pedrodetrindade",
