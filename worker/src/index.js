@@ -130,7 +130,7 @@ var CHAVES_DE_TOPO = {
   /* coverSpacing entra aqui porque o painel pode criá-lo (espaçamento da capa)
      mesmo que nenhum projeto o tenha hoje */
   '__projeto__': ['$schema', 'slug', 'status', 'grainEnabled', 'client', 'year', 'category', 'services',
-    'seo', 'hero', 'cover', 'coverMobile', 'coverSpacing', 'blocks']
+    'seo', 'hero', 'cover', 'coverMobile', 'caseCover', 'coverSpacing', 'blocks']
 };
 
 /* Slug do arquivo de UM projeto, ou null se o caminho não for de projeto.

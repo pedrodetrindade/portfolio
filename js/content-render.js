@@ -915,7 +915,8 @@
     }
 
     var coverImg = document.querySelector('.case-cover .scene img');
-    if (coverImg && P.cover) coverImg.setAttribute('src', resolveAssetUrl(P.cover));
+    var caseCover = P.caseCover || P.cover;
+    if (coverImg && caseCover) coverImg.setAttribute('src', resolveAssetUrl(caseCover));
     var coverEl = document.querySelector('.case-cover');
     if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 18, 0));
 

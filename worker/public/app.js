@@ -528,7 +528,7 @@
     titleLine2Pt: 'Título linha 2 (PT)', titleLine2En: 'Título linha 2 (EN)',
     mailLabelPt: 'Rótulo do e-mail (PT)', mailLabelEn: 'Rótulo do e-mail (EN)',
     visible: 'Visibilidade', featured: 'Destaque na Home', availability: 'Disponibilidade',
-    order: 'Ordem', cover: 'Capa', coverLight: 'Capa clara',
+    order: 'Ordem', cover: 'Capa da Home', caseCover: 'Capa interna', coverLight: 'Capa clara',
     year: 'Ano', slug: 'Slug', status: 'Status', rolePt: 'Papel (PT)', roleEn: 'Papel (EN)',
     scopePt: 'Escopo (PT)', scopeEn: 'Escopo (EN)', subtitlePt: 'Subtítulo (PT)', subtitleEn: 'Subtítulo (EN)',
     src: 'Imagem', alt: 'Texto alternativo', pt: 'Texto (PT)', en: 'Texto (EN)'
@@ -538,7 +538,7 @@
   /* Campos cujo valor é um caminho de arquivo de imagem — tratados como
      "Imagem alterada" em vez de "Campo alterado", porque o valor bruto (um
      caminho) não é informativo para quem está revisando. */
-  var CAMPOS_DE_IMAGEM = { cover: 1, photo: 1, src: 1 };
+  var CAMPOS_DE_IMAGEM = { cover: 1, caseCover: 1, photo: 1, src: 1 };
   var CHAVES_GENERICAS = { hex: 1, opacity: 1 };
 
   function ehObjeto(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -2702,10 +2702,12 @@
       fieldRow('Papel (EN)', 'Enter força uma nova linha.', ta('pe_roleen', P.hero.roleEn)) +
       fieldRow('Escopo (PT)', 'Enter força uma nova linha.', ta('pe_scopept', P.hero.scopePt)) +
       fieldRow('Escopo (EN)', 'Enter força uma nova linha.', ta('pe_scopeen', P.hero.scopeEn)) +
-      mediaCard(P.cover, 'Capa desktop atual') +
-      fieldRow('Substituir capa', 'Envie um arquivo, cole um caminho assets/ ou uma URL HTTPS direta.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
+      mediaCard(P.cover, 'Capa atual da Home') +
+      fieldRow('Substituir capa da Home', 'Usada no card da Home e como reserva para a página interna.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
       mediaCard(P.coverMobile || indexEntry.coverMobile, 'Capa mobile atual', { remove: 'pe_covermobile_remove' }) +
-      fieldRow('Substituir capa mobile', 'Opcional. Vazia usa a capa principal.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
+      fieldRow('Substituir capa mobile da Home', 'Opcional. Vazia usa a capa principal da Home.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
+      mediaCard(P.caseCover || P.cover, P.caseCover ? 'Capa interna atual' : 'Capa interna herdada da Home', { remove: P.caseCover ? 'pe_casecover_remove' : '' }) +
+      fieldRow('Capa dentro do projeto', 'Opcional. Quando vazia, herda a capa da Home.', '<input type="text" id="pe_casecover" value="' + esc(P.caseCover || '') + '"><input type="file" id="pe_casecover_upload" accept="image/*">') +
       fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
       '</div></details>' +
       '<details class="group"' + projectSection('seo') + '><summary>SEO do projeto</summary><div class="group-body">' +
@@ -2790,9 +2792,14 @@
     bindSwitch('pe_coverlight', function (v) { indexEntry.coverLight = v; saveIndex(); });
     bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_covermobile', function (v) { P.coverMobile = v; indexEntry.coverMobile = v; save(); saveIndex(); });
+    bindText('pe_casecover', function (v) { if (v.trim()) P.caseCover = v.trim(); else delete P.caseCover; save(); });
     var removeMobile = document.getElementById('pe_covermobile_remove');
     if (removeMobile) removeMobile.addEventListener('click', function () {
       delete P.coverMobile; delete indexEntry.coverMobile; save(); saveIndex(); renderProjectEditor();
+    });
+    var removeCaseCover = document.getElementById('pe_casecover_remove');
+    if (removeCaseCover) removeCaseCover.addEventListener('click', function () {
+      delete P.caseCover; save(); renderProjectEditor();
     });
     function setProjectSeo(key, value) {
       if (!P.seo) P.seo = {};
@@ -2821,6 +2828,10 @@
     var coverMobileUpload = document.getElementById('pe_covermobile_upload');
     if (coverMobileUpload) coverMobileUpload.addEventListener('change', function () { uploadFile(coverMobileUpload.files[0], slug, function (path) {
       P.coverMobile = path; indexEntry.coverMobile = path; save(); saveIndex(); renderProjectEditor();
+    }); });
+    var caseCoverUpload = document.getElementById('pe_casecover_upload');
+    if (caseCoverUpload) caseCoverUpload.addEventListener('change', function () { uploadFile(caseCoverUpload.files[0], slug, function (path) {
+      P.caseCover = path; save(); renderProjectEditor();
     }); });
     var seoUpload = document.getElementById('pe_seoogimage_upload');
     if (seoUpload) seoUpload.addEventListener('change', function () { uploadFile(seoUpload.files[0], slug, function (path) {
