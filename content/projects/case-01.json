@@ -15,8 +15,8 @@
   "hero": {
     "eyebrowPt": "branding",
     "eyebrowEn": "branding",
-    "titlePt": "Sistema de marca e diretrizes 2026",
-    "titleEn": "Brand system and guidelines 2026",
+    "titlePt": "Colégio Assertivo",
+    "titleEn": "Assertivo School",
     "subtitlePt": "Reconstrução do sistema de marca para sustentar consistência em qualquer canal, com governança clara para times internos e agências parceiras.",
     "subtitleEn": "A rebuilt brand system designed to hold consistency across every channel, with clear governance for internal teams and partner agencies.",
     "rolePt": "Direção de marca",
@@ -24,7 +24,7 @@
     "scopePt": "Identidade, sistema, diretrizes",
     "scopeEn": "Identity, system, guidelines"
   },
-  "cover": "assets/projetos/case-01/capa.jpg",
+  "cover": "assets/uploads/case-01/kv1.png",
   "coverMobile": "",
   "coverSpacing": {
     "marginTop": {
@@ -64,11 +64,7 @@
       "type": "gallery",
       "images": [
         {
-          "src": "assets/projetos/case-01/galeria-1.jpg",
-          "alt": ""
-        },
-        {
-          "src": "assets/projetos/case-01/galeria-2.jpg",
+          "src": "assets/uploads/case-01/1-copiar.png",
           "alt": ""
         }
       ],
@@ -94,17 +90,13 @@
       "type": "gallery",
       "images": [
         {
-          "src": "assets/projetos/case-01/galeria-1.jpg",
-          "alt": ""
-        },
-        {
-          "src": "assets/projetos/case-01/galeria-1.jpg",
+          "src": "assets/uploads/case-01/1-copiar-2.png",
           "alt": ""
         }
       ],
       "spacing": {
         "marginTop": {
-          "desktop": 18,
+          "desktop": 0,
           "tablet": null,
           "mobile": null
         },
@@ -119,6 +111,15 @@
           "mobile": null
         }
       }
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/case-01/2.png",
+      "alt": "",
+      "fit": "cover",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
     }
   ]
 }

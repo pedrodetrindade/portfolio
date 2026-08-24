@@ -14,8 +14,8 @@
       "featured": true,
       "cardSize": "normal",
       "order": 1,
-      "titlePt": "Sistema de marca e diretrizes 2026",
-      "titleEn": "Brand system and guidelines 2026",
+      "titlePt": "Colégio Assertivo",
+      "titleEn": "Assertivo School",
       "subtitlePt": "Marca, sistema",
       "subtitleEn": "Brand, system",
       "category": "branding",
@@ -28,7 +28,7 @@
         "design system"
       ],
       "year": 2026,
-      "cover": "assets/projetos/case-01/capa.jpg",
+      "cover": "assets/uploads/case-01/kv1.png",
       "coverMobile": "",
       "coverLight": false
     },
