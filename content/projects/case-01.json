@@ -61,65 +61,27 @@
       "textEn": "A living system adopted by product, marketing and communications, with a measurable drop in approval time for new assets."
     },
     {
-      "type": "gallery",
-      "images": [
-        {
-          "src": "assets/uploads/case-01/1-copiar.png",
-          "alt": ""
-        }
-      ],
-      "spacing": {
-        "marginTop": {
-          "tablet": null,
-          "mobile": null,
-          "desktop": 100
-        },
-        "marginBottom": {
-          "desktop": 0,
-          "tablet": null,
-          "mobile": null
-        },
-        "gap": {
-          "desktop": 18,
-          "tablet": null,
-          "mobile": null
-        }
-      }
-    },
-    {
-      "type": "gallery",
-      "images": [
-        {
-          "src": "assets/uploads/case-01/1-copiar-2.png",
-          "alt": ""
-        }
-      ],
-      "spacing": {
-        "marginTop": {
-          "desktop": 0,
-          "tablet": null,
-          "mobile": null
-        },
-        "marginBottom": {
-          "desktop": 0,
-          "tablet": null,
-          "mobile": null
-        },
-        "gap": {
-          "desktop": 18,
-          "tablet": null,
-          "mobile": null
-        }
-      }
-    },
-    {
       "type": "image",
-      "src": "assets/uploads/case-01/2.png",
+      "src": "assets/uploads/case-01/1-copiar.png",
       "alt": "",
-      "fit": "cover",
+      "fit": "auto",
       "width": "content",
       "captionPt": "",
       "captionEn": ""
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/case-01/1-copiar-2.png",
+      "alt": "",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": "",
+      "spacing": {
+        "marginTop": {
+          "desktop": 0
+        }
+      }
     }
   ]
 }
