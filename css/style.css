@@ -2001,8 +2001,11 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 /* Proporção livre: a imagem manda na altura, em vez de ser recortada em 16/9.
    É o que serve peça vertical, captura de tela e GIF, que raramente cabem
    num quadro fixo sem perder o assunto. */
-.case-figure.is-auto .scene{aspect-ratio:auto}
-.case-figure.is-auto img{height:auto}
+.case-figure.is-auto .scene{aspect-ratio:auto;height:auto}
+.case-figure.is-auto .scene>img,
+.case-figure.is-auto .scene>picture,
+.case-figure.is-auto .scene>picture>img{
+  position:relative;inset:auto;height:auto}
 /* Sangramento de ponta a ponta pela mesma régua do resto do site: --vw medido
    pelo JS, nunca calc(100vw - barra). Ver a seção própria no CLAUDE.md. */
 .case-figure.is-full{--bleed:var(--vw,100vw);
