@@ -33,14 +33,17 @@
   function isWorkPath() { return location.pathname.indexOf('/work/') !== -1; }
   function isWorkIndex() {
     if (!isWorkPath()) return false;
-    var leaf = location.pathname.split('/').pop();
-    return !leaf || leaf === 'index.html';
+    var workPath = location.pathname.split('/work/')[1].replace(/^\/+|\/+$/g, '');
+    return !workPath || workPath === 'index.html';
   }
   function isProjectPage() { return isWorkPath() && !isWorkIndex(); }
-  var base = isWorkPath() ? '../' : '';
+  var base = location.protocol === 'file:' ? (isProjectPage() ? '../../' : (isWorkPath() ? '../' : '')) : '/';
 
   function slugValido(slug) {
     return typeof slug === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug);
+  }
+  function projectUrl(slug) {
+    return slugValido(slug) ? '/work/' + encodeURIComponent(slug) + '/' : '';
   }
   function projetosPublicos(idx) {
     return ((idx && idx.projects) || []).filter(function (p) {
@@ -196,8 +199,8 @@
   function footerNavHref(section) {
     if (section === 'contact') return '#site-footer';
     if (!isWorkPath()) return section === 'top' ? '#top' : '#' + section;
-    if (section === 'work') return isWorkIndex() ? './' : './index.html';
-    return '../index.html' + (section === 'top' ? '' : '#' + section);
+    if (section === 'work') return '/work/';
+    return '/' + (section === 'top' ? '' : '#' + section);
   }
 
   function footerSection(item) {
@@ -761,7 +764,7 @@
             var media = projectMedia(p, 639);
             var coming = emBreve(p);
             var tag = coming ? 'article' : 'a';
-            var href = coming ? '' : ' href="work/' + esc(p.slug) + '.html"';
+            var href = coming ? '' : ' href="' + esc(projectUrl(p.slug)) + '"';
             return '' +
               '<' + tag + ' class="' + (coming ? 'home-teaser' : 'card') + ' reveal card--' + esc(size) + (coming ? ' home-teaser--coming' : '') + (p.coverLight ? ' card--light' : '') + '"' + href + '>' +
               '  <div class="scene p' + ((cardIndex % 4) + 1) + '">' + media + '</div>' +
@@ -817,7 +820,7 @@
       var number = String(i + 1).padStart(2, '0');
       var coming = emBreve(p);
       var tag = coming ? 'article' : 'a';
-      var href = coming ? '' : ' href="' + esc(p.slug) + '.html"';
+      var href = coming ? '' : ' href="' + esc(projectUrl(p.slug)) + '"';
       var titleId = 'work-title-' + number;
       var tagsPt = Array.isArray(p.tagsPt) ? p.tagsPt : [];
       var tagsEn = Array.isArray(p.tagsEn) ? p.tagsEn : [];
@@ -1064,13 +1067,13 @@
         if (prevP && nextP) {
           var links = navEl.querySelectorAll('a');
           if (links[0]) {
-            links[0].setAttribute('href', prevP.slug + '.html');
+            links[0].setAttribute('href', projectUrl(prevP.slug));
             var prevSpans = links[0].querySelectorAll('span');
             setText(prevSpans[0], 'anterior', 'previous');
             setText(prevSpans[1], prevP.titlePt, prevP.titleEn);
           }
           if (links[1]) {
-            links[1].setAttribute('href', nextP.slug + '.html');
+            links[1].setAttribute('href', projectUrl(nextP.slug));
             var nextSpans = links[1].querySelectorAll('span');
             setText(nextSpans[0], 'próximo', 'next');
             setText(nextSpans[1], nextP.titlePt, nextP.titleEn);

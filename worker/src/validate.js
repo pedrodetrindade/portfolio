@@ -46,15 +46,16 @@ var WRITABLE_PATTERNS = [
 
 /* Publicação atômica escreve mais que JSON: a página de um projeto novo e as
    mídias enviadas entram no mesmo commit. Antes, criar/duplicar/excluir
-   projeto chamavam writeFile direto em work/<slug>.html SEM passar por
+   projeto chamavam writeFile direto em work/<slug>/index.html SEM passar por
    isPathWritable — a whitelist existia e era contornada. Agora cada tipo de
    escrita tem sua própria lista, e nada escreve fora de uma delas. */
-var WRITABLE_PAGE_PATTERN = /^work\/[a-z0-9-]+\.html$/;
+var WRITABLE_PAGE_PATTERN = /^work\/[a-z0-9-]+\/index\.html$/;
+var WRITABLE_LEGACY_PAGE_PATTERN = /^work\/[a-z0-9-]+\.html$/;
 
 function isPagePathWritable(path) {
   if (typeof path !== 'string') return false;
   if (path.indexOf('..') !== -1 || path.indexOf('\0') !== -1) return false;
-  return WRITABLE_PAGE_PATTERN.test(path);
+  return WRITABLE_PAGE_PATTERN.test(path) || WRITABLE_LEGACY_PAGE_PATTERN.test(path);
 }
 
 /* Mídia: só dentro de assets/uploads/, com nome já sanitizado e extensão da

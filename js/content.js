@@ -26,10 +26,10 @@
   'use strict';
 
   var isWorkPath = location.pathname.indexOf('/work/') !== -1;
-  var workLeaf = isWorkPath ? location.pathname.split('/').pop() : '';
-  var isWorkIndex = isWorkPath && (!workLeaf || workLeaf === 'index.html');
+  var workPath = isWorkPath ? location.pathname.split('/work/')[1].replace(/^\/+|\/+$/g, '') : '';
+  var isWorkIndex = isWorkPath && (!workPath || workPath === 'index.html');
   var isCase = isWorkPath && !isWorkIndex;
-  var base = isWorkPath ? '../' : '';
+  var base = location.protocol === 'file:' ? (isCase ? '../../' : (isWorkPath ? '../' : '')) : '/';
 
   function xhrJSON(path) {
     try {
@@ -204,7 +204,8 @@
     window.__CMS_PROJECTS_INDEX__ = xhrJSON('content/projects/index.json?v=2') || {};
   }
   if (isCase) {
-    var slug = location.pathname.split('/').pop().replace('.html', '');
+    var slugParts = workPath.split('/');
+    var slug = slugParts[slugParts.length - 1] === 'index.html' ? slugParts[slugParts.length - 2] : slugParts[slugParts.length - 1].replace('.html', '');
     window.__CMS_PROJECT__ = xhrJSON('content/projects/' + slug + '.json?v=2') || {};
   }
 
@@ -257,7 +258,7 @@
     var share = brand.shareImage || seo.ogImage || 'assets/og-image.png';
     var image = project ? (pseo.ogImage || project.cover || share) : share;
     var canonicalBase = seo.canonicalBase || 'https://pedrodetrindade.com';
-    var canonical = canonicalBase.replace(/\/$/, '') + (project ? '/work/' + encodeURIComponent(project.slug || '') + '.html' : '/');
+    var canonical = canonicalBase.replace(/\/$/, '') + (project ? '/work/' + encodeURIComponent(project.slug || '') + '/' : '/');
     document.title = title;
     setMeta('meta[name="description"]', 'content', description);
     setMeta('meta[property="og:title"]', 'content', ogTitle);

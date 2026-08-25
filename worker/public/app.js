@@ -931,6 +931,10 @@
      documento recebia as mudanças: a prévia da aba Home nunca reagia. */
   var PREVIEW_PROTOCOL = 1;
 
+  function caminhoPaginaProjeto(slug) { return 'work/' + slug + '/index.html'; }
+  function caminhoLegadoProjeto(slug) { return 'work/' + slug + '.html'; }
+  function urlPublicaProjeto(slug) { return '/work/' + slug + '/'; }
+
   /* Origem exata do destino, nunca '*'. Com '*' o navegador entregaria o
      conteúdo não publicado para qualquer origem que estivesse no iframe
      naquele momento — inclusive uma para onde ele tivesse navegado sozinho.
@@ -947,7 +951,7 @@
   /* Monta a URL do iframe declarando a origem do painel, para o site poder
      validar event.origin sem ter nenhum endereço fixo no código. */
   /* `caminho` aponta a prévia para outra página do mesmo site — hoje só a de
-     um projeto (work/<slug>.html). Sem ele, editar um case mostrava a Home:
+     um projeto (work/<slug>/). Sem ele, editar um case mostrava a Home:
      o painel mandava os dados do projeto para uma página que não os usa, e
      quem editava não via nada mudar. O slug é conferido antes de virar
      caminho, porque ele acaba dentro de uma URL. */
@@ -955,9 +959,8 @@
     var u = new URL(state.previewUrl, location.href);
     if (caminho) u.pathname = u.pathname.replace(/\/?$/, '/') + caminho;
     u.searchParams.set('cmsOrigin', location.origin);
-    /* O servidor local canonicaliza .html para a URL sem extensão e pode
-       descartar a query. O fragmento é preservado pelo navegador no redirect
-       e carrega a mesma origem declarada, não uma origem inferida. */
+    /* O fragmento preserva a origem declarada mesmo se o servidor
+       canonicalizar a barra final, sem recorrer a document.referrer. */
     u.hash = 'cmsOrigin=' + encodeURIComponent(location.origin);
     if (extra) Object.keys(extra).forEach(function (k) { u.searchParams.set(k, extra[k]); });
     return u.toString();
@@ -969,8 +972,8 @@
     /* Uma URL criada ou renomeada ainda não existe no servidor de prévia.
        Usa a página-modelo até a publicação; o postMessage injeta o projeto
        em edição, então o conteúdo continua sendo o novo. */
-    var pendente = state.pendingPages['work/' + s + '.html'];
-    return 'work/' + (pendente && pendente.fromSlug ? pendente.fromSlug : s) + '.html';
+    var pendente = state.pendingPages[caminhoPaginaProjeto(s)];
+    return 'work/' + (pendente && pendente.fromSlug ? pendente.fromSlug : s) + '/';
   }
 
   function postToPreviews(msg) {
@@ -1773,7 +1776,7 @@
       encodeURIComponent(state.branch || 'main') + '/' + p.split('/').map(encodeURIComponent).join('/');
   }
   function enfileirarMetadataProjeto(slug) {
-    var path = 'work/' + slug + '.html';
+    var path = caminhoPaginaProjeto(slug);
     var projetoSujo = !!state.dirty['content/projects/' + slug + '.json'];
     var globalSujo = !!state.dirty['content/global.json'];
     if (!projetoSujo && !globalSujo) delete state.pendingMetadata[path];
@@ -2370,7 +2373,7 @@
 
         /* a página HTML é clonada pelo Worker a partir do modelo já
            versionado; o painel só diz qual slug e de onde copiar */
-        state.pendingPages['work/' + newSlug + '.html'] = { slug: newSlug, fromSlug: slug };
+        state.pendingPages[caminhoPaginaProjeto(newSlug)] = { slug: newSlug, fromSlug: slug };
         state.editingSlug = newSlug;
         marcarPendenteMudou();
         renderProjectsList(); renderProjectEditor();
@@ -2392,7 +2395,8 @@
       markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha);
 
       var pathJson = 'content/projects/' + slug + '.json';
-      var pathPagina = 'work/' + slug + '.html';
+      var pathPagina = caminhoPaginaProjeto(slug);
+      var pathLegado = caminhoLegadoProjeto(slug);
       /* projeto que só existia como pendente some sem virar exclusão remota */
       if (state.pendingPages[pathPagina]) {
         delete state.pendingPages[pathPagina];
@@ -2404,6 +2408,7 @@
         delete state.dirty[pathJson];
         state.pendingDeletes[pathJson] = 'conteúdo do projeto ' + slug;
         state.pendingDeletes[pathPagina] = 'página do projeto ' + slug;
+        state.pendingDeletes[pathLegado] = 'redirect legado do projeto ' + slug;
       }
       delete state.projects[slug];
       marcarPendenteMudou();
@@ -2845,9 +2850,10 @@
     if (!cached || !entrada) { toast('Não foi possível localizar o projeto em edição.', 'err'); return; }
 
     var oldJson = 'content/projects/' + slug + '.json';
-    var oldPage = 'work/' + slug + '.html';
+    var oldPage = caminhoPaginaProjeto(slug);
+    var oldLegacyPage = caminhoLegadoProjeto(slug);
     var newJson = 'content/projects/' + novoSlug + '.json';
-    var newPage = 'work/' + novoSlug + '.html';
+    var newPage = caminhoPaginaProjeto(novoSlug);
     var paginaPendente = state.pendingPages[oldPage] || null;
     var slugDeOrigem = paginaPendente && paginaPendente.fromSlug ? paginaPendente.fromSlug : slug;
     var shaDeOrigem = paginaPendente && Object.prototype.hasOwnProperty.call(paginaPendente, 'fromSha')
@@ -2866,7 +2872,7 @@
       return;
     }
 
-    if (!confirm('Alterar a URL de /work/' + slug + '.html para /work/' + novoSlug + '.html?\n\nA troca ficará pendente e só acontecerá ao Publicar.')) return;
+    if (!confirm('Alterar a URL de ' + urlPublicaProjeto(slug) + ' para ' + urlPublicaProjeto(novoSlug) + '?\n\nA troca ficará pendente e só acontecerá ao Publicar.')) return;
 
     /* Ao voltar para a URL publicada depois de restaurar um rascunho, a linha
        de base pode ainda não estar em memória. Carrega antes para que um
@@ -2880,6 +2886,7 @@
         delete state.dirty[oldJson];
         state.pendingDeletes[oldJson] = 'URL antiga do projeto ' + slug;
         state.pendingDeletes[oldPage] = 'página antiga do projeto ' + slug;
+        state.pendingDeletes[oldLegacyPage] = 'redirect legado do projeto ' + slug;
       }
 
       delete state.projects[slug];
@@ -2890,6 +2897,7 @@
       if (voltandoAoOriginal) {
         delete state.pendingDeletes[newJson];
         delete state.pendingDeletes[newPage];
+        delete state.pendingDeletes[caminhoLegadoProjeto(novoSlug)];
         cached.sha = shaDeOrigem;
         state.projects[novoSlug] = cached;
         markDirty(newJson, cached.data, shaDeOrigem, 'cms: atualiza ' + newJson);
@@ -2910,7 +2918,7 @@
       schedulePreview();
       renderProjectsList();
       renderProjectEditor();
-      toast('Nova URL preparada: /work/' + novoSlug + '.html', 'ok');
+      toast('Nova URL preparada: ' + urlPublicaProjeto(novoSlug), 'ok');
     }).catch(function (e) { toast(e.message || 'Não foi possível preparar a nova URL.', 'err'); });
   }
 
@@ -3016,7 +3024,7 @@
     editorEl.innerHTML =
       '<header class="project-editor-head"><div class="project-editor-top"><div class="project-editor-title">' +
         '<button class="btn small" type="button" id="pe_back">← Todos os projetos</button>' +
-        '<span class="eyebrow-admin">Editando projeto</span><h1>' + esc(P.hero.titlePt || slug) + '</h1><p>/work/' + esc(slug) + '.html</p></div>' +
+        '<span class="eyebrow-admin">Editando projeto</span><h1>' + esc(P.hero.titlePt || slug) + '</h1><p>' + esc(urlPublicaProjeto(slug)) + '</p></div>' +
         '<div class="project-editor-actions"><button class="btn" type="button" id="pe_preview">Preview</button>' +
         '<button class="btn" type="button" id="pe_state">Alterar estado</button><button class="btn" type="button" id="pe_duplicate">Duplicar</button>' + pendingLabel + '</div></div>' +
         '<div class="project-quick-state">' + chipsDoProjeto(indexEntry) + (faltas.length ? faltas.map(function (f) { return '<span class="status-chip is-draft">' + esc(f) + '</span>'; }).join('') : '<span class="status-chip">Preenchimento essencial completo</span>') + '</div></header>' +
@@ -3075,7 +3083,7 @@
 
       '<details id="project-sec-settings" class="group project-section"' + projectSection('settings') + '><summary><span class="summary-copy">Configurações<small>Estado editorial, URL e ações avançadas</small></span></summary><div class="group-body">' +
         fieldRow('Status editorial', 'Rascunho ou publicado. Não substitui visibilidade nem Em breve.', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
-        fieldRow('URL do case', 'A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">Alterar URL</button></div>') +
+        fieldRow('URL do case', 'A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>/</span><button class="btn small" id="pe_slug_apply" type="button">Alterar URL</button></div>') +
         '<div class="project-danger-zone"><p>Excluir remove índice, JSON e página no próximo Publicar. As mídias permanecem no repositório.</p><button class="btn small danger" id="pe_delete" type="button">Excluir projeto</button></div>' +
         '</div></details>';
 
@@ -3461,7 +3469,7 @@
 
       var origemPagina = lista.length > 1 ? lista[0].slug : null;
       if (!origemPagina) { toast('É preciso um projeto existente para servir de modelo da página HTML.', 'err'); return; }
-      state.pendingPages['work/' + slug + '.html'] = { slug: slug, fromSlug: origemPagina };
+      state.pendingPages[caminhoPaginaProjeto(slug)] = { slug: slug, fromSlug: origemPagina };
 
       state.editingSlug = slug;
       marcarPendenteMudou();

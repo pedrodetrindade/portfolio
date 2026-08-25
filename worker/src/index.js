@@ -291,7 +291,7 @@ function aplicarMetadataNoHtml(html, globalData, projeto, path) {
   var fallback = brand.shareImage || seo.ogImage || 'assets/og-image.png';
   var image = projeto ? (ps.ogImage || projeto.cover || fallback) : fallback;
   var base = seo.canonicalBase || 'https://pedrodetrindade.com';
-  var canonical = base.replace(/\/$/, '') + (projeto ? '/work/' + encodeURIComponent(projeto.slug) + '.html' : '/');
+  var canonical = base.replace(/\/$/, '') + (projeto ? '/work/' + encodeURIComponent(projeto.slug) + '/' : '/');
   var tags = [
     [/<title>[\s\S]*?<\/title>/i, '<title>' + escapeHtmlMeta(title) + '</title>'],
     [/<meta\s+name="description"[^>]*>/i, '<meta name="description" content="' + escapeHtmlMeta(desc) + '">'],
@@ -616,12 +616,12 @@ async function handlePublish(request, env) {
     if (tipo === 'page') {
       if (!isSlugValid(op.slug)) return json({ error: 'invalid_slug', message: 'Slug inválido para página de projeto.' }, 400);
       if (op.fromSlug != null && !isSlugValid(op.fromSlug)) return json({ error: 'invalid_slug', message: 'Slug de origem inválido.' }, 400);
-      caminho = 'work/' + op.slug + '.html';
+      caminho = 'work/' + op.slug + '/index.html';
       if (!isPagePathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'Caminho de página não autorizado.' }, 403);
     } else if (tipo === 'metadata') {
       if (caminho !== 'index.html' && !isPagePathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'HTML não autorizado para metadata.' }, 403);
       if (caminho === 'index.html' && op.slug != null) return json({ error: 'invalid_metadata', message: 'A Home não aceita slug.' }, 400);
-      if (caminho !== 'index.html' && (!isSlugValid(op.slug) || caminho !== 'work/' + op.slug + '.html')) return json({ error: 'invalid_metadata', message: 'Slug e caminho de metadata não correspondem.' }, 400);
+      if (caminho !== 'index.html' && (!isSlugValid(op.slug) || caminho !== 'work/' + op.slug + '/index.html')) return json({ error: 'invalid_metadata', message: 'Slug e caminho de metadata não correspondem.' }, 400);
     } else if (tipo === 'json') {
       if (!isPathWritable(caminho)) return json({ error: 'path_not_allowed', message: 'Caminho não autorizado: ' + caminho }, 403);
       if (!op.data || typeof op.data !== 'object') {
@@ -831,7 +831,7 @@ async function handlePublish(request, env) {
       } else { /* page */
         /* o HTML nunca vem do cliente: é lido de um modelo já versionado e
            testado, e o cliente só escolhe o slug */
-        var modeloPath = 'work/' + (o.fromSlug || 'case-01') + '.html';
+        var modeloPath = 'work/' + (o.fromSlug || 'colegio-assertivo') + '/index.html';
         var modelo = await readFile(env, modeloPath);
         if (!modelo) return json({ error: 'template_missing', message: 'Modelo de página não encontrado: ' + modeloPath }, 500);
         var globalPagina = await dadosDaPublicacao('content/global.json');

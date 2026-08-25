@@ -42,7 +42,7 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(medirEncerramento);
   if (window.ResizeObserver && footerMedido) new ResizeObserver(medirEncerramento).observe(footerMedido);
 
-  const base = location.pathname.includes('/work/') ? '../' : '';
+  const base = location.pathname.includes('/work/') ? '/' : '';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = window.matchMedia('(pointer: fine)').matches;
   /* limiar das variantes curtas de rótulo; reavaliado ao redimensionar */
