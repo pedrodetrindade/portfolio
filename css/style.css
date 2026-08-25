@@ -51,8 +51,8 @@
   /* Material fixo dos controles flutuantes. É escuro o bastante para manter
      contraste sobre imagens e sobre o FAQ claro, mas continua translúcido e
      pertencendo à paleta quente do site. */
-  --floating-surface:rgba(var(--ink-2-rgb),.82);
-  --floating-surface-hover:rgba(var(--ink-3-rgb),.78);
+  --floating-surface:rgba(26,22,22,.9);
+  --floating-surface-hover:rgba(31,26,26,.92);
   --floating-line:rgba(var(--paper-rgb),.14);
   --floating-line-strong:rgba(var(--paper-rgb),.24);
   --floating-shadow:rgba(var(--ink-rgb),.38);
@@ -1135,6 +1135,15 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 /* absoluto para cobrir o placeholder que fica por baixo como rede */
 .portrait-img{position:absolute;inset:0;z-index:1;width:100%;height:100%;
   object-fit:cover;object-position:50% 22%}
+.portrait-lens{position:absolute;z-index:2;top:0;left:0;
+  width:clamp(88px,10vw,148px);aspect-ratio:1;border-radius:50%;pointer-events:none;
+  opacity:0;transform:translate3d(calc(var(--lens-x,50%) - 50%),calc(var(--lens-y,50%) - 50%),0) scale(.82);
+  background:radial-gradient(circle,rgba(var(--paper-rgb),.055) 0 35%,rgba(var(--paper-rgb),.018) 64%,transparent 74%);
+  border:1px solid rgba(var(--paper-rgb),.11);
+  backdrop-filter:blur(10px) saturate(82%);-webkit-backdrop-filter:blur(10px) saturate(82%);
+  transition:opacity var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
+.portrait.lens-active .portrait-lens{opacity:1;
+  transform:translate3d(calc(var(--lens-x,50%) - 50%),calc(var(--lens-y,50%) - 50%),0) scale(1)}
 .portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted-2);
   background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:var(--radius-button,12px);padding:.5rem 1.1rem}
 /* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala.

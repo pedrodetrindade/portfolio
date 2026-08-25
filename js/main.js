@@ -728,19 +728,20 @@
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
     document.body.classList.remove('locked');
     /* No dropdown, a pílula fechada só volta depois que o painel terminou de
-       desaparecer. Remover menu-open no mesmo quadro fazia os dois controles
-       ficarem sobrepostos durante a transição de fechamento. */
+       desaparecer. Não usamos transitionend aqui: o sheet anima três
+       propriedades e o primeiro evento podia liberar a pílula cedo demais,
+       deixando por um quadro a impressão de uma cópia sob o painel. */
     if (menuClosing) {
       clearTimeout(menuCloseTimer);
       const closeVersion = ++menuVisualVersion;
-      const sheet = menu.querySelector('.overlay-sheet');
       const liberarPill = () => {
         if (closeVersion === menuVisualVersion && !menu.classList.contains('open')) {
           document.body.classList.remove('menu-open');
         }
       };
-      if (sheet) sheet.addEventListener('transitionend', liberarPill, { once: true });
-      menuCloseTimer = setTimeout(liberarPill, 700);
+      /* --dur-default = 700ms. A margem mínima deixa visibility:hidden ser
+         aplicada primeiro sem criar uma pausa perceptível entre as peças. */
+      menuCloseTimer = setTimeout(liberarPill, 710);
     } else {
       document.body.classList.remove('menu-open');
     }
@@ -1701,6 +1702,14 @@
     document.documentElement.classList.add('has-custom-cursor');
 
     const trilhas = [...camada.querySelectorAll('.cur-trail')];
+    const portrait = document.querySelector('.portrait');
+    let portraitLens = null;
+    if (portrait && portrait.querySelector('.portrait-img')) {
+      portraitLens = document.createElement('span');
+      portraitLens.className = 'portrait-lens';
+      portraitLens.setAttribute('aria-hidden', 'true');
+      portrait.appendChild(portraitLens);
+    }
     let alvoX = innerWidth / 2, alvoY = innerHeight / 2;
     let x = alvoX, y = alvoY;
     const tx = [alvoX, alvoX, alvoX], ty = [alvoY, alvoY, alvoY];
@@ -1746,6 +1755,11 @@
     let ultimoX = alvoX, ultimoY = alvoY, primeiraAmostra = true;
     document.addEventListener('mousemove', e => {
       alvoX = e.clientX; alvoY = e.clientY;
+      if (portraitLens && portrait.classList.contains('lens-active')) {
+        const r = portrait.getBoundingClientRect();
+        portraitLens.style.setProperty('--lens-x', (alvoX - r.left) + 'px');
+        portraitLens.style.setProperty('--lens-y', (alvoY - r.top) + 'px');
+      }
       /* A primeira amostra não vira velocidade: sem isto ela seria medida
          contra o centro da viewport (o chute inicial) e o cursor entraria
          piscando um rastro que nenhum movimento real produziu. Na primeira
@@ -1777,7 +1791,18 @@
       ligado = false;
       camada.classList.remove('on', 'fast', 'is-card', 'is-control', 'is-on-light');
       if (glow) glow.classList.remove('on');
+      if (portrait) portrait.classList.remove('lens-active');
     });
+
+    if (portraitLens) {
+      portrait.addEventListener('mouseenter', e => {
+        const r = portrait.getBoundingClientRect();
+        portraitLens.style.setProperty('--lens-x', (e.clientX - r.left) + 'px');
+        portraitLens.style.setProperty('--lens-y', (e.clientY - r.top) + 'px');
+        portrait.classList.add('lens-active');
+      }, { passive: true });
+      portrait.addEventListener('mouseleave', () => portrait.classList.remove('lens-active'), { passive: true });
+    }
 
     /* ---- estados por delegação ----
        mouseover/mouseout sobem na árvore, então cards e controles criados
