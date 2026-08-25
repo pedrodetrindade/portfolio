@@ -2413,7 +2413,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .site-footer-social a:hover .cta-blur-label,
   .site-footer-top:hover .cta-blur-label,
   .nav-cta:hover .cta-blur-label{
-    animation:cta-text-blur var(--dur-slow) linear both}
+    animation:cta-text-blur calc(var(--dur-slow) * .8) linear both}
 }
 
 /* Halo interno dos controles de vidro. Na referência ele lê como um pequeno
