@@ -1,10 +1,10 @@
 {
   "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
-  "slug": "case-01",
+  "slug": "colegio-assertivo",
   "status": "published",
   "client": "",
-  "year": 2026,
-  "category": "branding",
+  "year": 2024,
+  "category": "branding, key visual",
   "services": [
     "Direção de marca"
   ],
@@ -17,8 +17,8 @@
     "eyebrowEn": "branding",
     "titlePt": "Colégio Assertivo",
     "titleEn": "Assertivo School",
-    "subtitlePt": "Reconstrução do sistema de marca para sustentar consistência em qualquer canal, com governança clara para times internos e agências parceiras.",
-    "subtitleEn": "A rebuilt brand system designed to hold consistency across every channel, with clear governance for internal teams and partner agencies.",
+    "subtitlePt": "A marca já chegava com logo, paleta e tom de voz definidos: eclética, inovadora e lúdica.\n\nO que o briefing pedia era execução. O que eu tratei como desafio real foi outra coisa: manter uma identidade coerente em formatos com exigências técnicas muito diferentes entre si.",
+    "subtitleEn": "",
     "rolePt": "Direção de marca",
     "roleEn": "Brand direction",
     "scopePt": "Identidade, sistema, diretrizes",
@@ -26,6 +26,7 @@
   },
   "cover": "assets/uploads/case-01/kv1.png",
   "coverMobile": "",
+  "caseCover": "assets/uploads/colegio-assertivo/1-copiar.png",
   "coverSpacing": {
     "marginTop": {
       "desktop": 0,
@@ -43,22 +44,32 @@
       "type": "text",
       "labelPt": "contexto",
       "labelEn": "context",
-      "textPt": "A marca havia crescido além do sistema visual original: times diferentes aplicavam a identidade de formas inconsistentes, sem uma referência única de uso.",
-      "textEn": "The brand had outgrown its original visual system: different teams were applying the identity inconsistently, with no single reference for correct use."
+      "textPt": "O Colégio Assertivo já tinha logo, paleta e tom de voz definidos. O desafio era criar uma campanha de matrículas que mantivesse essa identidade reconhecível em formatos e mídias diferentes.",
+      "textEn": "Assertivo School already had its logo, color palette, and tone of voice defined. The challenge was to create an enrollment campaign that kept the brand recognizable across different formats and media.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 30
+        }
+      }
     },
     {
       "type": "text",
       "labelPt": "processo",
       "labelEn": "process",
-      "textPt": "Auditoria de todos os pontos de contato, redefinição dos princípios de marca e construção de um guideline modular, pensado para escalar sem perder rigor.",
-      "textEn": "Full audit of every touchpoint, redefinition of the brand principles, and a modular guideline built to scale without losing rigor."
+      "textPt": "Desenvolvi o Key Visual e seus desdobramentos para digital, motion e impresso, traduzindo os atributos “eclética, inovadora e lúdica” em decisões de cor, forma, tipografia e composição.",
+      "textEn": "I developed the Key Visual and its adaptations for digital, motion, and print, translating the attributes “eclectic, innovative, and playful” into choices of color, shape, typography, and composition."
     },
     {
       "type": "text",
       "labelPt": "resultado",
       "labelEn": "result",
-      "textPt": "Um sistema vivo, adotado por produto, marketing e comunicação, com redução mensurável no tempo de aprovação de novas peças.",
-      "textEn": "A living system adopted by product, marketing and communications, with a measurable drop in approval time for new assets."
+      "textPt": "Um sistema visual consistente e flexível, capaz de adaptar a mesma linguagem a diferentes peças e proporções sem perder unidade ou reconhecimento de campanha.",
+      "textEn": "A consistent and flexible visual system, able to adapt the same language across different pieces and formats without losing campaign unity or recognition.",
+      "spacing": {
+        "marginBottom": {
+          "desktop": 30
+        }
+      }
     },
     {
       "type": "image",
