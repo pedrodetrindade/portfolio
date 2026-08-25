@@ -567,7 +567,11 @@
   const sincronizarLarguraFechadaDoMenu = () => {
     const pill = document.querySelector('header .ctrl-group');
     const painel = document.getElementById('menu');
-    if (pill && painel) painel.style.setProperty('--menu-closed-width', pill.getBoundingClientRect().width + 'px');
+    if (pill && painel) {
+      const pillRect = pill.getBoundingClientRect();
+      painel.style.setProperty('--menu-closed-width', pillRect.width + 'px');
+      painel.style.setProperty('--menu-closed-height', pillRect.height + 'px');
+    }
   };
   sincronizarLarguraFechadaDoMenu();
 
@@ -706,7 +710,11 @@
          disponibilidade está visível ou oculta e conforme o idioma; número
          fixo faria o painel saltar lateralmente antes de começar a crescer. */
       const pill = document.querySelector('header .ctrl-group');
-      if (pill) el.style.setProperty('--menu-closed-width', pill.getBoundingClientRect().width + 'px');
+      if (pill) {
+        const pillRect = pill.getBoundingClientRect();
+        el.style.setProperty('--menu-closed-width', pillRect.width + 'px');
+        el.style.setProperty('--menu-closed-height', pillRect.height + 'px');
+      }
     }
     el.classList.add('open');
     document.body.classList.toggle('menu-open', el === menu);

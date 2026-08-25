@@ -1719,7 +1719,8 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   opacity:1;transition:visibility 0s linear var(--dur-slow)}
 .overlay.dropdown.open{transition-delay:0s}
 .overlay.dropdown .overlay-sheet{pointer-events:auto;margin-block:0;margin-top:1.1rem;
-  width:calc(100% - (var(--gutter) * 2));max-width:350px;max-height:55px;
+  width:calc(100% - (var(--gutter) * 2));max-width:350px;
+  max-height:var(--menu-closed-height,53px);
   transform:none;opacity:1;transform-origin:50% 0;
   box-shadow:0 30px 70px rgba(var(--ink-rgb),.5);
   transition:max-width var(--dur-slow) var(--ease-soft),
@@ -1776,6 +1777,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   transition-duration:var(--dur-slow)}
 .menu-panel-head{min-height:55px;display:flex;align-items:center;padding:.22rem 1rem;
   border-bottom:1px solid var(--menu-line);color:var(--menu-fg)}
+#menu.dropdown .menu-panel-head{min-height:calc(var(--menu-closed-height,53px) - 1px)}
 .menu-panel-title{display:inline-flex;align-items:center;gap:.58rem;padding:.62rem .3rem;
   font-size:.88rem;font-weight:var(--w-medium)}
 .menu-panel-title>i{width:9px;height:9px;flex:none;
@@ -2392,12 +2394,16 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .cta-blur-label{display:inline-block;transform-origin:50% 50%}
 @keyframes cta-text-blur{
   0%{filter:blur(0);transform:scale(1)}
-  16%{filter:blur(.7px);transform:scale(.982)}
-  40%{filter:blur(2.8px);transform:scale(.923)}
-  64%{filter:blur(2.35px);transform:scale(.9)}
-  80%{filter:blur(1.38px);transform:scale(.9)}
-  96%{filter:blur(.2px);transform:scale(.9)}
-  100%{filter:blur(0);transform:scale(.9)}
+  12%{filter:blur(.35px);transform:scale(.991)}
+  24%{filter:blur(1px);transform:scale(.973)}
+  38%{filter:blur(2.1px);transform:scale(.942)}
+  50%{filter:blur(2.8px);transform:scale(.915)}
+  62%{filter:blur(2.55px);transform:scale(.9)}
+  74%{filter:blur(1.9px);transform:scale(.91)}
+  84%{filter:blur(1.15px);transform:scale(.935)}
+  92%{filter:blur(.55px);transform:scale(.965)}
+  97%{filter:blur(.18px);transform:scale(.988)}
+  100%{filter:blur(0);transform:scale(1)}
 }
 @media(hover:hover) and (pointer:fine){
   .work-all-cta .ghost-cta:hover .cta-blur-label,
@@ -2407,7 +2413,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .site-footer-social a:hover .cta-blur-label,
   .site-footer-top:hover .cta-blur-label,
   .nav-cta:hover .cta-blur-label{
-    animation:cta-text-blur var(--dur-fast) linear both}
+    animation:cta-text-blur var(--dur-slow) linear both}
 }
 
 /* Halo interno dos controles de vidro. Na referência ele lê como um pequeno
