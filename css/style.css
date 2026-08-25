@@ -597,8 +597,7 @@ body.menu-open header .ctrl-group{opacity:0}
   font-family:var(--font);font-size:.88rem;font-weight:var(--w-medium);color:var(--hd-cta-fg);
   padding:.6rem 1.1rem;border-radius:var(--radius-button,12px);background:var(--hd-cta-bg);border:none;
   transition:transform var(--dur-micro) var(--ease-soft),
-             background-color var(--dur-micro) var(--ease-soft),
-             text-shadow var(--dur-micro) var(--ease-soft)}
+             background-color var(--dur-micro) var(--ease-soft)}
 .nav-cta svg{width:14px;height:14px;flex:none;
   transition:transform var(--dur-fast) var(--ease-soft)}
 .nav-cta .nc-label{display:inline-block;
@@ -608,8 +607,8 @@ body.menu-open header .ctrl-group{opacity:0}
    --nc-shift é medido pelo JS, porque o rótulo muda de largura com o idioma. */
 @media(hover:hover){
   .nav-cta:hover{transform:translateY(-2px)}
-  .nav-cta:hover .nc-label{opacity:1;transform:none}
-  .nav-cta:hover svg{transform:scale(1.08)}}
+  .nav-cta:hover .nc-label{opacity:0;transform:translateX(-6px)}
+  .nav-cta:hover svg{transform:translateX(var(--nc-shift,0px)) scale(1.12)}}
 @media(max-width:480px){.nav-cta .nc-label{display:none}}
 
 /* ===== HERO: o nome é o centro exato da tela =====
@@ -1184,7 +1183,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   font-family:var(--font);font-size:.92rem;font-weight:var(--w-medium);color:var(--paper);
   background:transparent;border:1px solid var(--line-strong);border-radius:var(--radius-button,12px);padding:.85rem 1.6rem;
   transition:transform var(--dur-micro) var(--ease-soft),border-color var(--dur-micro) var(--ease-soft),
-             background-color var(--dur-micro) var(--ease-soft),text-shadow var(--dur-micro) var(--ease-soft)}
+             background-color var(--dur-micro) var(--ease-soft)}
 .ghost-cta::after{content:"→";transition:transform var(--dur-micro) var(--ease-soft)}
 /* o do LinkedIn troca a seta pelo ícone da marca, à esquerda do rótulo */
 .ghost-cta.linkedin::after{content:none}
@@ -1804,10 +1803,9 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   letter-spacing:.035em;color:var(--menu-muted)}
 .menu-social>div{display:flex;align-items:center;gap:1.2rem}
 .menu-social a{display:inline-flex;align-items:center;gap:.34rem;font-size:.94rem;color:var(--menu-muted);
-  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft),
-             text-shadow var(--dur-micro) var(--ease-soft)}
+  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
 .menu-social a:hover{color:var(--menu-fg);transform:translateY(-1px)}
-.menu-social a span{font-size:.7em}
+.menu-social a span[aria-hidden]{font-size:.7em}
 
 /* ===== OFFSET DAS ÂNCORAS =====
    Um número só, num lugar só, em vez de espalhar cálculo de offset por
@@ -2362,8 +2360,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .site-footer-nav,.site-footer-social{display:flex;flex-direction:column;align-items:flex-start;gap:.62rem;padding:0}
 .site-footer-nav>p,.site-footer-social>p{margin-bottom:.55rem}
 .site-footer-nav a,.site-footer-social a{font-size:.92rem;color:rgba(var(--paper-rgb),.74);
-  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft),
-             text-shadow var(--dur-micro) var(--ease-soft)}
+  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
 .site-footer-nav a:hover,.site-footer-social a:hover{color:var(--paper);transform:translateX(3px)}
 .site-footer-nav a[aria-current="page"]{color:var(--paper)}
 .site-footer-marquee{width:100vw;position:relative;left:50%;translate:-50% 0;
@@ -2384,19 +2381,33 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .site-footer-top{display:inline-flex;align-items:center;justify-content:center;gap:.69rem;flex:none;
   min-height:53px;border:1px solid rgba(var(--paper-rgb),.34);border-radius:var(--radius-button,12px);padding:.78rem 1.125rem;
   background:rgba(var(--ink-rgb),.12);color:var(--paper);font-family:var(--mono);font-size:.8125rem;cursor:pointer;
-  transition:border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft),text-shadow var(--dur-micro) var(--ease-soft)}
+  transition:border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
 .site-footer-top svg{width:17.5px;height:17.5px;transition:transform var(--dur-micro) var(--ease-soft)}
 .site-footer-top:hover{border-color:var(--paper);background:rgba(var(--paper-rgb),.08);transform:translateY(-2px)}
 .site-footer-top:hover svg{transform:translateY(-2px)}
 
-/* Brilho difuso sob os rótulos dos CTAs com o mesmo peso visual da referência.
-   text-shadow limita o custo à área dos glifos e evita filter:blur() em caixas
-   inteiras durante a rolagem transformada. */
+/* Pulso medido na referência: o rótulo perde nitidez, encolhe até 90% e volta
+   a ficar nítido ainda durante o mesmo hover. O filtro fica restrito aos
+   poucos glifos do span, nunca ao botão ou a uma camada grande da página. */
+.cta-blur-label{display:inline-block;transform-origin:50% 50%}
+@keyframes cta-text-blur{
+  0%{filter:blur(0);transform:scale(1)}
+  16%{filter:blur(.7px);transform:scale(.982)}
+  40%{filter:blur(2.8px);transform:scale(.923)}
+  64%{filter:blur(2.35px);transform:scale(.9)}
+  80%{filter:blur(1.38px);transform:scale(.9)}
+  96%{filter:blur(.2px);transform:scale(.9)}
+  100%{filter:blur(0);transform:scale(.9)}
+}
 @media(hover:hover) and (pointer:fine){
-  .work-all-cta .ghost-cta:hover,.about-actions .cta-primary:hover,
-  .about-actions .linkedin:hover,.menu-social a:hover,.site-footer-social a:hover,
-  .site-footer-top:hover,.nav-cta:hover{
-    text-shadow:0 0 .48rem rgba(var(--paper-rgb),.58),0 0 1.05rem rgba(var(--paper-rgb),.26)}
+  .work-all-cta .ghost-cta:hover .cta-blur-label,
+  .about-actions .cta-primary:hover .cta-blur-label,
+  .about-actions .linkedin:hover .cta-blur-label,
+  .menu-social a:hover .cta-blur-label,
+  .site-footer-social a:hover .cta-blur-label,
+  .site-footer-top:hover .cta-blur-label,
+  .nav-cta:hover .cta-blur-label{
+    animation:cta-text-blur var(--dur-fast) linear both}
 }
 
 /* Halo interno dos controles de vidro. Na referência ele lê como um pequeno
@@ -2455,6 +2466,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .site-footer-video{display:none}
   .site-footer-marquee-track{animation:none;transform:none}
   .site-footer-email,.site-footer-copy,.site-footer-copy svg,.site-footer-nav a,.site-footer-social a,.site-footer-top,.site-footer-top svg{transition:none}
+  .cta-blur-label{animation:none!important;filter:none!important;transform:none!important}
 }
 
 /* ===== ENTRADAS POR BLOCO (coreografia via .in do observador) =====

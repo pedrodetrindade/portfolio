@@ -179,26 +179,6 @@
     "leadEn": "Five areas working as one: strategy sets the direction, creative direction turns that direction into language, communication puts the brand into circulation, digital experiences bring brand and audience closer, and technology expands its capacity to produce, evolve and scale.",
     "items": [
       {
-        "titlePt": "Estratégia & Gestão de Marca",
-        "titleEn": "Brand Strategy & Management",
-        "textPt": "Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, organizam suas mensagens, mantêm consistência e evoluem ao longo do tempo.",
-        "textEn": "I connect positioning, communication and business objectives to guide how brands present themselves, organize their messages, stay consistent and evolve over time.",
-        "tags": [
-          {
-            "pt": "posicionamento",
-            "en": "positioning"
-          },
-          {
-            "pt": "diretrizes de marca",
-            "en": "brand guidelines"
-          },
-          {
-            "pt": "governança criativa",
-            "en": "creative governance"
-          }
-        ]
-      },
-      {
         "titlePt": "Direção Criativa & Direção de Arte",
         "titleEn": "Creative Direction & Art Direction",
         "textPt": "Transformo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca em campanhas, conteúdos, produtos, projetos audiovisuais e experiências presenciais.",
@@ -215,6 +195,26 @@
           {
             "pt": "audiovisual",
             "en": "audiovisual"
+          }
+        ]
+      },
+      {
+        "titlePt": "Estratégia & Gestão de Marca",
+        "titleEn": "Brand Strategy & Management",
+        "textPt": "Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, organizam suas mensagens, mantêm consistência e evoluem ao longo do tempo.",
+        "textEn": "I connect positioning, communication and business objectives to guide how brands present themselves, organize their messages, stay consistent and evolve over time.",
+        "tags": [
+          {
+            "pt": "posicionamento",
+            "en": "positioning"
+          },
+          {
+            "pt": "diretrizes de marca",
+            "en": "brand guidelines"
+          },
+          {
+            "pt": "governança criativa",
+            "en": "creative governance"
           }
         ]
       },

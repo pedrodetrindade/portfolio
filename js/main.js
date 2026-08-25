@@ -264,8 +264,8 @@
   });
 
   const linksSociaisMenu = [
-    redesGlobais.linkedin ? '<a href="' + esc(redesGlobais.linkedin) + '" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>' : '',
-    redesGlobais.behance ? '<a href="' + esc(redesGlobais.behance) + '" target="_blank" rel="noopener noreferrer">Behance <span aria-hidden="true">↗</span></a>' : ''
+    redesGlobais.linkedin ? '<a href="' + esc(redesGlobais.linkedin) + '" target="_blank" rel="noopener noreferrer"><span class="cta-blur-label">LinkedIn</span><span aria-hidden="true">↗</span></a>' : '',
+    redesGlobais.behance ? '<a href="' + esc(redesGlobais.behance) + '" target="_blank" rel="noopener noreferrer"><span class="cta-blur-label">Behance</span><span aria-hidden="true">↗</span></a>' : ''
   ].filter(Boolean).join('');
 
   /* A disponibilidade saiu do header por decisão editorial. O CSS já impede

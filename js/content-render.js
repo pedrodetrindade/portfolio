@@ -377,8 +377,8 @@
     var socials = [];
     var linkedin = social.linkedinActive === false ? '' : footerExternalUrl(social.linkedin);
     var behance = social.behanceActive === false ? '' : footerExternalUrl(social.behance);
-    if (linkedin) socials.push('<a href="' + esc(linkedin) + '" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>');
-    if (behance) socials.push('<a href="' + esc(behance) + '" target="_blank" rel="noopener noreferrer">Behance <span aria-hidden="true">↗</span></a>');
+    if (linkedin) socials.push('<a href="' + esc(linkedin) + '" target="_blank" rel="noopener noreferrer"><span class="cta-blur-label">LinkedIn</span><span aria-hidden="true">↗</span></a>');
+    if (behance) socials.push('<a href="' + esc(behance) + '" target="_blank" rel="noopener noreferrer"><span class="cta-blur-label">Behance</span><span aria-hidden="true">↗</span></a>');
     var year = new Date().getFullYear();
     function withYear(value) { return String(value || '').replace(/\{year\}/g, year); }
     var copyPt = withYear(f.copyrightPt || ('© ' + year + ' · ' + (f.disclaimerPt || '')));
@@ -427,7 +427,7 @@
           (showSocial ? '<div class="site-footer-social"><p data-pt="Redes" data-en="Social">Redes</p>' + socials.join('') + '</div>' : '') +
         '</div>' +
         '<div class="site-footer-bottom"><p class="foot-copy" data-pt="' + esc(copyPt) + '" data-en="' + esc(copyEn) + '">' + esc(copyPt) + '</p>' +
-          '<button class="site-footer-top" type="button" data-top data-pt-label="Voltar ao topo da página" data-en-label="Back to the top of the page" aria-label="Voltar ao topo da página"><span data-pt="Voltar ao topo" data-en="Back to top">Voltar ao topo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5.6"/><path d="M5.8 11.8L12 5.6l6.2 6.2"/></svg></button></div>' +
+          '<button class="site-footer-top" type="button" data-top data-pt-label="Voltar ao topo da página" data-en-label="Back to the top of the page" aria-label="Voltar ao topo da página"><span class="cta-blur-label" data-pt="Voltar ao topo" data-en="Back to top">Voltar ao topo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5.6"/><path d="M5.8 11.8L12 5.6l6.2 6.2"/></svg></button></div>' +
         (showSignature ? '<div class="site-footer-marquee" aria-hidden="true"><div class="site-footer-marquee-track">' +
           '<span class="site-footer-marquee-group"><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i></span>' +
           '<span class="site-footer-marquee-group"><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i></span>' +
@@ -648,7 +648,7 @@
       setText(document.querySelector('.about-lead'), A.leadPt, A.leadEn);
       setText(document.querySelector('.about-sub'), A.subPt, A.subEn);
       setOptionalLabel(document.querySelector('.caps-k'), A.capabilitiesLabelPt, A.capabilitiesLabelEn, A.showCapabilitiesLabel);
-      var talkBtn = document.querySelector('.about-actions .ghost-cta[data-contact]');
+      var talkBtn = document.querySelector('.about-actions .ghost-cta[data-contact] .cta-blur-label');
       setText(talkBtn, A.ctaTalkPt, A.ctaTalkEn);
       /* Currículo: só aparece quando existe arquivo enviado pelo painel E o
          botão está ligado. Os dois são condição, não um ou outro — desligar
