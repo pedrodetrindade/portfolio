@@ -1703,18 +1703,29 @@
 
     const trilhas = [...camada.querySelectorAll('.cur-trail')];
     const portrait = document.querySelector('.portrait');
-    let portraitLens = null;
+    const portraitTrails = [];
     if (portrait && portrait.querySelector('.portrait-img')) {
-      portraitLens = document.createElement('span');
-      portraitLens.className = 'portrait-lens';
-      portraitLens.setAttribute('aria-hidden', 'true');
-      portrait.appendChild(portraitLens);
+      const opacidades = [.42, .3, .2, .12];
+      const escalas = [1, .92, .82, .7];
+      const desfoques = [11, 9, 7, 5];
+      for (let i = 0; i < 4; i++) {
+        const trail = document.createElement('span');
+        trail.className = 'portrait-blur-trail';
+        trail.setAttribute('aria-hidden', 'true');
+        trail.style.setProperty('--trail-opacity', opacidades[i]);
+        trail.style.setProperty('--trail-scale', escalas[i]);
+        trail.style.setProperty('--trail-blur', desfoques[i] + 'px');
+        portrait.appendChild(trail);
+        portraitTrails.push(trail);
+      }
     }
     let alvoX = innerWidth / 2, alvoY = innerHeight / 2;
     let x = alvoX, y = alvoY;
     const tx = [alvoX, alvoX, alvoX], ty = [alvoY, alvoY, alvoY];
     let rodando = false, ligado = false, rapidoAte = 0;
     let magneto = null, magnetoMax = 0;
+    let portraitAtivo = false, portraitAlvoX = 0, portraitAlvoY = 0;
+    const portraitX = [0, 0, 0, 0], portraitY = [0, 0, 0, 0];
 
     const LERP = .22;          /* inércia curta: acompanha sem parecer atrasado */
     const LERP_TRILHA = .3;
@@ -1743,10 +1754,23 @@
         escrever(trilhas[i], tx[i], ty[i]);
         px = tx[i]; py = ty[i];
       }
+      let portraitParado = true;
+      if (portraitAtivo && portraitTrails.length) {
+        const lerps = [.3, .2, .13, .085];
+        let anteriorX = portraitAlvoX, anteriorY = portraitAlvoY;
+        for (let i = 0; i < portraitTrails.length; i++) {
+          portraitX[i] += (anteriorX - portraitX[i]) * lerps[i];
+          portraitY[i] += (anteriorY - portraitY[i]) * lerps[i];
+          portraitTrails[i].style.setProperty('--trail-x', portraitX[i] + 'px');
+          portraitTrails[i].style.setProperty('--trail-y', portraitY[i] + 'px');
+          if (Math.abs(anteriorX - portraitX[i]) > .1 || Math.abs(anteriorY - portraitY[i]) > .1) portraitParado = false;
+          anteriorX = portraitX[i]; anteriorY = portraitY[i];
+        }
+      }
       if (performance.now() > rapidoAte) camada.classList.remove('fast');
       /* para o laço quando tudo assentou: sem movimento não há o que pintar */
       const parado = Math.abs(ax - x) < .1 && Math.abs(ay - y) < .1 &&
-        Math.abs(tx[2] - x) < .1 && Math.abs(ty[2] - y) < .1;
+        Math.abs(tx[2] - x) < .1 && Math.abs(ty[2] - y) < .1 && portraitParado;
       if (parado && performance.now() > rapidoAte) { rodando = false; return; }
       requestAnimationFrame(laco);
     };
@@ -1755,10 +1779,10 @@
     let ultimoX = alvoX, ultimoY = alvoY, primeiraAmostra = true;
     document.addEventListener('mousemove', e => {
       alvoX = e.clientX; alvoY = e.clientY;
-      if (portraitLens && portrait.classList.contains('lens-active')) {
+      if (portraitAtivo) {
         const r = portrait.getBoundingClientRect();
-        portraitLens.style.setProperty('--lens-x', (alvoX - r.left) + 'px');
-        portraitLens.style.setProperty('--lens-y', (alvoY - r.top) + 'px');
+        portraitAlvoX = alvoX - r.left;
+        portraitAlvoY = alvoY - r.top;
       }
       /* A primeira amostra não vira velocidade: sem isto ela seria medida
          contra o centro da viewport (o chute inicial) e o cursor entraria
@@ -1791,17 +1815,28 @@
       ligado = false;
       camada.classList.remove('on', 'fast', 'is-card', 'is-control', 'is-on-light');
       if (glow) glow.classList.remove('on');
+      portraitAtivo = false;
       if (portrait) portrait.classList.remove('lens-active');
     });
 
-    if (portraitLens) {
+    if (portraitTrails.length) {
       portrait.addEventListener('mouseenter', e => {
         const r = portrait.getBoundingClientRect();
-        portraitLens.style.setProperty('--lens-x', (e.clientX - r.left) + 'px');
-        portraitLens.style.setProperty('--lens-y', (e.clientY - r.top) + 'px');
+        portraitAlvoX = e.clientX - r.left;
+        portraitAlvoY = e.clientY - r.top;
+        for (let i = 0; i < portraitTrails.length; i++) {
+          portraitX[i] = portraitAlvoX; portraitY[i] = portraitAlvoY;
+          portraitTrails[i].style.setProperty('--trail-x', portraitAlvoX + 'px');
+          portraitTrails[i].style.setProperty('--trail-y', portraitAlvoY + 'px');
+        }
+        portraitAtivo = true;
         portrait.classList.add('lens-active');
+        acordarCursor();
       }, { passive: true });
-      portrait.addEventListener('mouseleave', () => portrait.classList.remove('lens-active'), { passive: true });
+      portrait.addEventListener('mouseleave', () => {
+        portraitAtivo = false;
+        portrait.classList.remove('lens-active');
+      }, { passive: true });
     }
 
     /* ---- estados por delegação ----

@@ -1135,15 +1135,16 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 /* absoluto para cobrir o placeholder que fica por baixo como rede */
 .portrait-img{position:absolute;inset:0;z-index:1;width:100%;height:100%;
   object-fit:cover;object-position:50% 22%}
-.portrait-lens{position:absolute;z-index:2;top:0;left:0;
-  width:clamp(88px,10vw,148px);aspect-ratio:1;border-radius:50%;pointer-events:none;
-  opacity:0;transform:translate3d(calc(var(--lens-x,50%) - 50%),calc(var(--lens-y,50%) - 50%),0) scale(.82);
-  background:radial-gradient(circle,rgba(var(--paper-rgb),.055) 0 35%,rgba(var(--paper-rgb),.018) 64%,transparent 74%);
-  border:1px solid rgba(var(--paper-rgb),.11);
-  backdrop-filter:blur(10px) saturate(82%);-webkit-backdrop-filter:blur(10px) saturate(82%);
-  transition:opacity var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
-.portrait.lens-active .portrait-lens{opacity:1;
-  transform:translate3d(calc(var(--lens-x,50%) - 50%),calc(var(--lens-y,50%) - 50%),0) scale(1)}
+.portrait-blur-trail{position:absolute;z-index:2;top:0;left:0;
+  width:clamp(112px,13vw,184px);aspect-ratio:1.18;border-radius:50%;pointer-events:none;
+  opacity:0;transform:translate3d(var(--trail-x,0),var(--trail-y,0),0) translate(-50%,-50%) scale(var(--trail-scale,1));
+  background:rgba(var(--paper-rgb),.012);
+  -webkit-mask-image:radial-gradient(ellipse,rgba(var(--ink-rgb),1) 0 24%,rgba(var(--ink-rgb),.72) 43%,rgba(var(--ink-rgb),.22) 62%,transparent 78%);
+  mask-image:radial-gradient(ellipse,rgba(var(--ink-rgb),1) 0 24%,rgba(var(--ink-rgb),.72) 43%,rgba(var(--ink-rgb),.22) 62%,transparent 78%);
+  backdrop-filter:blur(var(--trail-blur,8px)) saturate(82%);
+  -webkit-backdrop-filter:blur(var(--trail-blur,8px)) saturate(82%);
+  transition:opacity var(--dur-micro) var(--ease-soft)}
+.portrait.lens-active .portrait-blur-trail{opacity:var(--trail-opacity,.28)}
 .portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted-2);
   background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:var(--radius-button,12px);padding:.5rem 1.1rem}
 /* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala.
