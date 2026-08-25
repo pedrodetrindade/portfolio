@@ -597,7 +597,8 @@ body.menu-open header .ctrl-group{opacity:0}
   font-family:var(--font);font-size:.88rem;font-weight:var(--w-medium);color:var(--hd-cta-fg);
   padding:.6rem 1.1rem;border-radius:var(--radius-button,12px);background:var(--hd-cta-bg);border:none;
   transition:transform var(--dur-micro) var(--ease-soft),
-             background-color var(--dur-micro) var(--ease-soft)}
+             background-color var(--dur-micro) var(--ease-soft),
+             text-shadow var(--dur-micro) var(--ease-soft)}
 .nav-cta svg{width:14px;height:14px;flex:none;
   transition:transform var(--dur-fast) var(--ease-soft)}
 .nav-cta .nc-label{display:inline-block;
@@ -607,8 +608,8 @@ body.menu-open header .ctrl-group{opacity:0}
    --nc-shift é medido pelo JS, porque o rótulo muda de largura com o idioma. */
 @media(hover:hover){
   .nav-cta:hover{transform:translateY(-2px)}
-  .nav-cta:hover .nc-label{opacity:0;transform:translateX(-6px)}
-  .nav-cta:hover svg{transform:translateX(var(--nc-shift,0px)) scale(1.12)}}
+  .nav-cta:hover .nc-label{opacity:1;transform:none}
+  .nav-cta:hover svg{transform:scale(1.08)}}
 @media(max-width:480px){.nav-cta .nc-label{display:none}}
 
 /* ===== HERO: o nome é o centro exato da tela =====
@@ -1183,7 +1184,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   font-family:var(--font);font-size:.92rem;font-weight:var(--w-medium);color:var(--paper);
   background:transparent;border:1px solid var(--line-strong);border-radius:var(--radius-button,12px);padding:.85rem 1.6rem;
   transition:transform var(--dur-micro) var(--ease-soft),border-color var(--dur-micro) var(--ease-soft),
-             background-color var(--dur-micro) var(--ease-soft)}
+             background-color var(--dur-micro) var(--ease-soft),text-shadow var(--dur-micro) var(--ease-soft)}
 .ghost-cta::after{content:"→";transition:transform var(--dur-micro) var(--ease-soft)}
 /* o do LinkedIn troca a seta pelo ícone da marca, à esquerda do rótulo */
 .ghost-cta.linkedin::after{content:none}
@@ -1716,15 +1717,15 @@ body.ready main,body.ready footer{opacity:1;transform:none}
    é um painel, não um modal. */
 .overlay.dropdown{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
   pointer-events:none;align-items:flex-start;overflow:visible;padding-block:0;
-  opacity:1;transition:visibility 0s linear var(--dur-default)}
+  opacity:1;transition:visibility 0s linear var(--dur-slow)}
 .overlay.dropdown.open{transition-delay:0s}
 .overlay.dropdown .overlay-sheet{pointer-events:auto;margin-block:0;margin-top:1.1rem;
   width:calc(100% - (var(--gutter) * 2));max-width:350px;max-height:55px;
   transform:none;opacity:1;transform-origin:50% 0;
   box-shadow:0 30px 70px rgba(var(--ink-rgb),.5);
-  transition:max-width var(--dur-default) var(--ease-soft),
-             max-height var(--dur-default) var(--ease-soft),
-             border-radius var(--dur-default) var(--ease-soft)}
+  transition:max-width var(--dur-slow) var(--ease-soft),
+             max-height var(--dur-slow) var(--ease-soft),
+             border-radius var(--dur-slow) var(--ease-soft)}
 .overlay.dropdown.open .overlay-sheet{max-width:430px;max-height:calc(100svh - 2.2rem)}
 /* ponte invisível cobrindo o vão entre o botão e o painel: sem ela o cursor
    sai da região interativa no meio do caminho e o menu pisca */
@@ -1732,7 +1733,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
   width:min(500px,92vw);height:2rem;pointer-events:auto}
 /* conteúdo interno entra escalonado, e sai junto para o fechamento ser curto */
 .overlay.dropdown .menu-list,.overlay.dropdown .menu-social{opacity:0;transform:translateY(-8px);
-  transition:opacity var(--dur-fast) var(--ease-soft),transform var(--dur-fast) var(--ease-soft)}
+  transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
 .overlay.dropdown.open .menu-list,.overlay.dropdown.open .menu-social{opacity:1;transform:none;
   transition-delay:70ms}
 .overlay.dropdown .menu-item{transition:background-color var(--dur-micro) var(--ease-soft),
@@ -1772,7 +1773,8 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 #menu.dropdown::before{display:none}
 #menu .overlay-sheet{background:var(--menu-surface);border-color:var(--menu-line);
   backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);
-  box-shadow:0 24px 64px var(--floating-shadow);border-radius:var(--radius-card,16px)}
+  box-shadow:0 24px 64px var(--floating-shadow);border-radius:var(--radius-button,12px);
+  transition-duration:var(--dur-slow)}
 .menu-panel-head{min-height:55px;display:flex;align-items:center;padding:.22rem 1rem;
   border-bottom:1px solid var(--menu-line);color:var(--menu-fg)}
 .menu-panel-title{display:inline-flex;align-items:center;gap:.58rem;padding:.62rem .3rem;
@@ -1783,7 +1785,7 @@ body.ready main,body.ready footer{opacity:1;transform:none}
 .menu-panel-label-swap{position:relative;display:block;width:9.65em;height:1.15em;line-height:1.15;
   overflow:hidden}
 .menu-panel-label-swap>span{position:absolute;inset:0 auto auto 0;white-space:nowrap;
-  transition:transform var(--dur-fast) var(--ease-soft)}
+  transition:transform var(--dur-default) var(--ease-soft)}
 .menu-panel-label-swap>span+span{transform:translateY(125%)}
 #menu.open .menu-panel-label-swap>span:first-child{transform:translateY(-125%)}
 #menu.open .menu-panel-label-swap>span+span{transform:none}
@@ -1797,12 +1799,13 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 #menu .menu-item:hover{padding-left:1.3rem}
 #menu .menu-ico{width:31px;height:31px;border-radius:9px}
 #menu .menu-ico svg{width:14px;height:14px}
-.menu-social{flex:none;padding:.85rem .91rem 1rem;border-top:1px solid var(--menu-line)}
-.menu-social>span{display:block;margin-bottom:.55rem;font-family:var(--mono);font-size:.64rem;
+.menu-social{flex:none;padding:1.05rem 1rem 1.2rem;border-top:1px solid var(--menu-line)}
+.menu-social>span{display:block;margin-bottom:.68rem;font-family:var(--mono);font-size:.75rem;
   letter-spacing:.035em;color:var(--menu-muted)}
-.menu-social>div{display:flex;align-items:center;gap:1rem}
-.menu-social a{display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:var(--menu-muted);
-  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
+.menu-social>div{display:flex;align-items:center;gap:1.2rem}
+.menu-social a{display:inline-flex;align-items:center;gap:.34rem;font-size:.94rem;color:var(--menu-muted);
+  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft),
+             text-shadow var(--dur-micro) var(--ease-soft)}
 .menu-social a:hover{color:var(--menu-fg);transform:translateY(-1px)}
 .menu-social a span{font-size:.7em}
 
@@ -2359,7 +2362,8 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .site-footer-nav,.site-footer-social{display:flex;flex-direction:column;align-items:flex-start;gap:.62rem;padding:0}
 .site-footer-nav>p,.site-footer-social>p{margin-bottom:.55rem}
 .site-footer-nav a,.site-footer-social a{font-size:.92rem;color:rgba(var(--paper-rgb),.74);
-  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
+  transition:color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft),
+             text-shadow var(--dur-micro) var(--ease-soft)}
 .site-footer-nav a:hover,.site-footer-social a:hover{color:var(--paper);transform:translateX(3px)}
 .site-footer-nav a[aria-current="page"]{color:var(--paper)}
 .site-footer-marquee{width:100vw;position:relative;left:50%;translate:-50% 0;
@@ -2380,10 +2384,20 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .site-footer-top{display:inline-flex;align-items:center;justify-content:center;gap:.69rem;flex:none;
   min-height:53px;border:1px solid rgba(var(--paper-rgb),.34);border-radius:var(--radius-button,12px);padding:.78rem 1.125rem;
   background:rgba(var(--ink-rgb),.12);color:var(--paper);font-family:var(--mono);font-size:.8125rem;cursor:pointer;
-  transition:border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
+  transition:border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft),text-shadow var(--dur-micro) var(--ease-soft)}
 .site-footer-top svg{width:17.5px;height:17.5px;transition:transform var(--dur-micro) var(--ease-soft)}
 .site-footer-top:hover{border-color:var(--paper);background:rgba(var(--paper-rgb),.08);transform:translateY(-2px)}
 .site-footer-top:hover svg{transform:translateY(-2px)}
+
+/* Brilho difuso sob os rótulos dos CTAs com o mesmo peso visual da referência.
+   text-shadow limita o custo à área dos glifos e evita filter:blur() em caixas
+   inteiras durante a rolagem transformada. */
+@media(hover:hover) and (pointer:fine){
+  .work-all-cta .ghost-cta:hover,.about-actions .cta-primary:hover,
+  .about-actions .linkedin:hover,.menu-social a:hover,.site-footer-social a:hover,
+  .site-footer-top:hover,.nav-cta:hover{
+    text-shadow:0 0 .48rem rgba(var(--paper-rgb),.58),0 0 1.05rem rgba(var(--paper-rgb),.26)}
+}
 
 /* Halo interno dos controles de vidro. Na referência ele lê como um pequeno
    desfoque luminoso que corre por baixo do material. Aqui a borda macia vem

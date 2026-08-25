@@ -736,9 +736,9 @@
           document.body.classList.remove('menu-open');
         }
       };
-      /* --dur-default = 700ms. A margem mínima deixa visibility:hidden ser
+      /* --dur-slow = 1000ms. A margem mínima deixa visibility:hidden ser
          aplicada primeiro sem criar uma pausa perceptível entre as peças. */
-      menuCloseTimer = setTimeout(liberarPill, 710);
+      menuCloseTimer = setTimeout(liberarPill, 1010);
     } else {
       document.body.classList.remove('menu-open');
     }
