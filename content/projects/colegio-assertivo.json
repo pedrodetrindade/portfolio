@@ -19,10 +19,10 @@
     "titleEn": "Assertivo School",
     "subtitlePt": "O Colégio Assertivo é uma instituição de ensino com uma identidade vibrante, contemporânea e próxima dos alunos.\nSua comunicação combina educação, criatividade e dinamismo para criar uma experiência de marca reconhecível e conectada ao universo escolar.",
     "subtitleEn": "Assertivo School is an educational institution with a vibrant, contemporary identity and a close connection to its students.\nIts communication blends education, creativity, and dynamism to create a recognizable brand experience connected to school life.",
-    "rolePt": "Direção de marca",
-    "roleEn": "Brand direction",
-    "scopePt": "Identidade, sistema, diretrizes",
-    "scopeEn": "Identity, system, guidelines"
+    "rolePt": "Direção de Arte & Design",
+    "roleEn": "Art Direction & Design",
+    "scopePt": "Key Visual, Campanha, Social Media, Motion Design e Materiais Impressos",
+    "scopeEn": "Key Visual, Campaign, Social Media, Motion Design & Print Materials"
   },
   "cover": "assets/uploads/case-01/kv1.png",
   "coverMobile": "",
@@ -73,7 +73,7 @@
     },
     {
       "type": "image",
-      "src": "assets/uploads/case-01/1-copiar.png",
+      "src": "assets/uploads/colegio-assertivo/1115-01-round-neck-baby-t-shirt-mockups.png",
       "alt": "",
       "fit": "auto",
       "width": "content",
@@ -81,18 +81,39 @@
       "captionEn": ""
     },
     {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/colegio-assertivo/kv1.png",
+          "alt": ""
+        },
+        {
+          "src": "assets/uploads/colegio-assertivo/leitura.png",
+          "alt": ""
+        }
+      ]
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/colegio-assertivo/dia-da-arvore.png",
+          "alt": ""
+        },
+        {
+          "src": "assets/uploads/colegio-assertivo/kv3.png",
+          "alt": ""
+        }
+      ]
+    },
+    {
       "type": "image",
-      "src": "assets/uploads/case-01/1-copiar-2.png",
+      "src": "assets/uploads/colegio-assertivo/notebook-mockup-1.png",
       "alt": "",
-      "fit": "auto",
+      "fit": "cover",
       "width": "content",
       "captionPt": "",
-      "captionEn": "",
-      "spacing": {
-        "marginTop": {
-          "desktop": 0
-        }
-      }
+      "captionEn": ""
     }
   ]
 }
