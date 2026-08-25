@@ -414,6 +414,13 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 .gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem;width:100%}
 .gallery-item{position:relative;padding:.45rem;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.02)}
 .gallery-item img,.gallery-item .media-empty{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:6px}
+.gallery-layout-preview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;width:100%;margin:.2rem 0 1rem;padding:.65rem;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.08)}
+.gallery-layout-preview-item{position:relative;display:block;aspect-ratio:var(--gallery-ratio,4/3);min-width:0;overflow:hidden;border-radius:6px;background:var(--surface-2)}
+.gallery-layout-preview-item img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain}
+.gallery-layout-preview--single{grid-template-columns:1fr}
+.gallery-layout-preview--three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.gallery-layout-preview--adaptive{display:flex;flex-wrap:wrap;align-items:flex-start}
+.gallery-layout-preview--adaptive .gallery-layout-preview-item{flex:var(--gallery-ratio,1.333) 1 var(--gallery-basis,150px)}
 .gallery-item.is-dragging{opacity:.4}.gallery-item.is-drop{border-color:var(--accent)}
 .gallery-item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;color:var(--muted);font-size:.7rem}
 .gallery-item-actions{display:flex;gap:.25rem;margin-top:.35rem;flex-wrap:wrap}
@@ -436,4 +443,9 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
   .field-grid .field.span-2{grid-column:auto}
   .block-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
   .gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gallery-layout-preview--three{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .gallery-layout-preview,.gallery-layout-preview--three{grid-template-columns:1fr}
+  .gallery-layout-preview--adaptive{display:grid}
 }

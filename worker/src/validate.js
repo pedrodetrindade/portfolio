@@ -215,12 +215,13 @@ function isPosterValido(valor) {
    terceiro, um javascript: ou um caminho fora do repositório. */
 var CHAVES_DE_BLOCO = {
   text:    ['type', 'labelPt', 'labelEn', 'showLabel', 'textPt', 'textEn', 'spacing'],
-  gallery: ['type', 'images', 'spacing'],
+  gallery: ['type', 'images', 'layout', 'spacing'],
   image:   ['type', 'src', 'alt', 'fit', 'width', 'captionPt', 'captionEn', 'spacing'],
   quote:   ['type', 'quotePt', 'quoteEn', 'authorPt', 'authorEn', 'spacing'],
   video:   ['type', 'mode', 'src', 'poster', 'vimeo', 'captionPt', 'captionEn', 'spacing']
 };
 var AJUSTES_DE_IMAGEM = ['cover', 'auto'];
+var LAYOUTS_DE_GALERIA = ['adaptive', 'single', 'two', 'three'];
 var LARGURAS_DE_BLOCO = ['content', 'full'];
 var MODOS_DE_VIDEO_DE_BLOCO = ['file', 'vimeo'];
 var EXT_DE_VIDEO = ['.mp4', '.webm'];
@@ -298,6 +299,9 @@ function erroNosBlocos(blocks) {
 
     if (b.type === 'gallery') {
       if (!Array.isArray(b.images)) return onde + ': images precisa ser uma lista.';
+      if (b.layout != null && LAYOUTS_DE_GALERIA.indexOf(b.layout) === -1) {
+        return onde + ': layout precisa ser adaptive, single, two ou three.';
+      }
       for (var g = 0; g < b.images.length; g++) {
         var im = b.images[g];
         if (!im || typeof im !== 'object') return onde + ': imagem ' + (g + 1) + ' inválida.';

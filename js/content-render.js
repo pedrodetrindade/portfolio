@@ -848,7 +848,9 @@
   function htmlDoBloco(b, css) {
     if (b.type === 'gallery') {
       var imgs = Array.isArray(b.images) ? b.images : [];
-      return '<div class="case-gallery" style="' + css + '">' + imgs.map(function (img) {
+      var galleryLayout = ['adaptive', 'single', 'two', 'three'].indexOf(b.layout) !== -1 ? b.layout : '';
+      var galleryClass = 'case-gallery' + (galleryLayout ? ' case-gallery--' + galleryLayout : '');
+      return '<div class="' + galleryClass + '" style="' + css + '">' + imgs.map(function (img) {
         return '<div class="thumb reveal" data-case-media><div class="scene"><img src="' + esc(resolveAssetUrl(img.src)) +
           '" alt="' + esc(img.alt || '') + '" onerror="this.remove()"></div></div>';
       }).join('') + '</div>';
@@ -929,6 +931,21 @@
       if (b.type === 'video' && b.mode === 'vimeo' && b.vimeo && b.vimeo.videoId) vimeos.push(b.vimeo);
       return '<section class="case-block-group case-block-group--' + esc(b.type) + '" data-case-block="' + esc(b.type) + '">' + htmlDoBloco(b, css) + '</section>';
     }).join('');
+
+    host.querySelectorAll('.case-gallery:not(.case-gallery--legacy) img').forEach(function (img) {
+      var gallery = img.closest('.case-gallery');
+      if (!gallery || !/case-gallery--(adaptive|single|two|three)/.test(gallery.className)) return;
+      function aplicarProporcao() {
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        var thumb = img.closest('.thumb');
+        if (!thumb) return;
+        var ratio = img.naturalWidth / img.naturalHeight;
+        thumb.style.setProperty('--gallery-ratio', String(ratio));
+        thumb.style.setProperty('--gallery-basis', Math.round(ratio * 240) + 'px');
+      }
+      if (img.complete) aplicarProporcao();
+      else img.addEventListener('load', aplicarProporcao, { once: true });
+    });
 
     host.querySelectorAll('.case-video .scene[data-vimeo]').forEach(function (slot, i) {
       var cfg = vimeos[i];

@@ -2498,7 +2498,7 @@
      produz campo aparecendo e sumindo conforme a pessoa digita. */
   function blocoNovo(tipo) {
     if (tipo === 'text') return { type: 'text', labelPt: '', labelEn: '', textPt: '', textEn: '' };
-    if (tipo === 'gallery') return { type: 'gallery', images: [] };
+    if (tipo === 'gallery') return { type: 'gallery', images: [], layout: 'adaptive' };
     if (tipo === 'image') return { type: 'image', src: '', alt: '', fit: 'cover', width: 'content', captionPt: '', captionEn: '' };
     if (tipo === 'quote') return { type: 'quote', quotePt: '', quoteEn: '', authorPt: '', authorEn: '' };
     if (tipo === 'video') return { type: 'video', mode: 'file', src: '', poster: '', captionPt: '', captionEn: '' };
@@ -2536,7 +2536,25 @@
     }
     if (b.type === 'gallery') {
       var imgs = b.images || [];
-      return fieldRow('Adicionar várias imagens', 'Selecione várias de uma vez. JPG, PNG, WebP, AVIF, GIF ou SVG; até 25MB por arquivo e 32MB por publicação.',
+      var galleryLayout = b.layout || '';
+      var galleryPreviewClass = galleryLayout || 'legacy';
+      return fieldRow('Layout', 'Galerias antigas permanecem no layout atual até você escolher uma opção.',
+          selectDe(p + 'layout', galleryLayout, [
+            ['', 'Legado atual'],
+            ['adaptive', 'Adaptável'],
+            ['single', '1 por linha'],
+            ['two', '2 por linha'],
+            ['three', '3 por linha']
+          ])) +
+        '<div class="gallery-layout-preview gallery-layout-preview--' + galleryPreviewClass + '" aria-label="Prévia do layout da galeria">' +
+          (imgs.length ? imgs.map(function (im) {
+            var previewSrc = caminhoPublico(im.src);
+            return '<span class="gallery-layout-preview-item">' +
+              (previewSrc ? '<img src="' + esc(previewSrc) + '" alt="" data-gallery-preview-img>' : '<span class="media-empty">—</span>') +
+              '</span>';
+          }).join('') : '<span class="empty-state">Adicione imagens para visualizar a composição.</span>') +
+        '</div>' +
+        fieldRow('Adicionar várias imagens', 'Selecione várias de uma vez. JPG, PNG, WebP, AVIF, GIF ou SVG; até 25MB por arquivo e 32MB por publicação.',
         '<input type="file" id="' + p + 'multi" multiple accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
         '<div class="gallery-grid">' + (imgs.length ? imgs.map(function (im, j) {
           var src = caminhoPublico(im.src);
@@ -2610,6 +2628,7 @@
         if (removeImage) removeImage.addEventListener('click', function () { b.src = ''; save(); rerender(); });
       }
       if (b.type === 'gallery') {
+        sel('layout', function (v) { if (v) b.layout = v; else delete b.layout; });
         var multi = document.getElementById(p + 'multi');
         if (multi) multi.addEventListener('change', function () {
           var arquivos = Array.prototype.slice.call(multi.files || []);
@@ -2793,6 +2812,19 @@
         arr.splice(destino, 0, item);
         save(); rerender();
       });
+    });
+
+    q('[data-gallery-preview-img]').forEach(function (img) {
+      function aplicarProporcao() {
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        var item = img.closest('.gallery-layout-preview-item');
+        if (!item) return;
+        var ratio = img.naturalWidth / img.naturalHeight;
+        item.style.setProperty('--gallery-ratio', String(ratio));
+        item.style.setProperty('--gallery-basis', Math.round(ratio * 112) + 'px');
+      }
+      if (img.complete) aplicarProporcao();
+      else img.addEventListener('load', aplicarProporcao, { once: true });
     });
   }
 
