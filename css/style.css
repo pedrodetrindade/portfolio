@@ -148,28 +148,10 @@ p[data-pt][data-en]{text-wrap:pretty}
 
 .glow{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden;
   will-change:transform}
-/* 273px contra os 420px anteriores: 35% menor. O centro subiu de .13 para .156
-   (20% mais intenso) e os stops fecharam de 42%/70% para 34%/62%, o que
-   concentra a luz em vez de dispersá-la. A borda continua sem contorno visível,
-   porque o gradiente termina em transparente. Tons de #C2B3B3 e #736868, os
-   mesmos marrons do site. Move por translate3d, nunca por top/left. */
-.cursor-glow{position:fixed;top:0;left:0;width:273px;height:273px;margin:-136px 0 0 -136px;
-  border-radius:50%;pointer-events:none;z-index:-1;opacity:0;
-  background:radial-gradient(circle,rgba(194,179,179,.156),rgba(115,104,104,.07) 34%,transparent 62%);
-  transform:translate3d(var(--mx,50vw),var(--my,50vh),0);
-  transition:transform .55s var(--ease-out-smooth),opacity var(--dur-default) var(--ease-out-smooth)}
-.cursor-glow.on{opacity:1}
-@media(prefers-reduced-motion:reduce),(pointer:coarse){.cursor-glow{display:none}}
-
 /* ===== CURSOR INTERATIVO =====
-   Um glow compacto e exatamente três rastros, todos reaproveitados: nenhum nó
-   é criado durante o movimento. A camada inteira é pointer-events:none, então
-   nada aqui bloqueia clique, hover, arraste ou seleção.
-   O .cursor-glow acima continua existindo: ele é a luz ambiente do fundo
-   (z-index:-1, 273px), coisa diferente do cursor. O que mudou é que os dois
-   passaram a ser movidos pelo mesmo listener e pelo mesmo laço.
-   Cores derivadas da paleta, sem valor solto: --cream para o núcleo quente,
-   --paper-rgb para halo e borda. */
+   Um único canvas desenha a pincelada contínua; o núcleo pequeno e o rótulo de
+   projeto continuam no DOM porque são estados semânticos do cursor. A camada
+   inteira é pointer-events:none, então não bloqueia clique, hover ou seleção. */
 :root{
   --cursor-core:var(--cream);
   --cursor-glow-soft:rgba(var(--paper-rgb),.16);
@@ -181,6 +163,7 @@ p[data-pt][data-en]{text-wrap:pretty}
    Continua pointer-events:none, então estar por cima não bloqueia clique. */
 .cur-layer{position:fixed;inset:0;z-index:100;pointer-events:none;
   contain:layout style size}
+.cur-brush{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 /* O FAQ inverte a superfície para clara. O cursor acompanha essa superfície
    sem mudar sua lógica nem reativar o ponteiro nativo: só os tokens visuais da
    camada são invertidos enquanto o alvo está dentro do FAQ. */
@@ -192,32 +175,19 @@ p[data-pt][data-en]{text-wrap:pretty}
    folha do navegador. A regra explícita garante remoção real da caixa. */
 .about-k[hidden],.caps-k[hidden],.help-k[hidden],.mail-k[hidden],
 .case-hero .eyebrow[hidden]{display:none}
-.cur-dot,.cur-trail,.cur-label{position:absolute;top:0;left:0;pointer-events:none;
+.cur-dot,.cur-label{position:absolute;top:0;left:0;pointer-events:none;
   will-change:transform}
-/* núcleo: 16px, some por padrão até o ponteiro se mover pela primeira vez */
-.cur-dot{width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
-  background:radial-gradient(circle,var(--cursor-core),var(--cursor-glow-soft) 62%,transparent 72%);
-  box-shadow:0 0 12px 2px var(--cursor-glow-soft);
+/* Núcleo pequeno e preciso. O antigo halo circular grande saiu; a presença
+   luminosa agora vem da pincelada no canvas. */
+.cur-dot{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
+  background:var(--cursor-core);box-shadow:0 0 4px var(--cursor-glow-soft);
   opacity:0;transition:opacity var(--dur-micro) var(--ease-soft),
                        width var(--dur-micro) var(--ease-soft),
                        height var(--dur-micro) var(--ease-soft),
                        margin var(--dur-micro) var(--ease-soft)}
 .cur-layer.on .cur-dot{opacity:1}
-/* sobre controle: menor e mais preciso. Sobre card: vira halo atrás do rótulo. */
-.cur-layer.is-control .cur-dot{width:9px;height:9px;margin:-4.5px 0 0 -4.5px}
-.cur-layer.is-card .cur-dot{width:64px;height:64px;margin:-32px 0 0 -32px;opacity:.5}
-
-/* três rastros fixos, cada um menor e mais apagado que o anterior */
-.cur-trail{border-radius:50%;background:var(--cursor-glow-soft);opacity:0;
-  transition:opacity 320ms var(--ease-soft)}
-.cur-trail:nth-child(1){width:11px;height:11px;margin:-5.5px 0 0 -5.5px}
-.cur-trail:nth-child(2){width:8px;height:8px;margin:-4px 0 0 -4px}
-.cur-trail:nth-child(3){width:5px;height:5px;margin:-2.5px 0 0 -2.5px}
-.cur-layer.fast .cur-trail:nth-child(1){opacity:.42}
-.cur-layer.fast .cur-trail:nth-child(2){opacity:.26}
-.cur-layer.fast .cur-trail:nth-child(3){opacity:.14}
-/* sobre card ou controle o rastro sai: ali o cursor precisa ser preciso */
-.cur-layer.is-card .cur-trail,.cur-layer.is-control .cur-trail{opacity:0}
+.cur-layer.is-control .cur-dot{width:5px;height:5px;margin:-2.5px 0 0 -2.5px}
+.cur-layer.is-card .cur-dot{opacity:0}
 
 /* rótulo "Ver projeto": centrado no mesmo ponto do núcleo, então o cursor
    parece crescer e revelar o texto por dentro, sem animar largura. */
@@ -454,6 +424,7 @@ body.intro-mode{overflow:hidden}
 
 header{position:fixed;top:0;left:0;right:0;z-index:50;will-change:transform;
   transition:transform var(--dur-default) var(--ease-out-smooth)}
+header.is-hidden{transform:translateY(-130%)}
 /* Durante a assinatura inicial só o nome fica acima do véu. Quando os
    elementos secundários da hero começam a entrar (`hero-sec`), o cabeçalho
    entra no mesmo instante e também sobe acima do véu. Antes ele permanecia
@@ -1632,7 +1603,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
   .js .reveal[data-reveal="soft"],
   .js .reveal[data-reveal="soft"].in{filter:none!important}
   .scrub .w{color:inherit}
-  .cursor-glow,.cur-layer{display:none}
+  .cur-layer{display:none}
   /* nada preso em estado inicial: intro, máscaras, linhas e capacidades */
   .intro-veil{display:none}
   .js .h-step,.js .hn-line,.js .caps-grid li{opacity:1!important;transform:none!important}

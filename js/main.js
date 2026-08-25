@@ -1196,6 +1196,7 @@
      Listeners separados brigavam pelo mesmo tick e liam layout três vezes. */
   let scrubWords = [], wordTops = [], litCount = 0;
   let lastY = window.scrollY, queued = false, headHidden = false;
+  let headDirecao = 0, headPercurso = 0;
 
   /* Com a rolagem suave por transform, a posição real (window.scrollY) e a
      posição que está na tela deixam de coincidir enquanto o conteúdo alcança.
@@ -1368,16 +1369,44 @@
     const y = posVisual;
     const noFimDaPagina = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
 
-    /* Só escreve o transform quando o estado vira. Reescrever a cada quadro
-       invalidava o backdrop-filter do .menu-btn, que é filho do header: o
-       navegador recalculava o desfoque em todo quadro da rolagem, na página
-       inteira. Era a causa do engasgo constante. */
-    const esconder = y > lastY && y > 200;
-    if (esconder !== headHidden) {
-      headHidden = esconder;
-      headEl.style.transform = esconder ? 'translateY(-130%)' : 'translateY(0)';
-    }
+    /* A posição visual avança em passos fracionários enquanto alcança o scroll
+       real. Usar somente `y > lastY` fazia qualquer inversão mínima da cauda
+       alternar visible/hidden em quadros consecutivos. Agora a direção precisa
+       permanecer e percorrer uma fração da própria altura do header antes de
+       trocar o estado. O limiar de .1px só descarta a cauda subvisual, logo
+       acima do EPSILON (.08px) usado pelo smooth scroll; não muda sua curva. */
+    const deltaHead = y - lastY;
     lastY = y;
+    const menuEstavel = document.body.classList.contains('menu-open');
+    if (menuEstavel) {
+      headDirecao = 0;
+      headPercurso = 0;
+    } else if (y <= 200) {
+      headDirecao = 0;
+      headPercurso = 0;
+      if (headHidden) {
+        headHidden = false;
+        headEl.classList.remove('is-hidden');
+      }
+    } else if (Math.abs(deltaHead) >= .1) {
+      const direcao = deltaHead > 0 ? 1 : -1;
+      if (direcao !== headDirecao) {
+        headDirecao = direcao;
+        headPercurso = 0;
+      }
+      const esconder = direcao > 0;
+      if (esconder !== headHidden) {
+        headPercurso += Math.abs(deltaHead);
+        const limiar = Math.max(8, headAltura * (esconder ? .16 : .1));
+        if (headPercurso >= limiar) {
+          headHidden = esconder;
+          headPercurso = 0;
+          headEl.classList.toggle('is-hidden', esconder);
+        }
+      } else {
+        headPercurso = 0;
+      }
+    }
     pintarClaros(y);
     pintarSpy(y);
 
@@ -1663,21 +1692,10 @@
   }
 
   /* ================== CURSOR INTERATIVO ==================
-     Substitui dois sistemas que existiam antes e se sobrepunham:
-     - .cursor-glow tinha listener próprio de mousemove;
-     - .card-cue tinha OUTRO listener de mousemove e movia por left/top
-       (propriedades de layout), com mouseenter/mouseleave presos aos .card
-       existentes no carregamento — quando content-render.js reconstruía a
-       grade, os cards novos ficavam sem nenhum handler e o rótulo parava de
-       aparecer em silêncio.
-     Agora existe um listener de ponteiro e um laço de rAF só. Os cards são
-     reconhecidos por delegação, então grade reconstruída, troca de idioma e
-     prévia do CMS continuam funcionando sem religar nada.
-
-     A luz ambiente (.cursor-glow, z-index:-1) continua: ela é o fundo do site,
-     não o cursor. O que mudou é que passou a ser movida por este mesmo
-     listener, em vez de ter o dela. */
-  const glow = document.querySelector('.cursor-glow');
+     Um único listener de ponteiro e um único rAF alimentam o núcleo, o rótulo
+     dos cards, o efeito localizado do retrato e a pincelada em canvas. O canvas
+     substitui tanto o glow circular de fundo quanto os três pontos separados:
+     desenha segmentos contínuos, sem criar elementos durante o movimento. */
   /* pointer:fine sozinho não basta — um híbrido com caneta reporta fine sem
      ter hover de verdade. hover:hover é o que garante estado de passagem. */
   const podeCursor = window.matchMedia('(pointer: fine) and (hover: hover)').matches;
@@ -1686,9 +1704,9 @@
     const camada = document.createElement('div');
     camada.className = 'cur-layer';
     camada.setAttribute('aria-hidden', 'true');
-    /* três rastros fixos, criados uma vez. Nunca são recriados: durante o
-       movimento só o transform deles muda. */
-    for (let i = 0; i < 3; i++) camada.appendChild(document.createElement('i')).className = 'cur-trail';
+    const pincel = document.createElement('canvas');
+    pincel.className = 'cur-brush';
+    camada.appendChild(pincel);
     const ponto = document.createElement('div');
     ponto.className = 'cur-dot';
     const rotulo = document.createElement('span');
@@ -1706,7 +1724,90 @@
     /* só depois de a camada existir de verdade */
     document.documentElement.classList.add('has-custom-cursor');
 
-    const trilhas = [...camada.querySelectorAll('.cur-trail')];
+    const pincelCtx = pincel.getContext('2d', { alpha: true, desynchronized: true });
+    const estiloRaiz = getComputedStyle(document.documentElement);
+    const pincelClaro = estiloRaiz.getPropertyValue('--paper-rgb').trim();
+    const pincelEscuro = estiloRaiz.getPropertyValue('--ink-rgb').trim();
+    let pincelRgb = pincelClaro;
+
+    /* Buffer circular fixo: até 72 amostras, sem objetos ou arrays novos por
+       quadro. A vida curta conserva só o trecho recente da trajetória. */
+    const CAP_RASTRO = 72;
+    const rx = new Float32Array(CAP_RASTRO);
+    const ry = new Float32Array(CAP_RASTRO);
+    const rt = new Float64Array(CAP_RASTRO);
+    const rw = new Float32Array(CAP_RASTRO);
+    const rvida = new Float32Array(CAP_RASTRO);
+    const rquebra = new Uint8Array(CAP_RASTRO);
+    let rInicio = 0, rTotal = 0, rDpr = 1, continuidadeRastro = false;
+    const rIndice = pos => (rInicio + pos) % CAP_RASTRO;
+    const limparPincel = () => {
+      if (!pincelCtx) return;
+      pincelCtx.save();
+      pincelCtx.setTransform(1, 0, 0, 1, 0, 0);
+      pincelCtx.clearRect(0, 0, pincel.width, pincel.height);
+      pincelCtx.restore();
+    };
+    const dimensionarPincel = () => {
+      rDpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      pincel.width = Math.round(innerWidth * rDpr);
+      pincel.height = Math.round(innerHeight * rDpr);
+      pincelCtx.setTransform(rDpr, 0, 0, rDpr, 0, 0);
+      rInicio = 0;
+      rTotal = 0;
+      continuidadeRastro = false;
+    };
+    const adicionarAoRastro = (px, py, agora, velocidade, quebra) => {
+      let indice;
+      if (rTotal < CAP_RASTRO) {
+        indice = rIndice(rTotal++);
+      } else {
+        rInicio = (rInicio + 1) % CAP_RASTRO;
+        indice = rIndice(rTotal - 1);
+      }
+      rx[indice] = px;
+      ry[indice] = py;
+      rt[indice] = agora;
+      /* 7–12px: fino em movimento lento, discretamente mais largo no rápido. */
+      rw[indice] = 7 + Math.min(5, velocidade * 2.2);
+      /* O rápido permanece um pouco mais, logo percorre mais distância sem
+         criar uma cauda exagerada; o lento desaparece antes e fica curto. */
+      rvida[indice] = 460 + Math.min(170, velocidade * 55);
+      rquebra[indice] = quebra ? 1 : 0;
+    };
+    const pintarRastro = agora => {
+      if (!pincelCtx) return false;
+      limparPincel();
+      while (rTotal) {
+        const primeiro = rIndice(0);
+        if (agora - rt[primeiro] <= rvida[primeiro]) break;
+        rInicio = (rInicio + 1) % CAP_RASTRO;
+        rTotal--;
+      }
+      if (rTotal < 2) return rTotal > 0;
+      pincelCtx.lineCap = 'round';
+      pincelCtx.lineJoin = 'round';
+      for (let pos = 1; pos < rTotal; pos++) {
+        const atual = rIndice(pos);
+        const anterior = rIndice(pos - 1);
+        if (rquebra[atual]) continue;
+        const vida = rvida[atual];
+        const restante = Math.max(0, 1 - (agora - rt[atual]) / vida);
+        if (!restante) continue;
+        const alpha = .13 * restante * restante;
+        pincelCtx.strokeStyle = 'rgba(' + pincelRgb + ',' + alpha + ')';
+        pincelCtx.shadowColor = 'rgba(' + pincelRgb + ',' + (alpha * .7) + ')';
+        pincelCtx.shadowBlur = 9;
+        pincelCtx.lineWidth = rw[atual] * (.72 + restante * .28);
+        pincelCtx.beginPath();
+        pincelCtx.moveTo(rx[anterior], ry[anterior]);
+        pincelCtx.lineTo(rx[atual], ry[atual]);
+        pincelCtx.stroke();
+      }
+      pincelCtx.shadowBlur = 0;
+      return rTotal > 0;
+    };
+    dimensionarPincel();
     const portrait = document.querySelector('.portrait');
     const portraitTrails = [];
     if (portrait && portrait.querySelector('.portrait-img')) {
@@ -1726,16 +1827,12 @@
     }
     let alvoX = innerWidth / 2, alvoY = innerHeight / 2;
     let x = alvoX, y = alvoY;
-    const tx = [alvoX, alvoX, alvoX], ty = [alvoY, alvoY, alvoY];
-    let rodando = false, ligado = false, rapidoAte = 0;
+    let rodando = false, ligado = false;
     let magneto = null, magnetoMax = 0;
     let portraitAtivo = false, portraitAlvoX = 0, portraitAlvoY = 0;
     const portraitX = [0, 0, 0, 0], portraitY = [0, 0, 0, 0];
 
     const LERP = .22;          /* inércia curta: acompanha sem parecer atrasado */
-    const LERP_TRILHA = .3;
-    const VEL_RASTRO = 7;      /* px por amostra: abaixo disso o rastro some */
-
     const escrever = (el, px, py) => { el.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)'; };
 
     const laco = () => {
@@ -1752,13 +1849,7 @@
       x += (ax - x) * LERP; y += (ay - y) * LERP;
       escrever(ponto, x, y);
       escrever(rotulo, x, y);
-      let px = x, py = y;
-      for (let i = 0; i < 3; i++) {
-        tx[i] += (px - tx[i]) * LERP_TRILHA;
-        ty[i] += (py - ty[i]) * LERP_TRILHA;
-        escrever(trilhas[i], tx[i], ty[i]);
-        px = tx[i]; py = ty[i];
-      }
+      const rastroVivo = pintarRastro(performance.now());
       let portraitParado = true;
       if (portraitAtivo && portraitTrails.length) {
         const lerps = [.3, .2, .13, .085];
@@ -1772,18 +1863,17 @@
           anteriorX = portraitX[i]; anteriorY = portraitY[i];
         }
       }
-      if (performance.now() > rapidoAte) camada.classList.remove('fast');
       /* para o laço quando tudo assentou: sem movimento não há o que pintar */
-      const parado = Math.abs(ax - x) < .1 && Math.abs(ay - y) < .1 &&
-        Math.abs(tx[2] - x) < .1 && Math.abs(ty[2] - y) < .1 && portraitParado;
-      if (parado && performance.now() > rapidoAte) { rodando = false; return; }
+      const parado = Math.abs(ax - x) < .1 && Math.abs(ay - y) < .1 && portraitParado;
+      if (parado && !rastroVivo) { rodando = false; return; }
       requestAnimationFrame(laco);
     };
     const acordarCursor = () => { if (!rodando) { rodando = true; requestAnimationFrame(laco); } };
 
-    let ultimoX = alvoX, ultimoY = alvoY, primeiraAmostra = true;
+    let ultimoX = alvoX, ultimoY = alvoY, ultimoTempo = 0, primeiraAmostra = true;
     document.addEventListener('mousemove', e => {
       alvoX = e.clientX; alvoY = e.clientY;
+      const agora = performance.now();
       if (portraitAtivo) {
         const r = portrait.getBoundingClientRect();
         portraitAlvoX = alvoX - r.left;
@@ -1797,31 +1887,35 @@
       if (primeiraAmostra) {
         primeiraAmostra = false;
         ultimoX = alvoX; ultimoY = alvoY;
+        ultimoTempo = agora;
         x = alvoX; y = alvoY;
-        for (let i = 0; i < 3; i++) { tx[i] = alvoX; ty[i] = alvoY; }
+        adicionarAoRastro(alvoX, alvoY, agora, 0, true);
+        continuidadeRastro = true;
       }
-      /* rastro por velocidade, não por intervalo fixo: um movimento mínimo
-         não pode gerar rastro. */
-      else if (Math.hypot(alvoX - ultimoX, alvoY - ultimoY) > VEL_RASTRO) {
-        camada.classList.add('fast');
-        rapidoAte = performance.now() + 380;   /* dentro da faixa 250–450ms */
+      else {
+        const distancia = Math.hypot(alvoX - ultimoX, alvoY - ultimoY);
+        const intervalo = Math.max(8, agora - ultimoTempo);
+        /* px/ms: a própria distância percorrida alonga o rápido; velocidade
+           entra só como ajuste pequeno de espessura e permanência. */
+        if (distancia >= 1.5) {
+          adicionarAoRastro(alvoX, alvoY, agora, distancia / intervalo, !continuidadeRastro);
+          continuidadeRastro = true;
+        }
       }
       ultimoX = alvoX; ultimoY = alvoY;
+      ultimoTempo = agora;
       if (!ligado) { ligado = true; camada.classList.add('on'); }
-      if (glow) {
-        glow.style.setProperty('--mx', alvoX + 'px');
-        glow.style.setProperty('--my', alvoY + 'px');
-        glow.classList.add('on');
-      }
       acordarCursor();
     }, { passive: true });
 
     document.addEventListener('mouseleave', () => {
       ligado = false;
-      camada.classList.remove('on', 'fast', 'is-card', 'is-control', 'is-on-light');
-      if (glow) glow.classList.remove('on');
+      primeiraAmostra = true;
+      continuidadeRastro = false;
+      camada.classList.remove('on', 'is-card', 'is-control', 'is-on-light');
       portraitAtivo = false;
       if (portrait) portrait.classList.remove('lens-active');
+      acordarCursor();
     });
 
     if (portraitTrails.length) {
@@ -1862,7 +1956,9 @@
       /* O FAQ é a única superfície clara. A camada continua acima de tudo e
          sem capturar eventos; só troca de contraste quando o alvo real está
          dentro dela, inclusive em resposta aberta ou link inserido depois. */
-      camada.classList.toggle('is-on-light', !!(alvo.closest && alvo.closest('.faq')));
+      const sobreClaro = !!(alvo.closest && alvo.closest('.faq'));
+      camada.classList.toggle('is-on-light', sobreClaro);
+      pincelRgb = sobreClaro ? pincelEscuro : pincelClaro;
       /* campos de texto e áreas editáveis mantêm o cursor nativo: o efeito
          some ali em vez de disputar com o I-beam. */
       if (alvo.closest && alvo.closest(SEL_TEXTO)) {
@@ -1897,10 +1993,22 @@
        zerar é mais barato e mais seguro que remedir a cada quadro */
     const zerarMagneto = () => { magneto = null; };
     window.addEventListener('scroll', zerarMagneto, { passive: true });
-    window.addEventListener('resize', zerarMagneto, { passive: true });
+    window.addEventListener('resize', () => {
+      zerarMagneto();
+      dimensionarPincel();
+      primeiraAmostra = true;
+    }, { passive: true });
     /* aba em segundo plano não precisa de laço; ao voltar, ele reacende */
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') acordarCursor();
+      if (document.visibilityState === 'hidden') {
+        rInicio = 0;
+        rTotal = 0;
+        continuidadeRastro = false;
+        primeiraAmostra = true;
+        limparPincel();
+      } else {
+        acordarCursor();
+      }
     });
   }
 
