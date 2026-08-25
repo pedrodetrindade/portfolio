@@ -1,0 +1,123 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
+  "slug": "colegio-assertivo",
+  "status": "published",
+  "client": "",
+  "year": 2024,
+  "category": "branding, key visual",
+  "services": [
+    "Direção de marca"
+  ],
+  "seo": {
+    "title": "Sistema de marca e diretrizes 2026 · Pedro de Trindade",
+    "description": "Case: sistema de marca e diretrizes 2026. Branding, design system e governança de marca por Pedro de Trindade."
+  },
+  "hero": {
+    "eyebrowPt": "branding",
+    "eyebrowEn": "branding",
+    "titlePt": "Colégio Assertivo",
+    "titleEn": "Assertivo School",
+    "subtitlePt": "O Colégio Assertivo é uma instituição de ensino com uma identidade vibrante, contemporânea e próxima dos alunos.\nSua comunicação combina educação, criatividade e dinamismo para criar uma experiência de marca reconhecível e conectada ao universo escolar.",
+    "subtitleEn": "Assertivo School is an educational institution with a vibrant, contemporary identity and a close connection to its students.\nIts communication blends education, creativity, and dynamism to create a recognizable brand experience connected to school life.",
+    "rolePt": "Direção de Arte & Design",
+    "roleEn": "Art Direction & Design",
+    "scopePt": "Key Visual, Campanha, Social Media, Motion Design e Materiais Impressos",
+    "scopeEn": "Key Visual, Campaign, Social Media, Motion Design & Print Materials"
+  },
+  "cover": "assets/uploads/case-01/kv1.png",
+  "coverMobile": "",
+  "caseCover": "assets/uploads/colegio-assertivo/1-copiar.png",
+  "coverSpacing": {
+    "marginTop": {
+      "desktop": 0,
+      "tablet": null,
+      "mobile": null
+    },
+    "marginBottom": {
+      "desktop": 0,
+      "tablet": null,
+      "mobile": null
+    }
+  },
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "O Colégio Assertivo já tinha logo, paleta e tom de voz definidos. O desafio era criar uma campanha de matrículas que mantivesse essa identidade reconhecível em formatos e mídias diferentes.",
+      "textEn": "Assertivo School already had its logo, color palette, and tone of voice defined. The challenge was to create an enrollment campaign that kept the brand recognizable across different formats and media.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 30
+        }
+      }
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "Desenvolvi o Key Visual e seus desdobramentos para digital, motion e impresso, traduzindo os atributos “eclética, inovadora e lúdica” em decisões de cor, forma, tipografia e composição.",
+      "textEn": "I developed the Key Visual and its adaptations for digital, motion, and print, translating the attributes “eclectic, innovative, and playful” into choices of color, shape, typography, and composition."
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
+      "textPt": "Um sistema visual consistente e flexível, capaz de adaptar a mesma linguagem a diferentes peças e proporções sem perder unidade ou reconhecimento de campanha.",
+      "textEn": "A consistent and flexible visual system, able to adapt the same language across different pieces and formats without losing campaign unity or recognition.",
+      "spacing": {
+        "marginBottom": {
+          "desktop": 30
+        }
+      }
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/colegio-assertivo/1115-01-round-neck-baby-t-shirt-mockups.png",
+      "alt": "",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/colegio-assertivo/kv1.png",
+          "alt": ""
+        },
+        {
+          "src": "assets/uploads/colegio-assertivo/leitura.png",
+          "alt": ""
+        },
+        {
+          "src": "assets/uploads/colegio-assertivo/dia-dos-pais.png",
+          "alt": ""
+        }
+      ]
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/colegio-assertivo/dia-da-arvore.png",
+          "alt": ""
+        },
+        {
+          "src": "assets/uploads/colegio-assertivo/kv3.png",
+          "alt": ""
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/colegio-assertivo/notebook-mockup-1.png",
+      "alt": "",
+      "fit": "cover",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    }
+  ]
+}

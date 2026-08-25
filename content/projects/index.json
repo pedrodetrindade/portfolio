@@ -9,16 +9,16 @@
   ],
   "projects": [
     {
-      "slug": "case-01",
+      "slug": "colegio-assertivo",
       "visible": true,
       "featured": true,
       "cardSize": "normal",
       "order": 1,
       "titlePt": "Colégio Assertivo",
       "titleEn": "Assertivo School",
-      "subtitlePt": "Marca, sistema",
-      "subtitleEn": "Brand, system",
-      "category": "branding",
+      "subtitlePt": "O Colégio Assertivo é uma instituição de ensino com uma identidade vibrante, contemporânea e próxima dos alunos.\nSua comunicação combina educação, criatividade e dinamismo para criar uma experiência de marca reconhecível e conectada ao universo escolar.",
+      "subtitleEn": "Assertivo School is an educational institution with a vibrant, contemporary identity and a close connection to its students.\nIts communication blends education, creativity, and dynamism to create a recognizable brand experience connected to school life.",
+      "category": "branding, key visual",
       "tagsPt": [
         "branding",
         "design system"
@@ -27,7 +27,7 @@
         "branding",
         "design system"
       ],
-      "year": 2026,
+      "year": 2024,
       "cover": "assets/uploads/case-01/kv1.png",
       "coverMobile": "",
       "coverLight": false
