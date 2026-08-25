@@ -1789,6 +1789,52 @@
   window.__CMS_APPLY_CURSOR__ = aplicarModoCursor;
   aplicarModoCursor(modoCursorGlobal());
 
+  /* "Ver projeto" volta como um selo independente do modo de cursor. O
+     mousemove só existe enquanto um card está realmente sob o ponteiro; a
+     delegação mantém o comportamento depois que o CMS reconstrói a grade. */
+  const podeSeloDeProjeto = window.matchMedia('(pointer: fine) and (hover: hover)').matches;
+  if (podeSeloDeProjeto && !reduced && document.querySelector('.cards .card')) {
+    const selo = document.createElement('span');
+    selo.className = 'project-cue';
+    selo.setAttribute('aria-hidden', 'true');
+    selo.setAttribute('data-pt', 'Ver projeto');
+    selo.setAttribute('data-en', 'View project');
+    selo.textContent = (document.documentElement.lang || 'pt').indexOf('en') === 0 ? 'View project' : 'Ver projeto';
+    document.body.appendChild(selo);
+
+    let cardAtivo = null;
+    let movimentoDoSelo = null;
+    const moverSelo = e => {
+      selo.style.setProperty('--cue-x', e.clientX + 'px');
+      selo.style.setProperty('--cue-y', e.clientY + 'px');
+    };
+    const fecharSelo = () => {
+      cardAtivo = null;
+      selo.classList.remove('show');
+      if (movimentoDoSelo) movimentoDoSelo.abort();
+      movimentoDoSelo = null;
+    };
+
+    document.addEventListener('mouseover', e => {
+      const card = e.target.closest && e.target.closest('.cards .card');
+      if (!card || card === cardAtivo) return;
+      fecharSelo();
+      cardAtivo = card;
+      moverSelo(e);
+      selo.classList.add('show');
+      movimentoDoSelo = new AbortController();
+      document.addEventListener('mousemove', moverSelo, { passive: true, signal: movimentoDoSelo.signal });
+    }, { passive: true });
+
+    document.addEventListener('mouseout', e => {
+      const card = e.target.closest && e.target.closest('.cards .card');
+      if (!card || card !== cardAtivo || card.contains(e.relatedTarget)) return;
+      fecharSelo();
+    }, { passive: true });
+
+    document.addEventListener('mouseleave', fecharSelo);
+  }
+
   /* ---- ponte para a prévia do painel ----
      Chamado por js/content.js depois de reescrever texto e reconstruir listas
      com dados que ainda não foram publicados. Só reexecuta o que é idempotente:
