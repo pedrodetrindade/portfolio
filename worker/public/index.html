@@ -30,13 +30,14 @@
 
   <nav class="nav" id="navList">
     <button data-panel="overview" class="active">Visão geral</button>
+    <button data-panel="projects" class="nav-primary">Projetos<span class="dirty-flag"></span></button>
+    <span class="nav-label">Site</span>
     <button data-panel="appearance">Aparência global<span class="dirty-flag"></span></button>
     <button data-panel="layout">Layout e espaçamentos<span class="dirty-flag"></span></button>
     <button data-panel="headerfooter">Header e footer<span class="dirty-flag"></span></button>
     <button data-panel="branding">Identidade visual<span class="dirty-flag"></span></button>
     <button data-panel="seo">SEO<span class="dirty-flag"></span></button>
     <button data-panel="home">Home<span class="dirty-flag"></span></button>
-    <button data-panel="projects">Projetos<span class="dirty-flag"></span></button>
     <button data-panel="publish">Publicação</button>
   </nav>
 
@@ -136,16 +137,21 @@
     </section>
 
     <section class="panel" data-panel="projects">
-      <h1>Projetos</h1>
-      <p class="lead">Ordem, visibilidade, capa e conteúdo de cada projeto.</p>
-      <div class="toolbar">
-        <button class="btn primary small" id="btnNewProject">+ Novo projeto</button>
+      <div id="projectsBrowser">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow-admin">Área principal</span>
+            <h1>Projetos</h1>
+            <p class="lead">Encontre, organize e monte cada case como uma página.</p>
+          </div>
+          <button class="btn primary" id="btnNewProject">+ Novo projeto</button>
+        </div>
+        <div id="projectsList"></div>
       </div>
-      <div id="projectsList"></div>
-      <!-- A prévia fica acima do editor, como nos outros painéis: o slot só
-           ganha conteúdo quando há um projeto aberto para editar. -->
-      <div id="previewSlotProject"></div>
-      <div id="projectEditor"></div>
+      <div id="projectWorkspace" class="project-workspace" hidden>
+        <div id="projectEditor"></div>
+        <aside id="previewSlotProject" class="project-preview-column" aria-label="Prévia do projeto"></aside>
+      </div>
     </section>
 
     <section class="panel" data-panel="publish">
@@ -200,6 +206,6 @@
   </div>
 </div>
 
-<script src="app.js?v=5"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

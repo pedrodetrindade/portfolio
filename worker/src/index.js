@@ -130,7 +130,7 @@ var CHAVES_DE_TOPO = {
   /* coverSpacing entra aqui porque o painel pode criá-lo (espaçamento da capa)
      mesmo que nenhum projeto o tenha hoje */
   '__projeto__': ['$schema', 'slug', 'status', 'grainEnabled', 'client', 'year', 'category', 'services',
-    'seo', 'hero', 'cover', 'coverMobile', 'caseCover', 'coverSpacing', 'blocks']
+    'seo', 'hero', 'cover', 'coverMobile', 'caseCover', 'caseCoverMobile', 'coverSpacing', 'blocks']
 };
 
 /* Slug do arquivo de UM projeto, ou null se o caminho não for de projeto.
@@ -678,6 +678,17 @@ async function handlePublish(request, env) {
           if (seoExtra.length) return json({ error: 'invalid_seo', message: 'Campo SEO desconhecido em ' + caminho + ': ' + seoExtra.join(', '), path: caminho }, 422);
           if (op.data.seo.ogImage && !caminhoDeMidiaValido(op.data.seo.ogImage, ['.jpg','.jpeg','.png','.webp','.avif','.gif','.svg'])) {
             return json({ error: 'invalid_seo', message: 'Imagem Open Graph inválida em ' + caminho + '.', path: caminho }, 422);
+          }
+        }
+        var imagensDoProjeto = ['cover', 'coverMobile', 'caseCover', 'caseCoverMobile'];
+        for (var ci = 0; ci < imagensDoProjeto.length; ci++) {
+          var campoCapa = imagensDoProjeto[ci];
+          if (op.data[campoCapa] && !caminhoDeMidiaValido(op.data[campoCapa], ['.jpg','.jpeg','.png','.webp','.avif','.gif','.svg'])) {
+            return json({
+              error: 'invalid_project_media',
+              message: campoCapa + ' aponta para uma imagem inválida em ' + caminho + '.',
+              path: caminho
+            }, 422);
           }
         }
         var erroCapaSpacing = erroNoSpacing(op.data.coverSpacing, false);

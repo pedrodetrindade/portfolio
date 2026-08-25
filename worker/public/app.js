@@ -528,7 +528,8 @@
     titleLine2Pt: 'Título linha 2 (PT)', titleLine2En: 'Título linha 2 (EN)',
     mailLabelPt: 'Rótulo do e-mail (PT)', mailLabelEn: 'Rótulo do e-mail (EN)',
     visible: 'Visibilidade', featured: 'Destaque na Home', availability: 'Disponibilidade',
-    order: 'Ordem', cover: 'Capa da Home', caseCover: 'Capa interna', coverLight: 'Capa clara',
+    order: 'Ordem', cover: 'Capa da listagem', coverMobile: 'Capa mobile da listagem',
+    caseCover: 'Capa interna', caseCoverMobile: 'Capa interna mobile', coverLight: 'Capa clara',
     year: 'Ano', slug: 'Slug', status: 'Status', rolePt: 'Papel (PT)', roleEn: 'Papel (EN)',
     scopePt: 'Escopo (PT)', scopeEn: 'Escopo (EN)', subtitlePt: 'Subtítulo (PT)', subtitleEn: 'Subtítulo (EN)',
     src: 'Imagem', alt: 'Texto alternativo', pt: 'Texto (PT)', en: 'Texto (EN)'
@@ -538,7 +539,7 @@
   /* Campos cujo valor é um caminho de arquivo de imagem — tratados como
      "Imagem alterada" em vez de "Campo alterado", porque o valor bruto (um
      caminho) não é informativo para quem está revisando. */
-  var CAMPOS_DE_IMAGEM = { cover: 1, caseCover: 1, photo: 1, src: 1 };
+  var CAMPOS_DE_IMAGEM = { cover: 1, coverMobile: 1, caseCover: 1, caseCoverMobile: 1, photo: 1, src: 1 };
   var CHAVES_GENERICAS = { hex: 1, opacity: 1 };
 
   function ehObjeto(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -1789,21 +1790,34 @@
   function mediaCard(path, label, opts) {
     opts = opts || {};
     var src = caminhoPublico(path);
-    return '<div class="media-admin" data-media-card>' +
+    var nome = String(path || '').split('/').pop() || 'Nenhum arquivo definido';
+    return '<div class="media-admin' + (opts.className ? ' ' + esc(opts.className) : '') + '" data-media-card>' +
       (src ? '<img src="' + esc(src) + '" alt="" data-media-img>' : '<div class="media-empty">Sem arquivo</div>') +
-      '<div><b>' + esc(label) + '</b><code>' + esc(path || 'nenhum arquivo definido') + '</code>' +
+      '<div><div class="media-meta"><b>' + esc(label) + '</b><strong>' + esc(nome) + '</strong><small>' + esc(path || 'nenhum caminho definido') + '</small>' +
+      '<small data-media-ratio>' + (src ? 'Lendo proporção…' : 'Sem proporção') + '</small>' +
+      (opts.inherited ? '<span class="inherit-note">' + esc(opts.inherited) + '</span>' : '') + '</div>' +
       '<span class="media-missing" hidden>Arquivo não encontrado</span>' +
-      (src ? '<a class="btn small" href="' + esc(src) + '" target="_blank" rel="noopener">visualizar</a>' : '') +
-      (opts.remove ? '<button class="btn small danger" type="button" id="' + esc(opts.remove) + '">remover referência</button>' : '') +
+      '<div class="media-actions">' +
+      (src ? '<a class="btn small" href="' + esc(src) + '" target="_blank" rel="noopener">Visualizar</a>' : '') +
+      (opts.remove ? '<button class="btn small' + (opts.removeIsFallback ? '' : ' danger') + '" type="button" id="' + esc(opts.remove) + '">' + esc(opts.removeLabel || 'Remover referência') + '</button>' : '') +
+      '</div>' +
       '</div></div>';
   }
 
   function wireMediaErrors(root) {
     (root || document).querySelectorAll('[data-media-img]').forEach(function (img) {
+      function informarProporcao() {
+        var ratio = img.closest('[data-media-card]').querySelector('[data-media-ratio]');
+        if (ratio && img.naturalWidth && img.naturalHeight) ratio.textContent = img.naturalWidth + ' × ' + img.naturalHeight + ' · ' + (img.naturalWidth / img.naturalHeight).toFixed(2) + ':1';
+      }
+      if (img.complete && img.naturalWidth) informarProporcao();
+      else img.addEventListener('load', informarProporcao);
       img.addEventListener('error', function () {
         img.hidden = true;
         var aviso = img.closest('[data-media-card]').querySelector('.media-missing');
         if (aviso) aviso.hidden = false;
+        var ratio = img.closest('[data-media-card]').querySelector('[data-media-ratio]');
+        if (ratio) ratio.textContent = 'Mídia ausente';
       });
     });
   }
@@ -2204,34 +2218,100 @@
   }
 
   /* ---------- Projetos ---------- */
+  var projectListQuery = '';
+  var projectListFilter = 'all';
+
+  function estadoEditorialDoProjeto(p) {
+    var carregado = state.projects[p.slug] && state.projects[p.slug].data;
+    return carregado && carregado.status === 'draft' ? 'draft' : 'published';
+  }
+
+  function projetoBateNaBusca(p) {
+    var q = projectListQuery.trim().toLowerCase();
+    if (!q) return true;
+    return [p.titlePt, p.titleEn, p.slug, p.year, p.category]
+      .concat(p.tagsPt || [], p.tagsEn || [])
+      .some(function (v) { return String(v == null ? '' : v).toLowerCase().indexOf(q) !== -1; });
+  }
+
+  function projetoBateNoFiltro(p) {
+    if (projectListFilter === 'published') return estadoEditorialDoProjeto(p) === 'published';
+    if (projectListFilter === 'coming') return p.availability === 'coming-soon';
+    if (projectListFilter === 'hidden') return p.visible === false;
+    if (projectListFilter === 'featured') return p.featured === true;
+    return true;
+  }
+
+  function chipsDoProjeto(p) {
+    var status = estadoEditorialDoProjeto(p);
+    var chips = [status === 'draft'
+      ? '<span class="status-chip is-draft">Status: Rascunho</span>'
+      : '<span class="status-chip is-live">Status: Publicado</span>'];
+    chips.push(p.visible === false
+      ? '<span class="status-chip is-hidden">Oculto</span>'
+      : '<span class="status-chip">Público</span>');
+    if (p.availability === 'coming-soon') chips.push('<span class="status-chip is-coming">Em breve</span>');
+    if (p.featured === true) chips.push('<span class="status-chip is-featured">Destaque</span>');
+    return chips.join('');
+  }
+
+  function thumbDoProjeto(p) {
+    var src = caminhoPublico(p.cover);
+    return '<div class="project-thumb">' +
+      (src ? '<img src="' + esc(src) + '" alt="" data-list-thumb><div class="media-empty" hidden>Sem capa</div>'
+        : '<div class="media-empty">Sem capa</div>') +
+      '<span class="project-order" title="Ordem do projeto">' + esc(String(p.order || '—').padStart(2, '0')) + '</span></div>';
+  }
+
   function renderProjectsList() {
     var list = state.projectsIndex.projects.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
-    document.getElementById('projectsList').innerHTML = list.map(function (p, i) {
-      var capa = String(p.cover || '').trim();
-      var capaPainel = /^https:\/\//i.test(capa) ? capa : '../' + capa;
-      var carregado = state.projects[p.slug] && state.projects[p.slug].data;
-      var statusEditorial = carregado && carregado.status === 'draft' ? 'rascunho' :
-        carregado && carregado.status === 'published' ? 'publicado' : '';
-      var disponibilidade = p.availability === 'coming-soon' ? 'em breve' : 'case publicado';
-      return '<div class="list-row' + (p.visible === false ? ' hidden-project' : '') + '" data-slug="' + esc(p.slug) + '">' +
-        '<div class="thumb" style="background-image:url(\'' + esc(capaPainel) + '\')"></div>' +
-        '<div class="info"><b>' + esc(p.titlePt) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year) +
-          ' · ' + (p.visible === false ? 'oculto do site' : 'público') +
-          ' · ' + (p.featured === true ? 'destaque na Home' : 'fora da Home') +
-          ' · ' + disponibilidade +
-          (statusEditorial ? ' · ' + statusEditorial : '') + '</span></div>' +
-        '<div class="actions">' +
-        '<button class="btn small" data-act="up">↑</button>' +
-        '<button class="btn small" data-act="down">↓</button>' +
-        '<button class="btn small" data-act="edit">Editar</button>' +
-        '<button class="btn small" data-act="toggle">' + (p.visible === false ? 'Mostrar' : 'Ocultar') + '</button>' +
-        '<button class="btn small" data-act="duplicate">Duplicar</button>' +
-        '<button class="btn small danger" data-act="delete">Excluir</button>' +
-        '</div></div>';
-    }).join('');
+    var filtrada = list.filter(function (p) { return projetoBateNaBusca(p) && projetoBateNoFiltro(p); });
+    var filtros = [
+      ['all', 'Todos'], ['published', 'Publicados'], ['coming', 'Em breve'],
+      ['hidden', 'Ocultos'], ['featured', 'Destaques']
+    ];
+    var html = '<div class="projects-tools">' +
+      '<label class="projects-search"><span class="sr-only">Buscar projetos</span><input type="search" id="projectSearch" placeholder="Buscar por título, slug, ano ou categoria" value="' + esc(projectListQuery) + '"></label>' +
+      '<div class="project-filters" role="group" aria-label="Filtrar projetos">' + filtros.map(function (f) {
+        return '<button class="filter-btn' + (projectListFilter === f[0] ? ' active' : '') + '" data-project-filter="' + f[0] + '">' + f[1] + '</button>';
+      }).join('') + '</div></div>' +
+      '<p class="projects-count">' + filtrada.length + (filtrada.length === 1 ? ' projeto encontrado' : ' projetos encontrados') + '</p>' +
+      '<div class="projects-list">' + (filtrada.length ? filtrada.map(function (p) {
+        return '<article class="project-row' + (p.visible === false ? ' is-hidden' : '') + '" data-slug="' + esc(p.slug) + '">' +
+          thumbDoProjeto(p) +
+          '<div class="project-main"><b>' + esc(p.titlePt || p.slug) + '</b><span>' + esc(p.slug) + ' · ' + esc(p.year || 'sem ano') + ' · ' + esc(p.category || 'sem categoria') + '</span></div>' +
+          '<div class="project-state">' + chipsDoProjeto(p) + '</div>' +
+          '<div class="project-actions">' +
+            '<button class="btn small" data-act="up" title="Subir na ordem" aria-label="Subir ' + esc(p.titlePt || p.slug) + ' na ordem">↑</button>' +
+            '<button class="btn small" data-act="down" title="Descer na ordem" aria-label="Descer ' + esc(p.titlePt || p.slug) + ' na ordem">↓</button>' +
+            '<button class="btn small primary" data-act="edit">Editar</button>' +
+            '<button class="btn small" data-act="toggle">' + (p.visible === false ? 'Mostrar' : 'Ocultar') + '</button>' +
+          '</div></article>';
+      }).join('') : '<div class="empty-state">Nenhum projeto corresponde à busca ou ao filtro selecionado.</div>') + '</div>';
+    document.getElementById('projectsList').innerHTML = html;
+    var busca = document.getElementById('projectSearch');
+    if (busca) busca.addEventListener('input', function () {
+      projectListQuery = busca.value;
+      var pos = busca.selectionStart;
+      renderProjectsList();
+      var nova = document.getElementById('projectSearch');
+      if (nova) { nova.focus(); nova.setSelectionRange(pos, pos); }
+    });
+    document.querySelectorAll('[data-project-filter]').forEach(function (btn) {
+      btn.addEventListener('click', function () { projectListFilter = btn.getAttribute('data-project-filter'); renderProjectsList(); });
+    });
+    document.querySelectorAll('[data-list-thumb]').forEach(function (img) {
+      img.addEventListener('error', function () { img.hidden = true; if (img.nextElementSibling) img.nextElementSibling.hidden = false; });
+    });
     document.querySelectorAll('#projectsList .list-row').forEach(function (row) {
       var slug = row.getAttribute('data-slug');
       row.querySelectorAll('button').forEach(function (btn) {
+        btn.addEventListener('click', function () { handleProjectAction(slug, btn.getAttribute('data-act')); });
+      });
+    });
+    document.querySelectorAll('#projectsList .project-row').forEach(function (row) {
+      var slug = row.getAttribute('data-slug');
+      row.querySelectorAll('button[data-act]').forEach(function (btn) {
         btn.addEventListener('click', function () { handleProjectAction(slug, btn.getAttribute('data-act')); });
       });
     });
@@ -2291,8 +2371,9 @@
         /* a página HTML é clonada pelo Worker a partir do modelo já
            versionado; o painel só diz qual slug e de onde copiar */
         state.pendingPages['work/' + newSlug + '.html'] = { slug: newSlug, fromSlug: slug };
+        state.editingSlug = newSlug;
         marcarPendenteMudou();
-        renderProjectsList();
+        renderProjectsList(); renderProjectEditor();
         toast('Duplicado como "' + newSlug + '". As mídias continuam compartilhadas por caminho; nada foi copiado fisicamente.', 'ok');
       }).catch(function (e) { toast(e.message, 'err'); });
       return;
@@ -2326,7 +2407,7 @@
       }
       delete state.projects[slug];
       marcarPendenteMudou();
-      renderProjectsList();
+      renderProjectsList(); renderProjectEditor();
       toast('Exclusão pendente. Confirme em Publicação.', 'ok');
       return;
     }
@@ -2351,7 +2432,8 @@
      que o campo de espaçamento tinha parado de responder — era o segundo
      motivo de "não consigo mexer no espaçamento individual", junto com o
      re-render que interrompia o arraste do slider. */
-  var projectSectionOpen = { info: true };
+  var projectSectionOpen = { overview: true, listing: true, hero: true, content: true };
+  var blockInsertAt = null;
   function projectSection(key) {
     return ' data-sec="' + key + '"' + (projectSectionOpen[key] ? ' open' : '');
   }
@@ -2372,12 +2454,43 @@
   ];
 
   function resumoDoBloco(b) {
-    if (b.type === 'text') return 'Texto — ' + (b.labelPt || 'sem rótulo');
+    if (b.type === 'text') return 'Texto — ' + (b.labelPt || String(b.textPt || '').slice(0, 38) || 'sem conteúdo');
     if (b.type === 'gallery') return 'Galeria — ' + ((b.images || []).length) + ' imagens';
     if (b.type === 'image') return 'Imagem — ' + (b.src ? b.src.split('/').pop() : 'sem arquivo');
     if (b.type === 'quote') return 'Citação — ' + String(b.quotePt || '').slice(0, 40);
     if (b.type === 'video') return 'Vídeo — ' + (b.mode === 'vimeo' ? 'Vimeo' : 'arquivo');
     return String(b.type);
+  }
+
+  function iconeDoBloco(tipo) {
+    return { text: 'T', image: '▧', gallery: '▦', quote: '“', video: '▶' }[tipo] || '·';
+  }
+
+  function nomeDoTipoDeBloco(tipo) {
+    var item = TIPOS_DE_BLOCO_PAINEL.filter(function (t) { return t[0] === tipo; })[0];
+    return item ? item[1] : tipo;
+  }
+
+  function previaResumidaDoBloco(b) {
+    if (b.type === 'text') return String(b.textPt || b.textEn || 'Sem texto').replace(/\s+/g, ' ').slice(0, 95);
+    if (b.type === 'quote') return String(b.quotePt || b.quoteEn || 'Sem citação').replace(/\s+/g, ' ').slice(0, 95);
+    if (b.type === 'gallery') return (b.images || []).length + ((b.images || []).length === 1 ? ' imagem' : ' imagens');
+    if (b.type === 'image') return b.src ? b.src.split('/').pop() : 'Sem imagem';
+    if (b.type === 'video') return b.mode === 'vimeo'
+      ? 'Vimeo' + (b.vimeo && b.vimeo.videoId ? ' · ' + b.vimeo.videoId : ' não configurado')
+      : (b.src ? b.src.split('/').pop() : 'Sem vídeo');
+    return '';
+  }
+
+  function miniaturasDoBloco(b) {
+    var paths = b.type === 'gallery' ? (b.images || []).slice(0, 3).map(function (im) { return im.src; })
+      : b.type === 'image' && b.src ? [b.src]
+        : b.type === 'video' && b.poster ? [b.poster] : [];
+    if (!paths.length || ['image', 'gallery', 'video'].indexOf(b.type) === -1) return '<span class="block-summary-media" aria-hidden="true"></span>';
+    return '<span class="block-summary-media">' + paths.map(function (path) {
+      var src = caminhoPublico(path);
+      return src ? '<img src="' + esc(src) + '" alt="" data-summary-img>' : '<span class="media-empty">—</span>';
+    }).join('') + '</span>';
   }
 
   /* Bloco recém-criado nasce com todos os campos do tipo já presentes, mesmo
@@ -2402,10 +2515,10 @@
     var p = 'pe_bl_' + i + '_';
     var meio = 'style="max-width:160px"';
     if (b.type === 'text') {
-      return fieldRow('Rótulo (PT / EN)', '"contexto", "processo"', inp(p + 'lpt', b.labelPt, ' ' + meio) + inp(p + 'len', b.labelEn, ' ' + meio)) +
+      return fieldRow('Label (PT / EN)', 'Ex.: contexto, processo ou resultado.', inp(p + 'lpt', b.labelPt, ' ' + meio) + inp(p + 'len', b.labelEn, ' ' + meio)) +
         fieldRow('Mostrar rótulo', 'Desligar preserva o texto e remove a linha e o espaço internos do rótulo.', switchControl(p + 'showlabel', b.showLabel !== false)) +
-        fieldRow('Texto (PT)', '', ta(p + 'tpt', b.textPt)) +
-        fieldRow('Texto (EN)', '', ta(p + 'ten', b.textEn));
+        fieldRow('Narrativa (PT)', 'Enter cria uma quebra de linha real.', ta(p + 'tpt', b.textPt)) +
+        fieldRow('Narrativa (EN)', 'Enter cria uma quebra de linha real.', ta(p + 'ten', b.textEn));
     }
     if (b.type === 'quote') {
       return fieldRow('Citação (PT)', '', ta(p + 'qpt', b.quotePt)) +
@@ -2413,8 +2526,8 @@
         fieldRow('Autor (PT / EN)', 'opcional', inp(p + 'apt', b.authorPt, ' ' + meio) + inp(p + 'aen', b.authorEn, ' ' + meio));
     }
     if (b.type === 'image') {
-      return mediaCard(b.src, 'Imagem atual', { remove: p + 'remove' }) +
-        fieldRow('Substituir imagem', 'Envie um arquivo de até 25MB ou cole um caminho assets/ ou URL HTTPS direta.', inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
+      return mediaCard(b.src, 'Imagem do bloco', { remove: p + 'remove' }) +
+        fieldRow('Trocar imagem', 'Envie até 25MB ou use um caminho assets/ ou URL HTTPS direta.', '<div class="media-file-control">' + inp(p + 'src', b.src, ' placeholder="assets/... ou https://..."') + '<input type="file" id="' + p + 'up" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*"></div>') +
         fieldRow('Texto alternativo', 'descreve a imagem para quem não a vê', inp(p + 'alt', b.alt)) +
         fieldRow('Enquadramento', 'Recortada mantém 16/9; proporção livre deixa a imagem mandar na altura (peça vertical, captura de tela, GIF).',
           selectDe(p + 'fit', b.fit || 'cover', [['cover', 'Recortada em 16/9'], ['auto', 'Proporção livre']])) +
@@ -2424,19 +2537,28 @@
     if (b.type === 'gallery') {
       var imgs = b.images || [];
       return fieldRow('Adicionar várias imagens', 'Selecione várias de uma vez. JPG, PNG, WebP, AVIF, GIF ou SVG; até 25MB por arquivo e 32MB por publicação.',
-        '<input type="file" id="' + p + 'multi" multiple accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') + imgs.map(function (im, j) {
-        return mediaCard(im.src, 'Imagem ' + (j + 1)) + fieldRow('Imagem ' + (j + 1), 'Upload, caminho assets/ ou URL HTTPS direta.',
-          inp(p + 'img' + j, im.src) +
-          '<input type="file" id="' + p + 'imgup' + j + '" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">' +
-          '<button class="btn small" data-bl-imgup="' + i + ':' + j + '"' + (j === 0 ? ' disabled' : '') + '>↑ subir</button>' +
-          '<button class="btn small" data-bl-imgdown="' + i + ':' + j + '"' + (j === imgs.length - 1 ? ' disabled' : '') + '>↓ descer</button>' +
-          '<button class="btn small danger" data-bl-imgrm="' + i + ':' + j + '">remover</button>') +
-          fieldRow('Texto alternativo ' + (j + 1), '', inp(p + 'alt' + j, im.alt));
-      }).join('') + '<button class="btn small" data-bl-imgadd="' + i + '">+ adicionar imagem</button>';
+        '<input type="file" id="' + p + 'multi" multiple accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">') +
+        '<div class="gallery-grid">' + (imgs.length ? imgs.map(function (im, j) {
+          var src = caminhoPublico(im.src);
+          return '<article class="gallery-item" data-gallery-item="' + i + ':' + j + '">' +
+            '<div class="gallery-item-head"><b>' + String(j + 1).padStart(2, '0') + '</b><button class="block-drag" type="button" draggable="true" data-gallery-drag="' + i + ':' + j + '" aria-label="Arrastar imagem ' + (j + 1) + '">⋮⋮</button></div>' +
+            '<div data-media-card>' + (src ? '<img src="' + esc(src) + '" alt="" data-media-img>' : '<div class="media-empty">Sem imagem</div>') + '<span class="media-missing" hidden>Imagem não encontrada</span></div>' +
+            inp(p + 'img' + j, im.src, ' placeholder="assets/..." aria-label="Caminho da imagem ' + (j + 1) + '"') +
+            inp(p + 'alt' + j, im.alt, ' placeholder="Texto alternativo" aria-label="Texto alternativo da imagem ' + (j + 1) + '"') +
+            '<input type="file" id="' + p + 'imgup' + j + '" accept=".jpg,.jpeg,.png,.webp,.avif,.gif,.svg,image/*">' +
+            '<div class="gallery-item-actions"><button class="btn small" data-bl-imgup="' + i + ':' + j + '"' + (j === 0 ? ' disabled' : '') + '>↑</button>' +
+            '<button class="btn small" data-bl-imgdown="' + i + ':' + j + '"' + (j === imgs.length - 1 ? ' disabled' : '') + '>↓</button>' +
+            '<button class="btn small danger" data-bl-imgrm="' + i + ':' + j + '">Remover</button></div></article>';
+        }).join('') : '<div class="empty-state">Galeria vazia. Adicione uma ou várias imagens.</div>') + '</div>' +
+        '<button class="btn small" data-bl-imgadd="' + i + '">+ Adicionar espaço de imagem</button>';
     }
     if (b.type === 'video') {
       var ehVimeo = b.mode === 'vimeo';
-      return fieldRow('Origem', 'Upload local até 25MB, URL HTTPS direta para MP4/WebM ou Vimeo para vídeos maiores.',
+      var videoEstado = ehVimeo
+        ? '<div class="media-admin"><div class="media-empty">Vimeo</div><div><div class="media-meta"><b>Vídeo incorporado</b><strong>' + esc((b.vimeo && b.vimeo.videoId) || 'Não configurado') + '</strong><small>' + esc((b.vimeo && b.vimeo.url) || 'Cole o endereço abaixo') + '</small></div></div></div>'
+        : (b.poster ? mediaCard(b.poster, 'Poster do vídeo')
+          : '<div class="media-admin"><div class="media-empty">Vídeo</div><div><div class="media-meta"><b>Arquivo de vídeo</b><strong>' + esc(b.src ? b.src.split('/').pop() : 'Não configurado') + '</strong><small>' + esc(b.src || 'Envie MP4/WebM ou use uma URL HTTPS') + '</small></div></div></div>');
+      return videoEstado + fieldRow('Origem', 'Upload local até 25MB, URL HTTPS direta para MP4/WebM ou Vimeo para vídeos maiores.',
           selectDe(p + 'mode', b.mode || 'file', [['file', 'Arquivo ou URL direta'], ['vimeo', 'Vimeo']])) +
         (ehVimeo
           ? fieldRow('Endereço do Vimeo', 'cole o link do vídeo', inp(p + 'vurl', (b.vimeo && b.vimeo.url) || '')) +
@@ -2587,14 +2709,90 @@
     }
     q('[data-bl-imgup]').forEach(function (el) { el.addEventListener('click', function () { moverImagem(el, -1); }); });
     q('[data-bl-imgdown]').forEach(function (el) { el.addEventListener('click', function () { moverImagem(el, 1); }); });
-    var add = document.getElementById('pe_bl_add');
-    if (add) add.addEventListener('click', function () {
-      var novo = blocoNovo(document.getElementById('pe_bl_tipo').value);
+    q('[data-block-insert]').forEach(function (el) {
+      el.addEventListener('click', function () { blockInsertAt = Number(el.getAttribute('data-block-insert')); rerender(); });
+    });
+    q('[data-add-block]').forEach(function (el) {
+      el.addEventListener('click', function () {
+      var novo = blocoNovo(el.getAttribute('data-add-block'));
       if (!novo) return;
       assegurarBlocos();
-      blocos.push(novo);
-      projectSectionOpen['bloco-' + (blocos.length - 1)] = true;
+      var pos = el.hasAttribute('data-insert-at') ? Number(el.getAttribute('data-insert-at')) : blocos.length;
+      blocos.splice(pos, 0, novo);
+      blockInsertAt = null;
+      projectSectionOpen['bloco-' + pos] = true;
       save(); rerender();
+      });
+    });
+
+    var blockDragIndex = null;
+    q('[data-block-drag]').forEach(function (handle) {
+      handle.addEventListener('dragstart', function (e) {
+        blockDragIndex = Number(handle.getAttribute('data-block-drag'));
+        var card = handle.closest('.block-card');
+        if (card) card.classList.add('is-dragging');
+        if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(blockDragIndex)); }
+      });
+      handle.addEventListener('dragend', function () {
+        q('.block-card').forEach(function (c) { c.classList.remove('is-dragging', 'drop-before', 'drop-after'); });
+        blockDragIndex = null;
+      });
+    });
+    q('.block-card').forEach(function (card) {
+      card.addEventListener('dragover', function (e) {
+        if (blockDragIndex == null) return;
+        e.preventDefault();
+        var rect = card.getBoundingClientRect();
+        card.classList.toggle('drop-before', e.clientY < rect.top + rect.height / 2);
+        card.classList.toggle('drop-after', e.clientY >= rect.top + rect.height / 2);
+      });
+      card.addEventListener('dragleave', function () { card.classList.remove('drop-before', 'drop-after'); });
+      card.addEventListener('drop', function (e) {
+        if (blockDragIndex == null) return;
+        e.preventDefault();
+        var alvo = Number(card.getAttribute('data-block-index'));
+        var rect = card.getBoundingClientRect();
+        var depois = e.clientY >= rect.top + rect.height / 2;
+        var item = blocos.splice(blockDragIndex, 1)[0];
+        if (blockDragIndex < alvo) alvo--;
+        blocos.splice(alvo + (depois ? 1 : 0), 0, item);
+        save(); rerender();
+      });
+    });
+
+    var galleryDrag = null;
+    q('[data-gallery-drag]').forEach(function (handle) {
+      handle.addEventListener('dragstart', function (e) {
+        galleryDrag = handle.getAttribute('data-gallery-drag').split(':').map(Number);
+        var tile = handle.closest('.gallery-item');
+        if (tile) tile.classList.add('is-dragging');
+        if (e.dataTransfer) e.dataTransfer.setData('text/plain', handle.getAttribute('data-gallery-drag'));
+      });
+      handle.addEventListener('dragend', function () {
+        q('.gallery-item').forEach(function (tile) { tile.classList.remove('is-dragging', 'is-drop'); });
+        galleryDrag = null;
+      });
+    });
+    q('[data-gallery-item]').forEach(function (tile) {
+      tile.addEventListener('dragover', function (e) {
+        if (!galleryDrag) return;
+        var target = tile.getAttribute('data-gallery-item').split(':').map(Number);
+        if (target[0] !== galleryDrag[0]) return;
+        e.preventDefault(); tile.classList.add('is-drop');
+      });
+      tile.addEventListener('dragleave', function () { tile.classList.remove('is-drop'); });
+      tile.addEventListener('drop', function (e) {
+        if (!galleryDrag) return;
+        e.preventDefault();
+        var target = tile.getAttribute('data-gallery-item').split(':').map(Number);
+        if (target[0] !== galleryDrag[0]) return;
+        var arr = blocos[target[0]].images;
+        var origem = galleryDrag[1], destino = target[1];
+        var item = arr.splice(origem, 1)[0];
+        if (origem < destino) destino--;
+        arr.splice(destino, 0, item);
+        save(); rerender();
+      });
     });
   }
 
@@ -2684,10 +2882,73 @@
     }).catch(function (e) { toast(e.message || 'Não foi possível preparar a nova URL.', 'err'); });
   }
 
+  function blockPickerHtml(insertAt) {
+    var descricoes = {
+      text: 'Narrativa e contexto.', image: 'Imagem em destaque.', gallery: 'Grade de imagens.',
+      quote: 'Citação editorial.', video: 'MP4, WebM ou Vimeo.'
+    };
+    return '<div class="block-picker" aria-label="Escolha o tipo de bloco">' + TIPOS_DE_BLOCO_PAINEL.map(function (t) {
+      return '<button type="button" data-add-block="' + t[0] + '"' + (insertAt != null ? ' data-insert-at="' + insertAt + '"' : '') + '>' +
+        '<b><span aria-hidden="true">' + iconeDoBloco(t[0]) + '</span> ' + esc(t[1]) + '</b><span>' + esc(descricoes[t[0]]) + '</span></button>';
+    }).join('') + '</div>';
+  }
+
+  function insercaoDeBlocoHtml(pos, aberta) {
+    return '<div class="block-insert">' +
+      '<button class="btn small" type="button" data-block-insert="' + pos + '" aria-label="Adicionar bloco nesta posição">+</button></div>' +
+      (aberta ? blockPickerHtml(pos) : '');
+  }
+
+  function cardDoBlocoHtml(b, i, blocks, P, save) {
+    var proximoEhTexto = blocks[i + 1] && blocks[i + 1].type === 'text';
+    var corpo =
+      '<div class="block-body"><div class="group-body">' + camposDoBloco(b, i) +
+      '<details class="block-advanced"><summary>Configurações avançadas · espaçamento</summary><div class="group-body">' +
+      '<p class="hint">Margens externas do bloco por dispositivo' + (b.type === 'gallery' ? ' e espaço entre imagens' : '') + '.</p>' +
+      deviceTabsHtml('block-spacing-' + i) +
+      blockSpacingFields(b, 'spacing', save, b.type === 'gallery', {
+        marginTop: b.type === 'text' ? 0 : 18,
+        marginBottom: b.type === 'text' && proximoEhTexto ? 18 : 0,
+        gap: b.type === 'gallery' ? 18 : 0
+      }) + '</div></details>' +
+      '<div class="block-actions"><div class="block-actions-main">' +
+      '<button class="btn small" data-bl-sobe="' + i + '"' + (i === 0 ? ' disabled' : '') + '>↑ Subir</button>' +
+      '<button class="btn small" data-bl-desce="' + i + '"' + (i === blocks.length - 1 ? ' disabled' : '') + '>↓ Descer</button>' +
+      '<button class="btn small" data-bl-dup="' + i + '">Duplicar</button></div>' +
+      '<div class="block-actions-danger"><button class="btn small danger" data-bl-remove="' + i + '">Remover bloco</button></div></div>' +
+      '</div></div>';
+    return '<details class="block-card project-section" data-block-index="' + i + '"' + projectSection('bloco-' + i) + '>' +
+      '<summary><span class="block-number">' + String(i + 1).padStart(2, '0') + '</span>' +
+      '<span class="block-icon" aria-hidden="true">' + iconeDoBloco(b.type) + '</span>' +
+      '<span class="block-summary"><b>' + esc(nomeDoTipoDeBloco(b.type)) + '</b><span>' + esc(previaResumidaDoBloco(b)) + '</span></span>' +
+      miniaturasDoBloco(b) +
+      '<button class="block-drag" type="button" draggable="true" data-block-drag="' + i + '" aria-label="Arrastar bloco ' + (i + 1) + '">⋮⋮</button></summary>' +
+      corpo + '</details>';
+  }
+
+  function pendenciasDoProjeto(P, indexEntry) {
+    var faltas = [];
+    if (!String(P.cover || indexEntry.cover || '').trim()) faltas.push('Sem capa');
+    if (!String(P.hero && P.hero.titleEn || '').trim()) faltas.push('Sem título EN');
+    if (!Array.isArray(P.blocks) || !P.blocks.length) faltas.push('Sem conteúdo');
+    return faltas;
+  }
+
   function renderProjectEditor() {
     var slug = state.editingSlug;
     var editorEl = document.getElementById('projectEditor');
-    if (!slug) { editorEl.innerHTML = ''; return; }
+    var browserEl = document.getElementById('projectsBrowser');
+    var workspaceEl = document.getElementById('projectWorkspace');
+    if (!slug) {
+      editorEl.innerHTML = '';
+      if (browserEl) browserEl.hidden = false;
+      if (workspaceEl) workspaceEl.hidden = true;
+      var slotVazio = document.getElementById('previewSlotProject');
+      if (slotVazio) slotVazio.innerHTML = '';
+      return;
+    }
+    if (browserEl) browserEl.hidden = true;
+    if (workspaceEl) workspaceEl.hidden = false;
     var cached = state.projects[slug];
     if (!cached) {
       editorEl.innerHTML = '<p>Carregando…</p>';
@@ -2710,77 +2971,81 @@
        prévia nesta aba, então quem montava um case fazia isso às cegas. */
     wirePreviewBlock('previewSlotProject', caminhoDaPreviaDoProjeto());
 
+    var faltas = pendenciasDoProjeto(P, indexEntry);
+    var listingMobile = P.coverMobile || indexEntry.coverMobile || P.cover;
+    var internalDesktop = P.caseCover || P.cover;
+    var internalMobile = P.caseCoverMobile || P.caseCover || P.cover;
+    var builderHtml = projectBlocks.length
+      ? '<div class="case-builder">' + insercaoDeBlocoHtml(0, blockInsertAt === 0) + projectBlocks.map(function (b, i) {
+          return cardDoBlocoHtml(b, i, projectBlocks, P, save) + insercaoDeBlocoHtml(i + 1, blockInsertAt === i + 1);
+        }).join('') + '</div>'
+      : '<div class="case-builder">' + blockPickerHtml(0) + '</div>';
+    var pendingLabel = haPendencias() ? '<span class="status-chip is-draft">Alterações pendentes</span>' : '<span class="status-chip is-live">Sem alterações</span>';
     editorEl.innerHTML =
-      '<details class="group"' + projectSection('info') + '><summary>Editando: ' + esc(P.hero.titlePt || slug) + '</summary><div class="group-body">' +
-      fieldRow('URL do case', 'Use letras minúsculas, números e hífen. A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">alterar URL</button></div>') +
-      fieldRow('Status', 'Estado editorial do conteúdo no CMS. Não controla sozinho a visibilidade nem a disponibilidade pública.', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
-      fieldRow('Visibilidade', 'Público aparece em Todos os Trabalhos. Oculto não aparece no site.', switchControl('pe_visible', indexEntry.visible !== false)) +
-      fieldRow('Disponibilidade', 'Publicado abre o case. Em breve aparece na galeria sem link. Projetos antigos sem este campo continuam publicados.', selectDe('pe_availability', indexEntry.availability === 'coming-soon' ? 'coming-soon' : 'published', [
-        ['published', 'Publicado'], ['coming-soon', 'Em breve']
-      ])) +
-      fieldRow('Ano', '', '<input type="number" id="pe_year" value="' + esc(P.year) + '" min="1990" max="2100">') +
-      fieldRow('Categoria', 'Metadado do projeto e do índice.', '<input type="text" id="pe_category" value="' + esc(P.category || indexEntry.category) + '">') +
-      fieldRow('Rótulo acima do título (PT)', 'Eyebrow do case. Enter força uma nova linha.', ta('pe_eyebrowpt', P.hero.eyebrowPt)) +
-      fieldRow('Rótulo acima do título (EN)', 'Enter força uma nova linha.', ta('pe_eyebrowen', P.hero.eyebrowEn)) +
-      fieldRow('Mostrar rótulo acima do título', 'Desligar preserva o texto e remove seu espaço.', switchControl('pe_showeyebrow', P.hero.showEyebrow !== false)) +
-      fieldRow('Título (PT)', 'Enter força uma nova linha no case e no card.', '<textarea id="pe_titlept">' + esc(P.hero.titlePt) + '</textarea>') +
-      fieldRow('Título (EN)', 'Enter força uma nova linha no case e no card.', '<textarea id="pe_titleen">' + esc(P.hero.titleEn) + '</textarea>') +
-      fieldRow('Subtítulo (PT)', '', '<textarea id="pe_subpt">' + esc(P.hero.subtitlePt) + '</textarea>') +
-      fieldRow('Subtítulo (EN)', '', '<textarea id="pe_suben">' + esc(P.hero.subtitleEn) + '</textarea>') +
-      fieldRow('Tags do card (PT)', 'Separe por vírgulas.', '<input type="text" id="pe_tagspt" value="' + esc(tagsPt.join(', ')) + '">') +
-      fieldRow('Tags do card (EN)', 'Separe por vírgulas e mantenha a mesma ordem do PT.', '<input type="text" id="pe_tagsen" value="' + esc(tagsEn.join(', ')) + '">') +
-      fieldRow('Tamanho do card', 'Controla somente a composição visual dos destaques da Home.', selectDe('pe_cardsize', indexEntry.cardSize || 'normal', cardSizes.map(function (s) { return [s, s]; }))) +
-      fieldRow('Home', 'Destacar na Home. A Home mostra no máximo quatro projetos públicos, seguindo a ordem do índice.', switchControl('pe_featured', indexEntry.featured === true)) +
-      fieldRow('Papel (PT)', 'Enter força uma nova linha.', ta('pe_rolept', P.hero.rolePt)) +
-      fieldRow('Papel (EN)', 'Enter força uma nova linha.', ta('pe_roleen', P.hero.roleEn)) +
-      fieldRow('Escopo (PT)', 'Enter força uma nova linha.', ta('pe_scopept', P.hero.scopePt)) +
-      fieldRow('Escopo (EN)', 'Enter força uma nova linha.', ta('pe_scopeen', P.hero.scopeEn)) +
-      mediaCard(P.cover, 'Capa atual da Home') +
-      fieldRow('Substituir capa da Home', 'Usada no card da Home e como reserva para a página interna.', '<input type="text" id="pe_cover" value="' + esc(P.cover) + '"><input type="file" id="pe_cover_upload" accept="image/*">') +
-      mediaCard(P.coverMobile || indexEntry.coverMobile, 'Capa mobile atual', { remove: 'pe_covermobile_remove' }) +
-      fieldRow('Substituir capa mobile da Home', 'Opcional. Vazia usa a capa principal da Home.', '<input type="text" id="pe_covermobile" value="' + esc(P.coverMobile || indexEntry.coverMobile) + '"><input type="file" id="pe_covermobile_upload" accept="image/*">') +
-      mediaCard(P.caseCover || P.cover, P.caseCover ? 'Capa interna atual' : 'Capa interna herdada da Home', { remove: P.caseCover ? 'pe_casecover_remove' : '' }) +
-      fieldRow('Capa dentro do projeto', 'Opcional. Quando vazia, herda a capa da Home.', '<input type="text" id="pe_casecover" value="' + esc(P.caseCover || '') + '"><input type="file" id="pe_casecover_upload" accept="image/*">') +
-      fieldRow('Capa clara?', 'Ative para capas predominantemente claras (fundo amarelo, branco, etc). O header, fixo por cima da grade, troca a cor do texto para escura só enquanto passa por cima deste card.', switchControl('pe_coverlight', indexEntry.coverLight)) +
-      '</div></details>' +
-      '<details class="group"' + projectSection('seo') + '><summary>SEO do projeto</summary><div class="group-body">' +
-      fieldRow('Título para buscadores', 'Opcional; vazio usa o título do projeto.', inp('pe_seotitle', (P.seo && P.seo.title) || '')) +
-      fieldRow('Descrição para buscadores', 'Opcional; vazia usa o subtítulo.', ta('pe_seodesc', (P.seo && P.seo.description) || '')) +
-      fieldRow('Título da prévia do link', 'Opcional.', inp('pe_seoogtitle', (P.seo && P.seo.ogTitle) || '')) +
-      fieldRow('Descrição da prévia do link', 'Opcional.', ta('pe_seoogdesc', (P.seo && P.seo.ogDescription) || '')) +
-      fieldRow('Imagem da prévia do link', 'Vazia usa a capa e depois a imagem global.', inp('pe_seoogimage', (P.seo && P.seo.ogImage) || '') + '<input type="file" id="pe_seoogimage_upload" accept="image/*">') +
-      '</div></details>' +
-      '<details class="group"' + projectSection('cover') + '><summary>Espaçamento da capa</summary><div class="group-body">' +
-      deviceTabsHtml('cover-spacing') +
-      blockSpacingFields(P, 'coverSpacing', function () { save(); }, false, { marginTop: 18, marginBottom: 0 }) +
-      '</div></details>' +
-      projectBlocks.map(function (b, i) {
-        return '<details class="group"' + projectSection('bloco-' + i) + '><summary>' +
-          esc((i + 1) + '. ' + resumoDoBloco(b)) + '</summary><div class="group-body">' +
-          camposDoBloco(b, i) +
-           '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
-           '<b>Espaçamento</b>' +
-           '<p class="hint">Controla as margens externas do bloco. Em galerias, controla também o espaço entre imagens. O padding do rótulo de texto é interno e fixo.</p>' +
-          deviceTabsHtml('block-spacing-' + i) +
-          blockSpacingFields(b, 'spacing', function () { save(); }, b.type === 'gallery', {
-            marginTop: b.type === 'text' ? 0 : 18,
-            marginBottom: b.type === 'text' && projectBlocks[i + 1] && projectBlocks[i + 1].type === 'text' ? 18 : 0,
-            gap: b.type === 'gallery' ? 18 : 0
-          }) +
-          '</div>' +
-          '<div class="bloco-acoes">' +
-          '<button class="btn small" data-bl-sobe="' + i + '"' + (i === 0 ? ' disabled' : '') + '>↑ subir</button>' +
-          '<button class="btn small" data-bl-desce="' + i + '"' + (i === projectBlocks.length - 1 ? ' disabled' : '') + '>↓ descer</button>' +
-          '<button class="btn small" data-bl-dup="' + i + '">duplicar</button>' +
-          '<button class="btn small danger" data-bl-remove="' + i + '">remover bloco</button>' +
-          '</div></div></details>';
-      }).join('') +
-      '<div class="bloco-novo">' +
-      '<select id="pe_bl_tipo">' + TIPOS_DE_BLOCO_PAINEL.map(function (t) {
-        return '<option value="' + t[0] + '">' + esc(t[1]) + '</option>';
-      }).join('') + '</select>' +
-      '<button class="btn small" id="pe_bl_add">+ adicionar bloco</button>' +
-      '</div>';
+      '<header class="project-editor-head"><div class="project-editor-top"><div class="project-editor-title">' +
+        '<button class="btn small" type="button" id="pe_back">← Todos os projetos</button>' +
+        '<span class="eyebrow-admin">Editando projeto</span><h1>' + esc(P.hero.titlePt || slug) + '</h1><p>/work/' + esc(slug) + '.html</p></div>' +
+        '<div class="project-editor-actions"><button class="btn" type="button" id="pe_preview">Preview</button>' +
+        '<button class="btn" type="button" id="pe_state">Alterar estado</button><button class="btn" type="button" id="pe_duplicate">Duplicar</button>' + pendingLabel + '</div></div>' +
+        '<div class="project-quick-state">' + chipsDoProjeto(indexEntry) + (faltas.length ? faltas.map(function (f) { return '<span class="status-chip is-draft">' + esc(f) + '</span>'; }).join('') : '<span class="status-chip">Preenchimento essencial completo</span>') + '</div></header>' +
+      '<nav class="project-editor-nav" aria-label="Seções do projeto">' +
+        '<button data-editor-target="overview">Visão geral</button><button data-editor-target="listing">Listagem</button>' +
+        '<button data-editor-target="hero">Hero / capa</button><button data-editor-target="content">Conteúdo</button>' +
+        '<button data-editor-target="seo">SEO</button><button data-editor-target="settings">Configurações</button></nav>' +
+
+      '<details id="project-sec-overview" class="group project-section"' + projectSection('overview') + '><summary><span class="summary-copy">Visão geral<small>Identidade e metadados editoriais do projeto</small></span></summary><div class="group-body">' +
+        '<div class="field-grid">' +
+        fieldRow('Título (PT)', 'Também aparece no card.', ta('pe_titlept', P.hero.titlePt)) + fieldRow('Título (EN)', 'Também aparece no card.', ta('pe_titleen', P.hero.titleEn)) +
+        fieldRow('Subtítulo (PT)', 'Descrição curta do projeto.', ta('pe_subpt', P.hero.subtitlePt)) + fieldRow('Subtítulo (EN)', 'Descrição curta do projeto.', ta('pe_suben', P.hero.subtitleEn)) +
+        fieldRow('Ano', '', '<input type="number" id="pe_year" value="' + esc(P.year) + '" min="1990" max="2100">') +
+        fieldRow('Categoria', 'Usada na busca e no card.', inp('pe_category', P.category || indexEntry.category)) +
+        fieldRow('Tags do card (PT)', 'Separe por vírgulas.', inp('pe_tagspt', tagsPt.join(', '))) + fieldRow('Tags do card (EN)', 'Mantenha a mesma ordem do PT.', inp('pe_tagsen', tagsEn.join(', '))) +
+        fieldRow('Cliente', 'Opcional. Informação interna/editorial.', inp('pe_client', P.client || '')) + fieldRow('Serviços', 'Separe por vírgulas.', inp('pe_services', Array.isArray(P.services) ? P.services.join(', ') : '')) +
+        fieldRow('Papel (PT)', 'Enter cria nova linha.', ta('pe_rolept', P.hero.rolePt)) + fieldRow('Papel (EN)', 'Enter cria nova linha.', ta('pe_roleen', P.hero.roleEn)) +
+        fieldRow('Escopo (PT)', 'Enter cria nova linha.', ta('pe_scopept', P.hero.scopePt)) + fieldRow('Escopo (EN)', 'Enter cria nova linha.', ta('pe_scopeen', P.hero.scopeEn)) +
+        '</div></div></details>' +
+
+      '<details id="project-sec-listing" class="group project-section"' + projectSection('listing') + '><summary><span class="summary-copy">Aparência na listagem<small>Como o projeto aparece antes de ser aberto</small></span></summary><div class="group-body">' +
+        '<p class="section-intro">Estas imagens alimentam a Home, Todos os Trabalhos e as thumbnails do CMS.</p>' +
+        '<div class="cover-compare"><div class="cover-surface"><div class="cover-surface-head"><b>Listagem · Desktop</b><span>Home / Work</span></div>' + mediaCard(P.cover, 'Capa da listagem', { remove: P.cover ? 'pe_cover_remove' : '', removeLabel: 'Remover' }) + '</div>' +
+        '<div class="cover-surface"><div class="cover-surface-head"><b>Listagem · Mobile</b><span>' + (P.coverMobile || indexEntry.coverMobile ? 'Própria' : 'Fallback') + '</span></div>' + mediaCard(listingMobile, P.coverMobile || indexEntry.coverMobile ? 'Capa mobile' : 'Capa desktop herdada', { remove: P.coverMobile || indexEntry.coverMobile ? 'pe_covermobile_remove' : '', inherited: P.coverMobile || indexEntry.coverMobile ? '' : 'Usando capa desktop como fallback.' }) + '</div></div>' +
+        fieldRow('Trocar capa desktop', 'Essa imagem aparece antes de abrir o projeto.', '<div class="media-file-control">' + inp('pe_cover', P.cover, ' placeholder="assets/... ou https://..."') + '<input type="file" id="pe_cover_upload" accept="image/*"></div>') +
+        fieldRow('Trocar capa mobile', 'Opcional. Vazia usa a capa desktop.', '<div class="media-file-control">' + inp('pe_covermobile', P.coverMobile || indexEntry.coverMobile, ' placeholder="assets/... ou https://..."') + '<input type="file" id="pe_covermobile_upload" accept="image/*"></div>') +
+        '<div class="state-grid"><div class="state-card">' + fieldRow('Visibilidade', 'Público aparece no site. Oculto fica só no CMS.', switchControl('pe_visible', indexEntry.visible !== false)) + '</div>' +
+        '<div class="state-card">' + fieldRow('Destaque da Home', 'A Home usa no máximo quatro projetos públicos.', switchControl('pe_featured', indexEntry.featured === true)) + '</div>' +
+        '<div class="state-card">' + fieldRow('Disponibilidade', 'Em breve mostra o card sem abrir o case.', selectDe('pe_availability', indexEntry.availability === 'coming-soon' ? 'coming-soon' : 'published', [['published', 'Publicado'], ['coming-soon', 'Em breve']])) + '</div>' +
+        '<div class="state-card">' + fieldRow('Tamanho do card', 'Afeta apenas os destaques da Home.', selectDe('pe_cardsize', indexEntry.cardSize || 'normal', cardSizes.map(function (s) { return [s, s]; }))) + '</div></div>' +
+        fieldRow('Capa clara', 'Ajusta o contraste do header somente enquanto ele passa sobre cards claros da Home/Work. Não controla a capa interna.', switchControl('pe_coverlight', indexEntry.coverLight)) +
+        '</div></details>' +
+
+      '<details id="project-sec-hero" class="group project-section"' + projectSection('hero') + '><summary><span class="summary-copy">Hero / capa do case<small>O que aparece depois de abrir o projeto</small></span></summary><div class="group-body">' +
+        '<p class="section-intro">A capa interna é independente da listagem. Se não houver uma específica, o case preserva a capa desktop da listagem.</p>' +
+        '<div class="cover-compare"><div class="cover-surface"><div class="cover-surface-head"><b>Case · Desktop</b><span>' + (P.caseCover ? 'Própria' : 'Fallback') + '</span></div>' + mediaCard(internalDesktop, P.caseCover ? 'Capa interna' : 'Capa da listagem herdada', { remove: P.caseCover ? 'pe_casecover_remove' : '', removeLabel: 'Usar capa da listagem', inherited: P.caseCover ? '' : 'Usando capa da listagem como fallback.' }) + '</div>' +
+        '<div class="cover-surface"><div class="cover-surface-head"><b>Case · Mobile</b><span>' + (P.caseCoverMobile ? 'Própria' : 'Fallback') + '</span></div>' + mediaCard(internalMobile, P.caseCoverMobile ? 'Capa interna mobile' : (P.caseCover ? 'Capa interna desktop herdada' : 'Capa da listagem herdada'), { remove: P.caseCoverMobile ? 'pe_casecovermobile_remove' : '', removeLabel: 'Usar fallback', inherited: P.caseCoverMobile ? '' : (P.caseCover ? 'Usando capa interna desktop como fallback.' : 'Usando capa da listagem como fallback.') }) + '</div></div>' +
+        fieldRow('Trocar capa interna desktop', 'Essa é a imagem exibida após abrir o projeto.', '<div class="media-file-control">' + inp('pe_casecover', P.caseCover || '', ' placeholder="Vazio = capa da listagem"') + '<input type="file" id="pe_casecover_upload" accept="image/*"></div>') +
+        fieldRow('Trocar capa interna mobile', 'Opcional. Vazia usa a capa interna desktop e depois a capa desktop da listagem.', '<div class="media-file-control">' + inp('pe_casecovermobile', P.caseCoverMobile || '', ' placeholder="Vazio = fallback automático"') + '<input type="file" id="pe_casecovermobile_upload" accept="image/*"></div>') +
+        fieldRow('Rótulo acima do título (PT)', 'Eyebrow do case.', ta('pe_eyebrowpt', P.hero.eyebrowPt)) + fieldRow('Rótulo acima do título (EN)', 'Eyebrow do case.', ta('pe_eyebrowen', P.hero.eyebrowEn)) +
+        fieldRow('Exibir label', 'Desligar preserva o texto e remove o espaço.', switchControl('pe_showeyebrow', P.hero.showEyebrow !== false)) +
+        '<details class="block-advanced"><summary>Configurações avançadas · espaçamento da capa</summary><div class="group-body">' + deviceTabsHtml('cover-spacing') + blockSpacingFields(P, 'coverSpacing', function () { save(); }, false, { marginTop: 18, marginBottom: 0 }) + '</div></details>' +
+        '</div></details>' +
+
+      '<details id="project-sec-content" class="group project-section"' + projectSection('content') + '><summary><span class="summary-copy">Conteúdo do case<small>' + projectBlocks.length + (projectBlocks.length === 1 ? ' bloco na página' : ' blocos na página') + '</small></span></summary><div class="group-body">' +
+        '<p class="section-intro">A ordem abaixo é a ordem real da página. Recolha os cards para navegar em projetos longos.</p>' + builderHtml + '</div></details>' +
+
+      '<details id="project-sec-seo" class="group project-section"' + projectSection('seo') + '><summary><span class="summary-copy">SEO<small>Buscadores e compartilhamento</small></span></summary><div class="group-body">' +
+        '<div class="seo-preview"><b>' + esc((P.seo && (P.seo.ogTitle || P.seo.title)) || P.hero.titlePt || '') + '</b><p>' + esc((P.seo && (P.seo.ogDescription || P.seo.description)) || P.hero.subtitlePt || '') + '</p><small>Imagem: ' + esc((P.seo && P.seo.ogImage) || P.cover || 'imagem global') + '</small></div>' +
+        fieldRow('Título para buscadores', 'Vazio usa o título do projeto.', inp('pe_seotitle', (P.seo && P.seo.title) || '')) +
+        fieldRow('Descrição para buscadores', 'Vazia usa o subtítulo.', ta('pe_seodesc', (P.seo && P.seo.description) || '')) +
+        fieldRow('Título da prévia do link', 'Opcional.', inp('pe_seoogtitle', (P.seo && P.seo.ogTitle) || '')) +
+        fieldRow('Descrição da prévia do link', 'Opcional.', ta('pe_seoogdesc', (P.seo && P.seo.ogDescription) || '')) +
+        fieldRow('Imagem da prévia do link', 'Vazia usa cover e depois a imagem global. A capa interna não muda o SEO.', '<div class="media-file-control">' + inp('pe_seoogimage', (P.seo && P.seo.ogImage) || '') + '<input type="file" id="pe_seoogimage_upload" accept="image/*"></div>') +
+        '</div></details>' +
+
+      '<details id="project-sec-settings" class="group project-section"' + projectSection('settings') + '><summary><span class="summary-copy">Configurações<small>Estado editorial, URL e ações avançadas</small></span></summary><div class="group-body">' +
+        fieldRow('Status editorial', 'Rascunho ou publicado. Não substitui visibilidade nem Em breve.', '<select id="pe_status"><option value="draft"' + (P.status === 'draft' ? ' selected' : '') + '>Rascunho</option><option value="published"' + (P.status === 'published' ? ' selected' : '') + '>Publicado</option></select>') +
+        fieldRow('URL do case', 'A troca só acontece ao Publicar.', '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><span>/work/</span><input type="text" id="pe_slug" value="' + esc(slug) + '" maxlength="60" style="max-width:260px"><span>.html</span><button class="btn small" id="pe_slug_apply" type="button">Alterar URL</button></div>') +
+        '<div class="project-danger-zone"><p>Excluir remove índice, JSON e página no próximo Publicar. As mídias permanecem no repositório.</p><button class="btn small danger" id="pe_delete" type="button">Excluir projeto</button></div>' +
+        '</div></details>';
 
     /* schedulePreview aqui também: sem isso o editor de projeto era o único
        lugar do painel que alterava conteúdo sem avisar a prévia.
@@ -2795,6 +3060,33 @@
     function save() { P.slug = slug; markDirty('content/projects/' + slug + '.json', P, cached.sha); schedulePreview(); }
     function saveIndex() { markDirty('content/projects/index.json', state.projectsIndex, state.projectsIndexSha); schedulePreview(); }
     function tagsFrom(v) { return v.split(',').map(function (t) { return t.trim(); }).filter(Boolean); }
+    document.getElementById('pe_back').addEventListener('click', function () {
+      state.editingSlug = null; blockInsertAt = null; renderProjectsList(); renderProjectEditor();
+    });
+    document.getElementById('pe_preview').addEventListener('click', function () {
+      var open = document.querySelector('#previewSlotProject [data-pv-open]');
+      if (open) open.click();
+      else {
+        var preview = document.getElementById('previewSlotProject');
+        if (preview) preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast('Configure a URL da prévia para abrir o case.', 'err');
+      }
+    });
+    document.getElementById('pe_state').addEventListener('click', function () {
+      var target = document.getElementById('project-sec-settings');
+      if (target) { target.open = true; target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+    document.getElementById('pe_duplicate').addEventListener('click', function () { handleProjectAction(slug, 'duplicate'); });
+    document.getElementById('pe_delete').addEventListener('click', function () { handleProjectAction(slug, 'delete'); });
+    editorEl.querySelectorAll('[data-editor-target]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var target = document.getElementById('project-sec-' + btn.getAttribute('data-editor-target'));
+        if (!target) return;
+        target.open = true;
+        editorEl.querySelectorAll('[data-editor-target]').forEach(function (b) { b.classList.toggle('active', b === btn); });
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
     document.getElementById('pe_slug_apply').addEventListener('click', function () {
       renomearSlugProjeto(slug, document.getElementById('pe_slug').value);
     });
@@ -2809,6 +3101,8 @@
     bindText('pe_subpt', function (v) { P.hero.subtitlePt = v; indexEntry.subtitlePt = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_suben', function (v) { P.hero.subtitleEn = v; indexEntry.subtitleEn = v; save(); saveIndex(); });
     bindText('pe_category', function (v) { P.category = v; indexEntry.category = v; save(); saveIndex(); });
+    bindText('pe_client', function (v) { P.client = v; save(); });
+    bindText('pe_services', function (v) { P.services = tagsFrom(v); save(); });
     bindText('pe_tagspt', function (v) { indexEntry.tagsPt = tagsFrom(v); saveIndex(); });
     bindText('pe_tagsen', function (v) { indexEntry.tagsEn = tagsFrom(v); saveIndex(); });
     bindSwitch('pe_visible', function (v) { indexEntry.visible = v; saveIndex(); });
@@ -2826,6 +3120,11 @@
     bindText('pe_cover', function (v) { P.cover = v; indexEntry.cover = v; save(); saveIndex(); enfileirarMetadataProjeto(slug); });
     bindText('pe_covermobile', function (v) { P.coverMobile = v; indexEntry.coverMobile = v; save(); saveIndex(); });
     bindText('pe_casecover', function (v) { if (v.trim()) P.caseCover = v.trim(); else delete P.caseCover; save(); });
+    bindText('pe_casecovermobile', function (v) { if (v.trim()) P.caseCoverMobile = v.trim(); else delete P.caseCoverMobile; save(); });
+    var removeCover = document.getElementById('pe_cover_remove');
+    if (removeCover) removeCover.addEventListener('click', function () {
+      delete P.cover; delete indexEntry.cover; save(); saveIndex(); renderProjectEditor();
+    });
     var removeMobile = document.getElementById('pe_covermobile_remove');
     if (removeMobile) removeMobile.addEventListener('click', function () {
       delete P.coverMobile; delete indexEntry.coverMobile; save(); saveIndex(); renderProjectEditor();
@@ -2833,6 +3132,10 @@
     var removeCaseCover = document.getElementById('pe_casecover_remove');
     if (removeCaseCover) removeCaseCover.addEventListener('click', function () {
       delete P.caseCover; save(); renderProjectEditor();
+    });
+    var removeCaseCoverMobile = document.getElementById('pe_casecovermobile_remove');
+    if (removeCaseCoverMobile) removeCaseCoverMobile.addEventListener('click', function () {
+      delete P.caseCoverMobile; save(); renderProjectEditor();
     });
     function setProjectSeo(key, value) {
       if (!P.seo) P.seo = {};
@@ -2866,6 +3169,10 @@
     if (caseCoverUpload) caseCoverUpload.addEventListener('change', function () { uploadFile(caseCoverUpload.files[0], slug, function (path) {
       P.caseCover = path; save(); renderProjectEditor();
     }); });
+    var caseCoverMobileUpload = document.getElementById('pe_casecovermobile_upload');
+    if (caseCoverMobileUpload) caseCoverMobileUpload.addEventListener('change', function () { uploadFile(caseCoverMobileUpload.files[0], slug, function (path) {
+      P.caseCoverMobile = path; save(); renderProjectEditor();
+    }); });
     var seoUpload = document.getElementById('pe_seoogimage_upload');
     if (seoUpload) seoUpload.addEventListener('change', function () { uploadFile(seoUpload.files[0], slug, function (path) {
       setProjectSeo('ogImage', path); renderProjectEditor();
@@ -2873,9 +3180,17 @@
 
     wireTieredFields();
     wireMediaErrors(editorEl);
+    editorEl.querySelectorAll('[data-summary-img]').forEach(function (img) {
+      img.addEventListener('error', function () { img.remove(); });
+    });
     wireDeviceTabs(editorEl, renderProjectEditor);
     editorEl.querySelectorAll('details[data-sec]').forEach(function (d) {
-      d.addEventListener('toggle', function () { projectSectionOpen[d.getAttribute('data-sec')] = d.open; });
+      d.addEventListener('toggle', function () {
+        projectSectionOpen[d.getAttribute('data-sec')] = d.open;
+      });
+    });
+    editorEl.querySelectorAll('[data-block-drag],[data-gallery-drag]').forEach(function (handle) {
+      handle.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
     });
   }
 
@@ -3066,6 +3381,12 @@
   function renderProjects() {
     renderProjectsList();
     renderProjectEditor();
+    /* O índice não carrega status editorial. Uma leitura leve dos projetos
+       completa os chips e o filtro de Publicados sem escrever nada nem criar
+       diff; falha individual mantém a linha utilizável. */
+    Promise.all((state.projectsIndex.projects || []).map(function (p) {
+      return carregarProjeto(p.slug).catch(function () { return null; });
+    })).then(function () { renderProjectsList(); });
     /* Criar também virou pendente. Antes eram três commits imediatos antes de
        qualquer revisão; agora o projeto nasce só na memória, aparece no painel
        e na prévia, e o índice, o conteúdo e a página sobem juntos no Publicar.
@@ -3084,6 +3405,10 @@
       if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) { toast('Slug inválido. Use letras minúsculas, números e hífen.', 'err'); return; }
       var lista = state.projectsIndex.projects;
       if (lista.some(function (x) { return x.slug === slug; })) { toast('Já existe um projeto com esse slug.', 'err'); return; }
+      var anoTexto = prompt('Ano do projeto:', String(new Date().getFullYear()));
+      if (anoTexto == null) return;
+      var anoProjeto = Number(anoTexto);
+      if (!Number.isInteger(anoProjeto) || anoProjeto < 1990 || anoProjeto > 2100) { toast('Informe um ano entre 1990 e 2100.', 'err'); return; }
 
       /* Estrutura vem do template canônico, NÃO de um clone do primeiro
          projeto: um projeto novo não deve herdar quantidade de blocos, imagens
@@ -3092,6 +3417,7 @@
          Worker recusa marcação vinda do cliente e o modelo precisa ser um
          arquivo já versionado. */
       var novo = projetoNovo(slug, titlePt);
+      novo.year = anoProjeto;
       var caminho = 'content/projects/' + slug + '.json';
       state.projects[slug] = { data: novo, sha: null };
       state.published[caminho] = null;

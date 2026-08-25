@@ -986,9 +986,40 @@
       return parts.join(';');
     }
 
-    var coverImg = document.querySelector('.case-cover .scene img');
+    var coverScene = document.querySelector('.case-cover .scene');
+    var coverImg = coverScene && coverScene.querySelector('img');
+    /* Capas de listagem e do case são superfícies independentes. A ordem
+       mobile preserva rigorosamente o comportamento legado: antes desta
+       separação o case nunca lia coverMobile, então um projeto antigo segue
+       usando cover dentro do case em todas as larguras. Só um campo interno
+       explícito muda isso. */
     var caseCover = P.caseCover || P.cover;
-    if (coverImg && caseCover) coverImg.setAttribute('src', resolveAssetUrl(caseCover));
+    var caseCoverMobile = P.caseCoverMobile || P.caseCover || P.cover;
+    if (coverImg && caseCover) {
+      var picture = coverImg.parentElement && coverImg.parentElement.tagName === 'PICTURE'
+        ? coverImg.parentElement : null;
+      if (!picture && coverScene) {
+        picture = document.createElement('picture');
+        coverImg.parentNode.insertBefore(picture, coverImg);
+        picture.appendChild(coverImg);
+      }
+      var source = picture && picture.querySelector('source[data-case-cover-mobile]');
+      var mobileEhDiferente = caseCoverMobile && caseCoverMobile !== caseCover;
+      if (mobileEhDiferente) {
+        if (!source) {
+          source = document.createElement('source');
+          source.setAttribute('data-case-cover-mobile', '');
+          source.setAttribute('media', '(max-width:639px)');
+          picture.insertBefore(source, coverImg);
+        }
+        source.setAttribute('srcset', resolveAssetUrl(caseCoverMobile));
+      } else if (source) source.remove();
+      coverImg.setAttribute('src', resolveAssetUrl(caseCover));
+    } else if (coverImg) {
+      var oldSource = coverScene && coverScene.querySelector('source[data-case-cover-mobile]');
+      if (oldSource) oldSource.remove();
+      coverImg.removeAttribute('src');
+    }
     var coverEl = document.querySelector('.case-cover');
     if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 18, 0));
 
