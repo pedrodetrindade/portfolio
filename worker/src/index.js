@@ -358,6 +358,9 @@ function erroNaAparenciaDaHome(home) {
   for (var i = 0; i < ids.length; i++) {
     var id = ids[i], s = sections[id];
     if (!s || typeof s !== 'object' || Array.isArray(s)) continue;
+    if (s.visible !== undefined && typeof s.visible !== 'boolean') {
+      return 'sections.' + id + '.visible precisa ser verdadeiro ou falso.';
+    }
     if (s.backgroundImage !== undefined && s.backgroundImage !== '' && !isPosterValido(s.backgroundImage)) {
       return 'sections.' + id + '.backgroundImage precisa ser uma imagem em assets/ ou uma URL HTTPS válida.';
     }

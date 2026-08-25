@@ -1476,13 +1476,14 @@
     });
     wireDeviceTabs(document.getElementById('layoutGlobalBody'), renderLayout);
 
-    var sections = state.home.sections;
+    var sections = state.home.sections || {};
     var labels = { hero: 'Capa', work: 'Projetos', about: 'Sobre', help: 'O que eu faço', faq: 'FAQ', contact: 'Contato' };
     /* work e about já tinham respiro próprio, fixo no CSS, antes do CMS
        existir — sem valor gravado aqui, o site usa esse número fixo, não o
        padrão global. help/faq/contact sempre usaram o padrão global. */
     var USA_PADRAO_GLOBAL = { help: true, faq: true, contact: true, work: false, about: false };
     function sectionTarget(key) {
+      if (!state.home.sections) state.home.sections = sections;
       if (!sections[key]) sections[key] = {};
       return sections[key];
     }
@@ -1505,7 +1506,7 @@
       schedulePreview();
     }
     document.getElementById('layoutSectionsBody').innerHTML =
-      '<p class="hint">Cada seção pode usar cor e imagem próprias ou herdar o fundo original. O ruído permanece contínuo e é controlado globalmente em Layout. "Divisórias" controla somente as linhas estruturais.</p>' +
+      '<p class="hint">Cada seção pode ser ativada ou desativada e usar cor e imagem próprias ou herdar o fundo original. O ruído permanece contínuo e é controlado globalmente em Layout. "Divisórias" controla somente as linhas estruturais.</p>' +
       deviceTabsHtml('sections') +
       Object.keys(labels).map(function (key) {
         var s = sections[key] || {};
@@ -1522,6 +1523,7 @@
         var note = usesGlobal ? null : 'valor fixo do site (ainda não editável nesta seção)';
         return '<div style="border-top:1px solid var(--line);padding-top:.8rem;margin-top:.8rem">' +
           '<b>' + esc(labels[key]) + '</b>' +
+          fieldRow('Exibir seção', 'Se desligada, a seção e seus links de navegação deixam de aparecer no site.', switchControl('sec_' + key + '_visible', s.visible !== false)) +
           fieldRow('Usar cor de fundo própria', 'Desligado mantém o fundo original.', switchControl('sec_' + key + '_ownbg', !!ownBg)) +
           fieldRow('Cor de fundo', key === 'faq' ? 'A tipografia do FAQ foi desenhada para fundos claros.' : '',
             colorControl('sec_' + key + '_bg', (ownBg || fallbackBg).hex, (ownBg || fallbackBg).opacity)) +
@@ -1549,6 +1551,12 @@
       ['_hex', '_op', '_opn'].forEach(function (suffix) {
         var el = document.getElementById('sec_' + key + '_bg' + suffix);
         if (el) el.disabled = !own;
+      });
+      bindSwitch('sec_' + key + '_visible', function (enabled) {
+        var target = sectionTarget(key);
+        if (enabled) delete target.visible; else target.visible = false;
+        cleanEmptySection(key);
+        saveSection();
       });
       bindSwitch('sec_' + key + '_ownbg', function (enabled) {
         var target = sectionTarget(key);

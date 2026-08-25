@@ -1483,12 +1483,12 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
    Controle utilitário, abaixo dos CTAs na hierarquia. A caixa não muda no
    hover; só contraste, borda e um deslocamento curto da seta respondem. */
 .to-top{display:inline-flex;align-items:center;justify-content:center;gap:.55em;cursor:pointer;
-  min-height:42px;font-family:var(--font);font-size:.78rem;font-weight:var(--w-regular);color:var(--muted-2);
+  min-height:53px;font-family:var(--font);font-size:.975rem;font-weight:var(--w-regular);color:var(--muted-2);
   background:transparent;border:1px solid var(--line);border-radius:var(--radius-button,12px);
-  padding:.55rem .95rem;
+  padding:.69rem 1.19rem;
   transition:color var(--dur-micro) var(--ease-soft),
              border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft)}
-.to-top svg{width:13px;height:13px;flex:none;
+.to-top svg{width:16px;height:16px;flex:none;
   transition:transform var(--dur-micro) var(--ease-soft)}
 .to-top:hover{color:var(--muted);border-color:var(--line-strong);background:rgba(var(--paper-rgb),.025)}
 .to-top:hover svg{transform:translateY(-2px)}
@@ -2325,6 +2325,11 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .site-footer.has-footer-nav .site-footer-grid{grid-template-columns:minmax(0,1fr) minmax(9rem,13rem)}
 .site-footer.has-footer-nav.has-footer-social .site-footer-grid{grid-template-columns:minmax(0,1fr) minmax(9rem,13rem) minmax(9rem,12rem)}
 .site-footer-contact{max-width:60rem;padding:0}
+.cms-section-hidden,.menu-item[hidden],.site-footer-nav a[hidden]{display:none!important}
+.site-footer.cms-contact-hidden.has-footer-nav.has-footer-social .site-footer-grid{
+  grid-template-columns:repeat(2,minmax(9rem,13rem))}
+.site-footer.cms-contact-hidden.has-footer-nav:not(.has-footer-social) .site-footer-grid{
+  grid-template-columns:minmax(9rem,13rem)}
 .site-footer-kicker,.site-footer-nav>p,.site-footer-social>p{font-family:var(--mono);font-size:.76rem;
   letter-spacing:.065em;text-transform:uppercase;color:rgba(var(--paper-rgb),.58)}
 .site-footer-contact h2{max-width:14ch;margin-top:clamp(.85rem,1.7vh,1.35rem);
@@ -2372,11 +2377,11 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   border-top:1px solid rgba(var(--paper-rgb),.22);margin-top:auto;padding-top:clamp(.8rem,1.5vh,1.15rem);
   transform:translateY(var(--site-footer-legal-offset,-12px))}
 .site-footer-bottom .foot-copy{max-width:62ch;font-size:.72rem;line-height:1.55;color:rgba(var(--paper-rgb),.54)}
-.site-footer-top{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;flex:none;
-  min-height:42px;border:1px solid rgba(var(--paper-rgb),.34);border-radius:var(--radius-button,12px);padding:.62rem .9rem;
-  background:rgba(var(--ink-rgb),.12);color:var(--paper);font-family:var(--mono);font-size:.65rem;cursor:pointer;
+.site-footer-top{display:inline-flex;align-items:center;justify-content:center;gap:.69rem;flex:none;
+  min-height:53px;border:1px solid rgba(var(--paper-rgb),.34);border-radius:var(--radius-button,12px);padding:.78rem 1.125rem;
+  background:rgba(var(--ink-rgb),.12);color:var(--paper);font-family:var(--mono);font-size:.8125rem;cursor:pointer;
   transition:border-color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
-.site-footer-top svg{width:14px;height:14px;transition:transform var(--dur-micro) var(--ease-soft)}
+.site-footer-top svg{width:17.5px;height:17.5px;transition:transform var(--dur-micro) var(--ease-soft)}
 .site-footer-top:hover{border-color:var(--paper);background:rgba(var(--paper-rgb),.08);transform:translateY(-2px)}
 .site-footer-top:hover svg{transform:translateY(-2px)}
 
@@ -2425,7 +2430,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .site-footer-marquee-group b{font-size:clamp(2.5rem,13vw,4rem)}
   .site-footer-bottom{align-items:center}
   .site-footer-bottom .foot-copy{font-size:.66rem}
-  .site-footer-top{min-height:40px;padding:.58rem .75rem}
+  .site-footer-top{min-height:50px;padding:.725rem .94rem}
 }
 @media(max-height:720px) and (min-width:640px){
   .site-footer-inner{padding-top:clamp(3rem,7vh,4rem)}

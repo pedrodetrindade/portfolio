@@ -98,22 +98,20 @@
      e o ícone era escolhido pelo TEXTO do item — então renomear "Trabalhos"
      para "Projetos" trocava o ícone silenciosamente.
 
-     `estrutural` reflete o que o site realmente faz, não o que seria desejável:
-     hero, work e contact sustentam layout e navegação (o indicador da capa
-     aponta para work, o rodapé depende do fluxo terminar em contact), e o site
-     ignora `visible` nelas — por isso o CMS não deve oferecer um controle de
-     visibilidade ali. about, help e faq são de fato opcionais.
+     Todas as seções podem ser desativadas pelo CMS. O registro canônico liga
+     cada destino de navegação à chave correspondente em home.sections, para
+     que menu e conteúdo tomem a mesma decisão.
 
      A hero não tem id próprio no HTML: o topo navegável é o <main id="top">.
      Por isso o id canônico dela é 'top' — é o elemento que existe de verdade,
      não um id paralelo inventado. */
   const SECOES = [
-    { id: 'top',     pt: 'Início',         en: 'Home',      icone: 'inicio',    estrutural: true  },
-    { id: 'work',    pt: 'Trabalhos',      en: 'Work',      icone: 'trabalhos', estrutural: true  },
-    { id: 'about',   pt: 'Sobre',          en: 'About',     icone: 'sobre',     estrutural: false },
-    { id: 'help',    pt: 'O que eu faço',  en: 'What I do', icone: 'servicos',  estrutural: false },
-    { id: 'faq',     pt: 'FAQ',            en: 'FAQ',       icone: 'faq',       estrutural: false },
-    { id: 'contact', pt: 'Contato',        en: 'Contact',   icone: 'contato',   estrutural: true  }
+    { id: 'top',     config: 'hero',    pt: 'Início',        en: 'Home',      icone: 'inicio'    },
+    { id: 'work',    config: 'work',    pt: 'Trabalhos',     en: 'Work',      icone: 'trabalhos' },
+    { id: 'about',   config: 'about',   pt: 'Sobre',         en: 'About',     icone: 'sobre'     },
+    { id: 'help',    config: 'help',    pt: 'O que eu faço', en: 'What I do', icone: 'servicos'  },
+    { id: 'faq',     config: 'faq',     pt: 'FAQ',           en: 'FAQ',       icone: 'faq'       },
+    { id: 'contact', config: 'contact', pt: 'Contato',       en: 'Contact',   icone: 'contato'   }
   ];
   const secaoPorId = id => SECOES.filter(s => s.id === id)[0] || null;
 
@@ -169,14 +167,13 @@
     return (s && ICONES_MENU[s.icone]) || ICONES_MENU.generico;
   }
 
-  /* Seção opcional escondida pelo CMS sai do menu: um item apontando para uma
-     âncora que não existe mais é um link quebrado. Estrutural nunca sai. */
+  /* Seção escondida pelo CMS sai do menu: um item apontando para uma âncora
+     desativada seria um link quebrado. Ausência de visible mantém a seção. */
   function secaoDisponivel(id) {
     const s = secaoPorId(id);
     if (!s) return false;
-    if (s.estrutural) return true;
     const secoes = window.__CMS_HOME__ && window.__CMS_HOME__.sections;
-    if (secoes && secoes[id] && secoes[id].visible === false) return false;
+    if (secoes && secoes[s.config] && secoes[s.config].visible === false) return false;
     return true;
   }
 
@@ -201,17 +198,16 @@
     const vistos = {};
     const itens = [];
     cfgMenu.forEach(i => {
-      if (i.visible === false) return;
       const id = secaoDoItem(i);
       if (!id || vistos[id]) return;            /* item sem destino ou repetido */
       vistos[id] = true;
+      if (i.visible === false) return;
       const canon = secaoPorId(id);
       itens.push({ id, pt: i.pt || canon.pt, en: i.en || canon.en });
     });
     SECOES.forEach(s => { if (!vistos[s.id]) itens.push({ id: s.id, pt: s.pt, en: s.en }); });
     return itens
-      .filter(i => secaoDisponivel(i.id))
-      .map(i => ({ id: i.id, pt: i.pt, en: i.en, href: hrefDaSecao(i.id) }));
+      .map(i => ({ id: i.id, pt: i.pt, en: i.en, href: hrefDaSecao(i.id), visivel: secaoDisponivel(i.id) }));
   })();
 
   /* ---- indicador de próxima seção ----
@@ -248,6 +244,7 @@
   PROXIMA.forEach(p => {
     const secao = document.querySelector(p.de);
     if (!secao || !document.querySelector(p.alvo)) return;
+    if (p.alvo === '#work' && !secaoDisponivel('work')) return;
     if (p.de === '.hero' && heroCms.showNextHint === false) return;
 
     const rotuloPt = p.de === '.hero' ? ouEntao(heroCms.nextHintLabelPt, p.rotuloPt) : p.rotuloPt;
@@ -290,7 +287,7 @@
         </div>
         <nav class="menu-list">
           ${MENU.map(i => `
-            <a class="menu-item" href="${i.href}" data-secao="${i.id}">
+            <a class="menu-item" href="${i.href}" data-secao="${i.id}"${i.visivel ? '' : ' hidden'}>
               <span class="menu-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconeDaSecao(i.id)}</svg></span>
               <span data-pt="${i.pt}" data-en="${i.en}">${i.pt}</span>
             </a>`).join('')}
@@ -719,7 +716,7 @@
     lastFocused = document.activeElement;
     document.body.classList.add('locked');
     lockBackground(true);
-    const focusTarget = el.querySelector('.overlay-x, .menu-item, input, button, a');
+    const focusTarget = el.querySelector('.overlay-x, .menu-item:not([hidden]), input, button, a');
     if (focusTarget) focusTarget.focus();
   }
   function closeOverlays(){
