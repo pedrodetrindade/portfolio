@@ -90,25 +90,41 @@
         {
           "src": "assets/uploads/colegio-assertivo/leitura.png",
           "alt": ""
-        },
-        {
-          "src": "assets/uploads/colegio-assertivo/dia-dos-pais.png",
-          "alt": ""
         }
-      ]
+      ],
+      "layout": "adaptive"
     },
     {
       "type": "gallery",
       "images": [
         {
-          "src": "assets/uploads/colegio-assertivo/dia-da-arvore.png",
+          "src": "assets/uploads/colegio-assertivo/kv3.png",
           "alt": ""
         },
         {
-          "src": "assets/uploads/colegio-assertivo/kv3.png",
+          "src": "assets/uploads/colegio-assertivo/dia-dos-pais.png",
+          "alt": ""
+        },
+        {
+          "src": "assets/uploads/colegio-assertivo/dia-da-arvore.png",
           "alt": ""
         }
-      ]
+      ],
+      "layout": "adaptive"
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/colegio-assertivo/camada-18.png",
+          "alt": ""
+        },
+        {
+          "src": "assets/uploads/colegio-assertivo/prancheta-1.png",
+          "alt": ""
+        }
+      ],
+      "layout": "adaptive"
     },
     {
       "type": "image",
