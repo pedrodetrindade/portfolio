@@ -2388,23 +2388,13 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .site-footer-top:hover{border-color:var(--paper);background:rgba(var(--paper-rgb),.08);transform:translateY(-2px)}
 .site-footer-top:hover svg{transform:translateY(-2px)}
 
-/* Pulso medido na referência: o rótulo perde nitidez, encolhe até 90% e volta
-   a ficar nítido ainda durante o mesmo hover. O filtro fica restrito aos
-   poucos glifos do span, nunca ao botão ou a uma camada grande da página. */
-.cta-blur-label{display:inline-block;transform-origin:50% 50%}
-@keyframes cta-text-blur{
-  0%{filter:blur(0);transform:scale(1)}
-  12%{filter:blur(.35px);transform:scale(.991)}
-  24%{filter:blur(1px);transform:scale(.973)}
-  38%{filter:blur(2.1px);transform:scale(.942)}
-  50%{filter:blur(2.8px);transform:scale(.915)}
-  62%{filter:blur(2.55px);transform:scale(.9)}
-  74%{filter:blur(1.9px);transform:scale(.91)}
-  84%{filter:blur(1.15px);transform:scale(.935)}
-  92%{filter:blur(.55px);transform:scale(.965)}
-  97%{filter:blur(.18px);transform:scale(.988)}
-  100%{filter:blur(0);transform:scale(1)}
-}
+/* Estado de hover da referência: o rótulo encolhe, perde só um pouco de
+   nitidez e permanece assim enquanto o cursor estiver no controle. Ao sair,
+   as mesmas transições devolvem escala e foco sem salto. O filtro continua
+   restrito aos poucos glifos do span, nunca ao botão ou a uma camada grande. */
+.cta-blur-label{display:inline-block;transform-origin:50% 50%;filter:blur(0);transform:scale(1);
+  transition:filter calc(var(--dur-slow) * .8) linear,
+             transform calc(var(--dur-slow) * .8) var(--ease-soft)}
 @media(hover:hover) and (pointer:fine){
   .work-all-cta .ghost-cta:hover .cta-blur-label,
   .about-actions .cta-primary:hover .cta-blur-label,
@@ -2413,7 +2403,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .site-footer-social a:hover .cta-blur-label,
   .site-footer-top:hover .cta-blur-label,
   .nav-cta:hover .cta-blur-label{
-    animation:cta-text-blur calc(var(--dur-slow) * .8) linear both}
+    filter:blur(.55px);transform:scale(.9)}
 }
 
 /* Halo interno dos controles de vidro. Na referência ele lê como um pequeno
@@ -2472,7 +2462,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .site-footer-video{display:none}
   .site-footer-marquee-track{animation:none;transform:none}
   .site-footer-email,.site-footer-copy,.site-footer-copy svg,.site-footer-nav a,.site-footer-social a,.site-footer-top,.site-footer-top svg{transition:none}
-  .cta-blur-label{animation:none!important;filter:none!important;transform:none!important}
+  .cta-blur-label{transition:none!important;filter:none!important;transform:none!important}
 }
 
 /* ===== ENTRADAS POR BLOCO (coreografia via .in do observador) =====
