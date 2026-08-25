@@ -295,6 +295,39 @@
   function renderGlobalFooter(G) {
     var footer = document.querySelector('footer');
     if (!footer) return;
+    /* Se o XHR bloqueante falhar (rede, cache intermediário ou servidor local),
+       não reconstrói o rodapé a partir de {}. Era isso que apagava navegação,
+       redes, e-mail e crédito e ainda reativava a assinatura pelo fallback do
+       nome da marca. Esta reserva completa só entra quando o global realmente
+       não chegou; com JSON válido, o CMS continua sendo a única fonte. */
+    if (!G || !G.footer || !G.social || !G.header) {
+      G = {
+        footer: {
+          kickerPt: 'Contato', kickerEn: 'Contact',
+          headlinePt: 'Projetos, colaborações e novas conversas.',
+          headlineEn: 'Projects, collaborations and new conversations.',
+          supportPt: 'Se você tem uma ideia, uma marca ou um desafio que pede direção criativa, vamos conversar.',
+          supportEn: "If you have an idea, a brand or a challenge that needs creative direction, let's talk.",
+          copyrightPt: '© {year} Pedro de Trindade. Pensado, dirigido e desenvolvido por mim. Movido a playlists e só mais um ajustezinho.',
+          copyrightEn: '© {year} Pedro de Trindade. Designed, directed and built by me. Powered by playlists and one last little adjustment.',
+          showSignature: false
+        },
+        social: {
+          linkedin: 'https://www.linkedin.com/in/pedrodetrindade',
+          behance: 'https://www.behance.net/trind9de',
+          email: 'contact@pedrodetrindade.com'
+        },
+        header: { menu: [
+          { section:'top', pt:'Início', en:'Home' },
+          { section:'work', pt:'Trabalhos', en:'Work' },
+          { section:'about', pt:'Sobre', en:'About' },
+          { section:'help', pt:'O que eu faço', en:'What I do' },
+          { section:'faq', pt:'FAQ', en:'FAQ' },
+          { section:'contact', pt:'Contato', en:'Contact' }
+        ] },
+        brand: { name:'Pedro de Trindade' }
+      };
+    }
     var f = G.footer || {}, social = G.social || {}, brand = G.brand || {};
     var background = f.background && typeof f.background === 'object' ? f.background : {};
     var media = footerMediaHtml(background);

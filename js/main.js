@@ -141,6 +141,11 @@
   const emailDeContato =
     (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.social && window.__CMS_GLOBAL__.social.email) ||
     'contact@pedrodetrindade.com';
+  const redesCms = (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.social) || {};
+  const redesGlobais = {
+    linkedin: redesCms.linkedin || 'https://www.linkedin.com/in/pedrodetrindade',
+    behance: redesCms.behance || 'https://www.behance.net/trind9de'
+  };
 
   /* Ícones temáticos, SVG inline (sem biblioteca, sem requisição). São
      decorativos: quem carrega o significado é o texto ao lado, então todos
@@ -261,6 +266,16 @@
       </a>`);
   });
 
+  const linksSociaisMenu = [
+    redesGlobais.linkedin ? '<a href="' + esc(redesGlobais.linkedin) + '" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>' : '',
+    redesGlobais.behance ? '<a href="' + esc(redesGlobais.behance) + '" target="_blank" rel="noopener noreferrer">Behance <span aria-hidden="true">↗</span></a>' : ''
+  ].filter(Boolean).join('');
+
+  /* A disponibilidade saiu do header por decisão editorial. O CSS já impede
+     qualquer flash antes do JS; remover os nós também evita que leitores de
+     tela e futuras medições ainda tratem o status como parte do menu. */
+  document.querySelectorAll('.ctrl-div,.avail').forEach(el => el.remove());
+
   document.body.insertAdjacentHTML('beforeend', `
     <div class="veil" aria-hidden="true"></div>
 
@@ -271,9 +286,7 @@
     <div class="overlay" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
       <div class="overlay-sheet">
         <div class="menu-panel-head">
-          <span class="menu-panel-title"><i aria-hidden="true"></i><span data-pt="Menu" data-en="Menu">Menu</span></span>
-          <span class="menu-panel-div" aria-hidden="true"></span>
-          <span class="menu-panel-avail"><i class="avail-dot" aria-hidden="true"></i><span data-pt="Disponível para projetos" data-en="Available for projects" data-pt-short="Disponível" data-en-short="Available">Disponível para projetos</span></span>
+          <span class="menu-panel-title"><i aria-hidden="true"></i><span class="menu-panel-label-swap"><span data-pt="Menu" data-en="Menu">Menu</span><span>Pedro de Trindade</span></span></span>
         </div>
         <nav class="menu-list">
           ${MENU.map(i => `
@@ -282,6 +295,7 @@
               <span data-pt="${i.pt}" data-en="${i.en}">${i.pt}</span>
             </a>`).join('')}
         </nav>
+        ${linksSociaisMenu ? `<div class="menu-social"><span data-pt="Redes" data-en="Social">Redes</span><div>${linksSociaisMenu}</div></div>` : ''}
       </div>
     </div>
 
@@ -553,6 +567,12 @@
 
   aplicarDisponibilidade();
   setLang(detectLang());
+  const sincronizarLarguraFechadaDoMenu = () => {
+    const pill = document.querySelector('header .ctrl-group');
+    const painel = document.getElementById('menu');
+    if (pill && painel) painel.style.setProperty('--menu-closed-width', pill.getBoundingClientRect().width + 'px');
+  };
+  sincronizarLarguraFechadaDoMenu();
 
   /* O limiar das variantes curtas é uma media query, então precisa ser ouvido:
      sem isto o rótulo escolhido na carga ficava congelado, e quem abrisse largo
@@ -683,7 +703,14 @@
     /* O painel nasce com o tema que o header estava usando sobre a seção
        atual. Só depois o header é congelado no escuro. Sem guardar este estado,
        abrir o menu sobre o FAQ claro produzia vidro claro com texto branco. */
-    if (el === menu) el.setAttribute('data-theme', headEl.getAttribute('data-theme') || 'dark');
+    if (el === menu) {
+      el.setAttribute('data-theme', headEl.getAttribute('data-theme') || 'dark');
+      /* A expansão começa na largura REAL da pílula. Ela muda conforme a
+         disponibilidade está visível ou oculta e conforme o idioma; número
+         fixo faria o painel saltar lateralmente antes de começar a crescer. */
+      const pill = document.querySelector('header .ctrl-group');
+      if (pill) el.style.setProperty('--menu-closed-width', pill.getBoundingClientRect().width + 'px');
+    }
     el.classList.add('open');
     document.body.classList.toggle('menu-open', el === menu);
     modalOpen = modal;
@@ -1829,6 +1856,7 @@
     const atual = (document.documentElement.lang || 'pt').indexOf('pt') === 0 ? 'pt' : 'en';
     aplicarDisponibilidade();
     setLang(atual);
+    sincronizarLarguraFechadaDoMenu();
     ligarPerguntas();
     medirAlvos();
     readScroll();
