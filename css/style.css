@@ -109,11 +109,11 @@
 /* impede o navegador de fabricar negrito ou itálico que a fonte não tem */
 html,body{font-synthesis:none;-webkit-font-synthesis:none}
 /* clip em vez de hidden: contém o sangramento lateral sem criar um
-   contêiner de rolagem nem inflar o scrollWidth do documento.
-   scrollbar-gutter reserva a calha sempre: durante a intro o body trava a
-   rolagem, a barra sumia e a página inteira alargava uns 15px, deslocando o
-   nome e a frase no exato momento da passagem para a capa. */
-html{scroll-behavior:smooth;overflow-x:clip;scrollbar-gutter:stable}
+   contêiner de rolagem nem inflar o scrollWidth do documento. A scrollbar do
+   documento fica invisível, mas o próprio documento continua sendo o scroller:
+   roda, toque, teclado e scroll programático permanecem nativos. */
+html{scroll-behavior:smooth;overflow-x:clip;scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar{display:none;width:0;height:0}
 body{font-family:var(--font);background:var(--ink);color:var(--paper);line-height:1.6;font-weight:var(--w-regular);
   -webkit-font-smoothing:antialiased;overflow-x:clip;position:relative}
 body.locked{overflow:hidden;height:100dvh}
@@ -148,59 +148,33 @@ p[data-pt][data-en]{text-wrap:pretty}
 
 .glow{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden;
   will-change:transform}
-/* ===== CURSOR INTERATIVO =====
-   Um único canvas desenha a pincelada contínua; o núcleo pequeno e o rótulo de
-   projeto continuam no DOM porque são estados semânticos do cursor. A camada
-   inteira é pointer-events:none, então não bloqueia clique, hover ou seleção. */
+/* ===== CURSOR ORB OPCIONAL =====
+   Recuperado do cursor de 7be0c81: núcleo de 16px e glow radial de 273px.
+   Só existe quando effects.cursor.mode="orb"; no modo padrão nenhum destes
+   elementos é criado e o cursor nativo permanece completamente livre. */
 :root{
   --cursor-core:var(--cream);
   --cursor-glow-soft:rgba(var(--paper-rgb),.16);
-  --cursor-border:rgba(var(--paper-rgb),.34);
 }
-/* z-index 100: ACIMA do overlay do menu (95) e do véu (90). Em 70 o cursor
-   ficava atrás do menu aberto e sumia — e como html.has-custom-cursor já
-   esconde o ponteiro do sistema, não sobrava cursor nenhum sobre o menu.
-   Continua pointer-events:none, então estar por cima não bloqueia clique. */
-.cur-layer{position:fixed;inset:0;z-index:100;pointer-events:none;
+.cursor-orb-layer{position:fixed;inset:0;z-index:100;pointer-events:none;
   contain:layout style size}
-.cur-brush{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-/* O FAQ inverte a superfície para clara. O cursor acompanha essa superfície
-   sem mudar sua lógica nem reativar o ponteiro nativo: só os tokens visuais da
-   camada são invertidos enquanto o alvo está dentro do FAQ. */
-.cur-layer.is-on-light{
-  --cursor-core:var(--ink-2);
-  --cursor-glow-soft:rgba(var(--ink-rgb),.18);
-  --cursor-border:rgba(var(--ink-rgb),.34)}
+.cursor-orb-glow{position:fixed;top:0;left:0;width:273px;height:273px;margin:-136px 0 0 -136px;
+  border-radius:50%;pointer-events:none;z-index:-1;opacity:0;
+  background:radial-gradient(circle,rgba(194,179,179,.109),rgba(115,104,104,.049) 34%,transparent 62%);
+  transform:translate3d(var(--mx,50vw),var(--my,50vh),0);
+  transition:transform .55s var(--ease-out-smooth),opacity var(--dur-default) var(--ease-out-smooth)}
+.cursor-orb-glow.on{opacity:1}
 /* Várias classes de rótulo declaram display próprio e venceriam o [hidden] da
    folha do navegador. A regra explícita garante remoção real da caixa. */
 .about-k[hidden],.caps-k[hidden],.help-k[hidden],.mail-k[hidden],
 .case-hero .eyebrow[hidden]{display:none}
-.cur-dot,.cur-label{position:absolute;top:0;left:0;pointer-events:none;
+.cursor-orb-dot{position:absolute;top:0;left:0;pointer-events:none;
   will-change:transform}
-/* Núcleo pequeno e preciso. O antigo halo circular grande saiu; a presença
-   luminosa agora vem da pincelada no canvas. */
-.cur-dot{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
-  background:var(--cursor-core);box-shadow:0 0 4px var(--cursor-glow-soft);
-  opacity:0;transition:opacity var(--dur-micro) var(--ease-soft),
-                       width var(--dur-micro) var(--ease-soft),
-                       height var(--dur-micro) var(--ease-soft),
-                       margin var(--dur-micro) var(--ease-soft)}
-.cur-layer.on .cur-dot{opacity:1}
-.cur-layer.is-control .cur-dot{width:5px;height:5px;margin:-2.5px 0 0 -2.5px}
-.cur-layer.is-card .cur-dot{opacity:0}
-
-/* rótulo "Ver projeto": centrado no mesmo ponto do núcleo, então o cursor
-   parece crescer e revelar o texto por dentro, sem animar largura. */
-.cur-label{transform-origin:50% 50%;white-space:nowrap;
-  font-family:var(--mono);font-size:.7rem;letter-spacing:.025em;color:var(--paper);
-  padding:.6rem 1.05rem;border-radius:var(--radius-button,12px);
-  background:rgba(var(--ink-rgb),.55);border:1px solid var(--cursor-border);
-  backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);
-  opacity:0;visibility:hidden;
-  transition:opacity var(--dur-micro) var(--ease-soft),
-             transform var(--dur-micro) var(--ease-soft),
-             visibility var(--dur-micro)}
-.cur-layer.is-card .cur-label{opacity:1;visibility:visible}
+.cursor-orb-dot{width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+  background:radial-gradient(circle,var(--cursor-core),var(--cursor-glow-soft) 62%,transparent 72%);
+  box-shadow:0 0 12px 2px var(--cursor-glow-soft);opacity:0;
+  transition:opacity var(--dur-micro) var(--ease-soft)}
+.cursor-orb-layer.on .cursor-orb-dot{opacity:1}
 
 /* O cursor nativo só desaparece depois que o JS confirma que a camada foi
    criada e o dispositivo é compatível — a classe é adicionada por último, no
@@ -223,7 +197,7 @@ html.has-custom-cursor label{cursor:auto}
    pelo JS. Estas regras são a rede de segurança para o caso de o HTML vir de
    um cache antigo com a camada já no documento. */
 @media(prefers-reduced-motion:reduce),(pointer:coarse),(hover:none){
-  .cur-layer{display:none}
+  .cursor-orb-layer,.cursor-orb-glow{display:none}
   html.has-custom-cursor,html.has-custom-cursor a,html.has-custom-cursor button{cursor:auto}
 }
 .orb{position:absolute;border-radius:50%}
@@ -1042,12 +1016,6 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .scene.p3{background:radial-gradient(circle at 64% 36%,rgba(201,189,189,.24),transparent 46%),radial-gradient(circle at 38% 70%,rgba(115,104,104,.18),transparent 50%),radial-gradient(circle at 50% 50%,#251A1C,#100C0D 80%)}
 .scene.p4{background:radial-gradient(circle at 43% 48%,transparent 19%,rgba(184,172,172,.18) 27%,transparent 40%),radial-gradient(circle at 57% 52%,rgba(160,148,148,.22),transparent 36%),radial-gradient(circle at 50% 50%,#251A1C,#100C0D 80%)}
 
-/* .card-cue foi removido: o rótulo "Ver projeto" agora vive dentro do próprio
-   cursor (.cur-label), movido pelo mesmo laço. O elemento antigo era posicionado
-   por left/top — propriedades de layout — e dependia de listeners presos aos
-   .card existentes no carregamento, que a grade reconstruída pelo CMS
-   invalidava sem aviso. */
-
 #about{padding-block:0}
 /* Borda limpa contra o fundo escuro: sem máscara, sem névoa, sem orbes
    desfocadas. A troca de seção se resolve por contraste e ritmo vertical. */
@@ -1106,16 +1074,6 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 /* absoluto para cobrir o placeholder que fica por baixo como rede */
 .portrait-img{position:absolute;inset:0;z-index:1;width:100%;height:100%;
   object-fit:cover;object-position:50% 22%}
-.portrait-blur-trail{position:absolute;z-index:2;top:0;left:0;
-  width:clamp(112px,13vw,184px);aspect-ratio:1.18;border-radius:50%;pointer-events:none;
-  opacity:0;transform:translate3d(var(--trail-x,0),var(--trail-y,0),0) translate(-50%,-50%) scale(var(--trail-scale,1));
-  background:rgba(var(--paper-rgb),.012);
-  -webkit-mask-image:radial-gradient(ellipse,rgba(var(--ink-rgb),1) 0 24%,rgba(var(--ink-rgb),.72) 43%,rgba(var(--ink-rgb),.22) 62%,transparent 78%);
-  mask-image:radial-gradient(ellipse,rgba(var(--ink-rgb),1) 0 24%,rgba(var(--ink-rgb),.72) 43%,rgba(var(--ink-rgb),.22) 62%,transparent 78%);
-  backdrop-filter:blur(var(--trail-blur,8px)) saturate(82%);
-  -webkit-backdrop-filter:blur(var(--trail-blur,8px)) saturate(82%);
-  transition:opacity var(--dur-micro) var(--ease-soft)}
-.portrait.lens-active .portrait-blur-trail{opacity:var(--trail-opacity,.28)}
 .portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted-2);
   background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:var(--radius-button,12px);padding:.5rem 1.1rem}
 /* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala.

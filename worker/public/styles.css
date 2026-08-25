@@ -82,6 +82,9 @@ main{grid-area:main;overflow-y:auto;padding:1.6rem 2rem 4rem}
 .field label{padding-top:.4rem;font-size:.88rem;color:var(--muted)}
 .field label .hint{display:block;font-size:.74rem;color:var(--muted-2);margin-top:.15rem}
 .field .control{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.radio-options{display:flex;flex-direction:column;align-items:flex-start;gap:.55rem}
+.radio-option{display:inline-flex;align-items:center;gap:.55rem;cursor:pointer}
+.radio-option input{accent-color:var(--accent)}
 
 input[type=text],input[type=number],input[type=url],input[type=email],textarea,select{
   background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;

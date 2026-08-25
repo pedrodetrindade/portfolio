@@ -165,15 +165,23 @@ function chavesPermitidasPara(caminho) {
 function erroNosEfeitosGlobais(effects) {
   if (effects === undefined) return null;
   if (!effects || typeof effects !== 'object' || Array.isArray(effects)) return 'effects precisa ser um objeto.';
-  if (effects.grain === undefined) return null;
-  var grain = effects.grain;
-  if (!grain || typeof grain !== 'object' || Array.isArray(grain)) return 'effects.grain precisa ser um objeto.';
-  if (grain.enabled !== undefined && typeof grain.enabled !== 'boolean') return 'effects.grain.enabled precisa ser verdadeiro ou falso.';
-  if (grain.opacity !== undefined && (typeof grain.opacity !== 'number' || !Number.isFinite(grain.opacity) || grain.opacity < 0 || grain.opacity > 12)) {
-    return 'effects.grain.opacity precisa estar entre 0 e 12%.';
+  if (effects.grain !== undefined) {
+    var grain = effects.grain;
+    if (!grain || typeof grain !== 'object' || Array.isArray(grain)) return 'effects.grain precisa ser um objeto.';
+    if (grain.enabled !== undefined && typeof grain.enabled !== 'boolean') return 'effects.grain.enabled precisa ser verdadeiro ou falso.';
+    if (grain.opacity !== undefined && (typeof grain.opacity !== 'number' || !Number.isFinite(grain.opacity) || grain.opacity < 0 || grain.opacity > 12)) {
+      return 'effects.grain.opacity precisa estar entre 0 e 12%.';
+    }
+    if (grain.size !== undefined && (typeof grain.size !== 'number' || !Number.isFinite(grain.size) || grain.size < 100 || grain.size > 360)) {
+      return 'effects.grain.size precisa estar entre 100 e 360px.';
+    }
   }
-  if (grain.size !== undefined && (typeof grain.size !== 'number' || !Number.isFinite(grain.size) || grain.size < 100 || grain.size > 360)) {
-    return 'effects.grain.size precisa estar entre 100 e 360px.';
+  if (effects.cursor !== undefined) {
+    var cursor = effects.cursor;
+    if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor)) return 'effects.cursor precisa ser um objeto.';
+    var cursorExtra = Object.keys(cursor).filter(function (k) { return k !== 'mode'; });
+    if (cursorExtra.length) return 'effects.cursor tem campo desconhecido: ' + cursorExtra.join(', ') + '.';
+    if (['native', 'orb'].indexOf(cursor.mode) === -1) return 'effects.cursor.mode precisa ser native ou orb.';
   }
   return null;
 }
