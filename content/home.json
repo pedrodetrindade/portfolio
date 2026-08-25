@@ -175,14 +175,14 @@
     "kickerEn": "expertise",
     "titlePt": "O que eu faço",
     "titleEn": "What I do",
-    "leadPt": "Cinco frentes que funcionam de forma integrada: a estratégia define o rumo, a direção criativa transforma esse direcionamento em linguagem, a comunicação coloca a marca em circulação, as experiências digitais aproximam marca e público, e a tecnologia amplia sua capacidade de produzir, evoluir e ganhar escala.",
-    "leadEn": "Five areas working as one: strategy sets the direction, creative direction turns that direction into language, communication puts the brand into circulation, digital experiences bring brand and audience closer, and technology expands its capacity to produce, evolve and scale.",
+    "leadPt": "Atuo na interseção entre estratégia, criação e tecnologia para construir marcas mais claras, consistentes e relevantes. Da definição de posicionamento à direção criativa, campanhas, experiências digitais e novos fluxos com IA, conecto diferentes frentes para transformar objetivos de negócio em comunicação, experiências e sistemas que evoluem com a marca.",
+    "leadEn": "I work at the intersection of strategy, creativity, and technology to build clearer, more consistent, and more relevant brands. From positioning and creative direction to campaigns, digital experiences, and new AI-powered workflows, I connect different disciplines to turn business goals into communication, experiences, and systems that evolve with the brand.",
     "items": [
       {
         "titlePt": "Direção Criativa & Direção de Arte",
         "titleEn": "Creative Direction & Art Direction",
-        "textPt": "Transformo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca em campanhas, conteúdos, produtos, projetos audiovisuais e experiências presenciais.",
-        "textEn": "I turn strategy into concepts, narratives and visual systems, guiding brand expression across campaigns, content, products, audiovisual projects and in-person experiences.",
+        "textPt": "Transformo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca em campanhas, conteúdos, produtos digitais, projetos audiovisuais e experiências presenciais.",
+        "textEn": "I turn strategy into concepts, narratives, and visual systems, guiding how brands express themselves across campaigns, content, digital products, audiovisual projects, and in-person experiences.",
         "tags": [
           {
             "pt": "conceitos criativos",
@@ -202,7 +202,7 @@
         "titlePt": "Estratégia & Gestão de Marca",
         "titleEn": "Brand Strategy & Management",
         "textPt": "Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, organizam suas mensagens, mantêm consistência e evoluem ao longo do tempo.",
-        "textEn": "I connect positioning, communication and business objectives to guide how brands present themselves, organize their messages, stay consistent and evolve over time.",
+        "textEn": "I connect positioning, communication, and business goals to guide how brands present themselves, organize their messaging, maintain consistency, and evolve over time.",
         "tags": [
           {
             "pt": "posicionamento",
@@ -222,7 +222,7 @@
         "titlePt": "Campanhas & Comunicação de Negócio",
         "titleEn": "Campaigns & Business Communication",
         "textPt": "Desenvolvo campanhas e materiais que fortalecem a marca, tornam temas complexos mais claros e apoiam objetivos de marketing, produto e comercial, incluindo apresentações estratégicas, lançamentos e ativações em eventos.",
-        "textEn": "I develop campaigns and materials that strengthen the brand, make complex subjects clearer and support marketing, product and sales objectives, including strategic presentations, launches and event activations.",
+        "textEn": "I develop campaigns and materials that strengthen brands, make complex topics clearer, and support marketing, product, and commercial goals, including strategic presentations, launches, and event activations.",
         "tags": [
           {
             "pt": "campanhas integradas",
@@ -241,8 +241,8 @@
       {
         "titlePt": "Experiências Digitais & Produtos",
         "titleEn": "Digital Experiences & Products",
-        "textPt": "Transformo objetivos de marca e negócio em experiências digitais claras, consistentes e funcionais, participando da criação de sites, landing pages, interfaces e produtos digitais.",
-        "textEn": "I turn brand and business objectives into clear, consistent and functional digital experiences, taking part in the creation of websites, landing pages, interfaces and digital products.",
+        "textPt": "Transformo objetivos de marca e negócio em experiências digitais claras, consistentes e funcionais, atuando na criação de sites, landing pages, interfaces e produtos digitais.",
+        "textEn": "I turn brand and business goals into clear, consistent, and functional digital experiences, working across websites, landing pages, interfaces, and digital products.",
         "tags": [
           {
             "pt": "sites & landing pages",
@@ -261,8 +261,8 @@
       {
         "titlePt": "Operações Criativas & Inteligência Artificial",
         "titleEn": "Creative Operations & Artificial Intelligence",
-        "textPt": "Estruturo processos e fluxos que conectam estratégia, criação e execução, utilizando inteligência artificial e automação para ampliar eficiência, repertório e escala sem perder consistência e qualidade.",
-        "textEn": "I structure processes and workflows that connect strategy, creation and execution, using artificial intelligence and automation to expand efficiency, repertoire and scale without losing consistency and quality.",
+        "textPt": "Estruturo processos e fluxos que conectam estratégia, criação e execução, integrando inteligência artificial e automação para ampliar eficiência, repertório e escala sem perder consistência e qualidade.",
+        "textEn": "I structure processes and workflows that connect strategy, creation, and execution, integrating artificial intelligence and automation to increase efficiency, creative range, and scale without compromising consistency or quality.",
         "tags": [
           {
             "pt": "sistemas criativos",
