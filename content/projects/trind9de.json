@@ -1,0 +1,90 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
+  "slug": "trind9de",
+  "status": "published",
+  "client": "",
+  "year": 2023,
+  "category": "identidade visual, branding",
+  "services": [
+    "Branding",
+    "Design"
+  ],
+  "seo": {
+    "title": "trind9de · Pedro de Trindade",
+    "description": "Case: identidade visual pessoal de Pedro de Trindade. Símbolo, logotipo, paleta e tipografia a partir do número 9, da letra T e do torii japonês."
+  },
+  "hero": {
+    "eyebrowPt": "identidade visual",
+    "eyebrowEn": "visual identity",
+    "titlePt": "trind9de",
+    "titleEn": "trind9de",
+    "subtitlePt": "Identidade visual pessoal construída a partir de duas premissas: ser minimalista, simples e neutra, e representar criatividade, versatilidade e equilíbrio.\nO símbolo une o número 9 à letra T na silhueta de um torii, o portão japonês que marca a passagem do mundano para o sagrado.",
+    "subtitleEn": "A personal visual identity built on two premises: to be minimalist, simple, and neutral, and to represent creativity, versatility, and balance.\nThe symbol joins the number 9 and the letter T in the silhouette of a torii, the Japanese gate that marks the passage from the mundane to the sacred.",
+    "rolePt": "Branding & Design",
+    "roleEn": "Branding & Design",
+    "scopePt": "Símbolo, Logotipo, Paleta, Tipografia e Aplicações",
+    "scopeEn": "Symbol, Logotype, Palette, Typography & Applications"
+  },
+  "cover": "assets/uploads/trind9de/ecobag.webp",
+  "coverMobile": "",
+  "caseCover": "assets/uploads/trind9de/construcao.webp",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "Um projeto autoral: a minha própria marca. Antes de desenhar, defini o que ela precisava ser e o que precisava representar. Ser minimalista, simples e neutra. Representar criatividade, versatilidade e equilíbrio.",
+      "textEn": "A self-initiated project: my own brand. Before drawing anything, I defined what it needed to be and what it needed to represent. To be minimalist, simple, and neutral. To represent creativity, versatility, and balance."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "O número 9 carrega um significado antes de ser escolha estética: marca o momento de encerrar fases antigas, e é também o meu número da sorte. A letra T vem de Trindade e completa a assinatura. Os dois se encontram num ícone com a silhueta de um torii, ligado ao meu interesse pela cultura japonesa, desenhado sobre a proporção áurea para manter ângulos e proporções coerentes.",
+      "textEn": "The number 9 carries meaning before it becomes a design choice: it marks the moment of closing old chapters, and it is also my lucky number. The letter T comes from Trindade and completes the signature. The two meet in an icon shaped like a torii, tied to my interest in Japanese culture, drawn on the golden ratio to keep angles and proportions consistent."
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
+      "textPt": "Um sistema enxuto: símbolo e logotipo sobre a mesma construção, um laranja intenso apoiado em preto, cinza e branco, e a Urbanist como família tipográfica, do extra light ao bold.",
+      "textEn": "A lean system: symbol and logotype on the same construction, an intense orange supported by black, gray, and white, and Urbanist as the type family, from extra light to bold."
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/trind9de/conceito.webp",
+      "alt": "Construção do símbolo a partir do número 9 e da letra T, com referências de portões torii",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/trind9de/paleta.webp",
+      "alt": "Paleta de cores: laranja #D74000, preto, cinza, cinza claro e branco",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/trind9de/tipografia.webp",
+      "alt": "Família tipográfica Urbanist nos pesos extra light, regular e bold",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/trind9de/ecobag.webp",
+      "alt": "Ecobag preta com o símbolo trind9de pendurada numa escada de madeira",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    }
+  ]
+}

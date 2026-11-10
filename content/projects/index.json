@@ -33,28 +33,28 @@
       "coverLight": false
     },
     {
-      "slug": "case-02",
+      "slug": "trind9de",
       "visible": true,
       "featured": true,
       "cardSize": "normal",
       "order": 2,
-      "titlePt": "Direção de arte e comunicação de marca",
-      "titleEn": "Art direction and brand communication",
-      "subtitlePt": "Campanha, comunicação",
-      "subtitleEn": "Campaign, communication",
-      "category": "direcao-de-arte",
+      "titlePt": "trind9de",
+      "titleEn": "trind9de",
+      "subtitlePt": "Identidade visual pessoal construída a partir de duas premissas: ser minimalista, simples e neutra, e representar criatividade, versatilidade e equilíbrio.\nO símbolo une o número 9 à letra T na silhueta de um torii, o portão japonês que marca a passagem do mundano para o sagrado.",
+      "subtitleEn": "A personal visual identity built on two premises: to be minimalist, simple, and neutral, and to represent creativity, versatility, and balance.\nThe symbol joins the number 9 and the letter T in the silhouette of a torii, the Japanese gate that marks the passage from the mundane to the sacred.",
+      "category": "identidade visual, branding",
       "tagsPt": [
-        "direção de arte",
-        "campanha"
+        "identidade visual",
+        "branding"
       ],
       "tagsEn": [
-        "art direction",
-        "campaign"
+        "visual identity",
+        "branding"
       ],
-      "year": 2025,
-      "cover": "assets/projetos/case-02/capa.jpg",
+      "year": 2023,
+      "cover": "assets/uploads/trind9de/ecobag.webp",
       "coverMobile": "",
-      "coverLight": false
+      "coverLight": true
     },
     {
       "slug": "karmine-corp",
