@@ -25,9 +25,9 @@
     "scopePt": "Logotipo 3D, Capas para Twitter e YouTube, Painéis e Badges da Twitch",
     "scopeEn": "3D Logotype, Twitter & YouTube Banners, Twitch Panels & Badges"
   },
-  "cover": "assets/uploads/dgzin/capa.webp",
+  "cover": "assets/uploads/dgzin/capa-cordao.webp",
   "coverMobile": "",
-  "caseCover": "assets/uploads/dgzin/camisa-loud.webp",
+  "caseCover": "assets/uploads/dgzin/capa-case-cordao.webp",
   "blocks": [
     {
       "type": "text",
@@ -173,6 +173,20 @@
           "desktop": 96,
           "tablet": 72,
           "mobile": 56
+        }
+      }
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/dgzin/camisa-loud.webp",
+      "alt": "Logotipo dgzin em vidro sobre a camisa da LOUD, emoldurado pelas mãos do atleta",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": "",
+      "spacing": {
+        "marginTop": {
+          "desktop": 32
         }
       }
     }

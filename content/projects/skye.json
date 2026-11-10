@@ -1,0 +1,111 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
+  "slug": "skye",
+  "status": "published",
+  "client": "",
+  "year": 2023,
+  "category": "3d",
+  "services": [
+    "Design 3D",
+    "Direção de arte"
+  ],
+  "seo": {
+    "title": "Skye · Pedro de Trindade",
+    "description": "Case: estudo autoral em 3D com a agente Skye no mapa Haven, de VALORANT. Modelagem, composição de cena e correção de cor por Pedro de Trindade."
+  },
+  "hero": {
+    "eyebrowPt": "arte 3d",
+    "eyebrowEn": "3d art",
+    "titlePt": "Skye",
+    "titleEn": "Skye",
+    "subtitlePt": "",
+    "subtitleEn": "",
+    "rolePt": "Direção de Arte & 3D",
+    "roleEn": "Art Direction & 3D",
+    "scopePt": "Modelagem, Composição de Cena e Correção de Cor",
+    "scopeEn": "Modeling, Scene Composition & Color Correction"
+  },
+  "cover": "assets/uploads/skye/capa.webp",
+  "coverMobile": "",
+  "caseCover": "assets/uploads/skye/capa-case.webp",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "Estudo autoral e não oficial de VALORANT, feito para ganhar experiência com arte 3D. A cena junta o mapa Haven, a agente Skye e borboletas modeladas para a composição, num pôster batizado de Nature.",
+      "textEn": "A self-initiated, unofficial VALORANT study made to build experience in 3D art. The scene brings together the Haven map, the agent Skye, and butterflies modeled for the composition, in a poster called Nature."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "Os quadros animados mostram as etapas da cena, modelagem, composição e correção de cor, feitas entre o Blender e o Photoshop até chegar ao pôster final.",
+      "textEn": "The animated frames show each stage of the scene, modeling, composition, and color correction, carried out between Blender and Photoshop through to the final poster."
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 32
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/skye/processo-modelagem.webp",
+          "alt": "Animação da modelagem da cena no Blender, da grade vazia à casa e à árvore"
+        },
+        {
+          "src": "assets/uploads/skye/processo-composicao.webp",
+          "alt": "Animação da composição da cena com a agente Skye sobre o telhado"
+        },
+        {
+          "src": "assets/uploads/skye/poster.webp",
+          "alt": "Pôster Nature, com a agente Skye sentada no telhado de uma casa do mapa Haven, entre árvores e borboletas"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "destaques",
+      "labelEn": "highlights",
+      "spacing": {
+        "marginTop": {
+          "desktop": 96,
+          "tablet": 72,
+          "mobile": 56
+        }
+      },
+      "textPt": "Recortes em close da mesma cena: a Skye, os detalhes da casa do Haven, a árvore e as borboletas que acendem o conjunto.",
+      "textEn": "Close-up crops of the same scene: Skye, the details of the Haven house, the tree, and the butterflies that light up the whole piece."
+    },
+    {
+      "type": "gallery",
+      "layout": "two",
+      "spacing": {
+        "marginTop": {
+          "desktop": 32
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/skye/destaque-skye.webp",
+          "alt": "Close da agente Skye com uma borboleta luminosa na mão"
+        },
+        {
+          "src": "assets/uploads/skye/destaque-casa.webp",
+          "alt": "Detalhe da fachada da casa do Haven com uma borboleta pousada"
+        },
+        {
+          "src": "assets/uploads/skye/destaque-arvore.webp",
+          "alt": "Telhado da casa sob os galhos da árvore, com borboletas ao fundo"
+        },
+        {
+          "src": "assets/uploads/skye/destaque-bota.webp",
+          "alt": "Bota da agente Skye apoiada no telhado iluminado"
+        }
+      ]
+    }
+  ]
+}

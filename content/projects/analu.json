@@ -1,0 +1,117 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
+  "slug": "analu",
+  "status": "published",
+  "client": "",
+  "year": 2025,
+  "category": "media kit",
+  "services": [
+    "Design editorial",
+    "Direção de arte"
+  ],
+  "seo": {
+    "title": "AnaLu · Pedro de Trindade",
+    "description": "Case: media kit da criadora de conteúdo de corrida AnaLu, com apresentação, público, marcas parceiras e formatos de entrega. Design por Pedro de Trindade."
+  },
+  "hero": {
+    "eyebrowPt": "media kit",
+    "eyebrowEn": "media kit",
+    "titlePt": "AnaLu",
+    "titleEn": "AnaLu",
+    "subtitlePt": "",
+    "subtitleEn": "",
+    "rolePt": "Direção de Arte & Design",
+    "roleEn": "Art Direction & Design",
+    "scopePt": "Media Kit de 8 Lâminas para Parcerias com Marcas",
+    "scopeEn": "8-Slide Media Kit for Brand Partnerships"
+  },
+  "cover": "assets/uploads/analu/capa.webp",
+  "coverMobile": "",
+  "caseCover": "assets/uploads/analu/slide-capa.webp",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "Media kit de Ana Luiza Rigue, a AnaLu, criadora de conteúdo sobre corrida. O material apresenta quem ela é e o que a move no esporte, e reúne os números das redes para marcas interessadas em parcerias.",
+      "textEn": "A media kit for Ana Luiza Rigue, known as AnaLu, a running content creator. It introduces who she is and what drives her in the sport, and gathers her social numbers for brands interested in partnerships."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "Oito lâminas em sequência, da apresentação aos formatos de entrega. A paleta terrosa e as fotos de treino e de prova dão o tom, e os dados de público ganham uma lâmina vertical própria, com o alcance do TikTok em destaque.",
+      "textEn": "Eight slides in sequence, from the introduction to delivery formats. An earthy palette and photos from training and races set the tone, and the audience data gets its own vertical slide, with TikTok reach front and center."
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 32
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/analu/slide-sobre.webp",
+          "alt": "Lâmina Sobre, com a apresentação da AnaLu ao lado de uma foto dela correndo"
+        },
+        {
+          "src": "assets/uploads/analu/slide-o-que-me-move.webp",
+          "alt": "Lâmina O que me move, com a AnaLu e a mãe"
+        }
+      ]
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "images": [
+        {
+          "src": "assets/uploads/analu/slide-redes-sociais.webp",
+          "alt": "Lâmina Redes sociais, com os perfis do Instagram e do TikTok"
+        },
+        {
+          "src": "assets/uploads/analu/slide-publico.webp",
+          "alt": "Lâmina vertical Público, com gênero, faixa etária e os números de alcance do TikTok"
+        }
+      ]
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "images": [
+        {
+          "src": "assets/uploads/analu/slide-portfolio.webp",
+          "alt": "Lâmina Portfólio e trabalhos realizados"
+        },
+        {
+          "src": "assets/uploads/analu/slide-marcas.webp",
+          "alt": "Lâmina Marcas que já trabalhei, com adidas, Caffeine Army, Olympikus, tfsports, Push&Pow, Mombora, Track&Field e Polar"
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/analu/slide-formatos.webp",
+      "alt": "Lâmina Formatos de entrega, com publipost, stories, reels, unboxing, eventos e projetos especiais",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
+      "spacing": {
+        "marginTop": {
+          "desktop": 96,
+          "tablet": 72,
+          "mobile": 56
+        }
+      },
+      "textPt": "Um material direto para negociar com marcas: quem ela é, os números de alcance, as marcas com que já trabalhou, como adidas, Olympikus e Polar, e os formatos de entrega disponíveis.",
+      "textEn": "A straightforward tool for brand negotiations: who she is, her reach, the brands she has worked with, such as adidas, Olympikus, and Polar, and the delivery formats available."
+    }
+  ]
+}

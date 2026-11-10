@@ -124,7 +124,79 @@
         "social media"
       ],
       "year": 2023,
-      "cover": "assets/uploads/dgzin/capa.webp",
+      "cover": "assets/uploads/dgzin/capa-cordao.webp",
+      "coverMobile": "",
+      "coverLight": false
+    },
+    {
+      "slug": "analu",
+      "visible": true,
+      "featured": false,
+      "cardSize": "normal",
+      "order": 6,
+      "titlePt": "AnaLu",
+      "titleEn": "AnaLu",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "media kit",
+      "tagsPt": [
+        "media kit",
+        "editorial"
+      ],
+      "tagsEn": [
+        "media kit",
+        "editorial"
+      ],
+      "year": 2025,
+      "cover": "assets/uploads/analu/capa.webp",
+      "coverMobile": "",
+      "coverLight": false
+    },
+    {
+      "slug": "social-media",
+      "visible": true,
+      "featured": false,
+      "cardSize": "normal",
+      "order": 7,
+      "titlePt": "Social media",
+      "titleEn": "Social media",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "social media",
+      "tagsPt": [
+        "social media",
+        "conteúdo"
+      ],
+      "tagsEn": [
+        "social media",
+        "content"
+      ],
+      "year": 2024,
+      "cover": "assets/uploads/social-media/capa.webp",
+      "coverMobile": "",
+      "coverLight": true
+    },
+    {
+      "slug": "skye",
+      "visible": true,
+      "featured": false,
+      "cardSize": "normal",
+      "order": 8,
+      "titlePt": "Skye",
+      "titleEn": "Skye",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "3d",
+      "tagsPt": [
+        "3d",
+        "estudo autoral"
+      ],
+      "tagsEn": [
+        "3d",
+        "personal study"
+      ],
+      "year": 2023,
+      "cover": "assets/uploads/skye/capa.webp",
       "coverMobile": "",
       "coverLight": false
     }

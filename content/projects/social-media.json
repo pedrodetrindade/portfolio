@@ -1,0 +1,484 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
+  "slug": "social-media",
+  "status": "published",
+  "client": "",
+  "year": 2024,
+  "category": "social media",
+  "services": [
+    "Direção de arte",
+    "Design gráfico"
+  ],
+  "seo": {
+    "title": "Social media · Pedro de Trindade",
+    "description": "Case: seleção de peças para redes sociais de doze clientes, do comércio e da gastronomia à saúde, ao direito e ao marketing. Direção de arte e design por Pedro de Trindade."
+  },
+  "hero": {
+    "eyebrowPt": "social media",
+    "eyebrowEn": "social media",
+    "titlePt": "Social media",
+    "titleEn": "Social media",
+    "subtitlePt": "",
+    "subtitleEn": "",
+    "rolePt": "Direção de Arte & Design",
+    "roleEn": "Art Direction & Design",
+    "scopePt": "Posts e Carrosséis para 12 Clientes",
+    "scopeEn": "Posts & Carousels for 12 Clients"
+  },
+  "cover": "assets/uploads/social-media/capa.webp",
+  "coverMobile": "",
+  "caseCover": "assets/uploads/social-media/capa-case.webp",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "Uma seleção de peças para redes sociais feitas para doze clientes de segmentos bem diferentes: comércio náutico, gastronomia, saúde, direito, materiais de construção e uma agência de marketing. Cada marca pede um tom próprio, e o trabalho foi encontrar esse tom sem perder clareza no feed.",
+      "textEn": "A selection of social media pieces made for twelve clients across very different fields: nautical retail, food, healthcare, law, building supplies, and a marketing agency. Each brand calls for its own tone, and the work was finding it without losing clarity in the feed."
+    },
+    {
+      "type": "text",
+      "labelPt": "Happy Boat",
+      "labelEn": "Happy Boat",
+      "textPt": "Loja especializada em venda náutica.",
+      "textEn": "A store specializing in boats and nautical sales.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/happy-boat-1.webp",
+          "alt": "Post de redes sociais para Happy Boat, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/happy-boat-2.webp",
+          "alt": "Post de redes sociais para Happy Boat, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/happy-boat-3.webp",
+          "alt": "Post de redes sociais para Happy Boat, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Cantos das Canoas",
+      "labelEn": "Cantos das Canoas",
+      "textPt": "Restaurante de frutos do mar em Angra dos Reis.",
+      "textEn": "A seafood restaurant in Angra dos Reis.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/cantos-das-canoas-1.webp",
+          "alt": "Post de redes sociais para Cantos das Canoas, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/cantos-das-canoas-2.webp",
+          "alt": "Post de redes sociais para Cantos das Canoas, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/cantos-das-canoas-3.webp",
+          "alt": "Post de redes sociais para Cantos das Canoas, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Marmitinha",
+      "labelEn": "Marmitinha",
+      "textPt": "Restaurante com foco em marmitas fitness.",
+      "textEn": "A restaurant focused on healthy meal boxes.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/marmitinha-1.webp",
+          "alt": "Post de redes sociais para Marmitinha, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/marmitinha-2.webp",
+          "alt": "Post de redes sociais para Marmitinha, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/marmitinha-3.webp",
+          "alt": "Post de redes sociais para Marmitinha, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Marcos Raftopolo",
+      "labelEn": "Marcos Raftopolo",
+      "textPt": "Advogado com foco no mercado imobiliário.",
+      "textEn": "A lawyer focused on the real estate market.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/marcos-raftopolo-1.webp",
+          "alt": "Post de redes sociais para Marcos Raftopolo, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/marcos-raftopolo-2.webp",
+          "alt": "Post de redes sociais para Marcos Raftopolo, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/marcos-raftopolo-3.webp",
+          "alt": "Post de redes sociais para Marcos Raftopolo, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Studioral",
+      "labelEn": "Studioral",
+      "textPt": "Clínica odontológica.",
+      "textEn": "A dental clinic.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/studioral-1.webp",
+          "alt": "Post de redes sociais para Studioral, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/studioral-2.webp",
+          "alt": "Post de redes sociais para Studioral, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/studioral-3.webp",
+          "alt": "Post de redes sociais para Studioral, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Cintia Varela",
+      "labelEn": "Cintia Varela",
+      "textPt": "Pediatra e psiquiatra.",
+      "textEn": "Pediatrician and psychiatrist.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/cintia-varela-1.webp",
+          "alt": "Post de redes sociais para Cintia Varela, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/cintia-varela-2.webp",
+          "alt": "Post de redes sociais para Cintia Varela, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/cintia-varela-3.webp",
+          "alt": "Post de redes sociais para Cintia Varela, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Felipe Sushimen",
+      "labelEn": "Felipe Sushimen",
+      "textPt": "Restaurante japonês.",
+      "textEn": "A Japanese restaurant.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/felipe-sushimen-1.webp",
+          "alt": "Post de redes sociais para Felipe Sushimen, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/felipe-sushimen-2.webp",
+          "alt": "Post de redes sociais para Felipe Sushimen, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/felipe-sushimen-3.webp",
+          "alt": "Post de redes sociais para Felipe Sushimen, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Clínica Nabila Tabet",
+      "labelEn": "Clínica Nabila Tabet",
+      "textPt": "Clínica de estética avançada.",
+      "textEn": "An advanced aesthetics clinic.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/nabila-tabet-1.webp",
+          "alt": "Post de redes sociais para Clínica Nabila Tabet, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/nabila-tabet-2.webp",
+          "alt": "Post de redes sociais para Clínica Nabila Tabet, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/nabila-tabet-3.webp",
+          "alt": "Post de redes sociais para Clínica Nabila Tabet, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Jéssica Correa",
+      "labelEn": "Jéssica Correa",
+      "textPt": "Psicóloga.",
+      "textEn": "Psychologist.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/jessica-correa-1.webp",
+          "alt": "Post de redes sociais para Jéssica Correa, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/jessica-correa-2.webp",
+          "alt": "Post de redes sociais para Jéssica Correa, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/jessica-correa-3.webp",
+          "alt": "Post de redes sociais para Jéssica Correa, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Ultramed e Cedimar",
+      "labelEn": "Ultramed and Cedimar",
+      "textPt": "Clínicas de imagem.",
+      "textEn": "Diagnostic imaging clinics.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/ultramed-cedimar-1.webp",
+          "alt": "Post de redes sociais para Ultramed e Cedimar, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/ultramed-cedimar-2.webp",
+          "alt": "Post de redes sociais para Ultramed e Cedimar, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/ultramed-cedimar-3.webp",
+          "alt": "Post de redes sociais para Ultramed e Cedimar, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Madeirão de Angra",
+      "labelEn": "Madeirão de Angra",
+      "textPt": "Tradicional loja de madeiras.",
+      "textEn": "A long-established timber store.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/madeirao-de-angra-1.webp",
+          "alt": "Post de redes sociais para Madeirão de Angra, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/madeirao-de-angra-2.webp",
+          "alt": "Post de redes sociais para Madeirão de Angra, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/madeirao-de-angra-3.webp",
+          "alt": "Post de redes sociais para Madeirão de Angra, 3 de 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "labelPt": "Click.co",
+      "labelEn": "Click.co",
+      "textPt": "Agência de marketing.",
+      "textEn": "A marketing agency.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 72,
+          "tablet": 56,
+          "mobile": 48
+        }
+      }
+    },
+    {
+      "type": "gallery",
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 24
+        }
+      },
+      "images": [
+        {
+          "src": "assets/uploads/social-media/click-co-1.webp",
+          "alt": "Post de redes sociais para Click.co, 1 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/click-co-2.webp",
+          "alt": "Post de redes sociais para Click.co, 2 de 3"
+        },
+        {
+          "src": "assets/uploads/social-media/click-co-3.webp",
+          "alt": "Post de redes sociais para Click.co, 3 de 3"
+        }
+      ]
+    }
+  ]
+}
