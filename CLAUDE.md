@@ -323,18 +323,21 @@ Registro premium, claro e estratégico. Evitar tom que soe gerado por IA.
 
 ## Estado atual
 
-Home e 4 páginas de case no ar em `pedrodetrindade.com` (GitHub Pages), com CMS
+Home e 7 cases no ar em `pedrodetrindade.com` (GitHub Pages), com CMS
 próprio publicado em `admin.pedrodetrindade.com` e formulário de contato
 enviando de verdade (ver seções acima). Favicon, Open Graph e a primeira
 camada de acessibilidade (skip link, foco visível, `aria-label` bilíngue,
 `inert` no fundo com overlay aberto) já estão no lugar.
 
-**Imagens de galeria dos cases ainda faltam** (`galeria-1.jpg`/`galeria-2.jpg`
-em `assets/projetos/case-0*/`, o `case-03` sem nenhuma). Sem o arquivo, o
-`onerror="this.remove()"` tira só a `<img>` e deixa o gradiente decorativo do
-`.scene`/`.thumb` visível — não quebra a página, não gera ícone de erro, mas
-também não mostra imagem nenhuma do trabalho ali. Capas (`cover` nos quatro
-projetos) já estão preenchidas.
+**Os cases são todos projetos reais, vindos do Behance (behance.net/trind9de).**
+Colégio Assertivo, trind9de, Karmine Corp e dgzin são os destaques da home
+(`featured`, no máximo 4); AnaLu, Social media e Skye aparecem só em `/work/`.
+Os slugs provisórios saíram e viraram redirecionamento: `case-02` para
+`trind9de`, `case-03` para `karmine-corp` e `case-04`, que repetia a imagem do
+Assertivo, para `/work/`. A navegação estática de cada página de case (anterior
+e próximo, dando a volta na lista) acompanha a ordem do índice; ao incluir,
+remover ou reordenar um projeto, regenere-a em todas as páginas, senão a
+reserva sem JS aponta para o vizinho antigo.
 
 O retrato do Sobre é um placeholder `.portrait`. O texto dos cases já é
 conteúdo real, gerenciado pelo CMS, não mais genérico.

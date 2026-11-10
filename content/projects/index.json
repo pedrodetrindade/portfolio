@@ -81,35 +81,11 @@
       "coverLight": false
     },
     {
-      "slug": "case-04",
-      "visible": true,
-      "featured": false,
-      "cardSize": "normal",
-      "order": 4,
-      "titlePt": "Identidade visual e campanha integrada",
-      "titleEn": "Visual identity and integrated campaign",
-      "subtitlePt": "",
-      "subtitleEn": "",
-      "category": "identidade",
-      "tagsPt": [
-        "identidade",
-        "sistema visual"
-      ],
-      "tagsEn": [
-        "identity",
-        "visual system"
-      ],
-      "year": 2024,
-      "cover": "assets/projetos/case-04/capa.jpg",
-      "coverMobile": "",
-      "coverLight": true
-    },
-    {
       "slug": "dgzin",
       "visible": true,
       "featured": true,
       "cardSize": "normal",
-      "order": 5,
+      "order": 4,
       "titlePt": "dgzin",
       "titleEn": "dgzin",
       "subtitlePt": "",
@@ -133,7 +109,7 @@
       "visible": true,
       "featured": false,
       "cardSize": "normal",
-      "order": 6,
+      "order": 5,
       "titlePt": "AnaLu",
       "titleEn": "AnaLu",
       "subtitlePt": "",
@@ -157,7 +133,7 @@
       "visible": true,
       "featured": false,
       "cardSize": "normal",
-      "order": 7,
+      "order": 6,
       "titlePt": "Social media",
       "titleEn": "Social media",
       "subtitlePt": "",
@@ -181,7 +157,7 @@
       "visible": true,
       "featured": false,
       "cardSize": "normal",
-      "order": 8,
+      "order": 7,
       "titlePt": "Skye",
       "titleEn": "Skye",
       "subtitlePt": "",
