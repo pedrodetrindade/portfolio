@@ -667,8 +667,15 @@ body.menu-open header .ctrl-group{opacity:0}
    massas marrons da capa antiga continuam visíveis acima, animando como
    antes. O resultado é o marrom de sempre, com as imagens passando por baixo. */
 .hero-slides::after{content:"";position:absolute;inset:0;z-index:3;
-  background:rgba(var(--ink-rgb),.78)}
-.liquid-bg.has-slides .lq{z-index:2}
+  background:rgba(var(--ink-rgb),.86)}
+/* massas a 60%: somadas à imagem, a 100% clareavam o fundo atrás do rótulo
+   pequeno (--accent) até 3,7:1; medido, este par garante 4,5:1 nas capas
+   mais claras */
+.liquid-bg.has-slides .lq{z-index:2;opacity:.6}
+/* Sem vinheta neste modo: sobre as imagens ela virava um halo escuro atrás
+   do nome. A legibilidade vem do véu uniforme acima, escuro o bastante em
+   toda a capa, e não de uma mancha no centro. */
+.liquid-bg.has-slides .lq-veil{display:none}
 .hero-slide{position:absolute;inset:0;overflow:hidden;opacity:0;
   transition:opacity var(--hero-slide-fade,450ms) linear}
 .hero-slide.is-ativo{opacity:1;z-index:2}
@@ -677,7 +684,7 @@ body.menu-open header .ctrl-group{opacity:0}
   transform-origin:50% 50%}
 /* capa clara (coverLight no índice): véu a mais, só nela */
 .hero-slide.is-clara::after{content:"";position:absolute;inset:0;
-  background:rgba(var(--ink-rgb),.18)}
+  background:rgba(var(--ink-rgb),.3)}
 .hero-slide.zoom-in img{animation:hero-zoom-in 2000ms linear forwards}
 .hero-slide.zoom-out img{animation:hero-zoom-out 2000ms linear forwards}
 @keyframes hero-zoom-in{from{transform:scale(1)}to{transform:scale(1.08)}}

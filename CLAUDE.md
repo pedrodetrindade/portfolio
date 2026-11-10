@@ -556,9 +556,14 @@ passo (não pela posição, para a volta ao início não repetir o sentido), a n
 entrando por cima da anterior para a troca não escurecer. Chave própria, e não
 um quinto valor de `videoMode`: o Worker só aceita os quatro modos e recusaria
 a home inteira. A configuração do Vimeo continua gravada e volta ao desligar.
-As capas são fundo, não destaque: véu de `--ink` a 78% por cima delas (mais
-18% nas `coverLight`) e as massas marrons do vidro líquido continuam visíveis
-acima, animando como antes (sem `has-video`, elas não saem). O ruído da capa é
+As capas são fundo, não destaque: véu de `--ink` a 86% por cima delas (mais
+30% nas `coverLight`) e as massas marrons do vidro líquido continuam visíveis
+acima a 60%, animando como antes (sem `has-video`, elas não saem). Neste modo
+não há vinheta (`.lq-veil`): sobre imagens ela virava um halo escuro atrás do
+nome. A legibilidade vem do fundo inteiro escuro, e foi medida nas capas mais
+claras: o rótulo pequeno em `--accent` ("Diretor de Arte...") fica em 4,6:1 no
+pior ponto; nome e frase acima de 11:1. Clarear véu ou massas derruba o rótulo
+abaixo de 4,5:1 primeiro. O ruído da capa é
 o mesmo `.cms-section-grain` do resto do site, ligado (sem
 `sections.hero.grainEnabled`): textura estática repetida, sem blend nem filtro. Fora da tela ou com a aba oculta o relógio não avança;
 sob movimento reduzido fica só a primeira capa, parada. `SLIDE_MS` e
