@@ -1913,8 +1913,10 @@
        dos projetos, então criar o array não muda nada no que aparece. */
     if (!Array.isArray(hero.slides)) hero.slides = [];
     document.getElementById('heroBody').innerHTML =
-      fieldRow('Palavra que vira o seu nome na intro', 'Ela se condensa no centro da tela e se derrete no seu nome, no efeito de morph. Em branco, a intro volta à revelação clássica. Até 24 caracteres. A prévia ao lado não repete a intro: confira no site.',
-        inp('hero_morph', hero.morphFrom, ' maxlength="24" placeholder="trind9de"')) +
+      fieldRow('Palavra que vira o seu nome na intro (PT)', 'Ela se condensa no centro da tela e se derrete no seu nome, no efeito de morph. Em branco, a intro volta à revelação clássica. Até 24 caracteres. A prévia ao lado não repete a intro: confira no site.',
+        inp('hero_morph', hero.morphFrom, ' maxlength="24" placeholder="Bem-vindo(a)"')) +
+      fieldRow('Palavra que vira o seu nome na intro (EN)', 'Em branco, a versão em inglês usa a palavra em português.',
+        inp('hero_morph_en', hero.morphFromEn, ' maxlength="24" placeholder="Welcome"')) +
       fieldRow('Cargo (PT)', 'Enter força uma nova linha.', ta('hero_tagpt', hero.tagPt)) +
       fieldRow('Cargo (EN)', 'Enter força uma nova linha.', ta('hero_tagen', hero.tagEn)) +
       fieldRow('Localização (PT)', 'Enter força uma nova linha.', ta('hero_locpt', hero.locationPt)) +
@@ -1987,7 +1989,8 @@
       ['hero_nhlpt', function (v) { hero.nextHintLabelPt = v; }], ['hero_nhlen', function (v) { hero.nextHintLabelEn = v; }],
       ['hero_nhnpt', function (v) { hero.nextHintNamePt = v; }], ['hero_nhnen', function (v) { hero.nextHintNameEn = v; }],
       ['hero_bgvideo', function (v) { hero.backgroundVideo = v; }], ['hero_bgposter', function (v) { hero.backgroundVideoPoster = v; }],
-      ['hero_morph', function (v) { hero.morphFrom = v; }]
+      ['hero_morph', function (v) { hero.morphFrom = v; }],
+      ['hero_morph_en', function (v) { hero.morphFromEn = v; }]
     ].concat(hero.slides.map(function (s, i) {
       return ['hero_slide' + i, function (v) { hero.slides[i] = v; }];
     })), touch);

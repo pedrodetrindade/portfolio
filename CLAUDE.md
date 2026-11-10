@@ -424,7 +424,8 @@ só no total muda o ritmo interno, não a duração.
 
 **A etapa 1 da intro pode ser um morph** (Magic UI, morphing-text). Com
 `hero.morphFrom` preenchido (campo "Palavra que vira o seu nome na intro",
-hoje "trind9de", a marca dele), a palavra se condensa no centro, segura e se
+hoje "Bem-vindo(a)", com `hero.morphFromEn` "Welcome" para o inglês; inglês
+vazio cai no português; já foi "trind9de"), a palavra se condensa no centro, segura e se
 derrete no nome: 420ms de entrada, 300 de pausa e 1080 de fusão. A etapa 2 fica
 idêntica, e os secundários entram no mesmo ponto dela (`revelacao + 1350`), não
 num tempo absoluto. Vazio ou ausente devolve a intro clássica intacta. O efeito
@@ -523,17 +524,23 @@ do site", e o JS remove a variável em vez de escrever um valor — cuidado com
 repetida no painel e no Worker de propósito: o painel é conveniência, quem
 decide é o Worker.
 
-**O currículo do Sobre é um botão com duas opções, PT e EN, com bandeira.**
+**As ações do Sobre têm três níveis, um por decisão.** "Vamos conversar" é a
+principal: cheia (`.cta-solid`), no material do botão Contato do header, que
+faz a mesma coisa, e vem primeiro. LinkedIn é secundário: contorno, mesma
+altura. O currículo é terciário: uma linha de links discretos embaixo
+(`flex-basis:100%`), com a pílula de hover do breadcrumb. Antes eram três caixas
+de pesos parecidos e alturas diferentes (LinkedIn e conversa igualmente
+destacados, currículo num grupo de bordas próprio) e Pedro achou que não
+conversavam entre si. No celular os dois botões ocupam a linha inteira,
+empilhados. O ícone do botão cheio precisa de especificidade maior que a regra
+de `.cta-primary svg`, que o pinta de `--cream` e o apagava no branco.
 `about.resumeFile` é o PDF em português e `about.resumeFileEn` o em inglês,
 ambos enviáveis pelo painel. O grupo aparece quando existe ao menos um dos dois
 (e `showResume` não é `false`); a opção sem arquivo continua visível, apagada e
 marcada "em breve", sem `href`, para nunca virar link para 404. As bandeiras
 são o mesmo SVG do seletor de idioma (`[data-flag]`, desenhado pelo `main.js`).
-No celular o rótulo sobe para uma linha própria e as opções dividem a de baixo.
 Cada opção abre o PDF em nova aba (`target="_blank"`), sem `download` e sem
-seta, para o portfólio não ser substituído pelo arquivo. A ordem das ações do
-Sobre é LinkedIn, "Vamos conversar" (com o envelope do Contato do header no
-lugar da seta) e currículo.
+seta, para o portfólio não ser substituído pelo arquivo.
 
 **Quem monta um elemento é quem precisa ler o dado do CMS.** `content-render.js`
 carrega antes de `js/main.js`, e é o `main.js` que injeta o `.next-hint`, o
@@ -757,8 +764,9 @@ de 640px (no celular a foto fica no meio do texto). O original é 3D com
 three.js e física; aqui é 2,5D sem biblioteca. Visual de crachá como na
 referência: cartão claro (`--paper`, é um objeto, não uma seção), fenda e
 presilha metálica no alto, foto quadrada encaixada, nome e cargo embaixo;
-verso no mesmo material com a marca. Cordão em SVG saindo da linha do topo da
-seção, com "trind9de" em mono.
+verso no mesmo material com o nome grande, cargo e cidade. Cordão em SVG
+saindo da linha do topo da seção, com o nome em mono. Sem "trind9de" em lugar
+nenhum do crachá, a pedido.
 Calmo, a pedido (a primeira versão balançava demais): a presilha volta por
 uma mola amortecida no crítico (`W_CASA` 6, ~0,8s sem passar do ponto); com a
 ponta solta na corda, o cordão virava pêndulo e devolvia 30 a 70px de

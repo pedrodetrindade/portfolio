@@ -57,21 +57,22 @@
     const pe = document.createElement('div');
     pe.className = 'cf-pe';
     pe.setAttribute('aria-hidden', 'true');
+    /* sem a marca trind9de em lugar nenhum do crachá, a pedido: o nome é a
+       identidade aqui, na frente, no verso e no cordão */
     pe.innerHTML =
       '<span class="cf-id">' +
         '<span class="cf-nome">Pedro de Trindade</span>' +
         linha('cf-cargo', 'Diretor de Arte &amp; Designer Sênior', 'Art Director &amp; Senior Designer') +
-      '</span>' +
-      '<span class="cf-marca">trind9de</span>';
+      '</span>';
     const verso = document.createElement('div');
     verso.className = 'cracha-face cracha-verso';
     verso.setAttribute('aria-hidden', 'true');
     verso.innerHTML =
       '<span class="cf-furo" aria-hidden="true"></span>' +
-      '<span class="cv-marca">trind9de</span>' +
+      '<span class="cv-marca">Pedro de Trindade</span>' +
       '<span class="cv-grade"></span>' +
       '<span class="cv-pe">' +
-        '<span class="cv-nome">Pedro de Trindade</span>' +
+        linha('cv-nome', 'Diretor de Arte &amp; Designer Sênior', 'Art Director &amp; Senior Designer') +
         linha('cv-local', 'Rio de Janeiro, Brasil', 'Rio de Janeiro, Brazil') +
       '</span>';
     retrato.parentNode.insertBefore(cartao, retrato);
@@ -92,7 +93,7 @@
     const tp = document.createElementNS(NS, 'textPath');
     tp.setAttribute('href', '#cracha-trilho');
     tp.setAttribute('startOffset', '6');
-    tp.textContent = 'trind9de · trind9de · trind9de · trind9de · trind9de · trind9de';
+    tp.textContent = 'Pedro de Trindade · Pedro de Trindade · Pedro de Trindade · Pedro de Trindade';
     texto.appendChild(tp);
     svg.append(fita, trilho, texto);
     figura.insertBefore(svg, figura.firstChild);

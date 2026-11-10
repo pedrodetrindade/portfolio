@@ -986,8 +986,14 @@
      window.__CMS_HOME__ antes deste arquivo rodar. */
   const heroName = document.querySelector('.hero-name');
   const cmsHero = (window.__CMS_HOME__ && window.__CMS_HOME__.hero) || {};
-  const palavraMorph = typeof cmsHero.morphFrom === 'string'
-    ? cmsHero.morphFrom.replace(/\s+/g, ' ').trim().slice(0, 24) : '';
+  /* Bilíngue: morphFrom é o português e morphFromEn o inglês; o idioma já
+     foi decidido por setLang, que roda antes deste ponto. Inglês ausente cai
+     no português, para a intro nunca ficar sem palavra só por um campo. */
+  const emIngles = (document.documentElement.lang || 'pt').indexOf('en') === 0;
+  const palavraBruta = emIngles && typeof cmsHero.morphFromEn === 'string' && cmsHero.morphFromEn.trim()
+    ? cmsHero.morphFromEn : cmsHero.morphFrom;
+  const palavraMorph = typeof palavraBruta === 'string'
+    ? palavraBruta.replace(/\s+/g, ' ').trim().slice(0, 24) : '';
   const comMorph = !!(heroName && palavraMorph && !reduced);
   const MORPH = { entrada: 420, pausa: 300, fusao: 1080 };   // 1800ms
   const INTRO = {

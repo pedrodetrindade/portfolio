@@ -32,7 +32,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=169">
+<link rel="stylesheet" href="css/style.css?v=171">
 <link rel="canonical" href="https://pedrodetrindade.com/">
 </head>
 <body>
@@ -264,13 +264,17 @@
                  (about.resumeFile em PT, about.resumeFileEn em EN) e o botão
                  não foi desligado (about.showResume). A opção sem arquivo
                  fica visível como "em breve", sem link. -->
+            <!-- Três pesos, uma decisão por nível: a conversa é a ação principal
+                 (cheia, igual ao Contato do header, que faz a mesma coisa), o
+                 LinkedIn é secundário (contorno, mesma altura) e o currículo é
+                 uma linha de links discretos embaixo. -->
             <div class="about-actions reveal">
-              <a class="ghost-cta linkedin cta-primary" href="https://www.linkedin.com/in/pedrodetrindade"
+              <button class="ghost-cta cta-primary cta-solid" data-contact><span class="cta-blur-label" data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.7" y="5" width="18.6" height="14" rx="3.2"/><path d="M3.5 7.7l7.1 5a2.4 2.4 0 0 0 2.8 0l7.1-5"/></svg></button>
+              <a class="ghost-cta linkedin" href="https://www.linkedin.com/in/pedrodetrindade"
                  target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.65h.05c.53-.95 1.83-1.95 3.76-1.95C21.4 8.7 22 11 22 14.1V21h-4v-6.1c0-1.45-.03-3.32-2.05-3.32-2.05 0-2.37 1.58-2.37 3.21V21h-4z"/></svg>
                 <span class="cta-blur-label">LinkedIn</span>
               </a>
-              <button class="ghost-cta cta-primary" data-contact><span class="cta-blur-label" data-pt="Vamos conversar" data-en="Let's talk">Vamos conversar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.7" y="5" width="18.6" height="14" rx="3.2"/><path d="M3.5 7.7l7.1 5a2.4 2.4 0 0 0 2.8 0l7.1-5"/></svg></button>
               <div class="cta-resume" data-resume-group role="group" hidden
                    data-pt-label="Baixar currículo" data-en-label="Download CV" aria-label="Baixar currículo">
                 <span class="cta-resume-label" data-pt="Baixar currículo" data-en="Download CV">Baixar currículo</span>
@@ -540,7 +544,7 @@
 <!-- Fase B do CMS: reconstrói texto e listas a partir do JSON, agora que o
      HTML da página já existe. Precisa vir antes de main.js, que é quem lê
      data-pt/data-en para decidir o idioma exibido. -->
-<script src="js/content-render.js?v=61"></script>
-<script src="js/main.js?v=119"></script>
+<script src="js/content-render.js?v=62"></script>
+<script src="js/main.js?v=120"></script>
 </body>
 </html>

@@ -489,8 +489,10 @@ function validarVideoDaCapa(hero) {
   /* Palavra que vira o nome na intro. Entra no site por textContent, então
      marcação não é o risco: o teto existe porque o nome é uma linha só e uma
      frase longa passaria das bordas da tela durante o morph. */
-  if (hero.morphFrom !== undefined &&
-      (typeof hero.morphFrom !== 'string' || hero.morphFrom.trim().length > MAX_PALAVRA_DO_MORPH)) {
+  var palavraRuim = function (v) {
+    return v !== undefined && (typeof v !== 'string' || v.trim().length > MAX_PALAVRA_DO_MORPH);
+  };
+  if (palavraRuim(hero.morphFrom) || palavraRuim(hero.morphFromEn)) {
     return {
       status: 422,
       corpo: {

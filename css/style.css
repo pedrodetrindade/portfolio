@@ -1274,14 +1274,14 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .cf-id{display:flex;flex-direction:column;gap:.3rem;min-width:0}
 .cf-nome{font-size:1.05rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink);line-height:1.1}
 .cf-cargo{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--ink-3)}
-.cf-marca{font-size:.82rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink-3);flex:none}
 .cracha-verso{position:absolute;inset:0;transform:rotateY(180deg);display:flex;flex-direction:column}
-.cv-marca{font-size:clamp(1.8rem,2.8vw,2.5rem);font-weight:var(--w-medium);letter-spacing:-.045em;
-  color:var(--ink);padding-inline:4px}
+/* verso: o nome grande no alto (a marca trind9de saiu do crachá, a pedido) */
+.cv-marca{font-size:clamp(1.6rem,2.4vw,2.2rem);font-weight:var(--w-medium);letter-spacing:-.04em;
+  line-height:1.02;text-wrap:balance;color:var(--ink);padding-inline:4px}
 .cv-grade{flex:1;margin-block:12px;border-radius:10px;
   background:radial-gradient(rgba(var(--ink-rgb),.28) .8px,transparent 1px) 0 0/7px 7px}
 .cv-pe{display:flex;flex-direction:column;gap:.3rem;padding-inline:4px}
-.cv-nome{font-size:1.05rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink)}
+.cv-nome{font-size:.92rem;font-weight:var(--w-medium);letter-spacing:-.015em;color:var(--ink)}
 .cv-local{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--ink-3)}
 /* presilha: a peça metálica onde o cordão prende, entrando pela fenda */
 .cracha-presilha{position:absolute;left:50%;top:-16px;width:24px;height:30px;margin-left:-12px;z-index:3;
@@ -1341,13 +1341,22 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .ghost-cta:hover{transform:translateY(-2px);border-color:var(--accent);background:rgba(var(--paper-rgb),.05)}
 .ghost-cta:hover::after{transform:translateX(4px)}
 
-/* Ações do Sobre em dois pesos. Nenhuma cor nova e nenhum botão chapado:
-   a hierarquia sai só de contraste de borda e de texto, como no resto do
-   site. .cta-primary é o destaque, usado por LinkedIn e "Vamos conversar"
-   (o LinkedIn já foi .cta-quiet, apagado, e subiu a pedido); .cta-resume é
-   o currículo, secundário. Com .cta-primary o ícone do LinkedIn herda o
-   mesmo tratamento do envelope: --cream em repouso, --paper no hover. */
+/* Ações do Sobre em três níveis, um por decisão (antes eram três caixas de
+   pesos parecidos e alturas diferentes, que não conversavam entre si):
+   - "Vamos conversar" é a ação principal: cheia (.cta-solid), no mesmo
+     material do botão Contato do header, que faz exatamente a mesma coisa.
+     Mesma ação, mesmo visual, em qualquer lugar do site. Vem primeiro.
+   - LinkedIn é secundário: contorno, mesma altura e mesmo raio.
+   - O currículo é terciário: uma linha de links discretos embaixo, com a
+     pílula de hover do breadcrumb (.cta-resume, mais abaixo).
+   .cta-primary segue servindo ao "Ver todos os trabalhos", com o destaque
+   por borda de sempre. */
 .ghost-cta.cta-primary{border-color:var(--accent);background:rgba(var(--paper-rgb),.06)}
+.ghost-cta.cta-solid{background:var(--paper);border-color:var(--paper);color:var(--ink)}
+.ghost-cta.cta-solid:hover{background:var(--cream);border-color:var(--cream)}
+/* .cta-primary pinta o ícone de --cream mais abaixo no arquivo; aqui a
+   especificidade é maior de propósito, senão o envelope some no branco */
+.ghost-cta.cta-primary.cta-solid svg,.ghost-cta.cta-primary.cta-solid:hover svg{color:var(--ink)}
 .ghost-cta.cta-primary:hover{background:rgba(var(--paper-rgb),.1)}
 /* "Vamos conversar" abre o painel de contato: no lugar da seta, o mesmo
    envelope do botão Contato do header */
@@ -1360,34 +1369,33 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    escondido o painel do CMS atrás da tela de "Sem acesso". */
 .ghost-cta[hidden]{display:none}
 
-/* Currículo em dois idiomas: um único botão secundário, com o rótulo e uma
-   opção por idioma, cada uma com a bandeira do seletor de idioma do header.
-   Mesmo peso do botão de currículo de antes (borda --line-strong, texto
-   --paper); a divisão entre partes é hairline. A opção sem arquivo continua
-   visível, apagada e marcada "em breve", em vez de virar link quebrado. */
-.cta-resume{display:inline-flex;align-items:stretch;max-width:100%;
-  font-family:var(--font);font-size:.92rem;font-weight:var(--w-medium);color:var(--paper);
-  border:1px solid var(--line-strong);border-radius:var(--radius-button,12px);overflow:hidden}
+/* Currículo em dois idiomas, no nível terciário: uma linha própria abaixo
+   dos dois botões (flex-basis 100% dentro do .about-actions), sem caixa.
+   Rótulo em mono apagado e uma opção por idioma com a bandeira do seletor
+   de idioma do header; no hover, a mesma pílula suave do breadcrumb. A
+   opção sem arquivo continua visível, apagada e marcada "em breve", em vez
+   de virar link quebrado. O alinhamento à esquerda acompanha os botões: a
+   primeira pílula compensa o próprio respiro com margem negativa. */
+.cta-resume{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:.15rem .25rem;
+  margin-top:.1rem;font-family:var(--font);font-size:.86rem;font-weight:var(--w-medium)}
 .cta-resume[hidden]{display:none}
-.cta-resume-label{display:flex;align-items:center;padding:.85rem 1.1rem .85rem 1.4rem}
-.cta-resume-opt{display:inline-flex;align-items:center;gap:.5em;padding:.85rem 1.1rem;
-  border-left:1px solid var(--line);color:var(--paper);
+.cta-resume-label{font-family:var(--mono);font-size:.72rem;font-weight:var(--w-regular);
+  letter-spacing:.02em;color:var(--muted-2);margin-right:.35rem}
+.cta-resume-opt{display:inline-flex;align-items:center;gap:.45em;padding:.42rem .66rem;border-radius:999px;
+  color:var(--muted);
   transition:background-color var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft)}
-.cta-resume-opt:hover{background:rgba(var(--paper-rgb),.05)}
-.cta-resume-opt .lp-flag{width:15px;height:15px;box-shadow:0 0 0 1px var(--line)}
+.cta-resume-opt:hover{color:var(--paper);background:rgba(var(--paper-rgb),.07)}
+.cta-resume-opt .lp-flag{width:14px;height:14px;box-shadow:0 0 0 1px var(--line)}
 .cta-resume-code{letter-spacing:.02em}
 .cta-resume-soon{display:none;font-size:.72rem;font-weight:var(--w-regular);color:var(--muted-2)}
 .cta-resume-opt.is-soon{color:var(--muted-2);cursor:default}
 .cta-resume-opt.is-soon:hover{background:transparent}
 .cta-resume-opt.is-soon .lp-flag{opacity:.5}
 .cta-resume-opt.is-soon .cta-resume-soon{display:inline}
-/* no celular o rótulo sobe para uma linha própria e as opções dividem a de
-   baixo, em vez de estourar a largura da tela */
+/* no celular os dois botões não cabem lado a lado: em vez de um quebrar
+   sozinho com largura própria, os dois ocupam a linha inteira, empilhados */
 @media(max-width:479px){
-  .cta-resume{flex-wrap:wrap;width:100%}
-  .cta-resume-label{flex:1 0 100%;justify-content:center;border-bottom:1px solid var(--line);padding:.8rem 1rem}
-  .cta-resume-opt{flex:1 1 0;justify-content:center;padding:.8rem .9rem}
-  .cta-resume-opt:first-of-type{border-left:0}
+  .about-actions .ghost-cta{flex:1 1 100%;justify-content:center}
 }
 
 /* ===== O QUE EU FAÇO =====
