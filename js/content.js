@@ -373,12 +373,12 @@
       });
     });
 
-    /* Botão "ver todos os trabalhos": tamanho e respiro próprios.
-       Fica aqui e não em applyGlobalTokens porque o dado é da Home
-       (home.work), e é este mesmo caminho que a prévia do painel reexecuta.
+    /* O botão "ver todos os trabalhos" tinha tamanho e respiro próprios
+       (work.ctaScale, ctaSpacingTop, ctaSpacingBottom). Saíram quando ele
+       virou um botão comum no alto da seção; o Worker ainda valida os três
+       se um rascunho antigo os trouxer, mas o site não os lê mais.
        Campo ausente remove a variável em vez de escrever um valor: assim o
        CSS volta ao próprio fallback, e uma prévia antiga não fica presa. */
-    var w = (home && home.work) || {};
     /* clampNum(null) devolveria 0, porque Number(null) é 0 — e 0 clampado no
        mínimo viraria um valor real. Aqui campo ausente ou null precisa
        significar "sem override", então o == null vem antes. */
@@ -387,9 +387,6 @@
       if (n === null) { root2.removeProperty(nome); return; }
       root2.setProperty(nome, (divisor ? n / divisor : n) + sufixo);
     }
-    ctaVar('--work-cta-scale', w.ctaScale, 80, 160, '', 100);
-    ctaVar('--work-cta-space-top', w.ctaSpacingTop, 0, 200, 'px');
-    ctaVar('--work-cta-space-bottom', w.ctaSpacingBottom, 0, 200, 'px');
 
     /* Descida da frase de impacto da capa. Mesmo tratamento de ausência: sem o
        campo a variável sai e o CSS volta a 0px por conta própria.

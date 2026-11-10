@@ -128,6 +128,8 @@ mas voltou atrás: as duas destoavam do resto do site, que é todo `--ink` plano
 lugar. Se um pedido futuro for "o mesmo fundo em outra seção", primeiro
 confirme se é o vidro líquido animado que devem querer, ou o plano que já é
 o padrão do site — da última vez era o segundo.
+Exceção pedida depois, com todas as letras: o **Sobre tem fundo próprio**
+(ver "O Sobre tem tom e névoa próprios", mais abaixo). Não é vidro líquido.
 
 **Fundo fora da tela não anima.** O laço de scroll marca `.parado` no
 `.liquid-bg` quando ele está a mais de uma tela de distância, e o CSS aplica
@@ -521,13 +523,42 @@ inalcançável. `.menu-list` e `.cform` já têm `overflow-y:auto`; qualquer
 painel novo precisa do mesmo. Foi o que escondia o e-mail e o botão de copiar
 do formulário em notebook (768px de altura), e só aparecia com zoom em 80%.
 
-**O botão "ver todos os trabalhos" é configurável pelo CMS**
-(`content/home.json > work`): `ctaScale` 80-160%, `ctaSpacingTop` e
-`ctaSpacingBottom` 0-200px. Campo ausente ou `null` significa "usar o padrão
-do site", e o JS remove a variável em vez de escrever um valor — cuidado com
-`clampNum(null)`, que devolveria 0 porque `Number(null)` é 0. A faixa é
-repetida no painel e no Worker de propósito: o painel é conveniência, quem
-decide é o Worker.
+**O botão "ver todos os trabalhos" é um `.ghost-cta` comum no alto de
+`#work`, à direita do título** (`.wi-all`, grid de `.work-intro`), centrado
+na primeira linha do título: metade da linha menos metade do botão. Abaixo de
+860px ele desce para depois dos dois textos, antes da grade. A entrada
+(`.reveal`) fica no invólucro, como em `.about-actions`: no próprio `<a>`, o
+`transform:none` do `.reveal.in` anularia o hover. Antes era um pill grande,
+centrado no pé da seção, com tamanho e respiros pelo painel (`ctaScale`,
+`ctaSpacingTop`, `ctaSpacingBottom`) e um "mais" que girava; Pedro pediu algo
+mais normal. Os três campos saíram do `home.json`, do painel e do
+`content.js`; o Worker ainda os valida se um rascunho antigo os trouxer.
+Cuidado com `clampNum(null)` em campos assim, que devolveria 0 porque
+`Number(null)` é 0: ausente ou `null` precisa remover a variável.
+
+**O Sobre tem tom e névoa próprios, e nenhuma linha.** Pedido de Pedro: cor
+levemente diferente de Trabalhos, dither suave e passagem suave entre as duas.
+- O tom (`.about-fundo`) é `--ink-2` a 50% sobre o que já existe, não cor
+  opaca: o `.glow` fixo continua passando por baixo. Medido a 1920: Trabalhos
+  rgb(23,20,20), Sobre rgb(33,27,28). A cor do painel (`--about-section-bg`)
+  manda quando existe.
+- As divisórias saíram pelo próprio interruptor do painel
+  (`sections.about.showDividers:false`), e tom e pontos se dissolvem por
+  máscara nas bordas. A curva do tom é desenhada em stops, entrada e saída
+  lentas; medida, a luminância sobe de 20,6 a 28,3 em ~200px sem degrau.
+- A névoa é o `js/dither-field.js` com `{padrao:'nevoa', borracha:false}`
+  (manchas lentas no lugar das ondas; o crachá já é a interação da seção),
+  montada pelo `content-render` depois do `load`, quando o navegador fica
+  ocioso. O host `[data-sobre-dither]` está no HTML para o `medirFundos` já
+  medi-lo; `.parado` pausa o laço.
+- Tom e pontos são camadas separadas (`.about-fundo` e `.about-pontos`): dentro
+  da máscara do tom, os pontos do respiro de cima sumiriam junto com ele.
+- **A névoa nunca passa por trás do texto.** Com 22% ou 12% de pontos ali, o
+  "Capacidades" (`--muted-2`, mono pequeno) caía a 4,27:1 e 4,48:1 no
+  percentil 98 do fundo. A partir de 640px os pontos ficam do lado do retrato
+  e se apagam antes da coluna de texto (que começa em 51% da largura a partir
+  de 900px e em 43% no tablet, medido); no celular, só nos respiros de cima e
+  de baixo. Mexeu no grid do Sobre, remeça e mova os stops da máscara.
 
 **As ações do Sobre são três botões na mesma linha e na mesma altura.**
 "Vamos conversar" é a principal: cheia (`.cta-solid`), no material do botão
@@ -712,7 +743,10 @@ versão é a constante `DITHER_V` lá dentro. Ao editar `dither-field.js`, suba
   quadro do laço: gravado no laço, uma máquina que desenha poucos quadros
   pegava só um ou dois pontos e a borracha quase não aparecia.
 - Pausa fora de alcance pelo `.parado` do `main.js` (`medirFundos` inclui
-  `[data-footer-dither]`), não por IntersectionObserver. Sob movimento reduzido
+  `[data-footer-dither]` e `[data-sobre-dither]`), não por IntersectionObserver.
+- O mesmo arquivo desenha a névoa do Sobre: `montar(host, opcoes)` aceita
+  `padrao` ('ondas' por padrão, ou 'nevoa') e `borracha` (true por padrão).
+  O rodapé chama sem opções e não muda. Sob movimento reduzido
   desenha um quadro e para. Sem WebGL2, o CSS desenha uma grade parada.
 - Com rodapé dither, o `.edge-blur` vai a 0 na última altura dele de rolagem: no
   fim não há mais nada para dissolver, e ele borrava os pontos do horizonte, que

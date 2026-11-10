@@ -7,7 +7,7 @@
      aplica cor, borda, arredondamento e espaçamento antes de qualquer
      pintura. Precisa vir antes do <link rel="stylesheet">, para o navegador
      nunca chegar a pintar com o token antigo. Ver js/content.js. -->
-<script src="js/content.js?v=25"></script>
+<script src="js/content.js?v=26"></script>
 <title>Pedro de Trindade · Direção de Arte e Design Sênior</title>
 <meta name="description" content="Pedro de Trindade, diretor de arte e designer sênior. Direção criativa, branding, identidade visual, campanhas e estratégia de marca para fintech, ativos digitais e negócios B2B e B2C.">
 
@@ -32,7 +32,7 @@
 <meta name="twitter:image" content="https://pedrodetrindade.com/assets/og-image.png">
 
 <link rel="preload" href="assets/fonts/Switzer-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=174">
+<link rel="stylesheet" href="css/style.css?v=175">
 <link rel="canonical" href="https://pedrodetrindade.com/">
 </head>
 <body>
@@ -138,6 +138,9 @@
          então a primeira linha de projetos. -->
     <div class="work-intro">
       <h2 class="wi-title reveal" data-reveal="words" data-pt="Uma seleção de trabalhos construídos entre direção de arte, identidade e estratégia." data-en="A selection of work shaped across art direction, identity, and strategy.">Uma seleção de trabalhos construídos entre direção de arte, identidade e estratégia.</h2>
+      <!-- Botão comum, no alto à direita, na altura da primeira linha do
+           título. No celular ele desce para depois do texto (CSS). -->
+      <div class="wi-all reveal"><a class="ghost-cta" href="work/" data-pt="Ver todos os trabalhos" data-en="View all work">Ver todos os trabalhos</a></div>
       <div class="wi-foot">
         <p class="wi-context reveal" data-reveal="soft" data-pt="Projetos desenvolvidos para marcas, produtos e negócios em diferentes momentos, do posicionamento à execução." data-en="Projects developed for brands, products, and businesses at different stages, from positioning to execution.">Projetos desenvolvidos para marcas, produtos e negócios em diferentes momentos, do posicionamento à execução.</p>
         <p class="wi-aside reveal" data-pt="Explore projetos de branding, campanhas, experiências digitais e comunicação." data-en="Explore branding, campaigns, digital experiences, and communication projects.">Explore projetos de branding, campanhas, experiências digitais e comunicação.</p>
@@ -203,14 +206,17 @@
       </a>
 
     </div>
-    <div class="work-all-cta reveal">
-      <a class="ghost-cta cta-primary" href="work/"><span class="cta-blur-label" data-pt="Ver todos os trabalhos" data-en="View all work">Ver todos os trabalhos</span></a>
-    </div>
   </section>
 
   <!-- ===== SOBRE: retrato à esquerda, texto e capacidades à direita ===== -->
   <section id="about">
     <div class="about-break">
+      <!-- Fundo próprio do Sobre: um tom um pouco mais quente que Trabalhos e
+           uma névoa de pontos (js/dither-field.js), as duas dissolvidas nas
+           bordas de cima e de baixo. Fica no HTML, e não montado pelo JS,
+           para o laço de rolagem do main.js já encontrá-lo ao medir. -->
+      <div class="about-fundo" aria-hidden="true"></div>
+      <div class="about-pontos" aria-hidden="true"><div class="about-dither" data-sobre-dither></div></div>
       <div class="about-inner">
         <div class="about-grid">
 
@@ -551,7 +557,7 @@
 <!-- Fase B do CMS: reconstrói texto e listas a partir do JSON, agora que o
      HTML da página já existe. Precisa vir antes de main.js, que é quem lê
      data-pt/data-en para decidir o idioma exibido. -->
-<script src="js/content-render.js?v=64"></script>
-<script src="js/main.js?v=123"></script>
+<script src="js/content-render.js?v=65"></script>
+<script src="js/main.js?v=124"></script>
 </body>
 </html>

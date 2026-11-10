@@ -1,4 +1,6 @@
-/* ===== DITHER NO FUNDO DO RODAPÉ =====
+/* ===== DITHER NO FUNDO DO RODAPÉ (e do Sobre) =====
+   O mesmo motor serve ao fundo do Sobre, com montar(host, {padrao:'nevoa',
+   borracha:false}): manchas lentas no lugar das ondas e sem cursor.
    Porte sem framework do dither-field do Magic UI (footer.background.type
    'dither'). Duas passagens em WebGL2: um campo de luz é desenhado pequeno
    numa textura com mipmap, e a segunda passagem lê esse campo com um brilho
@@ -39,6 +41,7 @@ precision highp float;
 uniform vec2 uSize;
 uniform vec2 uView;
 uniform float uTime;
+uniform float uPadrao;
 out vec4 outColor;
 
 float hash(vec2 p) {
@@ -88,9 +91,21 @@ float pattern(vec2 p, vec2 size, float t) {
   float peso = base * topo;
   return (crest + 0.12 * warp) * peso;
 }
+float nevoa(vec2 p, float t) {
+  // Névoa do Sobre: manchas que se formam e se desfazem devagar, sem direção
+  // marcada, ao contrário das cristas do rodapé. Duas camadas de ruído
+  // derivando em sentidos diferentes deformam uma terceira. Onde os pontos
+  // pesam (do lado do retrato) e onde quase somem (atrás do texto) é decisão
+  // do CSS, por máscara, que acompanha o layout em cada largura.
+  vec2 q = p / 40.0;
+  vec2 d = vec2(fbm(q * 0.11 + vec2(t * 0.03, t * 0.012)),
+                fbm(q * 0.11 + vec2(5.2, 1.3) - vec2(t * 0.018, t * 0.025)));
+  float n = fbm(q * 0.16 + d * 1.6 + vec2(-t * 0.01, t * 0.008));
+  return smoothstep(0.36, 0.8, n);
+}
 void main() {
   vec2 p = gl_FragCoord.xy / uView * uSize;
-  float v = pattern(p, uSize, uTime);
+  float v = uPadrao > 0.5 ? nevoa(p, uTime) : pattern(p, uSize, uTime);
   outColor = vec4(clamp(v, 0.0, 1.0), 0.0, 0.0, 1.0);
 }`;
 
@@ -222,6 +237,10 @@ void main() {
         gl.useProgram(dither);
         gl.uniform1f(em(dither, 'uIntensity'), v);
       },
+      padrao(nome) {
+        gl.useProgram(campo);
+        gl.uniform1f(em(campo, 'uPadrao'), nome === 'nevoa' ? 1 : 0);
+      },
       desenhar(tempo, rastro) {
         gl.useProgram(campo);
         gl.uniform2f(em(campo, 'uSize'), css[0], css[1]);
@@ -275,7 +294,10 @@ void main() {
     /* A pedido, mais suave e mais fluido a cada volta: 60 quadros (a 30 a
        onda andava em degraus visíveis), velocidade .5 e intensidade .26 (as
        cristas mais largas ocupam mais área, então a intensidade desce junto) */
-    const o = Object.assign({ ponto: 2, intensidade: 0.26, velocidade: 0.5, fps: 60 }, opcoes || {});
+    /* padrao 'nevoa' e borracha:false são do fundo do Sobre; o rodapé usa
+       os valores padrão, então quem já chamava montar(host) não muda nada */
+    const o = Object.assign({ ponto: 2, intensidade: 0.26, velocidade: 0.5, fps: 60,
+      padrao: 'ondas', borracha: true }, opcoes || {});
     const canvas = document.createElement('canvas');
     canvas.className = 'dither-canvas';
     canvas.setAttribute('aria-hidden', 'true');
@@ -327,6 +349,7 @@ void main() {
     const pintar = () => {
       r.rampa(lerRampa(host));
       r.intensidade(o.intensidade);
+      r.padrao(o.padrao);
       desenhar();
     };
 
@@ -408,11 +431,15 @@ void main() {
     mo.observe(host, { attributes: true, attributeFilter: ['class'] });
     reduzido.addEventListener('change', aoMovimento);
     document.addEventListener('visibilitychange', sync);
-    window.addEventListener('pointerdown', aoPonteiro, { passive: true });
-    window.addEventListener('pointermove', aoPonteiro, { passive: true });
-    window.addEventListener('pointerup', aoSoltar, { passive: true });
-    window.addEventListener('pointercancel', aoSoltar, { passive: true });
-    document.documentElement.addEventListener('pointerleave', aoSair);
+    /* sem borracha, nenhum ouvinte de ponteiro: o rastro fica vazio e o
+       shader não apaga nada */
+    if (o.borracha) {
+      window.addEventListener('pointerdown', aoPonteiro, { passive: true });
+      window.addEventListener('pointermove', aoPonteiro, { passive: true });
+      window.addEventListener('pointerup', aoSoltar, { passive: true });
+      window.addEventListener('pointercancel', aoSoltar, { passive: true });
+      document.documentElement.addEventListener('pointerleave', aoSair);
+    }
     canvas.addEventListener('webglcontextlost', aoPerder);
 
     return {

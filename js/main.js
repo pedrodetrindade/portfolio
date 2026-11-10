@@ -1782,9 +1782,10 @@
      movimento, sem o salto de uma animação que começa do zero na borda.
      Mede uma vez e reaproveita: getBoundingClientRect por quadro anularia a
      economia. As posições são recalculadas junto com os alvos de entrada. */
-  /* O dither do rodapé ([data-footer-dither]) entra na mesma conta: o
-     dither-field.js observa o .parado do host e para o laço de WebGL fora do
-     alcance, sem precisar de IntersectionObserver nem de um segundo listener.
+  /* O dither do rodapé ([data-footer-dither]) e o do Sobre
+     ([data-sobre-dither]) entram na mesma conta: o dither-field.js observa o
+     .parado do host e para o laço de WebGL fora do alcance, sem precisar de
+     IntersectionObserver nem de um segundo listener.
 
      E o .edge-blur se apaga no fim da página quando o rodapé é dither. O
      desfoque existe para o conteúdo se dissolver na borda enquanto rola; no
@@ -1795,7 +1796,7 @@
   const bordaEl = document.querySelector('.edge-blur');
   let fimDither = null, alturaBorda = 0, opacBorda = -1;
   const medirFundos = () => {
-    fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither]')].map(el => {
+    fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither],[data-sobre-dither]')].map(el => {
       const r = el.getBoundingClientRect();
       return { el, topo: r.top + posVisual, base: r.bottom + posVisual, ativo: null };
     });

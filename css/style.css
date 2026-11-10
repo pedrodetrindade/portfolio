@@ -1194,9 +1194,90 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   width:var(--bleed);position:relative;left:50%;
   margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2);
   padding:var(--about-pad-top-desktop,clamp(5rem,10vh,8rem)) var(--gutter) var(--about-pad-bottom-desktop,clamp(4.5rem,8vh,6.5rem));
-  background:var(--about-section-bg,transparent);
   border-top:var(--about-divider-width,1px) solid var(--line);
   border-bottom:var(--about-divider-width,1px) solid var(--line)}
+/* ===== FUNDO DO SOBRE: tom próprio e névoa de pontos =====
+   Pedro pediu o Sobre numa cor levemente diferente de Trabalhos, com um
+   dither suave e uma passagem suave entre as duas. (O comentário acima, de
+   quando o vidro líquido e o gradiente destoaram, continua valendo para
+   eles: o que voltou aqui é outra coisa, pedida com todas as letras.)
+   - O tom é --ink-2 a 50% sobre o que já existe, não uma cor opaca: o .glow
+     fixo continua passando por baixo, então o Sobre fica um pouco mais quente
+     e mais claro que Trabalhos sem virar um bloco chapado.
+   - Nada de linha: as divisórias saíram (sections.about.showDividers:false
+     no CMS) e tom e pontos se dissolvem por máscara nas duas bordas. A curva
+     da máscara é desenhada em stops (a interpolação entre eles é linear),
+     com entrada e saída lentas, para a borda não ler como degrau.
+   - A cor do painel (--about-section-bg) continua mandando quando existe.
+   - O dither (js/dither-field.js, padrão "névoa", sem borracha: o crachá já
+     é a interação da seção) fica do lado do retrato e nos respiros de cima
+     e de baixo no celular, nunca atrás do texto (detalhes em .about-pontos). */
+.about-fundo{--about-fade-top:clamp(9rem,26vh,15rem);--about-fade-bottom:clamp(6rem,18vh,10rem);
+  position:absolute;inset:0;z-index:-2;pointer-events:none;
+  background:var(--about-section-bg,rgba(var(--ink-2-rgb),.5));
+  -webkit-mask-image:linear-gradient(to bottom,
+    transparent 0,
+    rgba(0,0,0,.06) calc(var(--about-fade-top) * .2),
+    rgba(0,0,0,.25) calc(var(--about-fade-top) * .4),
+    rgba(0,0,0,.6) calc(var(--about-fade-top) * .65),
+    rgba(0,0,0,.88) calc(var(--about-fade-top) * .85),
+    #000 var(--about-fade-top),
+    #000 calc(100% - var(--about-fade-bottom)),
+    rgba(0,0,0,.88) calc(100% - var(--about-fade-bottom) * .85),
+    rgba(0,0,0,.6) calc(100% - var(--about-fade-bottom) * .65),
+    rgba(0,0,0,.25) calc(100% - var(--about-fade-bottom) * .4),
+    rgba(0,0,0,.06) calc(100% - var(--about-fade-bottom) * .2),
+    transparent 100%);
+          mask-image:linear-gradient(to bottom,
+    transparent 0,
+    rgba(0,0,0,.06) calc(var(--about-fade-top) * .2),
+    rgba(0,0,0,.25) calc(var(--about-fade-top) * .4),
+    rgba(0,0,0,.6) calc(var(--about-fade-top) * .65),
+    rgba(0,0,0,.88) calc(var(--about-fade-top) * .85),
+    #000 var(--about-fade-top),
+    #000 calc(100% - var(--about-fade-bottom)),
+    rgba(0,0,0,.88) calc(100% - var(--about-fade-bottom) * .85),
+    rgba(0,0,0,.6) calc(100% - var(--about-fade-bottom) * .65),
+    rgba(0,0,0,.25) calc(100% - var(--about-fade-bottom) * .4),
+    rgba(0,0,0,.06) calc(100% - var(--about-fade-bottom) * .2),
+    transparent 100%)}
+/* Os pontos têm camada própria, fora da máscara do tom: dentro dela, tudo o
+   que ficasse no respiro de cima ou de baixo sumiria junto com o tom. Aqui a
+   entrada é curta (3,5rem no celular, 6rem a partir do tablet), só para a
+   borda não cortar seco.
+   Onde os pontos aparecem é decidido por máscara, e não no shader, porque
+   depende do layout. A névoa nunca passa por trás do texto: com 22% ou 12%
+   de pontos ali, o rótulo "Capacidades" (--muted-2, mono pequeno) caía a
+   4,27:1 e 4,48:1 no percentil 98 do fundo.
+   - A partir de 640px: do lado do retrato, cheia até perto do crachá e
+     apagada antes da coluna de texto, que começa em 51% da largura a partir
+     de 900px e em 43% no tablet (medido).
+   - No celular o texto ocupa a largura toda, então os pontos ficam só no
+     respiro de cima e no de baixo, onde tom e seção se dissolvem. */
+.about-pontos{--pontos-fade:3.5rem;position:absolute;inset:0;z-index:-2;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 var(--pontos-fade),#000 calc(100% - var(--pontos-fade)),transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 0,#000 var(--pontos-fade),#000 calc(100% - var(--pontos-fade)),transparent 100%)}
+.about-dither{position:absolute;inset:0;overflow:hidden;
+  --dither-low:var(--ink-2);--dither-mid:var(--ink-3);--dither-high:rgb(var(--warm-rgb));
+  --faixa-topo:var(--about-pad-top-mobile,7rem);--faixa-base:var(--about-pad-bottom-mobile,7rem);
+  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(var(--faixa-topo) - 2.5rem),transparent calc(var(--faixa-topo) - .5rem)),
+                     linear-gradient(to top,#000 0,#000 calc(var(--faixa-base) - 2.5rem),transparent calc(var(--faixa-base) - .5rem));
+          mask-image:linear-gradient(to bottom,#000 0,#000 calc(var(--faixa-topo) - 2.5rem),transparent calc(var(--faixa-topo) - .5rem)),
+                     linear-gradient(to top,#000 0,#000 calc(var(--faixa-base) - 2.5rem),transparent calc(var(--faixa-base) - .5rem))}
+@media(min-width:640px){
+  .about-pontos{--pontos-fade:6rem}
+  .about-dither{
+    -webkit-mask-image:linear-gradient(to right,#000 0,#000 26%,rgba(0,0,0,.3) 35%,transparent 41%);
+            mask-image:linear-gradient(to right,#000 0,#000 26%,rgba(0,0,0,.3) 35%,transparent 41%)}
+}
+@media(min-width:900px){
+  .about-dither{
+    -webkit-mask-image:linear-gradient(to right,#000 0,#000 34%,rgba(0,0,0,.3) 42%,transparent 49%);
+            mask-image:linear-gradient(to right,#000 0,#000 34%,rgba(0,0,0,.3) 42%,transparent 49%)}
+}
+/* sem WebGL2: grade de pontos parada, bem fraca, nos mesmos lugares */
+.about-dither.sem-webgl{opacity:.25;
+  background-image:radial-gradient(var(--dither-mid) .6px,transparent .9px);background-size:6px 6px}
 /* Precisa vir depois da regra base acima: mesma especificidade (uma classe
    só), então quem vier depois no arquivo é quem manda. As duas faixas
    responsivas de .about-break moravam antes da regra base e nunca
@@ -2406,41 +2487,8 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 /* ===== TODOS OS TRABALHOS =====
    A Home continua com previews de grande escala. /work/ usa uma grade regular,
    mais silenciosa, derivada do mesmo índice editorial. */
-/* Era um link sublinhado discreto; virou o mesmo pill de borda usado no
-   "Vamos conversar" do Sobre (.ghost-cta), ~30% mais peso visual sem sair
-   da linguagem do site: nada de botão chapado, só a borda e o fundo em
-   vidro que já são o vocabulário de CTA secundário daqui. */
-/* Espaçamento e tamanho vêm do CMS (content/home.json > work). Os fallbacks
-   aqui são o padrão do site: se o JSON não trouxer os campos, nada muda.
-   --work-cta-scale multiplica fonte e padding juntos, para o botão crescer
-   inteiro em vez de só engordar o texto dentro de uma caixa fixa. */
-.work-all-cta{display:flex;justify-content:center;
-  margin-top:var(--work-cta-space-top,2rem);
-  margin-bottom:var(--work-cta-space-bottom,0px)}
-.work-all-cta .ghost-cta{--k:var(--work-cta-scale,1);margin-top:0;
-  font-size:calc(clamp(1.06rem,1.34vw,1.16rem) * var(--k));
-  padding:calc(.92rem * var(--k)) calc(1.8rem * var(--k));gap:.7em}
-/* O "mais" é desenhado com dois gradientes, não com o glifo "+": o glifo é
-   centrado no eixo matemático da fonte, não no meio da caixa, e girar isso
-   faz o símbolo bambear fora do próprio centro. Duas faixas num quadrado
-   giram redondas.
-   90 graus e não 45: em 45 o mais vira um "x", que lê como fechar/cancelar,
-   e o botão é de abrir. Em 90 o símbolo volta a parecer o mesmo no fim, e é
-   esse o efeito: ele gira e assenta, sem trocar de significado.
-   A rotação usa --dur-fast enquanto o resto do botão fica em --dur-micro: o
-   estado responde no tempo de sempre, só o floreio do ícone demora um tempo
-   a mais para a volta ser percebida. */
-.work-all-cta .ghost-cta::after{content:"";width:.74em;height:.74em;flex:none;
-  background:linear-gradient(currentColor,currentColor) center/100% 1.5px no-repeat,
-             linear-gradient(currentColor,currentColor) center/1.5px 100% no-repeat;
-  transition:transform var(--dur-fast) var(--ease-soft)}
-@media(hover:hover){
-  .work-all-cta .ghost-cta:hover::after{transform:rotate(90deg)}
-}
-@media(prefers-reduced-motion:reduce){
-  .work-all-cta .ghost-cta::after{transition:none}
-  .work-all-cta .ghost-cta:hover::after{transform:none}
-}
+/* O "Ver todos os trabalhos" saiu daqui do pé da seção: agora é um botão
+   comum no alto, à direita do título (.wi-all, em ABERTURA EDITORIAL). */
 
 /* Teaser de projeto ainda indisponível na Home. Não usa .card para o cursor
    não anunciar “Ver projeto” sobre um elemento que não abre página. */
@@ -2526,9 +2574,6 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .work-archive-intro h1{margin-top:2rem}
   .work-archive-grid{grid-template-columns:1fr;row-gap:4rem}
   .work-archive-media{aspect-ratio:4/3.35}
-  /* o botão fica centralizado em toda largura; no estreito ele estica para a
-     linha inteira, que dá alvo de toque confortável sem virar bloco solto */
-  .work-all-cta .ghost-cta{width:100%;justify-content:center}
 }
 
 /* ===== FOOTER GLOBAL EDITORIAL =====
@@ -2697,7 +2742,6 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   transition:filter calc(var(--dur-slow) * .8) linear,
              transform calc(var(--dur-slow) * .8) var(--ease-soft)}
 @media(hover:hover) and (pointer:fine){
-  .work-all-cta .ghost-cta:hover .cta-blur-label,
   .about-actions .cta-primary:hover .cta-blur-label,
   .about-actions .linkedin:hover .cta-blur-label,
   .about-actions .cta-resume-btn:hover .cta-blur-label,
@@ -2830,9 +2874,29 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
    Frase grande ocupando duas ou três linhas, e o contexto abaixo em duas
    colunas: o de esquerda explica, o de direita convida. Sem card, sem moldura,
    muito espaço negativo. O peso vai até 600, teto da fonte carregada. */
-.work-intro{margin-bottom:clamp(3.4rem,7vw,6rem)}
-.wi-title{font-size:clamp(1.85rem,4.4vw,3.5rem);font-weight:var(--w-medium);line-height:1.1;
+.work-intro{--wi-size:clamp(1.85rem,4.4vw,3.5rem);display:grid;grid-template-columns:minmax(0,1fr);
+  margin-bottom:clamp(3.4rem,7vw,6rem)}
+.wi-title{font-size:var(--wi-size);font-weight:var(--w-medium);line-height:1.1;
   letter-spacing:-.035em;max-width:19ch}
+/* "Ver todos os trabalhos": antes era um pill grande, centrado no pé da seção,
+   com tamanho e respiro ajustáveis pelo painel e um "mais" que girava. Pedro
+   pediu algo mais normal, no alto e à direita. Ficou o .ghost-cta comum do
+   site (contorno, seta que anda 4px no hover), um pouco mais baixo, centrado
+   na primeira linha do título: metade da linha (1.1 x .5) menos metade da
+   altura do botão. Abaixo de 860px não cabe ao lado do título; desce para
+   depois dos dois textos, antes da grade, alinhado à esquerda. A entrada
+   (.reveal) fica no invólucro, como em .about-actions: no próprio botão, o
+   transform:none do .reveal.in anularia o translateY do hover. */
+.wi-all{margin-top:2rem;justify-self:start;grid-row:3}
+.wi-all .ghost-cta{margin-top:0;padding:.72rem 1.3rem}
+.wi-foot{grid-row:2}
+@media(min-width:860px){
+  .work-intro{grid-template-columns:minmax(0,1fr) auto;column-gap:2rem}
+  .wi-title{grid-column:1;grid-row:1}
+  .wi-all{grid-column:2;grid-row:1;align-self:start;
+    margin-top:max(0px,calc(var(--wi-size) * .55 - 1.33rem))}
+  .wi-foot{grid-column:1 / -1}
+}
 .wi-foot{display:grid;grid-template-columns:1fr;gap:1.6rem;
   margin-top:clamp(2.2rem,4.5vw,3.6rem)}
 @media(min-width:860px){

@@ -18,10 +18,12 @@
      js/ de jeitos diferentes (js/, ../js/, /js/), e currentScript só existe
      durante esta primeira execução: por isso fica aqui no topo, antes de
      qualquer render. Ao editar um deles, suba a constante dele aqui e o ?v=
-     deste arquivo nas páginas. */
+     deste arquivo nas páginas.
+     O dither-field.js também desenha a névoa do fundo do Sobre: aí ele é
+     baixado depois do load da página, quando o navegador fica ocioso. */
   var BASE_JS = document.currentScript && document.currentScript.src
     ? document.currentScript.src.replace(/content-render\.js(\?.*)?$/, '') : '';
-  var DITHER_V = 8;
+  var DITHER_V = 9;
   var DITHER_CAPA_V = 3;
   var ASSINATURA_V = 1;
   var CRACHA_V = 5;
@@ -284,6 +286,37 @@
       });
     }
     return scriptsCarregando[arquivo];
+  }
+
+  /* Névoa de pontos no fundo do Sobre (dither-field.js, padrão 'nevoa', sem
+     borracha). Baixa depois do load, quando o navegador fica ocioso: a seção
+     mora bem abaixo da dobra e não precisa disputar rede nem GPU com a intro.
+     O host está no HTML (data-sobre-dither) para o main.js já medi-lo e pôr
+     .parado fora de alcance, que é o que pausa o laço de WebGL. A prévia do
+     CMS chama renderHome a cada tecla; a marca em window impede montar de
+     novo. Estado em window, e não numa var deste arquivo, de propósito: uma
+     var declarada abaixo da primeira chamada seria zerada depois dela. */
+  function montarDitherDoSobre() {
+    var host = document.querySelector('[data-sobre-dither]');
+    if (!host || window.__CMS_SOBRE_DITHER__) return;
+    window.__CMS_SOBRE_DITHER__ = 'carregando';
+    function iniciar() {
+      carregarScript('dither-field.js', '__DITHER__', DITHER_V).then(function (D) {
+        if (!host.isConnected) { window.__CMS_SOBRE_DITHER__ = null; return; }
+        window.__CMS_SOBRE_DITHER__ = D.montar(host, {
+          padrao: 'nevoa', borracha: false, intensidade: 0.34, velocidade: 0.4
+        });
+      }).catch(function () {
+        window.__CMS_SOBRE_DITHER__ = null;
+        host.classList.add('sem-webgl');
+      });
+    }
+    function ocioso() {
+      if (window.requestIdleCallback) window.requestIdleCallback(iniciar, { timeout: 2500 });
+      else setTimeout(iniciar, 600);
+    }
+    if (document.readyState === 'complete') ocioso();
+    else window.addEventListener('load', ocioso, { once: true });
   }
 
   function initFooterMedia(footer, mediaType) {
@@ -938,6 +971,7 @@
           if (figuraCracha.isConnected) C.montar(figuraCracha);
         }).catch(function () { /* a foto continua parada, como sempre foi */ });
       }
+      montarDitherDoSobre();
       var capsGrid = document.querySelector('.caps-grid');
       if (capsGrid && Array.isArray(A.capabilities)) {
         capsGrid.innerHTML = A.capabilities.map(function (item) {
