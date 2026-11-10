@@ -879,6 +879,17 @@ se o crachá carregasse de cabeça para baixo ao chegar na seção.
 O crosshair do React Bits chegou a entrar e saiu a pedido: não volte com ele
 sem perguntar.
 
+**A foto do Sobre tem bloqueio contra abrir em outra aba e baixar** (pedido
+de Pedro), em três camadas: `.portrait-img` sem `pointer-events` (o clique cai
+no `.portrait`, uma div, então o navegador não oferece "abrir imagem em nova
+aba", "salvar imagem como" nem pesquisa por imagem), `draggable="false"` com
+`-webkit-user-drag:none`, e `-webkit-touch-callout:none` contra o "Salvar em
+Fotos" do toque longo no iPhone. O `main.js` ainda cancela `contextmenu` e
+`dragstart` em toda a `.about-photo`, delegado no documento porque o crachá
+move o retrato para dentro do cartão. O clique direito no resto da página
+continua normal. Não impede captura de tela nem quem abre as ferramentas do
+desenvolvedor (o arquivo é público em `assets/`); nenhum site consegue.
+
 **"O que eu faço" absorveu as Capacidades do Sobre.** As oito capacidades
 repetiam os títulos da seção; viraram as tags dos itens, cada uma aparecendo
 uma vez só, e saíram do Sobre, do `home.json` (`about.capabilities` e os

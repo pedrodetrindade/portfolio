@@ -1337,6 +1337,17 @@
     if (teclasScrollNativo.includes(e.key)) cancelarScrollProgramatico();
   });
 
+  /* Bloqueio da foto do Sobre: nada de menu de contexto (abrir em nova aba,
+     salvar, pesquisar imagem) nem arraste sobre ela. Delegado no documento
+     porque o crachá move o retrato para dentro do cartão depois de montar;
+     a .about-photo continua sendo a ancestral nos dois casos. O CSS já tira
+     o ponteiro da <img>; isto cobre o resto da área. */
+  ['contextmenu', 'dragstart'].forEach(tipo => {
+    document.addEventListener(tipo, e => {
+      if (e.target.closest && e.target.closest('.about-photo')) e.preventDefault();
+    });
+  });
+
   document.addEventListener('click', e => {
     const openMenu = e.target.closest('[data-menu]');
     const openContact = e.target.closest('[data-contact]');
