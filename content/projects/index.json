@@ -76,14 +76,14 @@
         "social media"
       ],
       "year": 2023,
-      "cover": "assets/uploads/karmine-corp/capa.webp",
+      "cover": "assets/uploads/karmine-corp/foto-time.webp",
       "coverMobile": "",
       "coverLight": false
     },
     {
       "slug": "case-04",
       "visible": true,
-      "featured": true,
+      "featured": false,
       "cardSize": "normal",
       "order": 4,
       "titlePt": "Identidade visual e campanha integrada",
@@ -107,7 +107,7 @@
     {
       "slug": "dgzin",
       "visible": true,
-      "featured": false,
+      "featured": true,
       "cardSize": "normal",
       "order": 5,
       "titlePt": "dgzin",

@@ -25,9 +25,9 @@
     "scopePt": "Key Visual, Social Media, Stories e Mockups",
     "scopeEn": "Key Visual, Social Media, Stories & Mockups"
   },
-  "cover": "assets/uploads/karmine-corp/capa.webp",
+  "cover": "assets/uploads/karmine-corp/foto-time.webp",
   "coverMobile": "",
-  "caseCover": "assets/uploads/karmine-corp/capa-case.webp",
+  "caseCover": "assets/uploads/karmine-corp/foto-time.webp",
   "blocks": [
     {
       "type": "text",
@@ -112,6 +112,15 @@
         }
       ],
       "layout": "adaptive"
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/karmine-corp/mockup-celulares.webp",
+      "alt": "Mockup de dois celulares com os stories de vitória e de boas-vindas ao ScreaM",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "Aplicação em mockup, para ver o conteúdo como ele apareceria depois de publicado.",
+      "captionEn": "Mockup application, to see the content as it would appear once published."
     }
   ]
 }
