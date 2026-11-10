@@ -178,8 +178,8 @@
     "ctaTalkEn": "Let's talk",
     "resumeFile": "assets/uploads/curriculo/pedro-de-trindade-cv-pt.pdf",
     "resumeFileEn": "assets/uploads/curriculo/pedro-de-trindade-cv-en.pdf",
-    "resumeLabelPt": "Baixar currículo",
-    "resumeLabelEn": "Download CV"
+    "resumeLabelPt": "Currículo",
+    "resumeLabelEn": "CV"
   },
   "help": {
     "kickerPt": "atuação",

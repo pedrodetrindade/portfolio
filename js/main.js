@@ -1171,6 +1171,35 @@
 
     Promise.all([comFonte, quandoVisivel]).then(rodarIntro);
   }
+  /* ---- currículo do Sobre: botão que abre o menu de idioma ----
+     Clique abre e fecha; Esc, clique fora ou a escolha de um idioma fecham.
+     aria-expanded acompanha o estado. Ao abrir pelo teclado, o foco vai para
+     a primeira opção com arquivo; pelo mouse, o foco fica onde o navegador
+     deixar, sem anel. */
+  document.querySelectorAll('.cta-resume').forEach(grupo => {
+    const botao = grupo.querySelector('.cta-resume-btn');
+    const menu = grupo.querySelector('.cta-resume-menu');
+    if (!botao || !menu) return;
+    const abrir = sim => {
+      grupo.classList.toggle('aberto', sim);
+      botao.setAttribute('aria-expanded', String(sim));
+    };
+    botao.addEventListener('click', e => {
+      e.stopPropagation();
+      const sim = !grupo.classList.contains('aberto');
+      abrir(sim);
+      if (sim && e.detail === 0) {
+        const primeira = menu.querySelector('.cta-resume-opt[href]');
+        if (primeira) primeira.focus();
+      }
+    });
+    document.addEventListener('click', e => { if (!grupo.contains(e.target)) abrir(false); });
+    grupo.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && grupo.classList.contains('aberto')) { abrir(false); botao.focus(); }
+    });
+    menu.addEventListener('click', e => { if (e.target.closest('.cta-resume-opt[href]')) abrir(false); });
+  });
+
   /* ---- seletor de idioma ----
      Clique, teclado e toque. Fecha ao clicar fora e com Escape, devolvendo
      o foco ao gatilho. A troca não recarrega nada e não mexe no scroll. */

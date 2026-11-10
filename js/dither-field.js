@@ -71,7 +71,9 @@ float pattern(vec2 p, vec2 size, float t) {
   vec2 q = p / 32.0;
   float warp = fbm(q * 0.09 + vec2(t * 0.035, t * 0.02));
   float s = 0.5 + 0.5 * sin(q.x * 0.9 + q.y * 0.6 + warp * 5.0 - t * 0.4);
-  float crest = s * s * s * s;
+  // crista mais larga que a do original (s^4): a onda entra e sai em
+  // gradiente longo, e os pontos acendem aos poucos em vez de em faixa dura
+  float crest = pow(s, 2.5);
   // O original fica mais forte em cima, justamente onde mora a headline. Aqui
   // o peso vai para a faixa vazia entre o conteúdo e a linha de baixo, e cai
   // nas duas pontas: some rente ao crédito e ao "voltar ao topo" (texto
@@ -270,7 +272,10 @@ void main() {
   function montar(host, opcoes) {
     /* intensidade e velocidade mais baixas que a primeira versão: a pedido,
        as ondas ficaram mais suaves e mais lentas */
-    const o = Object.assign({ ponto: 2, intensidade: 0.34, velocidade: 0.6, fps: 30 }, opcoes || {});
+    /* A pedido, mais suave e mais fluido a cada volta: 60 quadros (a 30 a
+       onda andava em degraus visíveis), velocidade .5 e intensidade .26 (as
+       cristas mais largas ocupam mais área, então a intensidade desce junto) */
+    const o = Object.assign({ ponto: 2, intensidade: 0.26, velocidade: 0.5, fps: 60 }, opcoes || {});
     const canvas = document.createElement('canvas');
     canvas.className = 'dither-canvas';
     canvas.setAttribute('aria-hidden', 'true');

@@ -84,7 +84,8 @@ void main() {
   // terço da velocidade e com dois terços da força, e contraste menor)
   vec2 q = uv * vec2(uView.x / uView.y, 1.0) * 2.2;
   float deriva = ruido(q + vec2(uTempo * 0.02, uTempo * 0.012)) - 0.5;
-  lum = clamp((lum - 0.5) * 1.12 + 0.5 + deriva * 0.09, 0.0, 1.0);
+  // contraste 1.28 (era 1.12): a pedido, o dither ficou um pouco mais visível
+  lum = clamp((lum - 0.5) * 1.28 + 0.5 + deriva * 0.09, 0.0, 1.0);
   float x = lum * uNiveis;
   float nivel = floor(x + step(bayer(ivec2(gl_FragCoord.xy)), fract(x))) / uNiveis;
   vec3 paleta = mix(uEscuro, uClaro, nivel);
@@ -130,7 +131,9 @@ void main() {
   }
 
   function montar(caixa, liquidBg, opcoes) {
-    const o = Object.assign({ celula: 4, niveis: 6, cor: 0.7, fps: 24 }, opcoes || {});
+    /* quatro níveis (eram seis): degraus maiores, a trama aparece mais; o
+       véu de 92% no CSS escurece o conjunto para compensar */
+    const o = Object.assign({ celula: 4, niveis: 4, cor: 0.7, fps: 24 }, opcoes || {});
     const estado = caixa.__estado;
     if (!estado || !estado.slides.length) return null;
 

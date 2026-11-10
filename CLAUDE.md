@@ -529,16 +529,21 @@ do site", e o JS remove a variável em vez de escrever um valor — cuidado com
 repetida no painel e no Worker de propósito: o painel é conveniência, quem
 decide é o Worker.
 
-**As ações do Sobre têm três níveis, um por decisão.** "Vamos conversar" é a
-principal: cheia (`.cta-solid`), no material do botão Contato do header, que
-faz a mesma coisa, e vem primeiro. LinkedIn é secundário: contorno, mesma
-altura. O currículo é terciário: uma linha de links discretos embaixo
-(`flex-basis:100%`), com a pílula de hover do breadcrumb. Antes eram três caixas
-de pesos parecidos e alturas diferentes (LinkedIn e conversa igualmente
-destacados, currículo num grupo de bordas próprio) e Pedro achou que não
-conversavam entre si. No celular os dois botões ocupam a linha inteira,
-empilhados. O ícone do botão cheio precisa de especificidade maior que a regra
-de `.cta-primary svg`, que o pinta de `--cream` e o apagava no branco.
+**As ações do Sobre são três botões na mesma linha e na mesma altura.**
+"Vamos conversar" é a principal: cheia (`.cta-solid`), no material do botão
+Contato do header, que faz a mesma coisa, e vem primeiro. LinkedIn e Currículo
+são secundários, em contorno. O Currículo (`.cta-resume-btn`, rótulo do CMS
+"Currículo"/"CV") abre para cima um menu pequeno com Português e Inglês, no
+vidro do seletor de idioma (`--floating-*`): para cima porque o Sobre tem
+`overflow:hidden` e os botões ficam perto da base. O menu fechado é
+`visibility:hidden` (fora do Tab); Esc, clique fora e a escolha fecham, com
+`aria-expanded` em dia (main.js). Histórico: eram três caixas de pesos
+parecidos; depois o currículo virou linha de links discretos, e Pedro também
+não gostou: pedia o mesmo peso de botão. `.ghost-cta` tem `line-height:1.25`
+próprio: o LinkedIn é `<a>` e herdava o 1.6 do corpo, saindo 5px mais alto que
+os `<button>` vizinhos. No celular os três empilham na largura toda. O ícone do
+botão cheio precisa de especificidade maior que a regra de `.cta-primary svg`,
+que o pinta de `--cream` e o apagava no branco.
 `about.resumeFile` é o PDF em português e `about.resumeFileEn` o em inglês,
 ambos enviáveis pelo painel. O grupo aparece quando existe ao menos um dos dois
 (e `showResume` não é `false`); a opção sem arquivo continua visível, apagada e
@@ -605,14 +610,15 @@ passo (não pela posição, para a volta ao início não repetir o sentido), a n
 entrando por cima da anterior para a troca não escurecer. Chave própria, e não
 um quinto valor de `videoMode`: o Worker só aceita os quatro modos e recusaria
 a home inteira. A configuração do Vimeo continua gravada e volta ao desligar.
-As capas são fundo, não destaque: véu de `--ink` a 90% por cima delas (mais
+As capas são fundo, não destaque: véu de `--ink` a 92% por cima delas (mais
 30% nas `coverLight`) e as massas marrons do vidro líquido continuam visíveis
 acima a 60%, animando como antes (sem `has-video`, elas não saem). Neste modo
 não há vinheta (`.lq-veil`): sobre imagens ela virava um halo escuro atrás do
 nome. A legibilidade vem do fundo inteiro escuro, medida nas seis imagens no
 percentil 98 do fundo: o rótulo pequeno em `--accent` ("Diretor de Arte...")
-fica entre 4,59:1 (dgzin) e 5,07:1; a frase acima de 12:1. Clarear véu ou massas
-derruba o rótulo abaixo de 4,5:1 primeiro.
+fica entre 5,34:1 e 5,80:1 com o dither atual (era 4,59:1 com as `<img>` lisas
+e véu de 90%); a frase acima de 15:1. Clarear véu ou massas derruba o rótulo
+abaixo de 4,5:1 primeiro.
 A base do `.liquid-bg` se dissolve por `mask-image`, não por um véu de `--ink`
 por cima: `#work` é transparente e mostra o `.glow` fixo, e um véu terminando em
 `--ink` opaco deixava a base da capa mais escura que o topo da seção seguinte
@@ -695,8 +701,11 @@ versão é a constante `DITHER_V` lá dentro. Ao editar `dither-field.js`, suba
   sobe e o topo apaga antes, porque crédito e navegação ocupam mais altura.
 - Cores dos tokens, lidas do CSS: `--dither-low` (`--ink-3`), `--dither-mid`
   (`--warm-rgb`) e `--dither-high` (`--muted-2`). Já foi `--accent` e, antes,
-  `--cream`: a cada volta Pedro pediu mais suave. Intensidade .34, velocidade
-  .6, ponto de 2px, 30 quadros por segundo.
+  `--cream`: a cada volta Pedro pediu mais suave. Intensidade .26, velocidade
+  .5, ponto de 2px e 60 quadros por segundo (a 30 a onda andava em degraus).
+  A crista é `pow(s, 2.5)`, mais larga que a `s^4` do original: os pontos
+  acendem num gradiente longo em vez de numa faixa dura, e por cobrir mais
+  área a intensidade desceu junto.
 - O cursor é uma borracha (no original ele acendia os pontos): até 24 pontos de
   rastro, um a cada 12px, raio de ~46px, e o rastro se enche de novo em 1,6s.
   O rastro é gravado no próprio `pointermove`, com relógio real, e não a cada
@@ -720,13 +729,15 @@ Canvas UI), em `js/dither-capa.js`, que substitui o ruído como textura da capa
 reage ao mouse. Vivo por conta própria, pelo zoom de cada foto e por um brilho
 que deriva devagar. Quem manda na sequência continua sendo `montarSlides()`,
 que publica o estado em `caixa.__estado` (ativa, saindo, início e sentido do
-zoom de cada uma); o WebGL só desenha esse estado, em células de 4px e seis
-níveis de Bayer, cor 70% puxada para `--dither-capa-escuro/-claro`, a 24 quadros
-por segundo. Pedro pediu mais lento e mais suave que a primeira versão: zoom de
-5% (os 8% da `<img>` faziam as células ferverem), deriva a um terço da
-velocidade e contraste 1,12. O canvas
-fica entre as `<img>` e o véu de 90%, e as `<img>` só somem depois do fundido
-de entrada. Medido nas seis imagens: rótulo da capa de 5,00:1 a 5,47:1.
+zoom de cada uma); o WebGL só desenha esse estado, em células de 4px e quatro
+níveis de Bayer, contraste 1,28, cor 70% puxada para
+`--dither-capa-escuro/-claro`, a 24 quadros por segundo. Ajustes de Pedro, em
+ordem: mais lento e suave (zoom de 5%, porque os 8% da `<img>` faziam as
+células ferverem; deriva a um terço da velocidade), depois a trama um pouco
+mais visível (de seis para quatro níveis, contraste de 1,12 para 1,28) com as
+imagens um pouco mais escuras (véu de 90% para 92%). O canvas
+fica entre as `<img>` e o véu, e as `<img>` só somem depois do fundido
+de entrada. Medido nas seis imagens: rótulo da capa de 5,34:1 a 5,80:1.
 Texturas reduzidas a 1280px (seis fotos de 2000px com mipmap passariam de
 80MB de vídeo). Versão em `DITHER_CAPA_V`, no content-render.
 O trind9de entra na capa e como capa de listagem (card da home e `/work/`) por
