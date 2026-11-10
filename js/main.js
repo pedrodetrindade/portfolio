@@ -609,9 +609,10 @@
      de "editor vetorial": a letra sob o cursor some do DOM e reaparece como
      contorno tracejado, com moldura de seleção, alças nos cantos, a medida da
      letra, pontinhos piscando em volta e um par de pontos correndo pela borda.
-     Dá para arrastar a letra (ela volta por mola) e o clique faz o nome saltar
-     em onda a partir dela. Do original ficou de fora a varredura automática:
-     a capa já tem movimento demais para o nome se mexer sozinho.
+     Dá para arrastar a letra (ela volta por mola). O clique curto, que fazia o
+     nome saltar em onda a partir da letra, saiu a pedido. Do original também
+     ficou de fora a varredura automática: a capa já tem movimento demais para
+     o nome se mexer sozinho.
      O laço de quadros só roda enquanto há cursor, mola ou fundido em curso. */
   function iniciarNomeVetorial(n){
     const wrap = n.closest('.hero-name-wrap');
@@ -638,9 +639,7 @@
     let raf = 0, ultimo = 0, pulso = 0, arrastando = -1, cursor = '';
     const ponteiro = { x: 0, y: 0, dentro: false };
     const pega = { x: 0, y: 0 };
-    const press = { x: 0, y: 0, t: 0, i: -1 };
     const moldura = { x1: 0, y1: 0, x2: 0, y2: 0, a: 0, i: -1 };
-    const chutes = [];
 
     /* Posição de cada letra relativa ao canvas, a partir do próprio span:
        origem na borda esquerda dele e linha de base no topo da caixa mais a
@@ -790,27 +789,12 @@
       ctx.fillText(texto, Math.round(moldura.x1), Math.round(moldura.y1) - 7);
       ctx.globalAlpha = 1;
     }
-    function chutar(i){
-      const forca = 1500;
-      chutes.push({ i, em: pulso, v: forca });
-      for (let d = 1; d < letras.length; d++) {
-        const v = forca * Math.pow(0.62, d);
-        if (v < 30) break;
-        for (const j of [i - d, i + d]) if (j >= 0 && j < letras.length) chutes.push({ i: j, em: pulso + d * 0.055, v });
-      }
-    }
     function tick(agora){
       raf = 0;
       const dt = Math.min(0.05, Math.max(0.001, (agora - ultimo) / 1000));
       ultimo = agora;
       pulso += dt;
-      for (let k = chutes.length - 1; k >= 0; k--) {
-        if (chutes[k].em > pulso) continue;
-        const l = letras[chutes[k].i];
-        if (l) l.vel.y -= chutes[k].v;
-        chutes.splice(k, 1);
-      }
-      let mexendo = chutes.length > 0;
+      let mexendo = false;
       letras.forEach((l, k) => {
         if (k === arrastando) {
           l.off.x = aproxima(l.off.x, ponteiro.x - pega.x, dt, 0.03);
@@ -903,7 +887,6 @@
       if (!medido) { medir(); medido = true; }
       local(e);
       const i = letraEm(ponteiro.x, ponteiro.y);
-      Object.assign(press, { x: ponteiro.x, y: ponteiro.y, t: performance.now(), i });
       if (i >= 0) {
         arrastando = i;
         pega.x = ponteiro.x - letras[i].off.x;
@@ -919,12 +902,6 @@
         const r = n.getBoundingClientRect();
         ponteiro.dentro = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
       }
-      /* clique curto e parado é um "chute": o nome salta em onda */
-      if (e.type === 'pointerup' && press.i >= 0 && performance.now() - press.t < 450) {
-        local(e);
-        if (Math.hypot(ponteiro.x - press.x, ponteiro.y - press.y) < 6) chutar(press.i);
-      }
-      press.i = -1;
       acordar();
     };
     n.addEventListener('pointerup', soltar);

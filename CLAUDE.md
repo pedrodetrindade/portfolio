@@ -461,8 +461,8 @@ reduzido, e só depois de `.hero-in`. O `main.js` quebra o nome em `.hn-letra`
 (`.hn-vetor`) por cima do `.hero-name-wrap`: a letra sob o cursor esmaece no DOM
 e reaparece no canvas como contorno tracejado, com moldura de seleção, alças,
 medida ("T 77 × 91"), pontinhos piscando e dois pontos correndo pela borda. A
-letra pode ser arrastada e volta por mola; clique curto faz o nome saltar em
-onda. O nome continua texto no DOM porque a intro, o morph e a calibração de
+letra pode ser arrastada e volta por mola. O clique curto fazia o nome saltar
+em onda e saiu a pedido de Pedro; o resto do efeito ficou. O nome continua texto no DOM porque a intro, o morph e a calibração de
 8,0x dependem dele. As letras são inline com `position:relative` (o arraste é
 left/top): transform não pega em inline, e inline-block perderia o kerning e
 mudaria a largura calibrada. A varredura automática do original ficou de fora.
