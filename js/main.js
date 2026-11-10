@@ -552,31 +552,23 @@
        intro. No celular a frase da capa usa esta largura para não ficar mais
        larga que o nome — sem isso ela ultrapassava o nome em 40px a 375, e a
        capa lia como dois blocos de medidas diferentes em vez de uma coluna. */
-    /* Nome cinético: a largura do bloco fica travada na medida de repouso. Sem
-       isto, a letra que engorda no hover alargava o wrapper (fit-content), e
-       profissão e localização, ancoradas às bordas dele, andavam junto com o
-       cursor. A medida sai com as letras forçadas ao peso normal (.em-repouso),
-       para não congelar um estado de hover. */
-    if (n.classList.contains('cinetico')) {
-      wrap.style.width = '';
-      n.classList.add('em-repouso');
-      wrap.style.width = wrap.getBoundingClientRect().width + 'px';
-      n.classList.remove('em-repouso');
-    }
     document.documentElement.style.setProperty('--nome-larg', wrap.offsetWidth + 'px');
+    if (window.__nomeVetorialRemedir) window.__nomeVetorialRemedir();
   }
 
-  /* ===== NOME CINÉTICO =====
-     Quebra o nome da capa em letras para o hover do kinetic-text (Magic UI).
-     Só onde existe cursor de verdade e sem movimento reduzido: no toque não
-     há hover, e o nome continua texto corrido, com a mesma métrica de sempre.
-     As letras ficam aria-hidden e uma cópia em texto corrido (.hn-sr) é o que
-     o leitor de tela lê, senão o VoiceOver soletraria o nome.
+  /* ===== NOME VETORIAL (tech-text, React Bits) =====
+     Quebra o nome da capa em letras para o hover do tech-text. Só onde existe
+     cursor de verdade e sem movimento reduzido: no toque não há hover, e o
+     nome continua texto corrido, com a mesma métrica de sempre.
+     As letras são spans inline, não inline-block: assim o navegador continua
+     aplicando o kerning entre elas (medido, a largura do nome não muda).
+     Ficam aria-hidden e uma cópia em texto corrido (.hn-sr) é o que o leitor
+     de tela lê, senão o VoiceOver soletraria o nome.
      Function e não const: roda antes de setLang, que remede o nome. */
   function montarNomeCinetico(){
     const n = document.querySelector('.hero-name');
     const linha = n && n.querySelector('.hn-line');
-    if (!linha || n.classList.contains('cinetico')) return;
+    if (!linha || n.classList.contains('vetorial')) return;
     if (reduced || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const letras = document.createElement('span');
     letras.className = 'hn-letras';
@@ -599,7 +591,338 @@
     sr.textContent = letras.textContent.trim();
     linha.textContent = '';
     linha.append(letras, sr);
-    n.classList.add('cinetico');
+    n.classList.add('vetorial');
+    iniciarNomeVetorial(n);
+  }
+
+  /* O efeito em si. O nome continua sendo texto no DOM (a intro, o morph e a
+     calibração de 8,0x dependem disso); um canvas por cima desenha só o que é
+     de "editor vetorial": a letra sob o cursor some do DOM e reaparece como
+     contorno tracejado, com moldura de seleção, alças nos cantos, a medida da
+     letra, pontinhos piscando em volta e um par de pontos correndo pela borda.
+     Dá para arrastar a letra (ela volta por mola) e o clique faz o nome saltar
+     em onda a partir dela. Do original ficou de fora a varredura automática:
+     a capa já tem movimento demais para o nome se mexer sozinho.
+     O laço de quadros só roda enquanto há cursor, mola ou fundido em curso. */
+  function iniciarNomeVetorial(n){
+    const wrap = n.closest('.hero-name-wrap');
+    if (!wrap) return;
+    const canvas = document.createElement('canvas');
+    canvas.className = 'hn-vetor';
+    canvas.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const MOLA = 320, AMORTECE = 2 * Math.sqrt(MOLA) * (1 - 0.4 * 0.96);
+    const aproxima = (a, b, dt, s) => a + (b - a) * (1 - Math.exp(-dt / s));
+    const ruido = (...v) => {
+      let h = 2166136261;
+      for (const x of v) { h = Math.imul(h ^ (x | 0), 16777619); h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; }
+      return (h >>> 0) / 4294967296;
+    };
+    const sinal = v => (v > 0 ? '+' + v : v < 0 ? '−' + (-v) : '0');
+    const letras = [...n.querySelectorAll('.hn-letra')].map((el, i) => ({
+      el, i, ch: el.textContent, ox: 0, base: 0, caixa: null, sprite: null,
+      off: { x: 0, y: 0 }, vel: { x: 0, y: 0 }, contorno: 0
+    })).filter(l => l.ch.trim());
+    let larg = 0, alt = 0, dpr = 1, fonte = '', tinta = '', acento = '', rotulo = '';
+    let raf = 0, ultimo = 0, pulso = 0, arrastando = -1, cursor = '';
+    const ponteiro = { x: 0, y: 0, dentro: false };
+    const pega = { x: 0, y: 0 };
+    const press = { x: 0, y: 0, t: 0, i: -1 };
+    const moldura = { x1: 0, y1: 0, x2: 0, y2: 0, a: 0, i: -1 };
+    const chutes = [];
+
+    /* Posição de cada letra relativa ao canvas, a partir do próprio span:
+       origem na borda esquerda dele e linha de base no topo da caixa mais a
+       subida da fonte. A caixa de tinta vem do measureText da letra. */
+    function medir(){
+      const cs = getComputedStyle(n);
+      const tam = parseFloat(cs.fontSize);
+      fonte = cs.fontWeight + ' ' + tam + 'px ' + cs.fontFamily;
+      tinta = cs.color;
+      acento = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || tinta;
+      const tag = document.querySelector('.hero-tag');
+      rotulo = '10px ' + (tag ? getComputedStyle(tag).fontFamily : 'monospace');
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const caixaC = canvas.getBoundingClientRect();
+      larg = caixaC.width; alt = caixaC.height;
+      canvas.width = Math.max(1, Math.round(larg * dpr));
+      canvas.height = Math.max(1, Math.round(alt * dpr));
+      ctx.font = fonte;
+      const sobe = ctx.measureText('H').fontBoundingBoxAscent;
+      for (const l of letras) {
+        const r = l.el.getBoundingClientRect();
+        const m = ctx.measureText(l.ch);
+        l.ox = r.left - caixaC.left - l.off.x;
+        l.base = r.top - caixaC.top + sobe - l.off.y;
+        l.caixa = {
+          x1: l.ox - m.actualBoundingBoxLeft, y1: l.base - m.actualBoundingBoxAscent,
+          x2: l.ox + m.actualBoundingBoxRight, y2: l.base + m.actualBoundingBoxDescent
+        };
+        l.sprite = null;
+      }
+    }
+    /* Contorno tracejado da letra, desenhado uma vez num canvas próprio: traço
+       duplo com tracejado e o miolo apagado por destination-out, então só a
+       metade de fora do traço sobra, como no original. */
+    function sprite(l){
+      if (l.sprite) return l.sprite;
+      const pad = 8;
+      const x = l.caixa.x1 - pad, y = l.caixa.y1 - pad;
+      const w = l.caixa.x2 - l.caixa.x1 + pad * 2, h = l.caixa.y2 - l.caixa.y1 + pad * 2;
+      const img = document.createElement('canvas');
+      img.width = Math.max(1, Math.ceil(w * dpr));
+      img.height = Math.max(1, Math.ceil(h * dpr));
+      const c = img.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, -x * dpr, -y * dpr);
+      c.font = fonte;
+      c.textBaseline = 'alphabetic';
+      c.lineJoin = 'round';
+      c.lineWidth = 3;
+      c.strokeStyle = tinta;
+      c.setLineDash([4, 2]);
+      c.strokeText(l.ch, l.ox, l.base);
+      c.setLineDash([]);
+      c.globalCompositeOperation = 'destination-out';
+      c.fillText(l.ch, l.ox, l.base);
+      return (l.sprite = { img, x, y });
+    }
+    function colar(s, dx, dy){
+      ctx.drawImage(s.img, Math.round((s.x + dx) * dpr), Math.round((s.y + dy) * dpr));
+    }
+    function letraEm(x, y){
+      let melhor = -1, dist = Infinity;
+      letras.forEach((l, k) => {
+        const c = l.caixa;
+        if (y < c.y1 - 24 || y > c.y2 + 24) return;
+        const x1 = c.x1 + l.off.x, x2 = c.x2 + l.off.x;
+        const d = x < x1 ? x1 - x : x > x2 ? x - x2 : 0;
+        if (d < dist) { dist = d; melhor = k; }
+      });
+      return dist < 20 ? melhor : -1;
+    }
+    const nitido = v => (Math.round(v * dpr) + 0.5) / dpr;
+    function perimetro(d, w, h){
+      d = ((d % (2 * (w + h))) + 2 * (w + h)) % (2 * (w + h));
+      if (d < w) return [moldura.x1 + d, moldura.y1, 0, -1];
+      d -= w;
+      if (d < h) return [moldura.x2, moldura.y1 + d, 1, 0];
+      d -= h;
+      if (d < w) return [moldura.x2 - d, moldura.y2, 0, 1];
+      d -= w;
+      return [moldura.x1, moldura.y2 - d, -1, 0];
+    }
+    function desenharMoldura(){
+      const l = letras[moldura.i];
+      if (!l || moldura.a < 0.01) return;
+      const a = moldura.a;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = acento;
+      ctx.strokeStyle = acento;
+      ctx.lineWidth = 1;
+      const movida = Math.hypot(l.off.x, l.off.y);
+      if (movida > 1) {
+        const hx = (l.caixa.x1 + l.caixa.x2) / 2, hy = (l.caixa.y1 + l.caixa.y2) / 2;
+        ctx.beginPath();
+        ctx.moveTo(hx, hy);
+        ctx.lineTo(hx + l.off.x, hy + l.off.y);
+        ctx.setLineDash([3, 4]);
+        ctx.globalAlpha = 0.45 * a;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 0.7 * a;
+        ctx.fillRect(Math.round(hx) - 2, Math.round(hy) - 2, 4, 4);
+      }
+      const x1 = nitido(moldura.x1), y1 = nitido(moldura.y1), x2 = nitido(moldura.x2), y2 = nitido(moldura.y2);
+      ctx.globalAlpha = 0.5 * a;
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.globalAlpha = 0.95 * a;
+      for (const [cx, cy] of [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]) ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 5, 5);
+      /* pontinhos que piscam em volta da moldura, em grade de 3px */
+      const w = moldura.x2 - moldura.x1, h = moldura.y2 - moldura.y1;
+      if (w > 2 && h > 2) {
+        const per = 2 * (w + h), semente = moldura.i + 1;
+        for (let k = 0; k < 12; k++) {
+          const periodo = 0.5 + ruido(semente, k, 11) * 1.2;
+          const t = pulso / periodo + ruido(semente, k, 17);
+          const ciclo = Math.floor(t), vida = t - ciclo;
+          if (vida > 0.7) continue;
+          const [px, py, nx, ny] = perimetro(ruido(semente, k, ciclo) * per, w, h);
+          const sorte = ruido(semente, k, ciclo, 2);
+          const lado = sorte < 0.5 ? 2 : sorte < 0.75 ? 3 : sorte < 0.9 ? 5 : 8;
+          const fora = (lado >= 8 ? 9 : 4) + Math.floor(ruido(semente, k, ciclo, 1) * 5) * 3;
+          const x = moldura.x1 + Math.round((px + nx * fora - moldura.x1) / 3) * 3;
+          const y = moldura.y1 + Math.round((py + ny * fora - moldura.y1) / 3) * 3;
+          const tom = ruido(semente, k, ciclo, 3);
+          const pisca = vida < 0.06 || (vida > 0.32 && vida < 0.36) ? 0.35 : 1;
+          ctx.globalAlpha = a * (0.3 + 0.5 * tom) * pisca;
+          const esq = Math.round(x - lado / 2), topo = Math.round(y - lado / 2);
+          if (tom < 0.3 || lado >= 8) ctx.strokeRect(esq + 0.5, topo + 0.5, lado, lado);
+          else ctx.fillRect(esq, topo, lado, lado);
+        }
+        /* dois pontos correndo pela borda, com rastro curto */
+        for (let j = 0; j < 2; j++) {
+          const cabeca = (pulso * 0.42 + j * 0.5) * per;
+          for (let i = 0; i < 4; i++) {
+            const [x, y] = perimetro(cabeca - i * 6, w, h);
+            const lado = i === 0 ? 3 : 2;
+            ctx.globalAlpha = a * [0.95, 0.55, 0.32, 0.16][i];
+            ctx.fillRect(Math.round(x - lado / 2), Math.round(y - lado / 2), lado, lado);
+          }
+        }
+      }
+      ctx.font = rotulo;
+      ctx.textBaseline = 'bottom';
+      ctx.globalAlpha = 0.7 * a;
+      const texto = movida > 1
+        ? sinal(Math.round(l.off.x)) + ', ' + sinal(Math.round(-l.off.y))
+        : l.ch + '  ' + Math.round(l.caixa.x2 - l.caixa.x1) + ' × ' + Math.round(l.caixa.y2 - l.caixa.y1);
+      ctx.fillText(texto, Math.round(moldura.x1), Math.round(moldura.y1) - 7);
+      ctx.globalAlpha = 1;
+    }
+    function chutar(i){
+      const forca = 1500;
+      chutes.push({ i, em: pulso, v: forca });
+      for (let d = 1; d < letras.length; d++) {
+        const v = forca * Math.pow(0.62, d);
+        if (v < 30) break;
+        for (const j of [i - d, i + d]) if (j >= 0 && j < letras.length) chutes.push({ i: j, em: pulso + d * 0.055, v });
+      }
+    }
+    function tick(agora){
+      raf = 0;
+      const dt = Math.min(0.05, Math.max(0.001, (agora - ultimo) / 1000));
+      ultimo = agora;
+      pulso += dt;
+      for (let k = chutes.length - 1; k >= 0; k--) {
+        if (chutes[k].em > pulso) continue;
+        const l = letras[chutes[k].i];
+        if (l) l.vel.y -= chutes[k].v;
+        chutes.splice(k, 1);
+      }
+      let mexendo = chutes.length > 0;
+      letras.forEach((l, k) => {
+        if (k === arrastando) {
+          l.off.x = aproxima(l.off.x, ponteiro.x - pega.x, dt, 0.03);
+          l.off.y = aproxima(l.off.y, ponteiro.y - pega.y, dt, 0.03);
+          l.vel.x = l.vel.y = 0;
+          mexendo = true;
+        } else if (Math.abs(l.off.x) > 0.05 || Math.abs(l.off.y) > 0.05 || Math.hypot(l.vel.x, l.vel.y) > 0.5) {
+          l.vel.x += (-MOLA * l.off.x - AMORTECE * l.vel.x) * dt;
+          l.vel.y += (-MOLA * l.off.y - AMORTECE * l.vel.y) * dt;
+          l.off.x += l.vel.x * dt;
+          l.off.y += l.vel.y * dt;
+          mexendo = true;
+        } else {
+          l.off.x = l.off.y = l.vel.x = l.vel.y = 0;
+        }
+        /* o deslocamento vai para o próprio span, por left/top relativos:
+           inline continua inline e o kerning do resto do nome não muda */
+        const lx = Math.round(l.off.x * 10) / 10, ly = Math.round(l.off.y * 10) / 10;
+        l.el.style.left = lx ? lx + 'px' : '';
+        l.el.style.top = ly ? ly + 'px' : '';
+      });
+      const foco = arrastando >= 0 ? arrastando : ponteiro.dentro ? letraEm(ponteiro.x, ponteiro.y) : -1;
+      if (foco >= 0) {
+        const l = letras[foco];
+        const bx1 = l.caixa.x1 + l.off.x - 6, by1 = l.caixa.y1 + l.off.y - 6;
+        const bx2 = l.caixa.x2 + l.off.x + 6, by2 = l.caixa.y2 + l.off.y + 6;
+        if (moldura.i < 0 || moldura.a < 0.02) Object.assign(moldura, { x1: bx1, y1: by1, x2: bx2, y2: by2 });
+        const deslize = foco === arrastando ? 0.02 : 0.08;
+        moldura.x1 = aproxima(moldura.x1, bx1, dt, deslize);
+        moldura.y1 = aproxima(moldura.y1, by1, dt, deslize);
+        moldura.x2 = aproxima(moldura.x2, bx2, dt, deslize);
+        moldura.y2 = aproxima(moldura.y2, by2, dt, deslize);
+        moldura.i = foco;
+      }
+      moldura.a = aproxima(moldura.a, foco >= 0 ? 1 : 0, dt, 0.1);
+      letras.forEach((l, k) => {
+        const alvo = k === foco && k !== arrastando ? 1 : 0;
+        l.contorno = aproxima(l.contorno, alvo, dt, 0.09);
+        if (Math.abs(l.contorno - alvo) > 0.002) mexendo = true;
+        else l.contorno = alvo;
+        /* a letra do DOM cede o lugar ao contorno do canvas */
+        const op = 1 - l.contorno;
+        l.el.style.opacity = op < 0.999 ? op.toFixed(3) : '';
+      });
+      const novoCursor = arrastando >= 0 ? 'grabbing' : foco >= 0 && ponteiro.dentro ? 'grab' : '';
+      if (novoCursor !== cursor) { cursor = novoCursor; n.style.cursor = novoCursor; }
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1;
+      for (const l of letras) {
+        const movida = Math.hypot(l.off.x, l.off.y);
+        /* fantasma tracejado no lugar de origem da letra arrastada */
+        if (movida > 1) { ctx.globalAlpha = Math.min(1, movida / 24) * 0.55; colar(sprite(l), 0, 0); }
+        if (l.contorno > 0.001) { ctx.globalAlpha = l.contorno; colar(sprite(l), l.off.x, l.off.y); }
+      }
+      ctx.globalAlpha = 1;
+      desenharMoldura();
+      const assentando = mexendo || (moldura.a > 0.01 && moldura.a < 0.99);
+      if (ponteiro.dentro || arrastando >= 0 || assentando || moldura.a > 0.01) raf = requestAnimationFrame(tick);
+    }
+    function acordar(){
+      if (raf) return;
+      ultimo = performance.now();
+      raf = requestAnimationFrame(tick);
+    }
+    const ativo = () => document.body.classList.contains('hero-in') && !reduced;
+    function local(e){
+      const r = canvas.getBoundingClientRect();
+      ponteiro.x = e.clientX - r.left;
+      ponteiro.y = e.clientY - r.top;
+    }
+    let medido = false;
+    n.addEventListener('pointerenter', e => {
+      if (!ativo()) return;
+      if (!medido) { medir(); medido = true; }
+      local(e); ponteiro.dentro = true; acordar();
+    }, { passive: true });
+    n.addEventListener('pointermove', e => {
+      if (!ativo()) return;
+      if (!medido) { medir(); medido = true; }
+      local(e); ponteiro.dentro = true; acordar();
+    }, { passive: true });
+    n.addEventListener('pointerleave', () => {
+      if (arrastando >= 0) return;
+      ponteiro.dentro = false; acordar();
+    }, { passive: true });
+    n.addEventListener('pointerdown', e => {
+      if (!ativo() || e.button !== 0) return;
+      if (!medido) { medir(); medido = true; }
+      local(e);
+      const i = letraEm(ponteiro.x, ponteiro.y);
+      Object.assign(press, { x: ponteiro.x, y: ponteiro.y, t: performance.now(), i });
+      if (i >= 0) {
+        arrastando = i;
+        pega.x = ponteiro.x - letras[i].off.x;
+        pega.y = ponteiro.y - letras[i].off.y;
+        try { n.setPointerCapture(e.pointerId); } catch (erro) { /* ponteiro sintético */ }
+      }
+      acordar();
+    });
+    const soltar = e => {
+      if (arrastando >= 0) {
+        arrastando = -1;
+        if (n.hasPointerCapture(e.pointerId)) n.releasePointerCapture(e.pointerId);
+        const r = n.getBoundingClientRect();
+        ponteiro.dentro = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      }
+      /* clique curto e parado é um "chute": o nome salta em onda */
+      if (e.type === 'pointerup' && press.i >= 0 && performance.now() - press.t < 450) {
+        local(e);
+        if (Math.hypot(ponteiro.x - press.x, ponteiro.y - press.y) < 6) chutar(press.i);
+      }
+      press.i = -1;
+      acordar();
+    };
+    n.addEventListener('pointerup', soltar);
+    n.addEventListener('pointercancel', soltar);
+    /* remedição pública: fonte que chega, resize e troca de idioma passam por
+       medirDeslocamentoNome, que chama isto */
+    window.__nomeVetorialRemedir = () => { if (medido) { medir(); acordar(); } };
   }
   montarNomeCinetico();
 

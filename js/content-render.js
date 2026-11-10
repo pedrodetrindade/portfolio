@@ -22,8 +22,9 @@
   var BASE_JS = document.currentScript && document.currentScript.src
     ? document.currentScript.src.replace(/content-render\.js(\?.*)?$/, '') : '';
   var DITHER_V = 3;
-  var DITHER_CAPA_V = 1;
+  var DITHER_CAPA_V = 2;
   var ASSINATURA_V = 1;
+  var CRACHA_V = 2;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -926,6 +927,17 @@
       }
       var photo = document.querySelector('.portrait-img');
       if (photo && A.photo) photo.setAttribute('src', resolveAssetUrl(A.photo));
+      /* Crachá (lanyard): a foto pendurada num cordão, arrastável. Só com
+         mouse, sem movimento reduzido e a partir do tablet: no celular a foto
+         fica no meio do texto, e o cordão cruzaria os parágrafos. */
+      var figuraCracha = document.querySelector('.about-photo');
+      if (figuraCracha && !figuraCracha.classList.contains('cracha-ativo') &&
+          window.matchMedia('(pointer: fine) and (hover: hover) and (min-width: 640px)').matches &&
+          !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        carregarScript('cracha.js', '__CRACHA__', CRACHA_V).then(function (C) {
+          if (figuraCracha.isConnected) C.montar(figuraCracha);
+        }).catch(function () { /* a foto continua parada, como sempre foi */ });
+      }
       var capsGrid = document.querySelector('.caps-grid');
       if (capsGrid && Array.isArray(A.capabilities)) {
         capsGrid.innerHTML = A.capabilities.map(function (item) {
@@ -1057,10 +1069,45 @@
      recusado na publicação pelo Worker, que é quem decide.
      TIPOS_DE_BLOCO fica lá em cima, junto das chamadas, pelo motivo explicado
      ali. */
+  /* ===== BREADCRUMB (BoardUI, navegação estrutural) =====
+     A trilha de onde a página está: Início › Trabalhos › projeto. Os níveis de
+     cima são links com pílula de fundo suave no hover; o último é a página
+     atual, sem link (aria-current). Montado aqui, e não escrito nas páginas,
+     para valer também nas páginas de case que o painel gera do zero; o nome do
+     projeto sai do mesmo título do hero, então acompanha o CMS e a prévia.
+     Textos com data-pt/data-en, que o main.js troca com o idioma. */
+  function aplicarBreadcrumb(alvo, itens) {
+    if (!alvo) return;
+    var nav = null;
+    for (var k = 0; k < alvo.children.length; k++) {
+      if (alvo.children[k].classList.contains('breadcrumb')) { nav = alvo.children[k]; break; }
+    }
+    if (!nav) {
+      nav = document.createElement('nav');
+      nav.className = 'breadcrumb reveal';
+      alvo.insertBefore(nav, alvo.firstChild);
+    }
+    nav.setAttribute('data-pt-label', 'Você está em');
+    nav.setAttribute('data-en-label', 'You are here');
+    nav.setAttribute('aria-label', 'Você está em');
+    var casa = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.6 12 4l8 6.6V19a1 1 0 0 1-1 1h-4.6v-5.6H9.6V20H5a1 1 0 0 1-1-1z"/></svg>';
+    nav.innerHTML = '<ol>' + itens.map(function (it) {
+      var rotulo = '<span data-pt="' + esc(it.pt) + '" data-en="' + esc(it.en) + '">' + esc(it.pt) + '</span>';
+      var icone = it.inicio ? casa : '';
+      return '<li>' + (it.href
+        ? '<a href="' + esc(it.href) + '">' + icone + rotulo + '</a>'
+        : '<span class="bc-atual" aria-current="page">' + icone + rotulo + '</span>') + '</li>';
+    }).join('') + '</ol>';
+  }
+
   function renderWorkIndex(overrideIndex) {
     if (!isWorkIndex()) return;
     aplicarAparenciaPagina();
     renderSharedChrome();
+    aplicarBreadcrumb(document.querySelector('.work-archive-intro'), [
+      { pt: 'Início', en: 'Home', href: '/', inicio: true },
+      { pt: 'Trabalhos', en: 'Work' }
+    ]);
     var idx = overrideIndex || window.__CMS_PROJECTS_INDEX__;
     if (!idx) return;
     var list = projetosPublicos(idx);
@@ -1234,6 +1281,11 @@
     /* Subtítulo vazio nos dois idiomas some do layout: o contexto do case já
        abre a leitura logo abaixo, e um <p> vazio ainda empurraria a meta. */
     setOptionalLabel(document.querySelector('.case-hero .sub'), h.subtitlePt, h.subtitleEn);
+    aplicarBreadcrumb(document.querySelector('.case-hero'), [
+      { pt: 'Início', en: 'Home', href: '/', inicio: true },
+      { pt: 'Trabalhos', en: 'Work', href: '/work/' },
+      { pt: h.titlePt || '', en: h.titleEn || h.titlePt || '' }
+    ]);
 
     var metaEl = document.querySelector('.case-meta');
     if (metaEl) {

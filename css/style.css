@@ -3,10 +3,9 @@
    assets/fonts/: publicar o pacote inteiro levaria OTF, TTF e dezoito pesos
    para o servidor sem necessidade. Uma declaração só, e font-synthesis
    desligado impede negrito falso. Nada é baixado da internet.
-   O eixo vai de 300 a 700. O texto do site para em 600; o que passa disso é
-   só o hover cinético do nome da capa, que precisa de peso de verdade para a
-   letra engordar sem virar negrito sintético. É o mesmo arquivo variável, sem
-   byte a mais.
+   O eixo vai de 300 a 700. O texto do site para em 600; a folga até 700 era
+   do antigo hover cinético do nome da capa (hoje vetorial, sem mudar peso) e
+   ficou porque não custa nada: é o mesmo arquivo variável, sem byte a mais.
    Antes estava escrito var(--w-light) 500, e var() não vale dentro de
    @font-face: o descritor inteiro era descartado e o eixo ficava sem limite
    nenhum, ao contrário do que o comentário prometia. */
@@ -994,33 +993,21 @@ body[data-availability="unavailable"] .menu-panel-avail .avail-dot{background:va
 .js .hn-mask.reveal .hn-line{transform:translateY(105%)}
 .hn-line i{font-style:normal;color:inherit;opacity:.62}
 
-/* ===== NOME CINÉTICO (hover) =====
-   Adaptação do kinetic-text do Magic UI: a letra sob o cursor engorda e
-   respira, e a onda passa às vizinhas em degraus. Lá o peso vai de 300 a 900
-   com contorno; aqui parte do 500 do nome e chega a 700, o teto do eixo
-   declarado no @font-face, sem contorno: a 130px a diferença já lê, e mais que
-   isso virava caricatura num nome que é a identidade do site.
-   O main.js só quebra o nome em letras (.cinetico) onde existe cursor de
-   verdade e sem movimento reduzido. No toque o nome continua texto corrido.
-   Só vale depois de a capa assentar (.hero-in): durante a intro o nome ainda
-   está escalando, e uma letra mudando de peso ali brigaria com o morph.
-   A letra muda de largura com o peso, e o padding também abre espaço. Para
-   isso não empurrar profissão e localização, o main.js trava a largura do
-   .hero-name-wrap na medida de repouso, e o flex centralizado deixa o nome
-   crescer igual para os dois lados em vez de só para a direita. */
-.hero-name.cinetico .hn-mask{display:flex;justify-content:center}
-.hn-letra{transition:font-weight var(--dur-micro) var(--ease-smooth),
-  padding var(--dur-micro) var(--ease-smooth)}
+/* ===== NOME VETORIAL (hover, tech-text do React Bits) =====
+   Substituiu o hover cinético (peso por letra). O main.js quebra o nome em
+   .hn-letra só onde existe cursor de verdade e sem movimento reduzido, e um
+   canvas por cima do bloco (.hn-vetor) desenha o contorno tracejado, a
+   moldura de seleção e as medidas; a letra do DOM só esmaece por baixo.
+   Letras inline com position:relative: é o left/top delas que leva o
+   arraste, porque transform não pega em inline e inline-block perderia o
+   kerning entre letras (a largura do nome é calibrada, ver CLAUDE.md).
+   O canvas passa da caixa do nome para caber rótulo e pontinhos em volta. */
+.hero-name-wrap{position:relative}
+.hero-name.vetorial{user-select:none;-webkit-user-select:none}
+.hero-name.vetorial .hn-letra{position:relative}
+.hn-vetor{position:absolute;left:-48px;top:-56px;z-index:2;pointer-events:none;
+  width:calc(100% + 96px);height:calc(100% + 112px)}
 .hn-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-@media(hover:hover) and (pointer:fine){
-  .js body.hero-in .hero-name.cinetico .hn-letra:hover{font-weight:700;padding-inline:.03em}
-  .js body.hero-in .hero-name.cinetico .hn-letra:hover + .hn-letra,
-  .js body.hero-in .hero-name.cinetico .hn-letra:has(+ .hn-letra:hover){font-weight:620;padding-inline:.03em}
-  .js body.hero-in .hero-name.cinetico .hn-letra:hover + .hn-letra + .hn-letra,
-  .js body.hero-in .hero-name.cinetico .hn-letra:has(+ .hn-letra + .hn-letra:hover){font-weight:560}
-}
-/* medição da largura de repouso: o main.js liga isto por um instante */
-.hero-name.em-repouso .hn-letra{font-weight:inherit!important;padding:0!important;transition:none!important}
 
 @media(max-width:760px){
   .hero-tag{white-space:nowrap}
@@ -1251,6 +1238,43 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   object-fit:cover;object-position:50% 22%}
 .portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted-2);
   background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:var(--radius-button,12px);padding:.5rem 1.1rem}
+/* ===== CRACHÁ (js/cracha.js, lanyard do React Bits) =====
+   A foto vira um crachá preso num cordão que sai da linha do topo do Sobre.
+   O cartão gira em torno da presilha (transform-origin no topo dela), e a
+   perspectiva da figura dá volume ao giro em Y. Frente é a foto de sempre;
+   verso, a marca em tipografia, nas cores do site.
+   O cordão é uma fita em --ink-3 com "trind9de" correndo em mono, desenhado
+   num SVG que ocupa a figura e passa da borda de cima.
+   Sem will-change: o translate3d/rotateY já compõe o cartão em camada
+   própria, e o projeto reserva will-change às três camadas fixas. */
+.about-photo.cracha-ativo{position:relative;perspective:1400px}
+.cracha{position:relative;z-index:2;transform-origin:50% -14px;transform-style:preserve-3d;
+  cursor:grab;touch-action:none}
+.cracha.arrastando{cursor:grabbing}
+.cracha-face{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.cracha-verso{position:absolute;inset:0;transform:rotateY(180deg);
+  display:flex;flex-direction:column;justify-content:space-between;padding:clamp(1.1rem,2vw,1.6rem);
+  border-radius:var(--radius-image,16px);border:1px solid var(--line);overflow:hidden;
+  background:radial-gradient(circle at 50% 38%,var(--ink-3),var(--ink-2) 55%,var(--ink) 100%)}
+.cv-marca{font-size:clamp(1.6rem,2.6vw,2.3rem);font-weight:var(--w-medium);letter-spacing:-.04em;
+  color:var(--color-hero-name)}
+.cv-grade{flex:1;margin-block:1rem;border-radius:calc(var(--radius-image,16px) / 2);opacity:.5;
+  background:radial-gradient(rgba(var(--paper-rgb),.22) .7px,transparent .9px) 0 0/6px 6px}
+.cv-pe{display:flex;flex-direction:column;gap:.3rem}
+.cv-nome{font-size:.95rem;font-weight:var(--w-medium);color:var(--paper);letter-spacing:-.01em}
+.cv-cargo,.cv-local{font-family:var(--mono);font-size:.68rem;letter-spacing:.02em;color:var(--muted-2)}
+/* presilha: a peça onde o cordão prende, acima da borda da foto */
+.cracha-presilha{position:absolute;left:50%;top:-14px;width:22px;height:20px;margin-left:-11px;z-index:2;
+  border-radius:6px;background:linear-gradient(var(--muted-2),var(--ink-3));
+  box-shadow:0 1px 0 rgba(var(--paper-rgb),.25) inset,0 2px 6px rgba(var(--ink-rgb),.6)}
+.cracha-presilha::after{content:"";position:absolute;left:50%;top:5px;width:10px;height:4px;margin-left:-5px;
+  border-radius:3px;background:var(--ink)}
+.cracha-cordao{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:1}
+.cc-fita{fill:none;stroke:var(--ink-3);stroke-width:13;stroke-linecap:butt}
+/* a "costura" é só o trilho do texto: invisível, o texto corre no meio da fita */
+.cc-costura{fill:none;stroke:none}
+.cc-texto{font-family:var(--mono);font-size:7px;letter-spacing:.06em;fill:var(--muted-2);dominant-baseline:middle}
+
 /* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala.
    1250ms, o tempo de imagem: mais longo que texto, sem parecer preguiçoso. */
 .js .mask-reveal{clip-path:inset(100% 0 0 0);transform:scale(1.025)}
@@ -2089,6 +2113,27 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   font-family:var(--mono);font-size:.68rem;letter-spacing:.02em;color:var(--muted-2);white-space:nowrap}
 
 /* ===== CASE PAGE ===== */
+/* ===== BREADCRUMB (BoardUI) =====
+   Montado pelo content-render no topo do hero do case e da página de
+   trabalhos. Texto pequeno e apagado, separado por uma seta fina; os níveis
+   clicáveis ganham a pílula de fundo suave no hover e clareiam, como na
+   referência. A página atual fica em --paper, sem pílula e sem link. */
+.breadcrumb{margin-bottom:1.4rem}
+.breadcrumb ol{display:flex;flex-wrap:wrap;align-items:center;gap:.15rem;list-style:none;margin:0;padding:0}
+.breadcrumb li{display:inline-flex;align-items:center;gap:.15rem;min-width:0}
+.breadcrumb li+li::before{content:"";width:13px;height:13px;flex:none;background:var(--muted-2);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9.5 6 6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9.5 6 6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat}
+.breadcrumb a,.breadcrumb .bc-atual{display:inline-flex;align-items:center;gap:.4em;
+  font-size:.8rem;line-height:1;letter-spacing:-.005em;padding:.42rem .62rem;border-radius:999px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:28ch}
+.breadcrumb a{color:var(--muted-2);
+  transition:color var(--dur-micro) var(--ease-soft),background-color var(--dur-micro) var(--ease-soft)}
+.breadcrumb a:hover{color:var(--paper);background:rgba(var(--paper-rgb),.07)}
+.breadcrumb li:first-child a{margin-left:-.62rem}
+.breadcrumb .bc-atual{color:var(--paper)}
+.breadcrumb svg{width:14px;height:14px;flex:none}
+.work-archive-intro .breadcrumb{margin-bottom:1.1rem}
 .case-hero{min-height:auto;padding-top:9rem;padding-bottom:1rem}
 .case-hero .eyebrow{margin-bottom:1.2rem}
 .case-hero h1{font-size:clamp(2rem,4.6vw,3.6rem);font-weight:var(--w-medium);line-height:1.08;letter-spacing:-.02em;max-width:20ch;margin-bottom:1.6rem}

@@ -80,9 +80,11 @@ void main() {
   vec3 c = mix(a, b, uMix);
   float lum = dot(c, vec3(0.299, 0.587, 0.114));
   // brilho que deriva devagar: manchas largas que mudam o nível dos pixels
+  // (a pedido, mais lento e mais suave que a primeira versão: deriva a um
+  // terço da velocidade e com dois terços da força, e contraste menor)
   vec2 q = uv * vec2(uView.x / uView.y, 1.0) * 2.2;
-  float deriva = ruido(q + vec2(uTempo * 0.06, uTempo * 0.035)) - 0.5;
-  lum = clamp((lum - 0.5) * 1.3 + 0.5 + deriva * 0.14, 0.0, 1.0);
+  float deriva = ruido(q + vec2(uTempo * 0.02, uTempo * 0.012)) - 0.5;
+  lum = clamp((lum - 0.5) * 1.12 + 0.5 + deriva * 0.09, 0.0, 1.0);
   float x = lum * uNiveis;
   float nivel = floor(x + step(bayer(ivec2(gl_FragCoord.xy)), fract(x))) / uNiveis;
   vec3 paleta = mix(uEscuro, uClaro, nivel);
@@ -116,9 +118,11 @@ void main() {
     return [d[0] / 255, d[1] / 255, d[2] / 255];
   }
 
-  /* Zoom de cada imagem: 2000ms lineares, de 1 a 1.08 ou de volta, a partir
-     do instante em que ela entrou. Os mesmos números do CSS da <img>. */
-  const ZOOM_MS = 2000, ZOOM = 0.08, FUNDIDO_MS = 450;
+  /* Zoom de cada imagem: 2000ms lineares a partir do instante em que ela
+     entrou, aproximando ou afastando. 5% e não os 8% do CSS da <img>: no
+     dither, cada fração de zoom faz células trocarem de nível, e 8% deixava
+     a imagem fervendo; a pedido, o movimento ficou mais lento. */
+  const ZOOM_MS = 2000, ZOOM = 0.05, FUNDIDO_MS = 450;
   function zoomDe(item, agora) {
     if (!item || !item.inicio) return 1;
     const t = Math.min(1, Math.max(0, (agora - item.inicio) / ZOOM_MS));
@@ -126,7 +130,7 @@ void main() {
   }
 
   function montar(caixa, liquidBg, opcoes) {
-    const o = Object.assign({ celula: 4, niveis: 4, cor: 0.7, fps: 30 }, opcoes || {});
+    const o = Object.assign({ celula: 4, niveis: 6, cor: 0.7, fps: 24 }, opcoes || {});
     const estado = caixa.__estado;
     if (!estado || !estado.slides.length) return null;
 

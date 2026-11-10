@@ -435,14 +435,18 @@ fecha o morph se a aba sumir. `.morfando` fica até o fim da intro: tirá-la ant
 religaria a máscara e o `acende-nome` no meio da animação. O ponto final some
 durante o morph e pousa depois, porque o limiar acenderia os 62% dele em 100%.
 
-**O nome da capa é cinético no hover** (Magic UI, kinetic-text), só com cursor
-de verdade e sem movimento reduzido. O `main.js` quebra o nome em `.hn-letra`
-(aria-hidden, com uma cópia `.hn-sr` para leitor de tela); a letra sob o cursor
-vai de 500 a 700 e as vizinhas a 620 e 560, com `--dur-micro`. Vale só depois de
-`.hero-in`. A largura do `.hero-name-wrap` é travada na medida de repouso
-(`medirDeslocamentoNome`, com `.em-repouso` para medir) e a `.hn-mask` vira flex
-centralizado: o nome cresce igual para os dois lados e profissão e localização
-não andam com o cursor.
+**O nome da capa é vetorial no hover** (React Bits, tech-text; substituiu o
+kinetic-text, que engordava a letra). Só com cursor de verdade e sem movimento
+reduzido, e só depois de `.hero-in`. O `main.js` quebra o nome em `.hn-letra`
+(aria-hidden, com uma cópia `.hn-sr` para leitor de tela) e põe um canvas
+(`.hn-vetor`) por cima do `.hero-name-wrap`: a letra sob o cursor esmaece no DOM
+e reaparece no canvas como contorno tracejado, com moldura de seleção, alças,
+medida ("T 77 × 91"), pontinhos piscando e dois pontos correndo pela borda. A
+letra pode ser arrastada e volta por mola; clique curto faz o nome saltar em
+onda. O nome continua texto no DOM porque a intro, o morph e a calibração de
+8,0x dependem dele. As letras são inline com `position:relative` (o arraste é
+left/top): transform não pega em inline, e inline-block perderia o kerning e
+mudaria a largura calibrada. A varredura automática do original ficou de fora.
 
 **As durações dos secundários precisam do prefixo `.js`** (`.js .h-step.hero-tag`).
 Sem ele perdem para `.js .h-step`, que declara a transição inteira com
@@ -482,8 +486,8 @@ gravar a detecção automática a congelaria como preferência permanente.
 fica comentado no HTML, não publicado.
 
 **Peso tipográfico vai até 600 no texto.** A Switzer é variável e o
-`@font-face` declara o eixo de 300 a 700; o que passa de 600 é só o hover
-cinético do nome da capa. `var()` não vale dentro de `@font-face`: o descritor
+`@font-face` declara o eixo de 300 a 700 (folga que o antigo hover cinético usava;
+hoje nada passa de 600). `var()` não vale dentro de `@font-face`: o descritor
 antigo (`var(--w-light) 500`) era descartado inteiro e o eixo ficava sem limite,
 ao contrário do que o comentário dizia. Escreva números ali.
 
@@ -699,12 +703,18 @@ Canvas UI), em `js/dither-capa.js`, que substitui o ruído como textura da capa
 reage ao mouse. Vivo por conta própria, pelo zoom de cada foto e por um brilho
 que deriva devagar. Quem manda na sequência continua sendo `montarSlides()`,
 que publica o estado em `caixa.__estado` (ativa, saindo, início e sentido do
-zoom de cada uma); o WebGL só desenha esse estado, em células de 4px e quatro
-níveis de Bayer, cor 70% puxada para `--dither-capa-escuro/-claro`. O canvas
+zoom de cada uma); o WebGL só desenha esse estado, em células de 4px e seis
+níveis de Bayer, cor 70% puxada para `--dither-capa-escuro/-claro`, a 24 quadros
+por segundo. Pedro pediu mais lento e mais suave que a primeira versão: zoom de
+5% (os 8% da `<img>` faziam as células ferverem), deriva a um terço da
+velocidade e contraste 1,12. O canvas
 fica entre as `<img>` e o véu de 90%, e as `<img>` só somem depois do fundido
 de entrada. Medido nas seis imagens: rótulo da capa de 5,00:1 a 5,47:1.
 Texturas reduzidas a 1280px (seis fotos de 2000px com mipmap passariam de
 80MB de vídeo). Versão em `DITHER_CAPA_V`, no content-render.
+O trind9de entra na capa e como capa de listagem (card da home e `/work/`) por
+`capa-ceu-zoom.webp`, um recorte de 1,7× em volta do símbolo 3D, que na foto
+inteira ficava pequeno demais; o `og:image` do case segue com a foto inteira.
 
 **Sem ruído na capa, a emenda com #work precisa do ruído na faixa de
 dissolução.** A máscara do `.liquid-bg` só fecha a conta se as duas seções
@@ -726,3 +736,24 @@ com `pathLength=1`: 110ms entre letras, `--dur-slow` cada, linear (com
 página no fim, quem a revela é a regra de fim de página, e ela se escreve
 quando a pessoa chega lá. `footer.showHandSignature:false` desliga (o Worker
 conhece a chave). Versão em `ASSINATURA_V`, no content-render.
+
+**Breadcrumb nas páginas de case e em `/work/`** (BoardUI, navegação
+estrutural): Início › Trabalhos › projeto. Montado pelo `content-render`
+(`aplicarBreadcrumb`) no topo do `.case-hero` e da `.work-archive-intro`, e não
+escrito nas páginas, para valer também nos cases que o painel gera do zero; o
+último nível sai do título do hero e acompanha o CMS. Links com pílula suave no
+hover, página atual em `--paper` com `aria-current`, rótulo do `nav` bilíngue.
+
+**A foto do Sobre é um crachá** (React Bits, lanyard), em `js/cracha.js`,
+carregado pelo `content-render` só com mouse, sem movimento reduzido e a partir
+de 640px (no celular a foto fica no meio do texto). O original é 3D com
+three.js e física; aqui é 2,5D sem biblioteca: cordão de verlet desenhado em
+SVG, saindo da linha do topo da seção, e o cartão preso na ponta, girando por
+mola para alinhar com os últimos quatro trechos (com um só, o giro sacudia
+demais) e com rotateY pela velocidade. Arrasta e arremessa; clique curto vira e
+mostra o verso tipográfico (trind9de, nome, cargo, cidade). Uma mola fraca leva
+a ponta de volta ao layout, e a montagem calibra o comprimento do cordão
+simulando até o repouso: sem isso a gravidade deixava a foto 7px abaixo do
+lugar dela no grid. Ganha um empurrão quando a máscara da foto abre.
+Versão em `CRACHA_V`. O crosshair do React Bits chegou a entrar e saiu a
+pedido: não volte com ele sem perguntar.
