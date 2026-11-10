@@ -559,6 +559,15 @@ levemente diferente de Trabalhos, dither suave e passagem suave entre as duas.
   e se apagam antes da coluna de texto (que começa em 51% da largura a partir
   de 900px e em 43% no tablet, medido); no celular, só nos respiros de cima e
   de baixo. Mexeu no grid do Sobre, remeça e mova os stops da máscara.
+- **Espaço entre seções em volta do Sobre (CMS, `sections.*.spacing*`).** Para
+  afastar o Sobre de Trabalhos, o que cresce é `work.spacingBottom` (170 / 130
+  / 120), não `about.spacingTop`: o cordão do crachá parte do topo do
+  `.about-break`, e mais padding ali alongaria o cordão. Para aproximar "O que
+  eu faço", o que diminui é `about.spacingBottom` (48 / 88 / 88): `#help` tem
+  `min-height:100svh` com o conteúdo centrado, então o padding de cima dele só
+  pesa pela metade em tela alta. Medido a 1920x889: 238px de Trabalhos ao
+  Sobre (era 138) e 270px do Sobre a "O que eu faço" (era 294). Os três
+  níveis vão escritos porque nível vazio herda o de cima desta mesma seção.
 
 **As ações do Sobre são três botões na mesma linha e na mesma altura.**
 "Vamos conversar" é a principal: cheia (`.cta-solid`), no material do botão

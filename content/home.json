@@ -54,9 +54,9 @@
         "mobile": null
       },
       "spacingBottom": {
-        "desktop": 70,
-        "tablet": 70,
-        "mobile": 70
+        "desktop": 170,
+        "tablet": 130,
+        "mobile": 120
       }
     },
     "about": {
@@ -67,9 +67,9 @@
         "mobile": null
       },
       "spacingBottom": {
-        "desktop": null,
-        "tablet": null,
-        "mobile": null
+        "desktop": 48,
+        "tablet": 88,
+        "mobile": 88
       },
       "showDividers": false
     },
