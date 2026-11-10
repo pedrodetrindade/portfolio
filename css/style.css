@@ -711,9 +711,10 @@ html.menu-desligado header .ctrl-group{visibility:hidden;pointer-events:none}
 .liquid-bg.video-pronto .hero-slides{opacity:1}
 /* As capas são fundo, não destaque: véu forte de --ink por cima delas e as
    massas marrons da capa antiga continuam visíveis acima, animando como
-   antes. O resultado é o marrom de sempre, com as imagens passando por baixo. */
+   antes. O resultado é o marrom de sempre, com as imagens passando por baixo.
+   90% (foi 92%): a pedido, o dither da capa um pouco mais visível. */
 .hero-slides::after{content:"";position:absolute;inset:0;z-index:4;
-  background:rgba(var(--ink-rgb),.92)}
+  background:rgba(var(--ink-rgb),.9)}
 /* Dither das imagens (js/dither-capa.js, a partir do Retro Dither do Canvas
    UI): o canvas desenha a mesma sequência em pixels de 3px, com o brilho em
    quatro níveis de Bayer e a cor puxada para a rampa abaixo. Fica entre as

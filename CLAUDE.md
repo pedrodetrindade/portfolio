@@ -591,6 +591,8 @@ levemente diferente de Trabalhos, dither suave e passagem suave entre as duas.
   máscara nas bordas. A curva do tom é desenhada em stops, entrada e saída
   lentas; medida, a luminância sobe de 20,6 a 28,3 em ~200px sem degrau.
 - A névoa é o `js/dither-field.js` com `{padrao:'nevoa', borracha:false}`
+  e intensidade .42 (era .34; Pedro pediu o dither um pouco mais visível no
+  site todo, menos no rodapé)
   (manchas lentas no lugar das ondas; o crachá já é a interação da seção),
   montada pelo `content-render` depois do `load`, quando o navegador fica
   ocioso. O host `[data-sobre-dither]` está no HTML para o `medirFundos` já
@@ -714,14 +716,14 @@ passo (não pela posição, para a volta ao início não repetir o sentido), a n
 entrando por cima da anterior para a troca não escurecer. Chave própria, e não
 um quinto valor de `videoMode`: o Worker só aceita os quatro modos e recusaria
 a home inteira. A configuração do Vimeo continua gravada e volta ao desligar.
-As capas são fundo, não destaque: véu de `--ink` a 92% por cima delas (mais
+As capas são fundo, não destaque: véu de `--ink` a 90% por cima delas (mais
 30% nas `coverLight`) e as massas marrons do vidro líquido continuam visíveis
 acima a 60%, animando como antes (sem `has-video`, elas não saem). Neste modo
 não há vinheta (`.lq-veil`): sobre imagens ela virava um halo escuro atrás do
 nome. A legibilidade vem do fundo inteiro escuro, medida nas seis imagens no
 percentil 98 do fundo: o rótulo pequeno em `--accent` ("Diretor de Arte...")
-fica entre 5,34:1 e 5,80:1 com o dither atual (era 4,59:1 com as `<img>` lisas
-e véu de 90%); a frase acima de 15:1. Clarear véu ou massas derruba o rótulo
+fica entre 5,05:1 e 5,38:1 com o dither atual e véu de 90% (era 4,59:1 com
+as `<img>` lisas e o mesmo véu); a frase acima de 15:1. Clarear véu ou massas derruba o rótulo
 abaixo de 4,5:1 primeiro.
 A base do `.liquid-bg` se dissolve por `mask-image`, não por um véu de `--ink`
 por cima: `#work` é transparente e mostra o `.glow` fixo, e um véu terminando em
@@ -845,9 +847,12 @@ níveis de Bayer, contraste 1,28, cor 70% puxada para
 ordem: mais lento e suave (zoom de 5%, porque os 8% da `<img>` faziam as
 células ferverem; deriva a um terço da velocidade), depois a trama um pouco
 mais visível (de seis para quatro níveis, contraste de 1,12 para 1,28) com as
-imagens um pouco mais escuras (véu de 90% para 92%). O canvas
+imagens um pouco mais escuras (véu de 90% para 92%), e por fim o dither um
+pouco mais visível de novo, pelo véu, que voltou a 90%: a trama passa 25% mais
+forte sem mexer no desenho. O canvas
 fica entre as `<img>` e o véu, e as `<img>` só somem depois do fundido
-de entrada. Medido nas seis imagens: rótulo da capa de 5,34:1 a 5,80:1.
+de entrada. Medido nas seis imagens, no mesmo método: rótulo da capa de
+5,44:1 a 5,79:1 com véu de 92% e de 5,05:1 a 5,38:1 com os 90% atuais.
 Texturas reduzidas a 1280px (seis fotos de 2000px com mipmap passariam de
 80MB de vídeo). Versão em `DITHER_CAPA_V`, no content-render.
 O trind9de entra na capa e como capa de listagem (card da home e `/work/`) por

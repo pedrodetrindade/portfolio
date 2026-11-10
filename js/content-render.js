@@ -316,7 +316,7 @@
       carregarScript('dither-field.js', '__DITHER__', DITHER_V).then(function (D) {
         if (!host.isConnected) { window.__CMS_SOBRE_DITHER__ = null; return; }
         window.__CMS_SOBRE_DITHER__ = D.montar(host, {
-          padrao: 'nevoa', borracha: false, intensidade: 0.34, velocidade: 0.4
+          padrao: 'nevoa', borracha: false, intensidade: 0.42, velocidade: 0.4
         });
       }).catch(function () {
         window.__CMS_SOBRE_DITHER__ = null;
