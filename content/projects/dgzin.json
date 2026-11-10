@@ -38,17 +38,10 @@
     },
     {
       "type": "text",
-      "labelPt": "processo",
-      "labelEn": "process",
-      "textPt": "O logotipo foi modelado no Blender, partindo de uma versão em argila até chegar ao vidro. Depois vieram a composição das cenas e o brilho, que dão ao nome um aspecto quase líquido e conversam com o verde da LOUD nas capas. O mesmo material se desdobra para Twitter, YouTube e Twitch.",
-      "textEn": "The logotype was modeled in Blender, moving from a clay pass to a glass finish. Scene composition and glow came next, giving the name an almost liquid quality that plays against LOUD's green in the banners. The same material then carries across Twitter, YouTube, and Twitch."
-    },
-    {
-      "type": "text",
-      "labelPt": "resultado",
-      "labelEn": "result",
-      "textPt": "Um sistema visual único para todas as redes do atleta. A coroa ganhou vida própria: virou o badge de inscrito da Twitch e muda de cor conforme o tempo de assinatura, de um a doze meses.",
-      "textEn": "A single visual system across all of the athlete's channels. The crown took on a life of its own: it became the Twitch subscriber badge, changing color with subscription length, from one to twelve months."
+      "labelPt": "processo 3d e brilho",
+      "labelEn": "3d process and glow",
+      "textPt": "O logotipo foi modelado no Blender, partindo de uma versão em argila até chegar ao vidro. Depois vieram a composição das cenas e o brilho, que dão ao nome um aspecto quase líquido.",
+      "textEn": "The logotype was modeled in Blender, moving from a clay pass to a glass finish. Scene composition and glow came next, giving the name an almost liquid quality."
     },
     {
       "type": "gallery",
@@ -62,7 +55,26 @@
           "alt": "Logotipo dgzin em vidro recebendo o brilho final"
         }
       ],
-      "layout": "adaptive"
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 32
+        }
+      }
+    },
+    {
+      "type": "text",
+      "labelPt": "capas",
+      "labelEn": "banners",
+      "textPt": "Uma capa para o Twitter e outra para o YouTube. O atleta aparece com a camisa da LOUD, e o logotipo em vidro divide a cena com o verde do time.",
+      "textEn": "One banner for Twitter and another for YouTube. The athlete appears in his LOUD jersey, and the glass logotype shares the scene with the team green.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 96,
+          "tablet": 72,
+          "mobile": 56
+        }
+      }
     },
     {
       "type": "image",
@@ -71,7 +83,12 @@
       "fit": "auto",
       "width": "content",
       "captionPt": "",
-      "captionEn": ""
+      "captionEn": "",
+      "spacing": {
+        "marginTop": {
+          "desktop": 32
+        }
+      }
     },
     {
       "type": "image",
@@ -79,28 +96,85 @@
       "alt": "Banner do canal de dgzin no YouTube",
       "fit": "auto",
       "width": "content",
-      "captionPt": "Capas para Twitter e YouTube.",
-      "captionEn": "Banners for Twitter and YouTube."
+      "captionPt": "",
+      "captionEn": ""
+    },
+    {
+      "type": "text",
+      "labelPt": "painéis da Twitch",
+      "labelEn": "Twitch panels",
+      "textPt": "Seis painéis organizam o canal: setup, sobre, sociais, designer, donate e regras. A coroa do logotipo ganhou vida própria e virou o badge de inscrito, que muda de cor conforme o tempo de assinatura, de um a doze meses.",
+      "textEn": "Six panels organize the channel: setup, about, socials, designer, donate, and rules. The crown from the logotype took on a life of its own as the subscriber badge, changing color with subscription length, from one to twelve months.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 96,
+          "tablet": 72,
+          "mobile": 56
+        }
+      }
     },
     {
       "type": "gallery",
       "images": [
-        { "src": "assets/uploads/dgzin/painel-setup.webp", "alt": "Painel da Twitch: setup" },
-        { "src": "assets/uploads/dgzin/painel-sobre.webp", "alt": "Painel da Twitch: sobre" },
-        { "src": "assets/uploads/dgzin/painel-sociais.webp", "alt": "Painel da Twitch: sociais" },
-        { "src": "assets/uploads/dgzin/painel-designer.webp", "alt": "Painel da Twitch: designer" },
-        { "src": "assets/uploads/dgzin/painel-donate.webp", "alt": "Painel da Twitch: donate" },
-        { "src": "assets/uploads/dgzin/painel-regras.webp", "alt": "Painel da Twitch: regras" }
+        {
+          "src": "assets/uploads/dgzin/painel-setup.webp",
+          "alt": "Painel da Twitch: setup"
+        },
+        {
+          "src": "assets/uploads/dgzin/painel-sobre.webp",
+          "alt": "Painel da Twitch: sobre"
+        },
+        {
+          "src": "assets/uploads/dgzin/painel-sociais.webp",
+          "alt": "Painel da Twitch: sociais"
+        },
+        {
+          "src": "assets/uploads/dgzin/painel-designer.webp",
+          "alt": "Painel da Twitch: designer"
+        },
+        {
+          "src": "assets/uploads/dgzin/painel-donate.webp",
+          "alt": "Painel da Twitch: donate"
+        },
+        {
+          "src": "assets/uploads/dgzin/painel-regras.webp",
+          "alt": "Painel da Twitch: regras"
+        }
       ],
-      "layout": "adaptive"
+      "layout": "adaptive",
+      "spacing": {
+        "marginTop": {
+          "desktop": 32
+        }
+      }
     },
     {
       "type": "gallery",
       "images": [
-        { "src": "assets/uploads/dgzin/painel-seja-sub.webp", "alt": "Painel da Twitch com os benefícios de ser inscrito" },
-        { "src": "assets/uploads/dgzin/badges-sub.webp", "alt": "Seis badges de inscrito em forma de coroa, uma cor para cada tempo de assinatura" }
+        {
+          "src": "assets/uploads/dgzin/painel-seja-sub.webp",
+          "alt": "Painel da Twitch com os benefícios de ser inscrito"
+        },
+        {
+          "src": "assets/uploads/dgzin/badges-sub.webp",
+          "alt": "Seis badges de inscrito em forma de coroa, uma cor para cada tempo de assinatura"
+        }
       ],
       "layout": "adaptive"
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
+      "textPt": "Um sistema visual único para todas as redes do atleta: o mesmo vidro e o mesmo brilho atravessam Twitter, YouTube e Twitch.",
+      "textEn": "A single visual system across all of the athlete's channels: the same glass and the same glow carry through Twitter, YouTube, and Twitch.",
+      "spacing": {
+        "marginTop": {
+          "desktop": 96,
+          "tablet": 72,
+          "mobile": 56
+        }
+      }
     }
   ]
 }
