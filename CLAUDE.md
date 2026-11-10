@@ -69,9 +69,12 @@ um instante, antes de existir rolagem.
 header e scrub. Não adicione outro: some no
 laço existente em `js/main.js`.
 
-O scroll por inércia é próprio, sem biblioteca, com decaimento por tempo
-(lerp .18, roda a 1). Intercepta só a roda do mouse. Toque, teclado, âncoras
-e barra de rolagem seguem nativos.
+O scroll por inércia é próprio, sem biblioteca, com decaimento por tempo:
+`LERP_60` .047 por quadro a 60Hz (corrigido pelo dt real), o que dá ~0,35s de
+constante de tempo no atraso. Era .04 (~0,41s) e Pedro achou pesado: pediu 15%
+menos efeito, e 15% é medido nessa constante de tempo, -1/(60·ln(1-lerp)), não
+no número do lerp. Saltos grandes aceleram até .32 e, a partir de 2,5 telas,
+alinham no mesmo quadro. `?lerp=0.08` testa outro valor sem editar arquivo.
 
 **Abrir com `?nosmooth=1` desliga a inércia** e devolve a rolagem nativa. É a
 chave de comparação para separar custo de pintura de custo de dirigir o scroll

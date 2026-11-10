@@ -2098,9 +2098,12 @@
     /* LERP_60 é a resposta equivalente por quadro a 60Hz. O alpha aplicado
        abaixo deriva do tempo real entre frames, então 90/120/144Hz percorrem
        a mesma proporção no mesmo intervalo. O valor segue ajustável sem editar
-       arquivo pela chave de diagnóstico existente: ?lerp=0.08. */
+       arquivo pela chave de diagnóstico existente: ?lerp=0.08.
+       .047 e não .04: Pedro achou a rolagem pesada e pediu 15% menos efeito.
+       A constante de tempo do atraso é -1/(60·ln(1-lerp)): com .04 dava ~0,41s,
+       com .047 dá ~0,35s, exatamente 15% mais curta. Mesmo caráter, menos peso. */
     const LERP_60 = Math.min(.4, Math.max(.02,
-      parseFloat(new URLSearchParams(location.search).get('lerp')) || .04));
+      parseFloat(new URLSearchParams(location.search).get('lerp')) || .047));
     const LERP_CATCHUP_60 = Math.max(LERP_60, .32);
     const DT_MAX = 1 / 30;
     const EPSILON = .08;
