@@ -675,20 +675,25 @@
           resumeGroup.setAttribute('data-pt-label', A.resumeLabelPt || 'Baixar currículo');
           resumeGroup.setAttribute('data-en-label', A.resumeLabelEn || 'Download CV');
           var rotulos = {
-            pt: ['Baixar currículo em português', 'Download CV in Portuguese', 'Currículo em português, em breve', 'CV in Portuguese, coming soon'],
-            en: ['Baixar currículo em inglês', 'Download CV in English', 'Currículo em inglês, em breve', 'CV in English, coming soon']
+            pt: ['Abrir currículo em português em nova aba', 'Open CV in Portuguese in a new tab', 'Currículo em português, em breve', 'CV in Portuguese, coming soon'],
+            en: ['Abrir currículo em inglês em nova aba', 'Open CV in English in a new tab', 'Currículo em inglês, em breve', 'CV in English, coming soon']
           };
+          /* O PDF abre em outra aba: o portfólio continua aberto atrás dele,
+             em vez de ser substituído pelo arquivo. */
           ['pt', 'en'].forEach(function (lang) {
             var opt = resumeGroup.querySelector('[data-resume="' + lang + '"]');
             if (!opt) return;
             var r = rotulos[lang], tem = !!arquivos[lang];
+            opt.removeAttribute('download');
             if (tem) {
               opt.setAttribute('href', resolveAssetUrl(arquivos[lang]));
-              opt.setAttribute('download', '');
+              opt.setAttribute('target', '_blank');
+              opt.setAttribute('rel', 'noopener');
               opt.removeAttribute('aria-disabled');
             } else {
               opt.removeAttribute('href');
-              opt.removeAttribute('download');
+              opt.removeAttribute('target');
+              opt.removeAttribute('rel');
               opt.setAttribute('aria-disabled', 'true');
             }
             opt.classList.toggle('is-soon', !tem);

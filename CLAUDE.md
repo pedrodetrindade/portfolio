@@ -499,6 +499,10 @@ ambos enviáveis pelo painel. O grupo aparece quando existe ao menos um dos dois
 marcada "em breve", sem `href`, para nunca virar link para 404. As bandeiras
 são o mesmo SVG do seletor de idioma (`[data-flag]`, desenhado pelo `main.js`).
 No celular o rótulo sobe para uma linha própria e as opções dividem a de baixo.
+Cada opção abre o PDF em nova aba (`target="_blank"`), sem `download` e sem
+seta, para o portfólio não ser substituído pelo arquivo. A ordem das ações do
+Sobre é LinkedIn, "Vamos conversar" (com o envelope do Contato do header no
+lugar da seta) e currículo.
 
 **Quem monta um elemento é quem precisa ler o dado do CMS.** `content-render.js`
 carrega antes de `js/main.js`, e é o `main.js` que injeta o `.next-hint`, o

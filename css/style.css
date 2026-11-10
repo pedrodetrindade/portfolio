@@ -1141,6 +1141,12 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    .cta-quiet é o LinkedIn. */
 .ghost-cta.cta-primary{border-color:var(--accent);background:rgba(var(--paper-rgb),.06)}
 .ghost-cta.cta-primary:hover{background:rgba(var(--paper-rgb),.1)}
+/* "Vamos conversar" abre o painel de contato: no lugar da seta, o mesmo
+   envelope do botão Contato do header */
+.ghost-cta.cta-primary::after{content:none}
+.ghost-cta.cta-primary svg{width:17px;height:17px;flex:none;color:var(--cream);
+  transition:color var(--dur-micro) var(--ease-soft)}
+.ghost-cta.cta-primary:hover svg{color:var(--paper)}
 .ghost-cta.cta-quiet{color:var(--muted);border-color:var(--line)}
 .ghost-cta.cta-quiet:hover{color:var(--paper)}
 /* display:inline-flex ganha do [hidden] da folha do navegador, então o botão
@@ -1161,14 +1167,11 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .cta-resume-opt{display:inline-flex;align-items:center;gap:.5em;padding:.85rem 1.1rem;
   border-left:1px solid var(--line);color:var(--paper);
   transition:background-color var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft)}
-.cta-resume-opt::after{content:"↓";transition:transform var(--dur-micro) var(--ease-soft)}
 .cta-resume-opt:hover{background:rgba(var(--paper-rgb),.05)}
-.cta-resume-opt:hover::after{transform:translateY(3px)}
 .cta-resume-opt .lp-flag{width:15px;height:15px;box-shadow:0 0 0 1px var(--line)}
 .cta-resume-code{letter-spacing:.02em}
 .cta-resume-soon{display:none;font-size:.72rem;font-weight:var(--w-regular);color:var(--muted-2)}
 .cta-resume-opt.is-soon{color:var(--muted-2);cursor:default}
-.cta-resume-opt.is-soon::after{content:none}
 .cta-resume-opt.is-soon:hover{background:transparent}
 .cta-resume-opt.is-soon .lp-flag{opacity:.5}
 .cta-resume-opt.is-soon .cta-resume-soon{display:inline}
