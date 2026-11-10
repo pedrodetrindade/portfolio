@@ -209,7 +209,7 @@ function erroNasConfiguracoesGlobais(data) {
     }
   }
   var footer = data.footer || {};
-  var footerKeys = ['kickerPt','kickerEn','headlinePt','headlineEn','supportPt','supportEn','copyrightPt','copyrightEn','disclaimerPt','disclaimerEn','marqueeText','showEmail','showCopyEmail','showNavigation','showSocial','showSignature','grainEnabled','topSpacing','emailOffset','legalOffset','background'];
+  var footerKeys = ['kickerPt','kickerEn','headlinePt','headlineEn','supportPt','supportEn','copyrightPt','copyrightEn','disclaimerPt','disclaimerEn','marqueeText','showEmail','showCopyEmail','showNavigation','showSocial','showSignature','showHandSignature','grainEnabled','topSpacing','emailOffset','legalOffset','background'];
   var footerExtra = Object.keys(footer).filter(function (k) { return footerKeys.indexOf(k) === -1; });
   if (footerExtra.length) return 'footer tem campo desconhecido: ' + footerExtra.join(', ') + '.';
   for (var ft = 0; ft < footerKeys.length; ft++) {
@@ -217,8 +217,8 @@ function erroNasConfiguracoesGlobais(data) {
     if (footerKey === 'background' || footerKey === 'grainEnabled' || ['topSpacing','emailOffset','legalOffset'].indexOf(footerKey) !== -1 || footerKey.indexOf('show') === 0 || footer[footerKey] === undefined) continue;
     if (typeof footer[footerKey] !== 'string') return 'footer.' + footerKey + ' precisa ser texto.';
   }
-  for (var fb = 0; fb < ['showEmail','showCopyEmail','showNavigation','showSocial','showSignature'].length; fb++) {
-    var booleanKey = ['showEmail','showCopyEmail','showNavigation','showSocial','showSignature'][fb];
+  for (var fb = 0; fb < ['showEmail','showCopyEmail','showNavigation','showSocial','showSignature','showHandSignature'].length; fb++) {
+    var booleanKey = ['showEmail','showCopyEmail','showNavigation','showSocial','showSignature','showHandSignature'][fb];
     if (footer[booleanKey] !== undefined && typeof footer[booleanKey] !== 'boolean') return 'footer.' + booleanKey + ' precisa ser verdadeiro ou falso.';
   }
   if (footer.grainEnabled !== undefined && typeof footer.grainEnabled !== 'boolean') return 'footer.grainEnabled precisa ser verdadeiro ou falso.';

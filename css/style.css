@@ -707,8 +707,23 @@ body.menu-open header .ctrl-group{opacity:0}
 /* As capas são fundo, não destaque: véu forte de --ink por cima delas e as
    massas marrons da capa antiga continuam visíveis acima, animando como
    antes. O resultado é o marrom de sempre, com as imagens passando por baixo. */
-.hero-slides::after{content:"";position:absolute;inset:0;z-index:3;
+.hero-slides::after{content:"";position:absolute;inset:0;z-index:4;
   background:rgba(var(--ink-rgb),.9)}
+/* Dither das imagens (js/dither-capa.js, a partir do Retro Dither do Canvas
+   UI): o canvas desenha a mesma sequência em pixels de 3px, com o brilho em
+   quatro níveis de Bayer e a cor puxada para a rampa abaixo. Fica entre as
+   <img> e o véu, então o véu de 90% e as massas marrons continuam valendo, e
+   a leitura medida do rótulo da capa não muda de regra. Substitui o ruído
+   como textura da capa (sections.hero.grainEnabled:false).
+   Entra por fundido longo e linear por cima das <img> lisas; só depois do
+   fundido elas somem, e o zoom delas para, porque ninguém mais as vê. */
+.hero-slides{--dither-capa-escuro:var(--ink);--dither-capa-claro:var(--cream)}
+.hero-dither{position:absolute;top:0;left:0;z-index:3;image-rendering:pixelated;
+  opacity:0;transition:opacity var(--dur-slow) linear}
+.hero-slides.dither-pronto .hero-dither{opacity:1}
+.hero-slides.dither-pronto .hero-slide{visibility:hidden;
+  transition:opacity var(--hero-slide-fade,450ms) linear,visibility 0s linear var(--dur-slow)}
+.hero-slides.dither-pronto .hero-slide img{animation-play-state:paused}
 /* massas a 60%: somadas à imagem, a 100% clareavam o fundo atrás do rótulo
    pequeno (--accent) até 3,7:1. Com o véu em .9 (era .86, escurecido a
    pedido), medido no percentil 98 do fundo: rótulo de 4,59:1 (dgzin) a
@@ -754,6 +769,23 @@ body.menu-open header .ctrl-group{opacity:0}
     rgba(0,0,0,.5) 85%,rgba(0,0,0,.16) 93.5%,transparent 100%);
           mask-image:linear-gradient(to bottom,#000 64%,rgba(0,0,0,.84) 74%,
     rgba(0,0,0,.5) 85%,rgba(0,0,0,.16) 93.5%,transparent 100%)}
+/* O ruído de #work na faixa de dissolução, quando a capa não tem ruído
+   próprio (o dither das imagens o substituiu). A conta acima só fecha se as
+   duas seções tiverem a mesma textura na emenda: sem isto a base da capa
+   terminava no fundo liso e #work começava com ruído a 10% por cima, e o
+   degrau voltava, agora ao contrário (medido, mais escuro em cima). A
+   máscara é o complemento exato da do .liquid-bg: o ruído entra na mesma
+   proporção em que as imagens saem, e na borda as duas seções são iguais.
+   Só vale se #work tiver ruído; z-index 0 deixa o texto da capa por cima. */
+.hero:not(.has-section-grain):has(+ .has-section-grain)::after{content:"";
+  position:absolute;left:50%;bottom:0;z-index:0;pointer-events:none;
+  width:var(--vw,100vw);margin-left:calc(var(--vw,100vw) / -2);height:36%;
+  background-image:var(--grain-url);background-size:var(--grain-size) var(--grain-size);
+  opacity:var(--section-grain-opacity,var(--grain-opacity));
+  -webkit-mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.16) 28%,
+    rgba(0,0,0,.5) 58%,rgba(0,0,0,.84) 82%,#000);
+          mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.16) 28%,
+    rgba(0,0,0,.5) 58%,rgba(0,0,0,.84) 82%,#000)}
 @media(prefers-reduced-motion:reduce){
   /* rede de segurança: o JS já não cria o iframe neste modo */
   .hero-vimeo{display:none}
@@ -2525,6 +2557,36 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   border-top:1px solid rgba(var(--paper-rgb),.22);margin-top:auto;padding-top:clamp(.8rem,1.5vh,1.15rem);
   transform:translateY(var(--site-footer-legal-offset,-12px))}
 .site-footer-bottom .foot-copy{max-width:62ch;font-size:.72rem;line-height:1.55;color:rgba(var(--paper-rgb),.54)}
+/* ===== ASSINATURA (js/assinatura.js, footer.showHandSignature) =====
+   A linha fina acima do crédito vira a linha da assinatura: o nome se escreve
+   apoiado nela, no canto esquerdo, na cor do nome da capa, que é o mesmo nome
+   que abre o site. Absoluta, para não somar altura ao rodapé, que é uma tela
+   exata. A entrada é o próprio traço, então o .reveal deste marcador não
+   desloca nem esmaece: o .in só serve de gatilho. */
+.site-footer-bottom{position:relative}
+.site-footer-assinatura{position:absolute;left:0;bottom:calc(100% + .2rem);
+  width:clamp(10.5rem,16vw,16rem);color:var(--color-hero-name);pointer-events:none}
+.site-footer-assinatura svg{display:block;width:100%;height:auto;overflow:visible}
+.js .site-footer-assinatura.reveal{opacity:1;transform:none}
+.ass-contorno .ass-traco{fill:none;stroke:currentColor;stroke-width:1px;vector-effect:non-scaling-stroke}
+/* traço grosso dentro da máscara: branco é o "mostra" da máscara, não cor */
+.ass-revela{fill:none;stroke:white;stroke-width:22;stroke-linecap:round;stroke-linejoin:round}
+.ass-tinta path{fill:currentColor}
+/* Cada letra começa 110ms depois da anterior e leva --dur-slow para se
+   escrever: ~2,5s para o nome inteiro, ritmo de quem assina sem pressa.
+   Linear de propósito, como os fundidos longos: com --ease-smooth a letra
+   saía 96% desenhada na primeira metade e se arrastava no resto (medido), o
+   que lia como um carimbo, não como caneta.
+   Opacidade zero até a vez dela, senão a ponta arredondada do traço grosso
+   aparece como um ponto antes de a letra começar. */
+.js .site-footer-assinatura .ass-traco{stroke-dasharray:1;stroke-dashoffset:1;opacity:0}
+.js .site-footer-assinatura.in .ass-traco{
+  animation:ass-escreve var(--dur-slow) linear forwards;
+  animation-delay:calc(var(--i) * 110ms)}
+@keyframes ass-escreve{from{opacity:1;stroke-dashoffset:1}to{opacity:1;stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){
+  .js .site-footer-assinatura .ass-traco{animation:none;stroke-dashoffset:0;opacity:1}
+}
 .site-footer-top{display:inline-flex;align-items:center;justify-content:center;gap:.69rem;flex:none;
   min-height:53px;border:1px solid rgba(var(--paper-rgb),.34);border-radius:var(--radius-button,12px);padding:.78rem 1.125rem;
   background:rgba(var(--ink-rgb),.12);color:var(--paper);font-family:var(--mono);font-size:.8125rem;cursor:pointer;

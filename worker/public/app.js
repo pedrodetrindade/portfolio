@@ -1704,7 +1704,8 @@
       fieldRow('Mostrar botão de copiar', 'Aparece ao lado do e-mail.', switchControl('foot_show_copy', f.showCopyEmail !== false)) +
       fieldRow('Mostrar navegação', '', switchControl('foot_show_nav', f.showNavigation !== false)) +
       fieldRow('Mostrar redes', '', switchControl('foot_show_social', f.showSocial !== false)) +
-      fieldRow('Mostrar assinatura', '', switchControl('foot_show_signature', f.showSignature !== false)) +
+      fieldRow('Mostrar assinatura', 'O texto em looping acima.', switchControl('foot_show_signature', f.showSignature !== false)) +
+      fieldRow('Mostrar assinatura manuscrita', 'Seu nome se escrevendo à mão sobre a linha do crédito, quando o rodapé entra na tela. O traço é fixo: trocar o nome exige gerar o desenho de novo.', switchControl('foot_show_hand', f.showHandSignature !== false)) +
       fieldRow('Mostrar ruído no rodapé', 'Desligado remove apenas o ruído; imagem ou vídeo continuam ativos.', switchControl('foot_grain', f.grainEnabled !== false)) +
       fieldRow('Respiro superior (desktop)', 'Distância entre o topo da viewport e os três blocos principais.', sliderControl('foot_top_spacing', f.topSpacing == null ? 86 : f.topSpacing, 48, 120, 'px')) +
       fieldRow('Posição vertical do e-mail', 'Não altera a altura do footer. Valor positivo desce; negativo sobe.', sliderControl('foot_email_offset', f.emailOffset == null ? 12 : f.emailOffset, -40, 60, 'px')) +
@@ -1743,7 +1744,7 @@
     bindEmail('soc_em', function (v) { state.global.social.email = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('soc_li_active', function (v) { if (v) delete s.linkedinActive; else s.linkedinActive = false; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('soc_be_active', function (v) { if (v) delete s.behanceActive; else s.behanceActive = false; markDirty('content/global.json', state.global, state.globalSha); });
-    [['foot_show_email','showEmail'],['foot_show_copy','showCopyEmail'],['foot_show_nav','showNavigation'],['foot_show_social','showSocial'],['foot_show_signature','showSignature']].forEach(function (entry) {
+    [['foot_show_email','showEmail'],['foot_show_copy','showCopyEmail'],['foot_show_nav','showNavigation'],['foot_show_social','showSocial'],['foot_show_signature','showSignature'],['foot_show_hand','showHandSignature']].forEach(function (entry) {
       bindSwitch(entry[0], function (enabled) { if (enabled) delete f[entry[1]]; else f[entry[1]] = false; saveFooter(); });
     });
     bindSwitch('foot_grain', function (enabled) { if (enabled) delete f.grainEnabled; else f.grainEnabled = false; saveFooter(); renderHeaderFooter(); });

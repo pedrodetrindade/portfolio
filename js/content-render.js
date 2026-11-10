@@ -11,15 +11,19 @@
    estático (o que já estava no arquivo) continua valendo. */
 (function () {
   'use strict';
-  /* O dither do rodapé mora em js/dither-field.js e só é baixado quando o
-     rodapé se aproxima. O endereço sai do próprio src deste arquivo, porque as
-     páginas apontam para js/ de jeitos diferentes (js/, ../js/, /js/), e
-     currentScript só existe durante esta primeira execução: por isso fica aqui
-     no topo, antes de qualquer render. Ao editar dither-field.js, suba
-     DITHER_V e o ?v= deste arquivo nas páginas. */
+  /* Os dois dithers moram em arquivos próprios e só são baixados quando
+     precisam: o do rodapé (js/dither-field.js) quando o rodapé se aproxima, o
+     da capa (js/dither-capa.js) quando a sequência de imagens começa. O
+     endereço sai do próprio src deste arquivo, porque as páginas apontam para
+     js/ de jeitos diferentes (js/, ../js/, /js/), e currentScript só existe
+     durante esta primeira execução: por isso fica aqui no topo, antes de
+     qualquer render. Ao editar um deles, suba a constante dele aqui e o ?v=
+     deste arquivo nas páginas. */
   var BASE_JS = document.currentScript && document.currentScript.src
     ? document.currentScript.src.replace(/content-render\.js(\?.*)?$/, '') : '';
-  var DITHER_V = 1;
+  var DITHER_V = 3;
+  var DITHER_CAPA_V = 1;
+  var ASSINATURA_V = 1;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -263,21 +267,22 @@
     return { type: type, html: media };
   }
 
-  /* Baixa dither-field.js uma vez só, por mais que o rodapé seja remontado. */
-  var ditherCarregando = null;
-  function carregarDither() {
-    if (window.__DITHER__) return Promise.resolve(window.__DITHER__);
-    if (!ditherCarregando) {
-      ditherCarregando = new Promise(function (resolve, reject) {
+  /* Baixa um script de efeito uma vez só, por mais que a capa ou o rodapé
+     sejam remontados (a prévia do CMS remonta a cada tecla). */
+  var scriptsCarregando = {};
+  function carregarScript(arquivo, global, versao) {
+    if (window[global]) return Promise.resolve(window[global]);
+    if (!scriptsCarregando[arquivo]) {
+      scriptsCarregando[arquivo] = new Promise(function (resolve, reject) {
         var s = document.createElement('script');
-        s.src = BASE_JS + 'dither-field.js?v=' + DITHER_V;
+        s.src = BASE_JS + arquivo + '?v=' + versao;
         s.async = true;
-        s.onload = function () { window.__DITHER__ ? resolve(window.__DITHER__) : reject(); };
-        s.onerror = function () { ditherCarregando = null; reject(); };
+        s.onload = function () { window[global] ? resolve(window[global]) : reject(); };
+        s.onerror = function () { delete scriptsCarregando[arquivo]; reject(); };
         document.head.appendChild(s);
       });
     }
-    return ditherCarregando;
+    return scriptsCarregando[arquivo];
   }
 
   function initFooterMedia(footer, mediaType) {
@@ -294,7 +299,7 @@
          e para, que é uma textura parada, sem movimento nenhum. */
       if (mediaType === 'dither') {
         if (window.__CMS_FOOTER_MEDIA_OBSERVER__) window.__CMS_FOOTER_MEDIA_OBSERVER__.disconnect();
-        carregarDither().then(function (D) {
+        carregarScript('dither-field.js', '__DITHER__', DITHER_V).then(function (D) {
           var host = footer.querySelector('[data-footer-dither]');
           if (!host || !host.isConnected || window.__CMS_FOOTER_DITHER__) return;
           window.__CMS_FOOTER_DITHER__ = D.montar(host);
@@ -332,6 +337,29 @@
     });
     observer.observe(trigger, { attributes: true, attributeFilter: ['class'] });
     window.__CMS_FOOTER_MEDIA_OBSERVER__ = observer;
+  }
+
+  /* A assinatura (js/assinatura.js) só é baixada quando o gatilho do rodapé,
+     a 110svh dele, entra em cena: o mesmo momento em que a mídia carrega. O
+     desenho em si só começa com o .in do próprio marcador, posto pelo
+     sistema de entradas do main.js; se o arquivo chegar depois disso, as
+     letras começam a se escrever no instante em que entram no DOM. */
+  function initFooterAssinatura(footer) {
+    var host = footer.querySelector('[data-footer-assinatura]');
+    var trigger = footer.querySelector('[data-footer-media-trigger]');
+    if (!host || !trigger) return;
+    function carregar() {
+      carregarScript('assinatura.js', '__ASSINATURA__', ASSINATURA_V).then(function (A) {
+        if (host.isConnected) A.montar(host);
+      }).catch(function () { /* sem assinatura; o crédito continua */ });
+    }
+    if (trigger.classList.contains('in')) { carregar(); return; }
+    var mo = new MutationObserver(function () {
+      if (!trigger.classList.contains('in')) return;
+      mo.disconnect();
+      carregar();
+    });
+    mo.observe(trigger, { attributes: true, attributeFilter: ['class'] });
   }
 
   function initFooterCopy(footer) {
@@ -478,7 +506,9 @@
           (showNav ? '<nav class="site-footer-nav" aria-label="Footer"><p data-pt="Navegação" data-en="Navigation">Navegação</p>' + nav + '</nav>' : '') +
           (showSocial ? '<div class="site-footer-social"><p data-pt="Redes" data-en="Social">Redes</p>' + socials.join('') + '</div>' : '') +
         '</div>' +
-        '<div class="site-footer-bottom"><p class="foot-copy" data-pt="' + esc(copyPt) + '" data-en="' + esc(copyEn) + '">' + esc(copyPt) + '</p>' +
+        '<div class="site-footer-bottom">' +
+          (f.showHandSignature !== false ? '<div class="site-footer-assinatura reveal" data-footer-assinatura aria-hidden="true"></div>' : '') +
+          '<p class="foot-copy" data-pt="' + esc(copyPt) + '" data-en="' + esc(copyEn) + '">' + esc(copyPt) + '</p>' +
           '<button class="site-footer-top" type="button" data-top data-pt-label="Voltar ao topo da página" data-en-label="Back to the top of the page" aria-label="Voltar ao topo da página"><span class="cta-blur-label" data-pt="Voltar ao topo" data-en="Back to top">Voltar ao topo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5.6"/><path d="M5.8 11.8L12 5.6l6.2 6.2"/></svg></button></div>' +
         (showSignature ? '<div class="site-footer-marquee" aria-hidden="true"><div class="site-footer-marquee-track">' +
           '<span class="site-footer-marquee-group"><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i><b>' + esc(signature) + '</b><i>·</i></span>' +
@@ -487,6 +517,7 @@
       '</div>';
     aplicarGrainNaSuperficie(footer, footerGrainLigado);
     initFooterMedia(footer, media.type);
+    initFooterAssinatura(footer);
     initFooterCopy(footer);
   }
 
@@ -605,6 +636,7 @@
   }
   function pararSlides(liquidBg) {
     if (slidesTimer) { clearInterval(slidesTimer); slidesTimer = null; }
+    if (window.__CMS_HERO_DITHER__) { window.__CMS_HERO_DITHER__.destruir(); window.__CMS_HERO_DITHER__ = null; }
     var antigo = liquidBg.querySelector('.hero-slides');
     if (antigo) antigo.remove();
     liquidBg.classList.remove('has-slides');
@@ -650,17 +682,40 @@
     /* sem has-video: as massas marrons não saem, ficam por cima das capas */
     liquidBg.classList.add('has-slides');
 
+    /* Estado da sequência para o dither da capa (js/dither-capa.js), que
+       desenha as mesmas imagens em WebGL por cima destas <img>. Quem decide a
+       troca continua sendo este relógio; lá só se lê o que está aqui. */
+    var estado = caixa.__estado = {
+      slides: slides.map(function (s, i) {
+        return { img: s.querySelector('img'), clara: capas[i].clara, inicio: 0, sentido: 1 };
+      }),
+      atual: 0,
+      anterior: null
+    };
     var atual = 0, passo = 0;
     function mostrar(s) {
       s.classList.remove('zoom-in', 'zoom-out');
       void s.offsetWidth; /* reinicia a animação do zoom */
       s.classList.add(passo % 2 ? 'zoom-out' : 'zoom-in', 'is-ativo');
+      var i = slides.indexOf(s);
+      estado.anterior = estado.atual === i ? null : estado.atual;
+      estado.atual = i;
+      estado.slides[i].inicio = performance.now();
+      estado.slides[i].sentido = passo % 2 ? -1 : 1;
+      if (caixa.__aoTrocar) caixa.__aoTrocar();
       passo++;
     }
     function comecar() {
       if (!caixa.isConnected) return;
       liquidBg.classList.add('video-pronto');
       mostrar(slides[0]);
+      /* Dither por cima da sequência: chega depois, quando o arquivo carrega,
+         e entra por fundido; até lá (ou se o WebGL2 faltar) ficam as <img>
+         lisas. Sob movimento reduzido ele desenha um quadro só. */
+      carregarScript('dither-capa.js', '__DITHER_CAPA__', DITHER_CAPA_V).then(function (D) {
+        if (!caixa.isConnected || window.__CMS_HERO_DITHER__) return;
+        window.__CMS_HERO_DITHER__ = D.montar(caixa, liquidBg);
+      }).catch(function () { /* a sequência segue lisa */ });
       if (reduced || slides.length < 2) return;
       slidesTimer = setInterval(function () {
         if (document.hidden || liquidBg.classList.contains('parado')) return;

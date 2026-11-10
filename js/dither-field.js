@@ -7,11 +7,10 @@
    image-rendering:pixelated, então o ponto fica nítido em qualquer tela.
 
    O que mudou em relação ao original, e por quê:
-   - Só o padrão "horizonte" (um sol baixo na borda de baixo, com faixas de
-     névoa subindo). É o único dos cinco que deixa limpa a área do texto: o
-     sol mora no centro de baixo, entre o crédito e o "voltar ao topo", e as
-     laterais apagam sozinhas. Os outros enchem a tela inteira por trás da
-     headline.
+   - Só o padrão "ondas" (escolha do Pedro, depois de ver o horizonte no ar).
+     O original enche a tela por igual e fica mais forte em cima, onde mora a
+     headline; aqui o peso vertical foi redesenhado para a faixa vazia do
+     rodapé, e as ondas quase somem atrás do texto pequeno.
    - As cores não vêm de prop: saem de --dither-low/-mid/-high no CSS, que
      apontam para os tokens da paleta. Mudar a cor é mexer no CSS.
    - Nada de IntersectionObserver: dentro do .smooth-holder ele não dispara
@@ -67,29 +66,25 @@ float fbm(vec2 p) {
   return sum;
 }
 float pattern(vec2 p, vec2 size, float t) {
-  // sol menor que o original (0.42 e 0.8): no rodapé de tela cheia ele
-  // passava de 70% da largura e a névoa subia até o e-mail
-  float r = max(min(size.x * 0.32, size.y * 0.58), 90.0);
-  // em tela vertical o crédito ocupa a base inteira, logo acima do sol: o
-  // centro desce mais para o topo do domo não encostar na última linha
+  // Ondas do original: cristas diagonais largas que descem da esquerda para
+  // a direita e deslizam, com a fase empurrada por um ruído lento.
+  vec2 q = p / 32.0;
+  float warp = fbm(q * 0.09 + vec2(t * 0.035, t * 0.02));
+  float s = 0.5 + 0.5 * sin(q.x * 0.9 + q.y * 0.6 + warp * 5.0 - t * 0.4);
+  float crest = s * s * s * s;
+  // O original fica mais forte em cima, justamente onde mora a headline. Aqui
+  // o peso vai para a faixa vazia entre o conteúdo e a linha de baixo, e cai
+  // nas duas pontas: some rente ao crédito e ao "voltar ao topo" (texto
+  // pequeno sobre pontos perde leitura) e fica fraco atrás da headline, do
+  // e-mail e da navegação, só o bastante para a onda continuar inteira.
+  // Em tela vertical o crédito ocupa uma faixa mais alta, então a base sobe.
+  float y = p.y / size.y;
   float retrato = step(size.x, size.y);
-  float desce = mix(0.15, 0.34, retrato);
-  // e a névoa não sobe: no retrato o horizonte é só uma faixa rente à borda
-  float teto = mix(1.0, 1.0 - smoothstep(0.2 * r, 0.5 * r, p.y), retrato);
-  vec2 d = (p - vec2(0.5 * size.x, -desce * r)) / vec2(1.25 * r, r);
-  float wobble = fbm(vec2(atan(d.y, d.x) * 1.8, t * 0.04)) - 0.5;
-  float rim = length(d) * (1.0 + 0.14 * wobble);
-  float sun = exp(-3.4 * max(rim - 0.42, 0.0)) * 0.78;
-  float h = p.y / r;
-  float drift = (fbm(vec2(p.x / 320.0, t * 0.03)) - 0.5) * 2.4;
-  float band = 0.5 + 0.5 * sin(log(1.0 + 7.0 * h) * 8.0 - t * 0.45 + drift);
-  float haze = smoothstep(0.25, 0.95, band) * exp(-1.9 * h) * 0.5;
-  float ground = exp(-p.y / 22.0) * 0.32;
-  // laterais apagadas mais para dentro que no original (0 a 0.2): o crédito
-  // mora no canto de baixo à esquerda e o "voltar ao topo" no da direita, e
-  // texto pequeno sobre pontos perde leitura. O horizonte fica no centro.
-  float sides = smoothstep(0.16, 0.44, p.x / size.x) * smoothstep(0.84, 0.56, p.x / size.x);
-  return (sun * (1.0 + haze) + haze * 0.35 + ground) * sides * teto * (1.0 + 0.04 * sin(t * 0.4));
+  float base = smoothstep(mix(0.1, 0.19, retrato), mix(0.24, 0.3, retrato), y);
+  // no celular a navegação desce para o meio da tela: as ondas apagam antes
+  float topo = mix(1.0, 0.16, smoothstep(mix(0.34, 0.27, retrato), mix(0.56, 0.4, retrato), y));
+  float peso = base * topo;
+  return (crest + 0.12 * warp) * peso;
 }
 void main() {
   vec2 p = gl_FragCoord.xy / uView * uSize;
@@ -259,7 +254,7 @@ void main() {
   const suavizar = (de, para, taxa, dt) => de + (para - de) * (1 - Math.exp(-taxa * dt));
 
   function montar(host, opcoes) {
-    const o = Object.assign({ ponto: 2, intensidade: 0.5, velocidade: 1, fps: 30 }, opcoes || {});
+    const o = Object.assign({ ponto: 2, intensidade: 0.44, velocidade: 1, fps: 30 }, opcoes || {});
     const canvas = document.createElement('canvas');
     canvas.className = 'dither-canvas';
     canvas.setAttribute('aria-hidden', 'true');

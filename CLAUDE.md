@@ -672,14 +672,14 @@ só baixa quando o gatilho do rodapé entra em cena; o endereço sai do `src` do
 próprio content-render (as páginas apontam para `js/` de três jeitos), e a
 versão é a constante `DITHER_V` lá dentro. Ao editar `dither-field.js`, suba
 `DITHER_V` e o `?v=` do content-render nas páginas.
-- Só o padrão "horizonte", ajustado ao rodapé: sol menor que o original, com
-  laterais apagadas de 16% a 44% para o crédito (canto esquerdo) e o "voltar
-  ao topo" (direito) ficarem sobre fundo liso. Em tela vertical o centro do
-  sol desce e a névoa não passa de meio raio, senão encostava no crédito, que
-  no celular ocupa a base inteira.
+- Só o padrão "ondas" (Pedro trocou o horizonte por ele): cristas diagonais
+  que deslizam. O original fica mais forte em cima, onde mora a headline; aqui
+  o peso vertical vai para a faixa vazia entre o e-mail e a linha de baixo,
+  some rente ao crédito e cai a 16% atrás do texto. Em tela vertical a base
+  sobe e o topo apaga antes, porque crédito e navegação ocupam mais altura.
 - Cores dos tokens, lidas do CSS: `--dither-low` (`--ink-3`), `--dither-mid`
   (`--warm-rgb`) e `--dither-high` (`--accent`). Com `--cream` no topo o
-  horizonte lia cinza-claro e brigava com a headline. Intensidade .5, ponto de
+  desenho lia cinza-claro e brigava com a headline. Intensidade .44, ponto de
   2px, 30 quadros por segundo.
 - Pausa fora de alcance pelo `.parado` do `main.js` (`medirFundos` inclui
   `[data-footer-dither]`), não por IntersectionObserver. Sob movimento reduzido
@@ -692,3 +692,37 @@ versão é a constante `DITHER_V` lá dentro. Ao editar `dither-field.js`, suba
 - A prévia do CMS remonta o rodapé a cada tecla: `initFooterMedia` destrói o
   dither anterior (`__CMS_FOOTER_DITHER__`) e devolve o contexto WebGL, senão o
   navegador estoura o limite de contextos vivos.
+
+**As imagens da capa passam por um dither** (a partir do Retro Dither do
+Canvas UI), em `js/dither-capa.js`, que substitui o ruído como textura da capa
+(`sections.hero.grainEnabled:false`). Sem cursor nenhum, a pedido: o nome já
+reage ao mouse. Vivo por conta própria, pelo zoom de cada foto e por um brilho
+que deriva devagar. Quem manda na sequência continua sendo `montarSlides()`,
+que publica o estado em `caixa.__estado` (ativa, saindo, início e sentido do
+zoom de cada uma); o WebGL só desenha esse estado, em células de 4px e quatro
+níveis de Bayer, cor 70% puxada para `--dither-capa-escuro/-claro`. O canvas
+fica entre as `<img>` e o véu de 90%, e as `<img>` só somem depois do fundido
+de entrada. Medido nas seis imagens: rótulo da capa de 5,00:1 a 5,47:1.
+Texturas reduzidas a 1280px (seis fotos de 2000px com mipmap passariam de
+80MB de vídeo). Versão em `DITHER_CAPA_V`, no content-render.
+
+**Sem ruído na capa, a emenda com #work precisa do ruído na faixa de
+dissolução.** A máscara do `.liquid-bg` só fecha a conta se as duas seções
+tiverem a mesma textura na borda: sem ruído na capa, a base dela acabava lisa
+e #work começava com ruído a 10% por cima, e o degrau voltava, mais escuro em
+cima. `.hero::after` desenha o ruído só nessa faixa, com a máscara
+complementar à do `.liquid-bg`, e só quando a capa não tem ruído próprio e
+#work tem. Pedro gosta muito dessa emenda: confira a passagem ao mexer em
+qualquer camada da capa.
+
+**A assinatura do rodapé** (Spell UI, signature) se escreve apoiada na linha
+fina acima do crédito, na cor do nome da capa. Contornos gerados uma vez da
+Herr Von Muellerhoff (OFL) com opentype.js, fora do site: `js/assinatura.js`
+traz só os 15 caminhos prontos, e o texto é fixo. Contorno fino e um traço
+grosso dentro de máscara revelando o preenchimento, por `stroke-dashoffset`
+com `pathLength=1`: 110ms entre letras, `--dur-slow` cada, linear (com
+`--ease-smooth` a letra saía 96% desenhada na primeira metade). Disparo pelo
+`.in` do sistema de entradas; como ela fica a ~80% da altura da tela com a
+página no fim, quem a revela é a regra de fim de página, e ela se escreve
+quando a pessoa chega lá. `footer.showHandSignature:false` desliga (o Worker
+conhece a chave). Versão em `ASSINATURA_V`, no content-render.
