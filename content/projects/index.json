@@ -103,6 +103,30 @@
       "cover": "assets/projetos/case-04/capa.jpg",
       "coverMobile": "",
       "coverLight": true
+    },
+    {
+      "slug": "dgzin",
+      "visible": true,
+      "featured": false,
+      "cardSize": "normal",
+      "order": 5,
+      "titlePt": "dgzin",
+      "titleEn": "dgzin",
+      "subtitlePt": "Identidade para as redes sociais e o canal da Twitch de Douglas “dgzin” Silva, jogador profissional de VALORANT pela LOUD.\nUm logotipo em 3D, com acabamento de vidro e uma coroa, organiza todo o sistema: capas, painéis e badges de inscrito.",
+      "subtitleEn": "Identity for the social channels and Twitch stream of Douglas “dgzin” Silva, a professional VALORANT player for LOUD.\nA 3D logotype, finished in glass and crowned, anchors the whole system: banners, panels, and subscriber badges.",
+      "category": "3d, social media",
+      "tagsPt": [
+        "3d",
+        "social media"
+      ],
+      "tagsEn": [
+        "3d",
+        "social media"
+      ],
+      "year": 2023,
+      "cover": "assets/uploads/dgzin/capa.webp",
+      "coverMobile": "",
+      "coverLight": false
     }
   ]
 }

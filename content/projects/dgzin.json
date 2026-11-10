@@ -1,0 +1,106 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
+  "slug": "dgzin",
+  "status": "published",
+  "client": "",
+  "year": 2023,
+  "category": "3d, social media",
+  "services": [
+    "Direção de arte",
+    "Design 3D"
+  ],
+  "seo": {
+    "title": "dgzin · Pedro de Trindade",
+    "description": "Case: identidade para as redes sociais e a Twitch de dgzin, jogador profissional de VALORANT da LOUD. Logotipo 3D, capas e painéis por Pedro de Trindade."
+  },
+  "hero": {
+    "eyebrowPt": "direção de arte e 3d",
+    "eyebrowEn": "art direction and 3d",
+    "titlePt": "dgzin",
+    "titleEn": "dgzin",
+    "subtitlePt": "Identidade para as redes sociais e o canal da Twitch de Douglas “dgzin” Silva, jogador profissional de VALORANT pela LOUD.\nUm logotipo em 3D, com acabamento de vidro e uma coroa, organiza todo o sistema: capas, painéis e badges de inscrito.",
+    "subtitleEn": "Identity for the social channels and Twitch stream of Douglas “dgzin” Silva, a professional VALORANT player for LOUD.\nA 3D logotype, finished in glass and crowned, anchors the whole system: banners, panels, and subscriber badges.",
+    "rolePt": "Direção de Arte, Design & 3D",
+    "roleEn": "Art Direction, Design & 3D",
+    "scopePt": "Logotipo 3D, Capas para Twitter e YouTube, Painéis e Badges da Twitch",
+    "scopeEn": "3D Logotype, Twitter & YouTube Banners, Twitch Panels & Badges"
+  },
+  "cover": "assets/uploads/dgzin/capa.webp",
+  "coverMobile": "",
+  "caseCover": "assets/uploads/dgzin/capa-case.webp",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "dgzin é jogador profissional de VALORANT e chegou à LOUD vindo da FURIA. Parte das peças nasceu ainda na equipe anterior. Com a mudança, o projeto virou uma releitura: preservar o que já era reconhecível no visual do atleta e ajustar o restante para acompanhar a nova fase da carreira.",
+      "textEn": "dgzin is a professional VALORANT player who joined LOUD from FURIA. Part of this work began while he was still with his previous team. After the move, the project became a reinterpretation: keep what was already recognizable in his visual identity and adjust the rest to match the new chapter of his career."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "O logotipo foi modelado no Blender, partindo de uma versão em argila até chegar ao vidro. Depois vieram a composição das cenas e o brilho, que dão ao nome um aspecto quase líquido e conversam com o verde da LOUD nas capas. O mesmo material se desdobra para Twitter, YouTube e Twitch.",
+      "textEn": "The logotype was modeled in Blender, moving from a clay pass to a glass finish. Scene composition and glow came next, giving the name an almost liquid quality that plays against LOUD's green in the banners. The same material then carries across Twitter, YouTube, and Twitch."
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
+      "textPt": "Um sistema visual único para todas as redes do atleta. A coroa ganhou vida própria: virou o badge de inscrito da Twitch e muda de cor conforme o tempo de assinatura, de um a doze meses.",
+      "textEn": "A single visual system across all of the athlete's channels. The crown took on a life of its own: it became the Twitch subscriber badge, changing color with subscription length, from one to twelve months."
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/dgzin/processo-3d.webp",
+          "alt": "Logotipo dgzin no Blender, da modelagem em argila ao acabamento em vidro"
+        },
+        {
+          "src": "assets/uploads/dgzin/brilho.webp",
+          "alt": "Logotipo dgzin em vidro recebendo o brilho final"
+        }
+      ],
+      "layout": "adaptive"
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/dgzin/twitter-header.webp",
+      "alt": "Capa do Twitter de dgzin, com o atleta de camisa da LOUD e o logotipo em 3D sobre textura verde",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "",
+      "captionEn": ""
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/dgzin/youtube-banner.webp",
+      "alt": "Banner do canal de dgzin no YouTube",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "Capas para Twitter e YouTube.",
+      "captionEn": "Banners for Twitter and YouTube."
+    },
+    {
+      "type": "gallery",
+      "images": [
+        { "src": "assets/uploads/dgzin/painel-setup.webp", "alt": "Painel da Twitch: setup" },
+        { "src": "assets/uploads/dgzin/painel-sobre.webp", "alt": "Painel da Twitch: sobre" },
+        { "src": "assets/uploads/dgzin/painel-sociais.webp", "alt": "Painel da Twitch: sociais" },
+        { "src": "assets/uploads/dgzin/painel-designer.webp", "alt": "Painel da Twitch: designer" },
+        { "src": "assets/uploads/dgzin/painel-donate.webp", "alt": "Painel da Twitch: donate" },
+        { "src": "assets/uploads/dgzin/painel-regras.webp", "alt": "Painel da Twitch: regras" }
+      ],
+      "layout": "adaptive"
+    },
+    {
+      "type": "gallery",
+      "images": [
+        { "src": "assets/uploads/dgzin/painel-seja-sub.webp", "alt": "Painel da Twitch com os benefícios de ser inscrito" },
+        { "src": "assets/uploads/dgzin/badges-sub.webp", "alt": "Seis badges de inscrito em forma de coroa, uma cor para cada tempo de assinatura" }
+      ],
+      "layout": "adaptive"
+    }
+  ]
+}
