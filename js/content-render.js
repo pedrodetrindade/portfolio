@@ -21,10 +21,10 @@
      deste arquivo nas páginas. */
   var BASE_JS = document.currentScript && document.currentScript.src
     ? document.currentScript.src.replace(/content-render\.js(\?.*)?$/, '') : '';
-  var DITHER_V = 3;
+  var DITHER_V = 6;
   var DITHER_CAPA_V = 2;
   var ASSINATURA_V = 1;
-  var CRACHA_V = 2;
+  var CRACHA_V = 4;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];

@@ -1711,7 +1711,7 @@
       fieldRow('Posição vertical do e-mail', 'Não altera a altura do footer. Valor positivo desce; negativo sobe.', sliderControl('foot_email_offset', f.emailOffset == null ? 12 : f.emailOffset, -40, 60, 'px')) +
       fieldRow('Posição vertical do copyright', 'Não altera a altura do footer. Valor negativo sobe e afasta do texto em looping.', sliderControl('foot_legal_offset', f.legalOffset == null ? -12 : f.legalOffset, -60, 40, 'px')) +
       '<div style="border-top:1px solid var(--line);padding-top:1rem;margin-top:1rem"><b>Background do footer</b></div>' +
-      fieldRow('Tipo', 'Sólido é o fallback quando não há configuração. Dither é o horizonte de pontos animados nas cores do site, que brilha sob o cursor; imagem e vídeo abaixo ficam guardados para quando voltar.', selectDe('foot_bg_type', bgType, [
+      fieldRow('Tipo', 'Sólido é o fallback quando não há configuração. Dither são ondas de pontos animados nas cores do site, que o cursor apaga como uma borracha; imagem e vídeo abaixo ficam guardados para quando voltar.', selectDe('foot_bg_type', bgType, [
         ['solid', 'Cor sólida'], ['image', 'Imagem'], ['video', 'Vídeo'], ['dither', 'Dither (pontos animados)']
       ])) +
       fieldRow('Cor de base', 'Permanece visível enquanto a mídia não carrega ou se ela falhar.', '<input type="color" id="foot_bg_color" value="' + esc(/^#[0-9a-f]{6}$/i.test(bg.color || '') ? bg.color : '#151111') + '">') +

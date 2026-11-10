@@ -100,7 +100,8 @@ uniform vec4 uLow;
 uniform vec4 uMid;
 uniform vec4 uHigh;
 uniform float uIntensity;
-uniform vec3 uPointer;
+uniform vec3 uRastro[24];
+uniform float uRaio;
 uniform float uDot;
 out vec4 outColor;
 
@@ -128,8 +129,17 @@ void main() {
   float over = max(v - 0.85, 0.0);
   v = min(v, 0.85) + over / (1.0 + 4.0 * over);
   v = clamp(v * uIntensity, 0.0, 1.0);
-  vec2 away = gl_FragCoord.xy * uDot - uPointer.xy;
-  v = min(v + uPointer.z * exp(-dot(away, away) / 28000.0) * (0.35 + 0.5 * v), 1.0);
+  // Borracha: o cursor e o rastro dele apagam os pontos, e o rastro volta a
+  // se encher devagar (a força de cada ponto cai com a idade, no JS).
+  vec2 aqui = gl_FragCoord.xy * uDot;
+  float apaga = 0.0;
+  for (int i = 0; i < 24; i++) {
+    vec3 r = uRastro[i];
+    if (r.z <= 0.001) continue;
+    vec2 d = aqui - r.xy;
+    apaga = max(apaga, r.z * exp(-dot(d, d) / uRaio));
+  }
+  v *= 1.0 - apaga;
   v = max(v - 0.02, 0.0) / 0.98;
   float on = step(threshold(gl_FragCoord.xy), v);
   vec4 c = v < 0.5 ? mix(uLow, uMid, v * 2.0) : mix(uMid, uHigh, v * 2.0 - 1.0);
@@ -138,7 +148,12 @@ void main() {
 
   /* o campo é desenhado a 60% do tamanho e depois "floresce" pelos mipmaps */
   const ESCALA_CAMPO = 0.6;
-  const SUAVE_PONTEIRO = 6;
+  /* Borracha do cursor: até 24 pontos de rastro, raio de ~46px (2σ² no
+     shader) e 1,6s para o rastro se encher de novo. No original o cursor
+     acendia os pontos; aqui, a pedido, ele apaga. */
+  const PONTOS_RASTRO = 24;
+  const RAIO_BORRACHA = 2 * 46 * 46;
+  const CURA_S = 1.6;
 
   function compilar(gl, fragmento) {
     const programa = gl.createProgram();
@@ -205,7 +220,7 @@ void main() {
         gl.useProgram(dither);
         gl.uniform1f(em(dither, 'uIntensity'), v);
       },
-      desenhar(tempo, ponteiro) {
+      desenhar(tempo, rastro) {
         gl.useProgram(campo);
         gl.uniform2f(em(campo, 'uSize'), css[0], css[1]);
         gl.uniform2f(em(campo, 'uView'), vistaCampo[0], vistaCampo[1]);
@@ -221,7 +236,8 @@ void main() {
         gl.useProgram(dither);
         gl.uniform2f(em(dither, 'uView'), vista[0], vista[1]);
         gl.uniform1f(em(dither, 'uDot'), css[0] / vista[0]);
-        gl.uniform3f(em(dither, 'uPointer'), ...ponteiro);
+        gl.uniform3fv(em(dither, 'uRastro[0]'), rastro);
+        gl.uniform1f(em(dither, 'uRaio'), RAIO_BORRACHA);
         gl.viewport(0, 0, vista[0], vista[1]);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       },
@@ -251,10 +267,10 @@ void main() {
     });
   }
 
-  const suavizar = (de, para, taxa, dt) => de + (para - de) * (1 - Math.exp(-taxa * dt));
-
   function montar(host, opcoes) {
-    const o = Object.assign({ ponto: 2, intensidade: 0.44, velocidade: 1, fps: 30 }, opcoes || {});
+    /* intensidade e velocidade mais baixas que a primeira versão: a pedido,
+       as ondas ficaram mais suaves e mais lentas */
+    const o = Object.assign({ ponto: 2, intensidade: 0.34, velocidade: 0.6, fps: 30 }, opcoes || {});
     const canvas = document.createElement('canvas');
     canvas.className = 'dither-canvas';
     canvas.setAttribute('aria-hidden', 'true');
@@ -273,12 +289,34 @@ void main() {
     host.appendChild(canvas);
 
     const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const ponteiro = { x: 0, y: 0, cx: 0, cy: 0, on: false, brilho: 0 };
+    const ponteiro = { cx: 0, cy: 0, on: false };
+    /* Rastro da borracha, gravado no próprio evento do ponteiro (em
+       coordenadas da janela e relógio real), não a cada quadro do laço: assim
+       o caminho sai inteiro mesmo numa máquina que desenha poucos quadros.
+       Cada ponto nasce com força 1 e some em CURA_S segundos; o laço só
+       converte para o campo e deixa curar. */
+    const rastro = [];
+    const uniforme = new Float32Array(PONTOS_RASTRO * 3);
+    const agoraS = () => performance.now() / 1000;
     let tempo = 10, anterior = 0, quadro = 0, alturaCss = 0, perdido = false;
 
+    function encherUniforme() {
+      uniforme.fill(0);
+      if (!rastro.length) return;
+      const caixa = host.getBoundingClientRect();
+      const agora = agoraS();
+      for (let i = 0; i < rastro.length && i < PONTOS_RASTRO; i++) {
+        const p = rastro[rastro.length - 1 - i];
+        const idade = Math.min(1, (agora - p.t) / CURA_S);
+        uniforme[i * 3] = p.cx - caixa.left;
+        uniforme[i * 3 + 1] = caixa.top + alturaCss - p.cy;
+        uniforme[i * 3 + 2] = 1 - idade * idade * (3 - 2 * idade);
+      }
+    }
     const desenhar = () => {
       if (!alturaCss || perdido) return;
-      r.desenhar(tempo, [ponteiro.x, ponteiro.y, ponteiro.brilho]);
+      encherUniforme();
+      r.desenhar(tempo, uniforme);
       canvas.classList.add('is-pronto');
     };
     const pintar = () => {
@@ -317,16 +355,11 @@ void main() {
       const dt = anterior ? Math.min((agora - anterior) / 1000, 2) : 0;
       anterior = agora;
       tempo += dt * o.velocidade;
-      /* a caixa só é lida enquanto há ponteiro na página ou brilho a apagar */
-      if (ponteiro.on || ponteiro.brilho > 0.002) {
-        const caixa = host.getBoundingClientRect();
-        const dentro = ponteiro.on &&
-          ponteiro.cx >= caixa.left && ponteiro.cx <= caixa.right &&
-          ponteiro.cy >= caixa.top && ponteiro.cy <= caixa.bottom;
-        ponteiro.x = suavizar(ponteiro.x, ponteiro.cx - caixa.left, SUAVE_PONTEIRO, dt);
-        ponteiro.y = suavizar(ponteiro.y, caixa.top + alturaCss - ponteiro.cy, SUAVE_PONTEIRO, dt);
-        ponteiro.brilho = suavizar(ponteiro.brilho, dentro ? 1 : 0, 4, dt);
-      }
+      /* cursor parado sobre o rodapé continua apagando onde está */
+      const seg = agoraS();
+      const ultimo = rastro[rastro.length - 1];
+      if (ponteiro.on && ultimo && ultimo.cx === ponteiro.cx && ultimo.cy === ponteiro.cy) ultimo.t = seg;
+      while (rastro.length && seg - rastro[0].t >= CURA_S) rastro.shift();
       desenhar();
     };
     const sync = () => {
@@ -335,17 +368,20 @@ void main() {
       else if (!deve && quadro) { cancelAnimationFrame(quadro); quadro = 0; }
     };
 
-    /* dedo só conta enquanto encosta, senão o brilho fica preso onde tocou */
+    /* dedo só conta enquanto encosta, senão a borracha fica presa onde tocou */
     const aoPonteiro = e => {
       if (e.pointerType === 'touch' && e.buttons === 0) return;
-      if (!ponteiro.on) {
-        const caixa = host.getBoundingClientRect();
-        ponteiro.x = e.clientX - caixa.left;
-        ponteiro.y = caixa.top + alturaCss - e.clientY;
-      }
       ponteiro.cx = e.clientX;
       ponteiro.cy = e.clientY;
       ponteiro.on = true;
+      /* um ponto novo a cada 12px de caminho; perto disso, renova o último */
+      const u = rastro[rastro.length - 1];
+      if (!u || Math.hypot(e.clientX - u.cx, e.clientY - u.cy) >= 12) {
+        rastro.push({ cx: e.clientX, cy: e.clientY, t: agoraS() });
+        if (rastro.length > PONTOS_RASTRO) rastro.shift();
+      } else {
+        u.cx = e.clientX; u.cy = e.clientY; u.t = agoraS();
+      }
     };
     const aoSair = () => { ponteiro.on = false; };
     const aoSoltar = e => { if (e.pointerType === 'touch') ponteiro.on = false; };

@@ -682,9 +682,14 @@ versão é a constante `DITHER_V` lá dentro. Ao editar `dither-field.js`, suba
   some rente ao crédito e cai a 16% atrás do texto. Em tela vertical a base
   sobe e o topo apaga antes, porque crédito e navegação ocupam mais altura.
 - Cores dos tokens, lidas do CSS: `--dither-low` (`--ink-3`), `--dither-mid`
-  (`--warm-rgb`) e `--dither-high` (`--accent`). Com `--cream` no topo o
-  desenho lia cinza-claro e brigava com a headline. Intensidade .44, ponto de
-  2px, 30 quadros por segundo.
+  (`--warm-rgb`) e `--dither-high` (`--muted-2`). Já foi `--accent` e, antes,
+  `--cream`: a cada volta Pedro pediu mais suave. Intensidade .34, velocidade
+  .6, ponto de 2px, 30 quadros por segundo.
+- O cursor é uma borracha (no original ele acendia os pontos): até 24 pontos de
+  rastro, um a cada 12px, raio de ~46px, e o rastro se enche de novo em 1,6s.
+  O rastro é gravado no próprio `pointermove`, com relógio real, e não a cada
+  quadro do laço: gravado no laço, uma máquina que desenha poucos quadros
+  pegava só um ou dois pontos e a borracha quase não aparecia.
 - Pausa fora de alcance pelo `.parado` do `main.js` (`medirFundos` inclui
   `[data-footer-dither]`), não por IntersectionObserver. Sob movimento reduzido
   desenha um quadro e para. Sem WebGL2, o CSS desenha uma grade parada.
@@ -725,7 +730,9 @@ complementar à do `.liquid-bg`, e só quando a capa não tem ruído próprio e
 #work tem. Pedro gosta muito dessa emenda: confira a passagem ao mexer em
 qualquer camada da capa.
 
-**A assinatura do rodapé** (Spell UI, signature) se escreve apoiada na linha
+**A assinatura do rodapé está desligada** (`footer.showHandSignature:false`, a
+pedido): o código e o desenho ficam, e o interruptor do painel a religa.
+A assinatura (Spell UI, signature) se escreve apoiada na linha
 fina acima do crédito, na cor do nome da capa. Contornos gerados uma vez da
 Herr Von Muellerhoff (OFL) com opentype.js, fora do site: `js/assinatura.js`
 traz só os 15 caminhos prontos, e o texto é fixo. Contorno fino e um traço
@@ -747,13 +754,23 @@ hover, página atual em `--paper` com `aria-current`, rótulo do `nav` bilíngue
 **A foto do Sobre é um crachá** (React Bits, lanyard), em `js/cracha.js`,
 carregado pelo `content-render` só com mouse, sem movimento reduzido e a partir
 de 640px (no celular a foto fica no meio do texto). O original é 3D com
-three.js e física; aqui é 2,5D sem biblioteca: cordão de verlet desenhado em
-SVG, saindo da linha do topo da seção, e o cartão preso na ponta, girando por
-mola para alinhar com os últimos quatro trechos (com um só, o giro sacudia
-demais) e com rotateY pela velocidade. Arrasta e arremessa; clique curto vira e
-mostra o verso tipográfico (trind9de, nome, cargo, cidade). Uma mola fraca leva
-a ponta de volta ao layout, e a montagem calibra o comprimento do cordão
-simulando até o repouso: sem isso a gravidade deixava a foto 7px abaixo do
-lugar dela no grid. Ganha um empurrão quando a máscara da foto abre.
-Versão em `CRACHA_V`. O crosshair do React Bits chegou a entrar e saiu a
-pedido: não volte com ele sem perguntar.
+three.js e física; aqui é 2,5D sem biblioteca. Visual de crachá como na
+referência: cartão claro (`--paper`, é um objeto, não uma seção), fenda e
+presilha metálica no alto, foto quadrada encaixada, nome e cargo embaixo;
+verso no mesmo material com a marca. Cordão em SVG saindo da linha do topo da
+seção, com "trind9de" em mono.
+Calmo, a pedido (a primeira versão balançava demais): a presilha volta por
+uma mola amortecida no crítico (`W_CASA` 6, ~0,8s sem passar do ponto); com a
+ponta solta na corda, o cordão virava pêndulo e devolvia 30 a 70px de
+sobressalto mesmo com muito atrito (simulado). Só o meio do cordão é verlet,
+para a curva ter vida. O giro acompanha os últimos quatro trechos com mola
+acima do crítico, a virada (clique curto) é amortecida no crítico, o arremesso
+leva metade da velocidade do arraste e não há empurrão na entrada.
+Entra por fundido da figura inteira, parado no lugar. A máscara de baixo para
+cima das outras imagens fica desligada aqui: num objeto pendurado ela lia como
+se o crachá carregasse de cabeça para baixo ao chegar na seção.
+`casa` vem de `offsetLeft/offsetTop` do cartão (caixa de layout): o
+`getBoundingClientRect` devolveria a caixa do cartão girado. A foto é
+`assets/uploads/sobre/retrato-2026.webp`, quadrada. Versão em `CRACHA_V`.
+O crosshair do React Bits chegou a entrar e saiu a pedido: não volte com ele
+sem perguntar.

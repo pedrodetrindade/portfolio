@@ -1239,40 +1239,60 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .portrait-hint{position:relative;font-family:var(--mono);font-size:.7rem;letter-spacing:.015em;color:var(--muted-2);
   background:rgba(var(--paper-rgb),.05);border:1px solid var(--line);border-radius:var(--radius-button,12px);padding:.5rem 1.1rem}
 /* ===== CRACHÁ (js/cracha.js, lanyard do React Bits) =====
-   A foto vira um crachá preso num cordão que sai da linha do topo do Sobre.
-   O cartão gira em torno da presilha (transform-origin no topo dela), e a
-   perspectiva da figura dá volume ao giro em Y. Frente é a foto de sempre;
-   verso, a marca em tipografia, nas cores do site.
-   O cordão é uma fita em --ink-3 com "trind9de" correndo em mono, desenhado
-   num SVG que ocupa a figura e passa da borda de cima.
+   A foto vira um crachá preso num cordão que sai da linha do topo do Sobre,
+   com a cara da referência: cartão claro, furo da presilha no alto, foto
+   quadrada encaixada com margem, nome e cargo embaixo. O cartão é um objeto,
+   não uma seção, por isso pode ser claro num site escuro: é o --paper, o
+   mesmo branco quente do texto. Texto escuro sobre ele em --ink e --ink-3.
+   O cartão gira em torno do topo da presilha (transform-origin), e a
+   perspectiva da figura dá volume ao giro em Y. O cordão é uma fita em
+   --ink-3 com "trind9de" em mono, num SVG que passa da borda de cima.
+   Entra por fundido da figura inteira, parado no lugar; a máscara de baixo
+   para cima das outras imagens fica desligada aqui, porque num objeto
+   pendurado ela lia como se o crachá carregasse de cabeça para baixo.
    Sem will-change: o translate3d/rotateY já compõe o cartão em camada
    própria, e o projeto reserva will-change às três camadas fixas. */
-.about-photo.cracha-ativo{position:relative;perspective:1400px}
-.cracha{position:relative;z-index:2;transform-origin:50% -14px;transform-style:preserve-3d;
+.about-photo.cracha-ativo{position:relative;perspective:1600px;
+  opacity:0;transition:opacity var(--dur-reveal) var(--ease-soft)}
+.about-photo.cracha-ativo.cracha-visivel{opacity:1}
+.js .cracha .portrait.mask-reveal{clip-path:none;transform:none;transition:none}
+.cracha{position:relative;z-index:2;transform-origin:50% -16px;transform-style:preserve-3d;
   cursor:grab;touch-action:none}
 .cracha.arrastando{cursor:grabbing}
-.cracha-face{backface-visibility:hidden;-webkit-backface-visibility:hidden}
-.cracha-verso{position:absolute;inset:0;transform:rotateY(180deg);
-  display:flex;flex-direction:column;justify-content:space-between;padding:clamp(1.1rem,2vw,1.6rem);
-  border-radius:var(--radius-image,16px);border:1px solid var(--line);overflow:hidden;
-  background:radial-gradient(circle at 50% 38%,var(--ink-3),var(--ink-2) 55%,var(--ink) 100%)}
-.cv-marca{font-size:clamp(1.6rem,2.6vw,2.3rem);font-weight:var(--w-medium);letter-spacing:-.04em;
-  color:var(--color-hero-name)}
-.cv-grade{flex:1;margin-block:1rem;border-radius:calc(var(--radius-image,16px) / 2);opacity:.5;
-  background:radial-gradient(rgba(var(--paper-rgb),.22) .7px,transparent .9px) 0 0/6px 6px}
-.cv-pe{display:flex;flex-direction:column;gap:.3rem}
-.cv-nome{font-size:.95rem;font-weight:var(--w-medium);color:var(--paper);letter-spacing:-.01em}
-.cv-cargo,.cv-local{font-family:var(--mono);font-size:.68rem;letter-spacing:.02em;color:var(--muted-2)}
-/* presilha: a peça onde o cordão prende, acima da borda da foto */
-.cracha-presilha{position:absolute;left:50%;top:-14px;width:22px;height:20px;margin-left:-11px;z-index:2;
-  border-radius:6px;background:linear-gradient(var(--muted-2),var(--ink-3));
-  box-shadow:0 1px 0 rgba(var(--paper-rgb),.25) inset,0 2px 6px rgba(var(--ink-rgb),.6)}
-.cracha-presilha::after{content:"";position:absolute;left:50%;top:5px;width:10px;height:4px;margin-left:-5px;
-  border-radius:3px;background:var(--ink)}
+.cracha-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:18px;padding:12px 12px 16px;
+  background:linear-gradient(170deg,var(--paper),var(--cream) 140%);
+  box-shadow:0 1px 0 rgba(var(--paper-rgb),.9) inset,0 -1px 0 rgba(var(--ink-rgb),.08) inset,
+             0 28px 60px -24px rgba(var(--ink-rgb),.9)}
+/* furo da presilha: a fenda escura no alto do cartão */
+.cf-furo{display:block;width:54px;height:9px;margin:2px auto 12px;border-radius:9px;
+  background:var(--ink-2);box-shadow:0 1px 2px rgba(var(--ink-rgb),.7) inset}
+.cracha .portrait{aspect-ratio:1/1;border:0;border-radius:10px;background:var(--ink-2)}
+.cracha .portrait::after{opacity:.12}
+.cracha .portrait-img{object-position:50% 50%}
+.cf-pe{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-top:14px;padding-inline:4px}
+.cf-id{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.cf-nome{font-size:1.05rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink);line-height:1.1}
+.cf-cargo{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--ink-3)}
+.cf-marca{font-size:.82rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink-3);flex:none}
+.cracha-verso{position:absolute;inset:0;transform:rotateY(180deg);display:flex;flex-direction:column}
+.cv-marca{font-size:clamp(1.8rem,2.8vw,2.5rem);font-weight:var(--w-medium);letter-spacing:-.045em;
+  color:var(--ink);padding-inline:4px}
+.cv-grade{flex:1;margin-block:12px;border-radius:10px;
+  background:radial-gradient(rgba(var(--ink-rgb),.28) .8px,transparent 1px) 0 0/7px 7px}
+.cv-pe{display:flex;flex-direction:column;gap:.3rem;padding-inline:4px}
+.cv-nome{font-size:1.05rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink)}
+.cv-local{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--ink-3)}
+/* presilha: a peça metálica onde o cordão prende, entrando pela fenda */
+.cracha-presilha{position:absolute;left:50%;top:-16px;width:24px;height:30px;margin-left:-12px;z-index:3;
+  border-radius:5px;background:linear-gradient(90deg,var(--muted-2),var(--cream) 45%,var(--muted-2));
+  box-shadow:0 1px 0 rgba(var(--paper-rgb),.6) inset,0 3px 6px rgba(var(--ink-rgb),.5)}
+.cracha-presilha::after{content:"";position:absolute;left:50%;top:4px;width:12px;height:5px;margin-left:-6px;
+  border-radius:3px;background:var(--ink-2)}
 .cracha-cordao{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:1}
-.cc-fita{fill:none;stroke:var(--ink-3);stroke-width:13;stroke-linecap:butt}
-/* a "costura" é só o trilho do texto: invisível, o texto corre no meio da fita */
-.cc-costura{fill:none;stroke:none}
+.cc-fita{fill:none;stroke:var(--ink-3);stroke-width:14;stroke-linecap:butt}
+/* trilho do texto: invisível, o texto corre no meio da fita */
+.cc-trilho{fill:none;stroke:none}
 .cc-texto{font-family:var(--mono);font-size:7px;letter-spacing:.06em;fill:var(--muted-2);dominant-baseline:middle}
 
 /* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala.
@@ -2501,16 +2521,16 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .site-footer-overlay{z-index:-2;background:rgba(8,6,6,var(--site-footer-overlay))}
 /* ===== DITHER NO FUNDO DO RODAPÉ (footer.background.type 'dither') =====
    Pontos quadrados em matriz de Bayer, desenhados pelo js/dither-field.js
-   (Magic UI, dither-field, só o padrão "horizonte"). A rampa de cor sai
-   destes três tokens, lidos pelo JS: ponto fraco em --ink-3, que mal se
-   separa do fundo, médio no marrom-acinzentado de --warm-rgb e o miolo do sol
-   em --accent. Com --cream no topo o horizonte lia cinza-claro e brigava com a
-   headline: o rodapé continua sendo do texto, o horizonte é fundo.
-   O canvas tem um ponto por pixel e é ampliado com pixelated, então o ponto
-   sai nítido em qualquer densidade de tela. Entra por fundido longo e
+   (Magic UI, dither-field, padrão "ondas"; o cursor funciona como borracha).
+   A rampa de cor sai destes três tokens, lidos pelo JS: ponto fraco em
+   --ink-3, que mal se separa do fundo, médio no marrom-acinzentado de
+   --warm-rgb e a crista em --muted-2. Já foi --accent e, antes, --cream: a
+   pedido, o desenho ficou mais suave a cada volta, e o rodapé continua sendo
+   do texto. O canvas tem um ponto por pixel e é ampliado com pixelated, então
+   o ponto sai nítido em qualquer densidade de tela. Entra por fundido longo e
    linear, como as outras camadas grandes. */
 .site-footer-dither{position:absolute;inset:0;overflow:hidden;
-  --dither-low:var(--ink-3);--dither-mid:rgb(var(--warm-rgb));--dither-high:var(--accent)}
+  --dither-low:var(--ink-3);--dither-mid:rgb(var(--warm-rgb));--dither-high:var(--muted-2)}
 .dither-canvas{position:absolute;top:0;left:0;image-rendering:pixelated;opacity:0;
   transition:opacity var(--dur-slow) linear}
 .dither-canvas.is-pronto{opacity:1}
