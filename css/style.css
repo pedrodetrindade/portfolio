@@ -23,7 +23,7 @@
   --ink-3:#403638;        /* superfícies elevadas */
   --paper:#F2EEEE;        /* texto principal, branco quente */
   --muted:#B7ACAC;        /* texto secundário */
-  --muted-2:#8A7E7E;      /* texto terciário */
+  --muted-2:#938787;      /* texto terciário; 4,8:1 sobre --ink-2 (era #8A7E7E, 4,27:1) */
   --accent:#A29595;       /* rótulos e detalhes */
   --cream:#C9BDBD;        /* realce quente discreto */
   /* O nome da hero tem cor própria e única: marrom-claro, o mesmo na intro e na

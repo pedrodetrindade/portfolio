@@ -697,6 +697,16 @@
      modal=true  : painel de contato, trava fundo e move o foco
      modal=false : menu em hover no desktop, não trava nada nem rouba foco */
   let lastFocused = null, modalOpen = false, menuCloseTimer = 0, menuVisualVersion = 0;
+  /* Leitor de tela precisa saber que o botão Menu controla o painel e se ele
+     está aberto. Function declaration de propósito: é içada, então vale mesmo
+     se algo chamar openOverlay antes desta linha ser avaliada. */
+  function sincronizarMenuExpandido(aberto){
+    document.querySelectorAll('[data-menu]').forEach(b => {
+      b.setAttribute('aria-controls', 'menu');
+      b.setAttribute('aria-expanded', String(aberto));
+    });
+  }
+  sincronizarMenuExpandido(false);
   function openOverlay(el, modal = true){
     clearTimeout(menuCloseTimer);
     menuVisualVersion++;
@@ -717,6 +727,7 @@
       }
     }
     el.classList.add('open');
+    sincronizarMenuExpandido(el === menu);
     document.body.classList.toggle('menu-open', el === menu);
     modalOpen = modal;
     if (window.__travarTemaHeader) window.__travarTemaHeader(true);
@@ -731,6 +742,7 @@
     const wasOpen = document.querySelector('.overlay.open');
     const menuClosing = !!(menu && menu.classList.contains('open') && menu.classList.contains('dropdown'));
     document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+    sincronizarMenuExpandido(false);
     document.body.classList.remove('locked');
     /* No dropdown, a pílula fechada só volta depois que o painel terminou de
        desaparecer. Não usamos transitionend aqui: o sheet anima três

@@ -24,9 +24,9 @@
     "scopePt": "Key Visual, Campanha, Social Media, Motion Design e Materiais Impressos",
     "scopeEn": "Key Visual, Campaign, Social Media, Motion Design & Print Materials"
   },
-  "cover": "assets/uploads/case-01/kv1.png",
+  "cover": "assets/uploads/case-01/kv1.webp",
   "coverMobile": "",
-  "caseCover": "assets/uploads/colegio-assertivo/1-copiar.png",
+  "caseCover": "assets/uploads/colegio-assertivo/1-copiar.webp",
   "coverSpacing": {
     "marginTop": {
       "desktop": 0,
@@ -73,7 +73,7 @@
     },
     {
       "type": "image",
-      "src": "assets/uploads/colegio-assertivo/1115-01-round-neck-baby-t-shirt-mockups.png",
+      "src": "assets/uploads/colegio-assertivo/1115-01-round-neck-baby-t-shirt-mockups.webp",
       "alt": "",
       "fit": "auto",
       "width": "content",
@@ -84,11 +84,11 @@
       "type": "gallery",
       "images": [
         {
-          "src": "assets/uploads/colegio-assertivo/kv1.png",
+          "src": "assets/uploads/colegio-assertivo/kv1.webp",
           "alt": ""
         },
         {
-          "src": "assets/uploads/colegio-assertivo/leitura.png",
+          "src": "assets/uploads/colegio-assertivo/leitura.webp",
           "alt": ""
         }
       ],
@@ -98,15 +98,15 @@
       "type": "gallery",
       "images": [
         {
-          "src": "assets/uploads/colegio-assertivo/kv3.png",
+          "src": "assets/uploads/colegio-assertivo/kv3.webp",
           "alt": ""
         },
         {
-          "src": "assets/uploads/colegio-assertivo/dia-dos-pais.png",
+          "src": "assets/uploads/colegio-assertivo/dia-dos-pais.webp",
           "alt": ""
         },
         {
-          "src": "assets/uploads/colegio-assertivo/dia-da-arvore.png",
+          "src": "assets/uploads/colegio-assertivo/dia-da-arvore.webp",
           "alt": ""
         }
       ],
@@ -116,11 +116,11 @@
       "type": "gallery",
       "images": [
         {
-          "src": "assets/uploads/colegio-assertivo/camada-18.png",
+          "src": "assets/uploads/colegio-assertivo/camada-18.webp",
           "alt": ""
         },
         {
-          "src": "assets/uploads/colegio-assertivo/prancheta-1.png",
+          "src": "assets/uploads/colegio-assertivo/prancheta-1.webp",
           "alt": ""
         }
       ],
@@ -128,7 +128,7 @@
     },
     {
       "type": "image",
-      "src": "assets/uploads/colegio-assertivo/notebook-mockup-1.png",
+      "src": "assets/uploads/colegio-assertivo/notebook-mockup-1.webp",
       "alt": "",
       "fit": "cover",
       "width": "content",

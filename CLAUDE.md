@@ -29,7 +29,7 @@ home. O JS detecta a pasta com `location.pathname.includes('/work/')`.
 Escura, monocromática e levemente quente, puxada para marrom. Tudo sai dos
 tokens em `:root`: `--ink` #0D0A0A (fundo), `--ink-2` #261B1D (superfícies),
 `--ink-3` #403638 (elevadas), `--paper` #F2EEEE (texto), `--muted` #B7ACAC
-(secundário), `--muted-2` #8A7E7E, `--accent` #A29595, `--cream` #C9BDBD.
+(secundário), `--muted-2` #938787 (subiu de #8A7E7E para passar 4,5:1 sobre `--ink-2` nos cards), `--accent` #A29595, `--cream` #C9BDBD.
 
 Para compor alpha use os triplets `--paper-rgb`, `--ink-rgb` e `--warm-rgb`
 dentro de `rgba()`. Não escreva valores literais de cor em componente.
