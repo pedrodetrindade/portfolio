@@ -136,42 +136,6 @@
     "subPt": "Ao longo da minha trajetória, desenvolvi soluções visuais e estratégicas para projetos nacionais e internacionais, com entregas on e offline, em contextos B2B e B2C. Hoje atuo em uma empresa B2B do setor financeiro voltada a ativos digitais, incorporando inteligência artificial, automação e novas tecnologias ao processo criativo.",
     "subEn": "Throughout my career I have developed visual and strategic solutions for national and international projects, online and offline, across B2B and B2C contexts. Today I work at a B2B financial company focused on digital assets, bringing artificial intelligence, automation and new technologies into the creative process.",
     "photo": "assets/uploads/sobre/retrato-2026.webp",
-    "capabilitiesLabelPt": "Capacidades",
-    "capabilitiesLabelEn": "Capabilities",
-    "capabilities": [
-      {
-        "pt": "Direção criativa e de arte",
-        "en": "Creative and art direction"
-      },
-      {
-        "pt": "Estratégia e gestão de marca",
-        "en": "Brand strategy and management"
-      },
-      {
-        "pt": "Campanhas e key visuals",
-        "en": "Campaigns and key visuals"
-      },
-      {
-        "pt": "Identidade e sistemas visuais",
-        "en": "Identity and visual systems"
-      },
-      {
-        "pt": "Apresentações estratégicas",
-        "en": "Strategic presentations"
-      },
-      {
-        "pt": "Experiências e produtos digitais",
-        "en": "Digital experiences and products"
-      },
-      {
-        "pt": "Motion, audiovisual e eventos",
-        "en": "Motion, audiovisual and events"
-      },
-      {
-        "pt": "IA, automação e operações criativas",
-        "en": "AI, automation and creative operations"
-      }
-    ],
     "ctaTalkPt": "Vamos conversar",
     "ctaTalkEn": "Let's talk",
     "resumeFile": "assets/uploads/curriculo/pedro-de-trindade-cv-pt.pdf",
@@ -184,106 +148,126 @@
     "kickerEn": "expertise",
     "titlePt": "O que eu faço",
     "titleEn": "What I do",
-    "leadPt": "Atuo na interseção entre estratégia, criação e tecnologia para construir marcas mais claras, consistentes e relevantes. Da definição de posicionamento à direção criativa, campanhas, experiências digitais e novos fluxos com IA, conecto diferentes frentes para transformar objetivos de negócio em comunicação, experiências e sistemas que evoluem com a marca.",
-    "leadEn": "I work at the intersection of strategy, creativity, and technology to build clearer, more consistent, and more relevant brands. From positioning and creative direction to campaigns, digital experiences, and new AI-powered workflows, I connect different disciplines to turn business goals into communication, experiences, and systems that evolve with the brand.",
+    "leadPt": "Cuido da marca do posicionamento à peça final, e costumo ser mais útil justamente na passagem de um para o outro. Meu trabalho recente está no mercado financeiro e de ativos digitais, onde um assunto complexo precisa chegar claro a quem decide: numa apresentação, num estande ou numa tela.",
+    "leadEn": "I take brands from positioning to the finished piece, and I tend to be most useful in the handoff between the two. My recent work is in financial services and digital assets, where a complex subject has to reach decision-makers clearly: in a presentation, at a trade show booth, or on a screen.",
     "items": [
       {
-        "titlePt": "Direção Criativa & Direção de Arte",
-        "titleEn": "Creative Direction & Art Direction",
-        "textPt": "Transformo estratégia em conceitos, narrativas e sistemas visuais, conduzindo a expressão da marca em campanhas, conteúdos, produtos digitais, projetos audiovisuais e experiências presenciais.",
-        "textEn": "I turn strategy into concepts, narratives, and visual systems, guiding how brands express themselves across campaigns, content, digital products, audiovisual projects, and in-person experiences.",
+        "titlePt": "Marcas, rebrandings e guias de marca",
+        "titleEn": "Brands, rebrands and brand guidelines",
+        "textPt": "Crio marcas do zero, do naming ao posicionamento e à identidade visual, e reorganizo as que cresceram sem um sistema. No rebranding mais recente, unifiquei sob uma só identidade mais de cinco frentes de um grupo financeiro, de gestão de patrimônio a tecnologia de pagamentos, com brand guideline, regras de governança visual e a base de um design system.",
+        "textEn": "I build brands from scratch, from naming and positioning to visual identity, and restructure the ones that grew without a system. In my most recent rebrand, I brought more than five business lines of a financial group under one identity, from wealth management to payment technology, with brand guidelines, visual governance rules and the foundation of a design system.",
         "tags": [
           {
-            "pt": "conceitos criativos",
-            "en": "creative concepts"
+            "pt": "naming e posicionamento",
+            "en": "naming & positioning"
           },
           {
-            "pt": "direção de arte",
-            "en": "art direction"
+            "pt": "identidade e sistemas visuais",
+            "en": "identity & visual systems"
           },
           {
-            "pt": "audiovisual",
-            "en": "audiovisual"
+            "pt": "governança de marca",
+            "en": "brand governance"
           }
         ]
       },
       {
-        "titlePt": "Estratégia & Gestão de Marca",
-        "titleEn": "Brand Strategy & Management",
-        "textPt": "Conecto posicionamento, comunicação e objetivos de negócio para orientar como marcas se apresentam, organizam suas mensagens, mantêm consistência e evoluem ao longo do tempo.",
-        "textEn": "I connect positioning, communication, and business goals to guide how brands present themselves, organize their messaging, maintain consistency, and evolve over time.",
+        "titlePt": "Campanhas, key visuals e performance",
+        "titleEn": "Campaigns, key visuals and performance",
+        "textPt": "Do conceito ao key visual, a campanha se desdobra em social, e-mail marketing, mídia paga e peças impressas sem perder a mesma leitura em nenhum formato. Em tráfego pago, os criativos saem em volume e cada peça é ajustada pelo que os números mostram.",
+        "textEn": "From concept to key visual, the campaign rolls out across social, email, paid media and print while staying recognizable in every format. For paid traffic, creatives are produced at volume and each piece is refined based on what the numbers show.",
         "tags": [
           {
-            "pt": "posicionamento",
-            "en": "positioning"
+            "pt": "direção criativa e de arte",
+            "en": "creative & art direction"
           },
           {
-            "pt": "diretrizes de marca",
-            "en": "brand guidelines"
+            "pt": "key visuals",
+            "en": "key visuals"
           },
           {
-            "pt": "governança criativa",
-            "en": "creative governance"
+            "pt": "criativos para tráfego pago",
+            "en": "paid media creatives"
           }
         ]
       },
       {
-        "titlePt": "Campanhas & Comunicação de Negócio",
-        "titleEn": "Campaigns & Business Communication",
-        "textPt": "Desenvolvo campanhas e materiais que fortalecem a marca, tornam temas complexos mais claros e apoiam objetivos de marketing, produto e comercial, incluindo apresentações estratégicas, lançamentos e ativações em eventos.",
-        "textEn": "I develop campaigns and materials that strengthen brands, make complex topics clearer, and support marketing, product, and commercial goals, including strategic presentations, launches, and event activations.",
+        "titlePt": "Apresentações e materiais comerciais",
+        "titleEn": "Presentations and sales materials",
+        "textPt": "Organizo produtos, propostas e temas técnicos em apresentações institucionais e comerciais que o time de vendas usa com segurança na frente do cliente. Nesse tipo de peça, o design primeiro ordena o argumento e só depois cuida da forma.",
+        "textEn": "I turn products, proposals and technical subjects into institutional and sales presentations that the commercial team can use confidently in front of clients. In this kind of work, design organizes the argument first and refines the form second.",
         "tags": [
-          {
-            "pt": "campanhas integradas",
-            "en": "integrated campaigns"
-          },
           {
             "pt": "apresentações estratégicas",
             "en": "strategic presentations"
           },
           {
-            "pt": "eventos & ativações",
-            "en": "events & activations"
+            "pt": "materiais institucionais",
+            "en": "institutional materials"
+          },
+          {
+            "pt": "apoio ao comercial",
+            "en": "sales enablement"
           }
         ]
       },
       {
-        "titlePt": "Experiências Digitais & Produtos",
-        "titleEn": "Digital Experiences & Products",
-        "textPt": "Transformo objetivos de marca e negócio em experiências digitais claras, consistentes e funcionais, atuando na criação de sites, landing pages, interfaces e produtos digitais.",
-        "textEn": "I turn brand and business goals into clear, consistent, and functional digital experiences, working across websites, landing pages, interfaces, and digital products.",
+        "titlePt": "Eventos, foto, vídeo e motion",
+        "titleEn": "Events, photo, video and motion",
+        "textPt": "Em feiras e eventos, dirijo a presença da marca, de estandes e backdrops a banners, aprovando o que sai da gráfica e dos fornecedores. No próprio evento, capto foto e vídeo e depois edito o aftermovie e os cortes em motion para as redes, com IA generativa em vídeo e animação quando ela soma ao resultado.",
+        "textEn": "At trade shows and events, I direct how the brand shows up, from booths and backdrops to banners, signing off on what comes from printers and suppliers. At the event itself, I shoot photo and video, then edit the aftermovie and motion cuts for social, using generative AI for video and animation when it adds to the result.",
         "tags": [
           {
-            "pt": "sites & landing pages",
+            "pt": "estandes e eventos",
+            "en": "booths & events"
+          },
+          {
+            "pt": "foto e vídeo",
+            "en": "photo & video"
+          },
+          {
+            "pt": "motion e aftermovies",
+            "en": "motion & aftermovies"
+          }
+        ]
+      },
+      {
+        "titlePt": "Sites, interfaces e produtos digitais",
+        "titleEn": "Websites, interfaces and digital products",
+        "textPt": "Desenho sites e interfaces da arquitetura de navegação à tela final e participo de lançamentos de apps e produtos. O site institucional mais recente que fiz foi construído com apoio de IA e com o formulário ligado direto ao CRM; este portfólio, com o painel que o edita, saiu do mesmo jeito.",
+        "textEn": "I design websites and interfaces from navigation architecture to the final screen, and I take part in app and product launches. The latest institutional site I designed was built with AI support and a form wired straight into the CRM; this portfolio, along with the panel that edits it, was made the same way.",
+        "tags": [
+          {
+            "pt": "sites e landing pages",
             "en": "websites & landing pages"
           },
           {
-            "pt": "interfaces digitais",
-            "en": "digital interfaces"
+            "pt": "UX e interfaces",
+            "en": "UX & interfaces"
           },
           {
-            "pt": "produtos & experiências",
-            "en": "products & experiences"
+            "pt": "lançamento de apps",
+            "en": "app launches"
           }
         ]
       },
       {
-        "titlePt": "Operações Criativas & Inteligência Artificial",
-        "titleEn": "Creative Operations & Artificial Intelligence",
-        "textPt": "Estruturo processos e fluxos que conectam estratégia, criação e execução, integrando inteligência artificial e automação para ampliar eficiência, repertório e escala sem perder consistência e qualidade.",
-        "textEn": "I structure processes and workflows that connect strategy, creation, and execution, integrating artificial intelligence and automation to increase efficiency, creative range, and scale without compromising consistency or quality.",
+        "titlePt": "IA aplicada e operações criativas",
+        "titleEn": "Applied AI and creative operations",
+        "textPt": "Com agentes e automações ligados aos templates e padrões da marca, marketing e comercial passam a produzir apresentações e peças por conta própria, sem sair das regras. São menos etapas manuais e menos fila no design, e o tempo da equipe criativa volta para o que pede critério.",
+        "textEn": "With agents and automations connected to the brand's templates and standards, marketing and sales can produce presentations and assets on their own without breaking the rules. That means fewer manual steps, a shorter design queue, and the creative team's time goes back to work that needs judgment.",
         "tags": [
           {
-            "pt": "sistemas criativos",
-            "en": "creative systems"
+            "pt": "agentes e automações",
+            "en": "agents & automations"
           },
           {
-            "pt": "IA aplicada",
-            "en": "applied AI"
+            "pt": "IA generativa",
+            "en": "generative AI"
           },
           {
-            "pt": "processos & automação",
-            "en": "processes & automation"
+            "pt": "operações criativas",
+            "en": "creative operations"
           }
         ]
       }

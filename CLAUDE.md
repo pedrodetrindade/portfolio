@@ -481,8 +481,8 @@ explorar" são absolutos. Se algum deles voltar ao fluxo, o nome sai do centro d
 viewport e a continuidade com a intro quebra.
 
 **Tudo que começa escondido precisa da guarda `.js`.** Vale para `.intro-veil`
-(`display:none` sob movimento reduzido), `.hn-line`, `.hi-line`, `.stat-line`,
-`.caps-grid li` e `.mask-reveal`. Sem isso, se o JS falhar, o conteúdo some ou a
+(`display:none` sob movimento reduzido), `.hn-line`, `.hi-line`, `.stat-line`
+e `.mask-reveal`. Sem isso, se o JS falhar, o conteúdo some ou a
 intro cobre o site para sempre.
 
 **O idioma inicial é detectado, não fixo.** `detectLang()` olha
@@ -818,21 +818,27 @@ escrito nas páginas, para valer também nos cases que o painel gera do zero; o
 hover, página atual em `--paper` com `aria-current`, rótulo do `nav` bilíngue.
 
 **A foto do Sobre é um crachá** (React Bits, lanyard), em `js/cracha.js`,
-carregado pelo `content-render` só com mouse, sem movimento reduzido e a partir
-de 640px (no celular a foto fica no meio do texto). O original é 3D com
-three.js e física; aqui é 2,5D sem biblioteca. Visual de crachá como na
-referência: cartão claro (`--paper`, é um objeto, não uma seção), fenda e
-presilha metálica no alto, foto quadrada encaixada, nome e cargo embaixo;
-verso no mesmo material com o nome grande, cargo e cidade. Cordão em SVG
-saindo da linha do topo da seção, com o nome em mono. Sem "trind9de" em lugar
-nenhum do crachá, a pedido.
-Calmo, a pedido (a primeira versão balançava demais): a presilha volta por
-uma mola amortecida no crítico (`W_CASA` 6, ~0,8s sem passar do ponto); com a
-ponta solta na corda, o cordão virava pêndulo e devolvia 30 a 70px de
-sobressalto mesmo com muito atrito (simulado). Só o meio do cordão é verlet,
-para a curva ter vida. O giro acompanha os últimos quatro trechos com mola
-acima do crítico, a virada (clique curto) é amortecida no crítico, o arremesso
-leva metade da velocidade do arraste e não há empurrão na entrada.
+carregado pelo `content-render` sem movimento reduzido e a partir de 640px (no
+celular a foto fica no meio do texto). O original é 3D com three.js e física;
+aqui é 2,5D sem biblioteca. Visual de crachá como na referência: cartão claro
+(`--paper`, é um objeto, não uma seção), fenda e presilha metálica no alto,
+foto quadrada encaixada, nome e cargo embaixo. Cordão em SVG saindo do topo da
+seção, com o nome em mono. Sem "trind9de" em lugar nenhum do crachá, a pedido.
+**Sem interação nenhuma, só respiro** (pedido de Pedro, depois de ter sido
+arrastável e de virar com clique): o verso saiu junto com a virada, e sem
+arraste ele deixou de exigir mouse, então tablet de toque também recebe. O
+alvo da mola da presilha oscila em volta da posição de layout, 2,4px para os
+lados em 7s e 1,2px para cima e para baixo em 4,6s, com giro em Y de ~1,7 grau
+em 9,4s; os períodos não se dividem, para o desenho não se repetir à vista. A
+amplitude entra em 2,5s. Medido: no máximo 2,3px, 1,1px e 0,7 grau de giro no
+plano. **O giro no plano vem do cordão inteiro (âncora até a presilha), com
+piso de 180px no comprimento**: medido nos últimos quatro trechos, como era no
+arraste, o cordão curto do Sobre transformava 2px de respiro em 8 a 10 graus.
+A física continua: a presilha anda por uma mola amortecida no crítico
+(`W_CASA` 6); com a ponta solta na corda, o cordão virava pêndulo e devolvia
+30 a 70px de sobressalto (simulado). Só o meio do cordão é verlet. O laço
+dorme com a aba oculta e longe da seção, pelo mesmo `.parado` que o `main.js`
+põe em `[data-sobre-dither]`; o tempo do respiro só anda com o laço acordado.
 Entra por fundido da figura inteira, parado no lugar. A máscara de baixo para
 cima das outras imagens fica desligada aqui: num objeto pendurado ela lia como
 se o crachá carregasse de cabeça para baixo ao chegar na seção.
@@ -841,3 +847,22 @@ se o crachá carregasse de cabeça para baixo ao chegar na seção.
 `assets/uploads/sobre/retrato-2026.webp`, quadrada. Versão em `CRACHA_V`.
 O crosshair do React Bits chegou a entrar e saiu a pedido: não volte com ele
 sem perguntar.
+
+**"O que eu faço" absorveu as Capacidades do Sobre.** As oito capacidades
+repetiam os títulos da seção; viraram as tags dos itens, cada uma aparecendo
+uma vez só, e saíram do Sobre, do `home.json` (`about.capabilities` e os
+rótulos), do `content-render`, do `main.js`, do CSS e do painel. O texto foi
+reescrito a partir do currículo (`assets/uploads/curriculo/`) e do LinkedIn,
+porque o anterior dizia que ele fazia de tudo sem dizer o quê: cada item nomeia
+entregas reais (rebranding do grupo com mais de cinco frentes, brand guideline
+e base de design system, estandes e aftermovies, site com formulário no CRM,
+criativos de tráfego pago, agentes ligados a templates). São seis itens, e o
+HTML estático da lista é gerado do mesmo molde do `content-render`.
+- Fora do texto de propósito: o número de países. O currículo diz "mais de 200"
+  e o LinkedIn "mais de 120"; com dois valores, nenhum é verificável.
+- O item de sites diz que este portfólio e o painel foram feitos com apoio de
+  IA. É verdade, mas é uma escolha de posicionamento de Pedro: se ele preferir
+  não dizer, é só a última frase do item 05.
+- Sem as Capacidades, a coluna de texto do Sobre ficou mais baixa que o crachá
+  e o grid repartia a sobra entre as três linhas, abrindo um vão entre título e
+  texto. `grid-template-rows:auto auto 1fr` manda a sobra para baixo das ações.

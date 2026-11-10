@@ -170,7 +170,7 @@ p[data-pt][data-en]{text-wrap:pretty}
 .cursor-orb-glow.on{opacity:1}
 /* Várias classes de rótulo declaram display próprio e venceriam o [hidden] da
    folha do navegador. A regra explícita garante remoção real da caixa. */
-.about-k[hidden],.caps-k[hidden],.help-k[hidden],.mail-k[hidden],
+.about-k[hidden],.help-k[hidden],.mail-k[hidden],
 .case-hero .eyebrow[hidden]{display:none}
 .cursor-orb-dot{position:absolute;top:0;left:0;pointer-events:none;
   will-change:transform}
@@ -1292,11 +1292,14 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 /* grid editorial de 12 colunas: retrato em 5, conteúdo em 6, com uma coluna de
    respiro entre eles, usando a largura toda do container */
 .about-grid{display:grid;grid-template-columns:1fr;gap:2.3rem}
-.about-details .caps{margin-top:0}
 /* Tablet já usa a composição editorial de duas colunas, com retrato menor.
    No celular a ordem do HTML manda: cabeçalho, dois textos, foto, detalhes. */
 @media(min-width:640px){
-  .about-grid{grid-template-columns:repeat(12,minmax(0,1fr));
+  /* A foto ocupa as três linhas. Sem as Capacidades, a coluna de texto ficou
+     mais baixa que ela, e o grid repartia a sobra entre as três linhas: abria
+     um vão entre o título e o texto. Com a última linha em 1fr, a sobra vai
+     toda para baixo das ações. */
+  .about-grid{grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:auto auto 1fr;
     column-gap:clamp(1rem,2.2vw,2rem);row-gap:1.8rem;align-items:start}
   .about-photo{grid-column:1 / span 4;grid-row:1 / span 3}
   .about-head{grid-column:6 / span 7;grid-row:1}
@@ -1326,8 +1329,8 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    não uma seção, por isso pode ser claro num site escuro: é o --paper, o
    mesmo branco quente do texto. Texto escuro sobre ele em --ink e --ink-3.
    O cartão gira em torno do topo da presilha (transform-origin), e a
-   perspectiva da figura dá volume ao giro em Y. O cordão é uma fita em
-   --ink-3 com "trind9de" em mono, num SVG que passa da borda de cima.
+   perspectiva da figura dá volume ao leve giro em Y do respiro. O cordão é
+   uma fita em --ink-3 com o nome em mono, num SVG que passa da borda de cima.
    Entra por fundido da figura inteira, parado no lugar; a máscara de baixo
    para cima das outras imagens fica desligada aqui, porque num objeto
    pendurado ela lia como se o crachá carregasse de cabeça para baixo.
@@ -1337,9 +1340,8 @@ section{padding-block:clamp(4rem,8vw,7rem)}
   opacity:0;transition:opacity var(--dur-reveal) var(--ease-soft)}
 .about-photo.cracha-ativo.cracha-visivel{opacity:1}
 .js .cracha .portrait.mask-reveal{clip-path:none;transform:none;transition:none}
-.cracha{position:relative;z-index:2;transform-origin:50% -16px;transform-style:preserve-3d;
-  cursor:grab;touch-action:none}
-.cracha.arrastando{cursor:grabbing}
+/* sem cursor de agarrar: o crachá não tem interação, só respira (cracha.js) */
+.cracha{position:relative;z-index:2;transform-origin:50% -16px;transform-style:preserve-3d}
 .cracha-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;
   border-radius:18px;padding:12px 12px 16px;
   background:linear-gradient(170deg,var(--paper),var(--cream) 140%);
@@ -1355,15 +1357,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .cf-id{display:flex;flex-direction:column;gap:.3rem;min-width:0}
 .cf-nome{font-size:1.05rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink);line-height:1.1}
 .cf-cargo{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--ink-3)}
-.cracha-verso{position:absolute;inset:0;transform:rotateY(180deg);display:flex;flex-direction:column}
-/* verso: o nome grande no alto (a marca trind9de saiu do crachá, a pedido) */
-.cv-marca{font-size:clamp(1.6rem,2.4vw,2.2rem);font-weight:var(--w-medium);letter-spacing:-.04em;
-  line-height:1.02;text-wrap:balance;color:var(--ink);padding-inline:4px}
-.cv-grade{flex:1;margin-block:12px;border-radius:10px;
-  background:radial-gradient(rgba(var(--ink-rgb),.28) .8px,transparent 1px) 0 0/7px 7px}
-.cv-pe{display:flex;flex-direction:column;gap:.3rem;padding-inline:4px}
-.cv-nome{font-size:.92rem;font-weight:var(--w-medium);letter-spacing:-.015em;color:var(--ink)}
-.cv-local{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--ink-3)}
+/* o verso saiu junto com o clique que virava o crachá */
 /* presilha: a peça metálica onde o cordão prende, entrando pela fenda */
 .cracha-presilha{position:absolute;left:50%;top:-16px;width:24px;height:30px;margin-left:-12px;z-index:3;
   border-radius:5px;background:linear-gradient(90deg,var(--muted-2),var(--cream) 45%,var(--muted-2));
@@ -1393,16 +1387,7 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .about-lead{font-size:clamp(1rem,1.25vw,1.1rem);font-weight:var(--w-light);
   color:var(--muted);max-width:58ch;letter-spacing:-.005em;line-height:1.68}
 
-.caps{margin-top:2.8rem}
-.caps-k{display:block;font-family:var(--mono);font-size:.7rem;letter-spacing:.03em;color:var(--muted-2);
-  padding-bottom:.9rem;border-bottom:1px solid var(--line)}
-.caps-grid{list-style:none;display:grid;grid-template-columns:1fr;gap:0}
-@media(min-width:560px){.caps-grid{grid-template-columns:1fr 1fr;column-gap:2.4rem}}
-.caps-grid li{font-size:.95rem;font-weight:var(--w-regular);color:var(--paper);
-  padding:.85rem 0;border-bottom:1px solid var(--line)}
-.js .caps-grid li{opacity:0;transform:translateY(12px);
-  transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
-.js .caps-grid.in li{opacity:1;transform:none}
+/* As Capacidades saíram daqui: viraram as tags de "O que eu faço". */
 
 /* LinkedIn e "Vamos conversar" lado a lado; quebram em coluna no estreito */
 .about-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem;margin-top:2.4rem}
@@ -1843,7 +1828,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
 .js .reveal.in{opacity:1;transform:none}
 
 /* rótulos e elementos pequenos: 10px, 620ms (antes 12px, 800ms) */
-.js .sec-head.reveal,.js .caps-k.reveal,.js .mail-k.reveal,
+.js .sec-head.reveal,.js .mail-k.reveal,
 .js .about-k.reveal,.js .help-k.reveal,.js .eyebrow.reveal{--rv-y:10px;--rv-dur:620ms}
 /* parágrafos: 19px, 760ms (antes 16px, 1000ms) */
 .js .about-lead.reveal,.js .about-sub.reveal,.js .help-lead.reveal,
@@ -1920,9 +1905,9 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
   .js .reveal[data-reveal="soft"].in{filter:none!important}
   .scrub .w{color:inherit}
   .cur-layer{display:none}
-  /* nada preso em estado inicial: intro, máscaras, linhas e capacidades */
+  /* nada preso em estado inicial: intro, máscaras e linhas */
   .intro-veil{display:none}
-  .js .h-step,.js .hn-line,.js .caps-grid li{opacity:1!important;transform:none!important}
+  .js .h-step,.js .hn-line{opacity:1!important;transform:none!important}
   .js .mask-reveal{clip-path:none!important;transform:none!important}
   .hi-line,.stat-line{transform:scaleX(1)!important}
   /* menu simplificado: aparece sem escalonar nem deslizar */

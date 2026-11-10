@@ -2107,7 +2107,8 @@
     ], touch);
 
     var a = H.about;
-    if (!Array.isArray(a.capabilities)) a.capabilities = [];
+    /* As Capacidades saíram do Sobre e viraram as tags de "O que eu faço":
+       o editor delas (lista, rótulo e interruptor) saiu junto. */
     document.getElementById('aboutBody').innerHTML =
       fieldRow('Rótulo da seção (PT)', '"Sobre"', ta('ab_kpt', a.kickerPt)) +
       fieldRow('Rótulo da seção (EN)', '', ta('ab_ken', a.kickerEn)) +
@@ -2127,14 +2128,7 @@
       fieldRow('Currículo em inglês (PDF)', a.resumeFileEn ? 'atual: ' + a.resumeFileEn : 'sem arquivo, a opção EN aparece como "em breve"; o botão some só se os dois estiverem vazios',
         inp('ab_cvfile_en', a.resumeFileEn, ' placeholder="assets/uploads/curriculo/..."') + '<input type="file" id="ab_cv_upload_en" accept="application/pdf,.pdf">') +
       fieldRow('Rótulo do currículo (PT)', '"Baixar currículo"', ta('ab_cvlpt', a.resumeLabelPt)) +
-      fieldRow('Rótulo do currículo (EN)', '', ta('ab_cvlen', a.resumeLabelEn)) +
-      fieldRow('Rótulo das capacidades (PT)', '"Capacidades"', ta('ab_caplpt', a.capabilitiesLabelPt)) +
-      fieldRow('Rótulo das capacidades (EN)', '', ta('ab_caplen', a.capabilitiesLabelEn)) +
-      fieldRow('Mostrar rótulo das capacidades', 'Desligar preserva o texto.', switchControl('ab_showcapk', a.showCapabilitiesLabel !== false)) +
-      listBlock('abcap', a.capabilities, 'Capacidade', function (c, i) {
-        return fieldRow('Texto (PT)', 'Enter força uma nova linha.', ta('ab_cap' + i + '_pt', c.pt)) +
-          fieldRow('Texto (EN)', 'Enter força uma nova linha.', ta('ab_cap' + i + '_en', c.en));
-      });
+      fieldRow('Rótulo do currículo (EN)', '', ta('ab_cvlen', a.resumeLabelEn));
     var aboutPairs = [
       ['ab_kpt', function (v) { a.kickerPt = v; }], ['ab_ken', function (v) { a.kickerEn = v; }],
       ['ab_tpt', function (v) { a.titlePt = v; }], ['ab_ten', function (v) { a.titleEn = v; }],
@@ -2144,17 +2138,10 @@
       ['ab_ctapt', function (v) { a.ctaTalkPt = v; }], ['ab_ctaen', function (v) { a.ctaTalkEn = v; }],
       ['ab_cvfile', function (v) { a.resumeFile = v; }],
       ['ab_cvfile_en', function (v) { a.resumeFileEn = v; }],
-      ['ab_cvlpt', function (v) { a.resumeLabelPt = v; }], ['ab_cvlen', function (v) { a.resumeLabelEn = v; }],
-      ['ab_caplpt', function (v) { a.capabilitiesLabelPt = v; }], ['ab_caplen', function (v) { a.capabilitiesLabelEn = v; }]
+      ['ab_cvlpt', function (v) { a.resumeLabelPt = v; }], ['ab_cvlen', function (v) { a.resumeLabelEn = v; }]
     ];
-    a.capabilities.forEach(function (c, i) {
-      aboutPairs.push(['ab_cap' + i + '_pt', function (v) { c.pt = v; }]);
-      aboutPairs.push(['ab_cap' + i + '_en', function (v) { c.en = v; }]);
-    });
     bindAll(aboutPairs, touch);
     bindSwitch('ab_showk', function (v) { if (v) delete a.showKicker; else a.showKicker = false; touch(); });
-    bindSwitch('ab_showcapk', function (v) { if (v) delete a.showCapabilitiesLabel; else a.showCapabilitiesLabel = false; touch(); });
-    wireListBlock('abcap', a.capabilities, function () { return { pt: '', en: '' }; }, renderHome);
     var abPhoto = document.getElementById('ab_photo_upload');
     if (abPhoto) abPhoto.addEventListener('change', function () {
       uploadFile(abPhoto.files[0], 'sobre', function (path) { a.photo = path; touch(); renderHome(); });

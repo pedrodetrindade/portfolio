@@ -1,26 +1,37 @@
 /* ===== CRACHÁ NO SOBRE (lanyard, React Bits) =====
-   A foto do Sobre vira um crachá pendurado num cordão que sai da linha fina
-   do topo da seção: cartão claro com o furo da presilha, a foto encaixada e
-   nome e cargo embaixo, como na referência. Dá para arrastar e soltar: ele
-   balança de leve e volta para o lugar dele no grid. Um clique sem arrastar
-   vira o crachá e mostra o verso.
+   A foto do Sobre vira um crachá pendurado num cordão que sai do topo da
+   seção: cartão claro com o furo da presilha, a foto encaixada e nome e cargo
+   embaixo, como na referência.
+
+   Sem interação nenhuma, a pedido: nada de arrastar, nada de virar com o
+   clique (e por isso o verso saiu). Ele só respira. A presilha segue uma
+   posição de repouso que oscila muito pouco, uns 2,4px para os lados em 7s e
+   1,2px para cima e para baixo em 4,6s (o ritmo de uma respiração calma), e o
+   cartão gira em Y menos de 2 graus num terceiro período. Os três períodos
+   não se dividem uns pelos outros, então o desenho não se repete de um jeito
+   que o olho perceba. A física é a de antes: a mola amortecida no crítico leva
+   a presilha até esse alvo, o meio do cordão é verlet e o cartão se alinha
+   aos últimos trechos dele, então a corda e o giro acompanham sozinhos, sem
+   animação desenhada à parte.
 
    O original é 3D de verdade (three.js, física rapier, malha do cordão): mais
    de meio megabyte para uma foto. Aqui é 2,5D e sem biblioteca:
    - o cordão é uma corda de verlet (pontos com gravidade e restrição de
      distância, um pouco elástica), desenhada num <path> de SVG;
    - o crachá é preso na ponta da corda e gira por uma mola amortecida que o
-     alinha aos últimos trechos do cordão, com um giro em Y pela velocidade;
-   - uma mola puxa a ponta de volta para a posição de layout, então o grid
-     nunca muda: em repouso a foto está exatamente onde sempre esteve.
-   Calmo de propósito, a pedido: tudo bem amortecido, a virada sem passar do
-   ponto, e nenhum empurrão na entrada. Entra por fundido, não pela máscara de
-   baixo para cima das outras imagens, que num objeto pendurado lia como se ele
-   carregasse de cabeça para baixo.
-   Só com mouse (no toque, arrastar brigaria com a rolagem), sem movimento
-   reduzido e a partir de 640px; nos outros casos a foto fica como sempre foi.
-   O laço de quadros dorme quando tudo assenta. Carregado sob demanda pelo
-   content-render (CRACHA_V). */
+     alinha aos últimos trechos do cordão;
+   - o alvo da mola é a posição de layout mais o respiro, então o grid nunca
+     muda: a foto oscila em volta de onde sempre esteve.
+   Entra por fundido, não pela máscara de baixo para cima das outras imagens,
+   que num objeto pendurado lia como se ele carregasse de cabeça para baixo.
+   O respiro também entra aos poucos (2,5s), para não começar no meio de um
+   balanço.
+   O laço dorme com a aba oculta e fora de alcance: usa o mesmo .parado que o
+   main.js põe na névoa de pontos do Sobre ([data-sobre-dither]), sem
+   IntersectionObserver (ver CLAUDE.md). O tempo do respiro só anda com o laço
+   acordado, então ele retoma de onde parou.
+   Sem movimento reduzido e a partir de 640px; nos outros casos a foto fica
+   como sempre foi. Carregado sob demanda pelo content-render (CRACHA_V). */
 (function () {
   'use strict';
   if (window.__CRACHA__) return;
@@ -31,8 +42,15 @@
   const ITER = 8;
   const RIGIDEZ = 0.92;       // < 1: o cordão estica um pouco, como elástico
   const ATRITO = 0.94;        // perda de velocidade do meio do cordão, por passo
-  const W_CASA = 6;           // mola da presilha (rad/s), amortecida no crítico: ~0,8s sem passar do ponto
+  const W_CASA = 6;           // mola da presilha (rad/s), amortecida no crítico
   const ABA = 16;             // altura da presilha acima do cartão
+  /* respiro: amplitude e período de cada eixo */
+  const RESPIRO = {
+    x: { amp: 2.4, periodo: 7.0 },          // px, s
+    y: { amp: 1.2, periodo: 4.6 },          // px, s
+    giro: { amp: 0.03, periodo: 9.4 },      // rad em Y (~1,7 grau), s
+    entrada: 2.5                            // s até a amplitude cheia
+  };
 
   function montar(figura) {
     if (!figura || figura.classList.contains('cracha-ativo')) return null;
@@ -45,7 +63,7 @@
     const linha = (cls, pt, eng) =>
       '<span class="' + cls + '" data-pt="' + pt + '" data-en="' + eng + '">' + (en ? eng : pt) + '</span>';
 
-    /* estrutura: presilha, frente (furo, foto, nome) e verso */
+    /* estrutura: presilha e frente (furo, foto, nome) */
     const cartao = document.createElement('div');
     cartao.className = 'cracha';
     const presilha = document.createElement('span');
@@ -58,26 +76,15 @@
     pe.className = 'cf-pe';
     pe.setAttribute('aria-hidden', 'true');
     /* sem a marca trind9de em lugar nenhum do crachá, a pedido: o nome é a
-       identidade aqui, na frente, no verso e no cordão */
+       identidade aqui, na frente e no cordão */
     pe.innerHTML =
       '<span class="cf-id">' +
         '<span class="cf-nome">Pedro de Trindade</span>' +
         linha('cf-cargo', 'Diretor de Arte &amp; Designer Sênior', 'Art Director &amp; Senior Designer') +
       '</span>';
-    const verso = document.createElement('div');
-    verso.className = 'cracha-face cracha-verso';
-    verso.setAttribute('aria-hidden', 'true');
-    verso.innerHTML =
-      '<span class="cf-furo" aria-hidden="true"></span>' +
-      '<span class="cv-marca">Pedro de Trindade</span>' +
-      '<span class="cv-grade"></span>' +
-      '<span class="cv-pe">' +
-        linha('cv-nome', 'Diretor de Arte &amp; Designer Sênior', 'Art Director &amp; Senior Designer') +
-        linha('cv-local', 'Rio de Janeiro, Brasil', 'Rio de Janeiro, Brazil') +
-      '</span>';
     retrato.parentNode.insertBefore(cartao, retrato);
     frente.append(retrato, pe);
-    cartao.append(presilha, frente, verso);
+    cartao.append(presilha, frente);
 
     const NS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
@@ -99,30 +106,32 @@
     figura.insertBefore(svg, figura.firstChild);
 
     /* ---- física ---- */
-    let pts = [], casa = { x: 0, y: 0 }, ancora = { x: 0, y: 0 }, trecho = 1, limites = null;
-    let theta = 0, omega = 0, phi = 0, phiV = 0, phiAlvo = 0, inclina = 0;
-    let arrastando = false, pega = { x: 0, y: 0 }, alvo = { x: 0, y: 0 };
+    let pts = [], casa = { x: 0, y: 0 }, ancora = { x: 0, y: 0 }, trecho = 1;
+    let theta = 0, omega = 0, giro = 0, tempo = 0;
     const velPonta = { x: 0, y: 0 };
     let raf = 0, ultimo = 0, sobra = 0;
-    const press = { x: 0, y: 0, t: 0 };
+
+    const onda = (eixo, t) => eixo.amp * Math.sin(2 * Math.PI * t / eixo.periodo);
 
     function passo() {
+      tempo += DT;
+      /* a amplitude cresce de 0 a 1 na entrada, numa curva sem arranco */
+      const e = Math.min(1, tempo / RESPIRO.entrada);
+      const forca = e * e * (3 - 2 * e);
+      const alvoX = casa.x + onda(RESPIRO.x, tempo) * forca;
+      const alvoY = casa.y + onda(RESPIRO.y, tempo + 1.3) * forca;
+      giro = onda(RESPIRO.giro, tempo + 2.1) * forca;
+
       const g = G * DT * DT;
       const ponta = pts[pts.length - 1];
       /* A ponta (onde o crachá prende) não é corda livre: com ela solta, o
          cordão virava pêndulo e devolvia 30 a 70px de sobressalto mesmo com
-         muito atrito (simulado). Ela anda por uma mola amortecida no crítico,
-         que volta para casa sem passar do ponto; arrastando, segue o mouse. */
+         muito atrito (simulado). Ela anda por uma mola amortecida no crítico
+         até o alvo do respiro, sem passar do ponto. */
       ponta.px = ponta.x; ponta.py = ponta.y;
-      if (arrastando) {
-        velPonta.x = (alvo.x - ponta.x) / DT * 0.35 + velPonta.x * 0.65;
-        velPonta.y = (alvo.y - ponta.y) / DT * 0.35 + velPonta.y * 0.65;
-        ponta.x = alvo.x; ponta.y = alvo.y;
-      } else {
-        velPonta.x += (W_CASA * W_CASA * (casa.x - ponta.x) - 2 * W_CASA * velPonta.x) * DT;
-        velPonta.y += (W_CASA * W_CASA * (casa.y - ponta.y) - 2 * W_CASA * velPonta.y) * DT;
-        ponta.x += velPonta.x * DT; ponta.y += velPonta.y * DT;
-      }
+      velPonta.x += (W_CASA * W_CASA * (alvoX - ponta.x) - 2 * W_CASA * velPonta.x) * DT;
+      velPonta.y += (W_CASA * W_CASA * (alvoY - ponta.y) - 2 * W_CASA * velPonta.y) * DT;
+      ponta.x += velPonta.x * DT; ponta.y += velPonta.y * DT;
       /* o meio do cordão é verlet com gravidade, só para ter a curva viva */
       for (let i = 1; i < pts.length - 1; i++) {
         const p = pts[i];
@@ -142,18 +151,15 @@
           b.x -= dx * dif * wb / (wa + wb); b.y -= dy * dif * wb / (wa + wb);
         }
       }
-      /* O cartão se alinha ao fim do cordão, medido nos últimos quatro
-         trechos (com um só, de ~9px, qualquer desvio virava giro demais).
-         Mola com amortecimento acima do crítico: ele acompanha sem sacudir. */
-      const pen = pts[Math.max(0, pts.length - 5)];
-      const alvoTheta = Math.atan2(-(ponta.x - pen.x), ponta.y - pen.y);
+      /* O cartão se alinha ao cordão inteiro, da âncora à presilha, e não aos
+         últimos trechos dele: com o cordão curto do Sobre (60 a 100px), 2px
+         de respiro no fim viravam 8 a 10 graus de giro (medido). O comprimento
+         de referência tem piso de 180px, então o giro do respiro fica abaixo
+         de 1 grau em qualquer altura de seção. Mola com amortecimento acima
+         do crítico: ele acompanha sem sacudir. */
+      const alvoTheta = Math.atan2(-(ponta.x - ancora.x), Math.max(180, ponta.y - ancora.y));
       omega += (60 * (alvoTheta - theta) - 18 * omega) * DT;
       theta += omega * DT;
-      const vx = (ponta.x - ponta.px) / DT;
-      inclina += (Math.max(-0.3, Math.min(0.3, vx * 0.0008)) - inclina) * 0.08;
-      /* virada amortecida no crítico (2·√36 = 12): vai e para, sem voltar */
-      phiV += (36 * (phiAlvo - phi) - 12 * phiV) * DT;
-      phi += phiV * DT;
     }
 
     function medir() {
@@ -166,22 +172,17 @@
       ancora = { x: casa.x, y: (rs.top - rf.top) + 1 };
       const total = Math.max(40, casa.y - ancora.y);
       trecho = total / PASSOS;
-      /* As duas pontas do cordão são fixas na corda (peso 0): a âncora na
-         linha da seção e a presilha, que tem a própria mola. Com o
-         comprimento igual à distância, em repouso o cordão fica reto e a foto
-         exatamente no lugar dela no grid, sem calibração. */
+      /* As duas pontas do cordão são fixas na corda (peso 0): a âncora no
+         topo da seção e a presilha, que tem a própria mola. Com o comprimento
+         igual à distância, em repouso o cordão fica reto e a foto exatamente
+         no lugar dela no grid, sem calibração. */
       pts = [];
       for (let i = 0; i <= PASSOS; i++) {
         const y = ancora.y + trecho * i;
         pts.push({ x: casa.x, y, px: casa.x, py: y, w: i === 0 || i === PASSOS ? 0 : 1 });
       }
-      limites = {
-        x1: rs.left - rf.left + 24, x2: rs.right - rf.left - 24,
-        y1: ancora.y + 30, y2: rs.bottom - rf.top - 40
-      };
       velPonta.x = velPonta.y = 0;
-      theta = omega = phiV = inclina = 0;
-      phi = phiAlvo;
+      theta = omega = 0;
       desenhar();
     }
 
@@ -205,86 +206,35 @@
       const ponta = pts[pts.length - 1];
       const tx = ponta.x - casa.x, ty = ponta.y - casa.y;
       cartao.style.transform = 'translate3d(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px,0) rotate(' +
-        theta.toFixed(4) + 'rad) rotateY(' + (phi + inclina).toFixed(4) + 'rad)';
-      cartao.classList.toggle('de-costas', Math.cos(phi + inclina) < 0);
+        theta.toFixed(4) + 'rad) rotateY(' + giro.toFixed(4) + 'rad)';
     }
 
-    function assentado() {
-      if (arrastando) return false;
-      const ponta = pts[pts.length - 1];
-      let mov = Math.abs(omega) + Math.abs(phiV) + Math.abs(phiAlvo - phi) + Math.abs(inclina);
-      mov += Math.hypot(ponta.x - casa.x, ponta.y - casa.y) * 0.05 + Math.hypot(velPonta.x, velPonta.y) * 0.01;
-      for (const p of pts) mov += Math.abs(p.x - p.px) + Math.abs(p.y - p.py);
-      return mov < 0.02;
-    }
-
+    /* ---- laço: só roda com a aba visível e a seção por perto ---- */
+    const marcador = secao.querySelector('[data-sobre-dither]');
+    const deveRodar = () => !document.hidden && !(marcador && marcador.classList.contains('parado'));
     function laco(agora) {
-      raf = 0;
+      raf = requestAnimationFrame(laco);
       const dt = Math.min(0.1, (agora - ultimo) / 1000);
       ultimo = agora;
       sobra += dt;
       while (sobra >= DT) { passo(); sobra -= DT; }
       desenhar();
-      if (!assentado()) raf = requestAnimationFrame(laco);
-      else { omega = phiV = inclina = 0; phi = phiAlvo; desenhar(); }
     }
-    function acordar() {
-      if (raf) return;
-      ultimo = performance.now();
-      sobra = 0;
-      raf = requestAnimationFrame(laco);
+    function sincronizar() {
+      const deve = deveRodar();
+      if (deve && !raf) { ultimo = performance.now(); sobra = 0; raf = requestAnimationFrame(laco); }
+      else if (!deve && raf) { cancelAnimationFrame(raf); raf = 0; }
     }
-
-    /* ---- ponteiro ---- */
-    function local(e) {
-      const rf = figura.getBoundingClientRect();
-      return { x: e.clientX - rf.left, y: e.clientY - rf.top };
-    }
-    function prender(p) {
-      return {
-        x: Math.max(limites.x1, Math.min(limites.x2, p.x)),
-        y: Math.max(limites.y1, Math.min(limites.y2, p.y))
-      };
-    }
-    cartao.addEventListener('pointerdown', e => {
-      if (e.button !== 0) return;
-      const p = local(e);
-      const ponta = pts[pts.length - 1];
-      pega = { x: p.x - ponta.x, y: p.y - ponta.y };
-      alvo = prender({ x: p.x - pega.x, y: p.y - pega.y });
-      Object.assign(press, { x: p.x, y: p.y, t: performance.now() });
-      arrastando = true;
-      cartao.classList.add('arrastando');
-      try { cartao.setPointerCapture(e.pointerId); } catch (erro) { /* ponteiro sintético */ }
-      e.preventDefault();
-      acordar();
-    });
-    cartao.addEventListener('pointermove', e => {
-      if (!arrastando) return;
-      const p = local(e);
-      alvo = prender({ x: p.x - pega.x, y: p.y - pega.y });
-      acordar();
-    });
-    const soltar = e => {
-      if (!arrastando) return;
-      arrastando = false;
-      cartao.classList.remove('arrastando');
-      /* o arremesso leva metade da velocidade do arraste: o crachá segue um
-         pouco no rumo da mão e volta, sem ir longe */
-      velPonta.x *= 0.5; velPonta.y *= 0.5;
-      const p = local(e);
-      /* clique curto e parado vira o crachá */
-      if (e.type === 'pointerup' && performance.now() - press.t < 320 && Math.hypot(p.x - press.x, p.y - press.y) < 6) {
-        phiAlvo = phiAlvo ? 0 : Math.PI;
-      }
-      acordar();
-    };
-    cartao.addEventListener('pointerup', soltar);
-    cartao.addEventListener('pointercancel', soltar);
 
     /* entrada: quando o sistema de entradas do main.js marca a foto com .in,
-       o crachá e o cordão aparecem por fundido (CSS), parados no lugar */
-    const aparecer = () => figura.classList.add('cracha-visivel');
+       o crachá e o cordão aparecem por fundido (CSS), parados no lugar; o
+       respiro começa a partir daí */
+    let visivel = false;
+    const aparecer = () => {
+      figura.classList.add('cracha-visivel');
+      visivel = true;
+      sincronizar();
+    };
     if (retrato.classList.contains('in')) aparecer();
     else {
       const mo = new MutationObserver(() => {
@@ -294,8 +244,11 @@
       });
       mo.observe(retrato, { attributes: true, attributeFilter: ['class'] });
     }
+    const aoMudar = () => { if (visivel) sincronizar(); };
+    document.addEventListener('visibilitychange', aoMudar);
+    if (marcador) new MutationObserver(aoMudar).observe(marcador, { attributes: true, attributeFilter: ['class'] });
 
-    const ro = new ResizeObserver(() => { if (!arrastando) { medir(); acordar(); } });
+    const ro = new ResizeObserver(() => medir());
     ro.observe(figura);
     medir();
     return { remedir: medir };

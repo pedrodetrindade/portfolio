@@ -1568,11 +1568,6 @@
       el.classList.add('in');
       return;
     }
-    if (el.classList.contains('caps-grid')) {
-      [...el.children].forEach((li, i) => { li.style.transitionDelay = (i * 55) + 'ms'; });
-      el.classList.add('in');
-      return;
-    }
     if (el.classList.contains('help-item') || el.classList.contains('stat')) {
       const base = (+el.dataset.col || 0) * 110;
       const line = el.querySelector('.hi-line,.stat-line');
@@ -1588,7 +1583,7 @@
   };
 
   const medirAlvos = () => {
-    alvos = [...document.querySelectorAll('.reveal,.mask-reveal,.caps-grid,.help-item,.stat')]
+    alvos = [...document.querySelectorAll('.reveal,.mask-reveal,.help-item,.stat')]
       .filter(el => !el.classList.contains('in'))
       .map(el => ({ el, topo: el.getBoundingClientRect().top + posVisual }))
       .sort((a, b) => a.topo - b.topo);

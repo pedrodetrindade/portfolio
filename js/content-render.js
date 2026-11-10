@@ -26,7 +26,7 @@
   var DITHER_V = 9;
   var DITHER_CAPA_V = 3;
   var ASSINATURA_V = 1;
-  var CRACHA_V = 5;
+  var CRACHA_V = 7;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -905,7 +905,6 @@
       setText(document.querySelector('.about-title'), A.titlePt, A.titleEn);
       setText(document.querySelector('.about-lead'), A.leadPt, A.leadEn);
       setText(document.querySelector('.about-sub'), A.subPt, A.subEn);
-      setOptionalLabel(document.querySelector('.caps-k'), A.capabilitiesLabelPt, A.capabilitiesLabelEn, A.showCapabilitiesLabel);
       var talkBtn = document.querySelector('.about-actions .ghost-cta[data-contact] .cta-blur-label');
       setText(talkBtn, A.ctaTalkPt, A.ctaTalkEn);
       /* Currículo: só aparece quando existe arquivo enviado pelo painel E o
@@ -960,24 +959,22 @@
       }
       var photo = document.querySelector('.portrait-img');
       if (photo && A.photo) photo.setAttribute('src', resolveAssetUrl(A.photo));
-      /* Crachá (lanyard): a foto pendurada num cordão, arrastável. Só com
-         mouse, sem movimento reduzido e a partir do tablet: no celular a foto
-         fica no meio do texto, e o cordão cruzaria os parágrafos. */
+      /* Crachá (lanyard): a foto pendurada num cordão, respirando de leve, sem
+         interação. Sem movimento reduzido e a partir do tablet: no celular a
+         foto fica no meio do texto, e o cordão cruzaria os parágrafos. Já
+         exigiu mouse, quando dava para arrastar (no toque, arrastar brigaria
+         com a rolagem); sem arraste, tablet de toque também recebe. */
       var figuraCracha = document.querySelector('.about-photo');
       if (figuraCracha && !figuraCracha.classList.contains('cracha-ativo') &&
-          window.matchMedia('(pointer: fine) and (hover: hover) and (min-width: 640px)').matches &&
+          window.matchMedia('(min-width: 640px)').matches &&
           !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         carregarScript('cracha.js', '__CRACHA__', CRACHA_V).then(function (C) {
           if (figuraCracha.isConnected) C.montar(figuraCracha);
         }).catch(function () { /* a foto continua parada, como sempre foi */ });
       }
       montarDitherDoSobre();
-      var capsGrid = document.querySelector('.caps-grid');
-      if (capsGrid && Array.isArray(A.capabilities)) {
-        capsGrid.innerHTML = A.capabilities.map(function (item) {
-          return '<li data-pt="' + esc(item.pt) + '" data-en="' + esc(item.en) + '">' + esc(item.pt) + '</li>';
-        }).join('');
-      }
+      /* As Capacidades saíram do Sobre: viraram as tags de "O que eu faço",
+         cada uma uma vez só (about.capabilities não existe mais). */
     }
 
     if (H.help && Array.isArray(H.help.items)) {
