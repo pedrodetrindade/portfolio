@@ -519,7 +519,7 @@
     kickerPt: 'Rótulo (PT)', kickerEn: 'Rótulo (EN)', leadPt: 'Texto principal (PT)', leadEn: 'Texto principal (EN)',
     subPt: 'Texto complementar (PT)', subEn: 'Texto complementar (EN)', photo: 'Retrato',
     ctaTalkPt: 'Botão de contato (PT)', ctaTalkEn: 'Botão de contato (EN)',
-    showResume: 'Mostrar botão de currículo', resumeFile: 'Arquivo do currículo',
+    showResume: 'Mostrar botão de currículo', resumeFile: 'Arquivo do currículo (PT)', resumeFileEn: 'Arquivo do currículo (EN)',
     resumeLabelPt: 'Rótulo do currículo (PT)', resumeLabelEn: 'Rótulo do currículo (EN)',
     capabilities: 'Capacidades', capabilitiesLabelPt: 'Rótulo das capacidades (PT)', capabilitiesLabelEn: 'Rótulo das capacidades (EN)',
     items: 'Itens', tags: 'Tags', textPt: 'Texto (PT)', textEn: 'Texto (EN)',
@@ -2094,8 +2094,10 @@
       fieldRow('Botão de contato (PT)', '"Vamos conversar"', ta('ab_ctapt', a.ctaTalkPt)) +
       fieldRow('Botão de contato (EN)', '', ta('ab_ctaen', a.ctaTalkEn)) +
       fieldRow('Mostrar botão de currículo', 'Desligar esconde o botão no site sem apagar o arquivo.', switchControl('ab_showcv', a.showResume !== false)) +
-      fieldRow('Arquivo do currículo (PDF)', a.resumeFile ? 'atual: ' + a.resumeFile : 'nenhum arquivo enviado ainda — o botão fica escondido até você enviar um',
+      fieldRow('Currículo em português (PDF)', a.resumeFile ? 'atual: ' + a.resumeFile : 'sem arquivo, a opção PT aparece como "em breve"',
         inp('ab_cvfile', a.resumeFile, ' placeholder="assets/uploads/curriculo/..."') + '<input type="file" id="ab_cv_upload" accept="application/pdf,.pdf">') +
+      fieldRow('Currículo em inglês (PDF)', a.resumeFileEn ? 'atual: ' + a.resumeFileEn : 'sem arquivo, a opção EN aparece como "em breve"; o botão some só se os dois estiverem vazios',
+        inp('ab_cvfile_en', a.resumeFileEn, ' placeholder="assets/uploads/curriculo/..."') + '<input type="file" id="ab_cv_upload_en" accept="application/pdf,.pdf">') +
       fieldRow('Rótulo do currículo (PT)', '"Baixar currículo"', ta('ab_cvlpt', a.resumeLabelPt)) +
       fieldRow('Rótulo do currículo (EN)', '', ta('ab_cvlen', a.resumeLabelEn)) +
       fieldRow('Rótulo das capacidades (PT)', '"Capacidades"', ta('ab_caplpt', a.capabilitiesLabelPt)) +
@@ -2113,6 +2115,7 @@
       ['ab_photo', function (v) { a.photo = v; }],
       ['ab_ctapt', function (v) { a.ctaTalkPt = v; }], ['ab_ctaen', function (v) { a.ctaTalkEn = v; }],
       ['ab_cvfile', function (v) { a.resumeFile = v; }],
+      ['ab_cvfile_en', function (v) { a.resumeFileEn = v; }],
       ['ab_cvlpt', function (v) { a.resumeLabelPt = v; }], ['ab_cvlen', function (v) { a.resumeLabelEn = v; }],
       ['ab_caplpt', function (v) { a.capabilitiesLabelPt = v; }], ['ab_caplen', function (v) { a.capabilitiesLabelEn = v; }]
     ];
@@ -2128,10 +2131,16 @@
     if (abPhoto) abPhoto.addEventListener('change', function () {
       uploadFile(abPhoto.files[0], 'sobre', function (path) { a.photo = path; touch(); renderHome(); });
     });
-    bindSwitch('ab_showcv', function (v) { a.showResume = v; touch(); });
+    /* religar apaga o campo em vez de gravar true: mesma convenção de
+       showLabel/showEyebrow (ausência = ligado) */
+    bindSwitch('ab_showcv', function (v) { if (v) delete a.showResume; else a.showResume = false; touch(); });
     var abCv = document.getElementById('ab_cv_upload');
     if (abCv) abCv.addEventListener('change', function () {
       uploadFile(abCv.files[0], 'curriculo', function (path) { a.resumeFile = path; touch(); renderHome(); });
+    });
+    var abCvEn = document.getElementById('ab_cv_upload_en');
+    if (abCvEn) abCvEn.addEventListener('change', function () {
+      uploadFile(abCvEn.files[0], 'curriculo', function (path) { a.resumeFileEn = path; touch(); renderHome(); });
     });
 
     var hp = H.help;

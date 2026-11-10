@@ -1143,13 +1143,43 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .ghost-cta.cta-primary:hover{background:rgba(var(--paper-rgb),.1)}
 .ghost-cta.cta-quiet{color:var(--muted);border-color:var(--line)}
 .ghost-cta.cta-quiet:hover{color:var(--paper)}
-/* seta para baixo: é download, não navegação para frente */
-.ghost-cta.cta-resume::after{content:"↓"}
-.ghost-cta.cta-resume:hover::after{transform:translateY(3px)}
 /* display:inline-flex ganha do [hidden] da folha do navegador, então o botão
    do currículo continuaria visível mesmo oculto. Mesmo detalhe que já tinha
    escondido o painel do CMS atrás da tela de "Sem acesso". */
 .ghost-cta[hidden]{display:none}
+
+/* Currículo em dois idiomas: um único botão secundário, com o rótulo e uma
+   opção por idioma, cada uma com a bandeira do seletor de idioma do header.
+   Mesmo peso do botão de currículo de antes (borda --line-strong, texto
+   --paper); a divisão entre partes é hairline. A opção sem arquivo continua
+   visível, apagada e marcada "em breve", em vez de virar link quebrado. */
+.cta-resume{display:inline-flex;align-items:stretch;max-width:100%;
+  font-family:var(--font);font-size:.92rem;font-weight:var(--w-medium);color:var(--paper);
+  border:1px solid var(--line-strong);border-radius:var(--radius-button,12px);overflow:hidden}
+.cta-resume[hidden]{display:none}
+.cta-resume-label{display:flex;align-items:center;padding:.85rem 1.1rem .85rem 1.4rem}
+.cta-resume-opt{display:inline-flex;align-items:center;gap:.5em;padding:.85rem 1.1rem;
+  border-left:1px solid var(--line);color:var(--paper);
+  transition:background-color var(--dur-micro) var(--ease-soft),color var(--dur-micro) var(--ease-soft)}
+.cta-resume-opt::after{content:"↓";transition:transform var(--dur-micro) var(--ease-soft)}
+.cta-resume-opt:hover{background:rgba(var(--paper-rgb),.05)}
+.cta-resume-opt:hover::after{transform:translateY(3px)}
+.cta-resume-opt .lp-flag{width:15px;height:15px;box-shadow:0 0 0 1px var(--line)}
+.cta-resume-code{letter-spacing:.02em}
+.cta-resume-soon{display:none;font-size:.72rem;font-weight:var(--w-regular);color:var(--muted-2)}
+.cta-resume-opt.is-soon{color:var(--muted-2);cursor:default}
+.cta-resume-opt.is-soon::after{content:none}
+.cta-resume-opt.is-soon:hover{background:transparent}
+.cta-resume-opt.is-soon .lp-flag{opacity:.5}
+.cta-resume-opt.is-soon .cta-resume-soon{display:inline}
+/* no celular o rótulo sobe para uma linha própria e as opções dividem a de
+   baixo, em vez de estourar a largura da tela */
+@media(max-width:479px){
+  .cta-resume{flex-wrap:wrap;width:100%}
+  .cta-resume-label{flex:1 0 100%;justify-content:center;border-bottom:1px solid var(--line);padding:.8rem 1rem}
+  .cta-resume-opt{flex:1 1 0;justify-content:center;padding:.8rem .9rem}
+  .cta-resume-opt:first-of-type{border-left:0}
+}
 
 /* ===== O QUE EU FAÇO =====
    Linhas horizontais amplas, não cards: índice e título à esquerda, descrição

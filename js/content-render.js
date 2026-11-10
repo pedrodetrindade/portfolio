@@ -658,15 +658,44 @@
          mantém o PDF no repositório sem expor o link, e apagar o caminho
          esconde o botão mesmo com ele ligado, em vez de publicar um link
          quebrado. */
-      var resumeBtn = document.querySelector('.about-actions [data-resume]');
-      if (resumeBtn) {
-        var file = typeof A.resumeFile === 'string' ? A.resumeFile.trim() : '';
-        if (file && A.showResume !== false) {
-      resumeBtn.setAttribute('href', resolveAssetUrl(file));
-          setText(resumeBtn, A.resumeLabelPt, A.resumeLabelEn);
-          resumeBtn.hidden = false;
-        } else {
-          resumeBtn.hidden = true;
+      /* Dois idiomas: resumeFile é o PDF em português e resumeFileEn o em
+         inglês. O grupo aparece quando existe ao menos um arquivo; a opção
+         sem arquivo fica visível como "em breve", sem href, em vez de levar a
+         um 404. Enviar o PDF que falta pelo painel acende a opção sozinho. */
+      var resumeGroup = document.querySelector('.about-actions [data-resume-group]');
+      if (resumeGroup) {
+        var arquivos = {
+          pt: typeof A.resumeFile === 'string' ? A.resumeFile.trim() : '',
+          en: typeof A.resumeFileEn === 'string' ? A.resumeFileEn.trim() : ''
+        };
+        var mostrar = A.showResume !== false && !!(arquivos.pt || arquivos.en);
+        resumeGroup.hidden = !mostrar;
+        if (mostrar) {
+          setText(resumeGroup.querySelector('.cta-resume-label'), A.resumeLabelPt, A.resumeLabelEn);
+          resumeGroup.setAttribute('data-pt-label', A.resumeLabelPt || 'Baixar currículo');
+          resumeGroup.setAttribute('data-en-label', A.resumeLabelEn || 'Download CV');
+          var rotulos = {
+            pt: ['Baixar currículo em português', 'Download CV in Portuguese', 'Currículo em português, em breve', 'CV in Portuguese, coming soon'],
+            en: ['Baixar currículo em inglês', 'Download CV in English', 'Currículo em inglês, em breve', 'CV in English, coming soon']
+          };
+          ['pt', 'en'].forEach(function (lang) {
+            var opt = resumeGroup.querySelector('[data-resume="' + lang + '"]');
+            if (!opt) return;
+            var r = rotulos[lang], tem = !!arquivos[lang];
+            if (tem) {
+              opt.setAttribute('href', resolveAssetUrl(arquivos[lang]));
+              opt.setAttribute('download', '');
+              opt.removeAttribute('aria-disabled');
+            } else {
+              opt.removeAttribute('href');
+              opt.removeAttribute('download');
+              opt.setAttribute('aria-disabled', 'true');
+            }
+            opt.classList.toggle('is-soon', !tem);
+            opt.setAttribute('data-pt-label', tem ? r[0] : r[2]);
+            opt.setAttribute('data-en-label', tem ? r[1] : r[3]);
+            opt.setAttribute('aria-label', (document.documentElement.lang || 'pt').indexOf('pt') === 0 ? (tem ? r[0] : r[2]) : (tem ? r[1] : r[3]));
+          });
         }
       }
       var photo = document.querySelector('.portrait-img');

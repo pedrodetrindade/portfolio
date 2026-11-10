@@ -492,6 +492,14 @@ do site", e o JS remove a variável em vez de escrever um valor — cuidado com
 repetida no painel e no Worker de propósito: o painel é conveniência, quem
 decide é o Worker.
 
+**O currículo do Sobre é um botão com duas opções, PT e EN, com bandeira.**
+`about.resumeFile` é o PDF em português e `about.resumeFileEn` o em inglês,
+ambos enviáveis pelo painel. O grupo aparece quando existe ao menos um dos dois
+(e `showResume` não é `false`); a opção sem arquivo continua visível, apagada e
+marcada "em breve", sem `href`, para nunca virar link para 404. As bandeiras
+são o mesmo SVG do seletor de idioma (`[data-flag]`, desenhado pelo `main.js`).
+No celular o rótulo sobe para uma linha própria e as opções dividem a de baixo.
+
 **Quem monta um elemento é quem precisa ler o dado do CMS.** `content-render.js`
 carrega antes de `js/main.js`, e é o `main.js` que injeta o `.next-hint`, o
 menu, o painel de contato e o véu. Quando o render tentava escrever o texto
