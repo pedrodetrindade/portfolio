@@ -663,8 +663,12 @@ body.menu-open header .ctrl-group{opacity:0}
 .hero-slides{position:absolute;inset:0;z-index:1;opacity:0;
   transition:opacity var(--hero-video-fade,2200ms) linear}
 .liquid-bg.video-pronto .hero-slides{opacity:1}
+/* As capas são fundo, não destaque: véu forte de --ink por cima delas e as
+   massas marrons da capa antiga continuam visíveis acima, animando como
+   antes. O resultado é o marrom de sempre, com as imagens passando por baixo. */
 .hero-slides::after{content:"";position:absolute;inset:0;z-index:3;
-  background:rgba(var(--ink-rgb),.45)}
+  background:rgba(var(--ink-rgb),.78)}
+.liquid-bg.has-slides .lq{z-index:2}
 .hero-slide{position:absolute;inset:0;overflow:hidden;opacity:0;
   transition:opacity var(--hero-slide-fade,450ms) linear}
 .hero-slide.is-ativo{opacity:1;z-index:2}
@@ -673,7 +677,7 @@ body.menu-open header .ctrl-group{opacity:0}
   transform-origin:50% 50%}
 /* capa clara (coverLight no índice): véu a mais, só nela */
 .hero-slide.is-clara::after{content:"";position:absolute;inset:0;
-  background:rgba(var(--ink-rgb),.32)}
+  background:rgba(var(--ink-rgb),.18)}
 .hero-slide.zoom-in img{animation:hero-zoom-in 2000ms linear forwards}
 .hero-slide.zoom-out img{animation:hero-zoom-out 2000ms linear forwards}
 @keyframes hero-zoom-in{from{transform:scale(1)}to{transform:scale(1.08)}}

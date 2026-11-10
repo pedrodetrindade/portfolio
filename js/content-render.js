@@ -583,7 +583,8 @@
     /* antes da vinheta no DOM; a ordem de pintura vem do z-index de cada um */
     var veu = liquidBg.querySelector('.lq-veil');
     liquidBg.insertBefore(caixa, veu || null);
-    liquidBg.classList.add('has-video', 'has-slides');
+    /* sem has-video: as massas marrons não saem, ficam por cima das capas */
+    liquidBg.classList.add('has-slides');
 
     var atual = 0, passo = 0;
     function mostrar(s) {

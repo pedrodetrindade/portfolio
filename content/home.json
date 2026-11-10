@@ -101,9 +101,7 @@
         "mobile": 104
       }
     },
-    "hero": {
-      "grainEnabled": false
-    }
+    "hero": {}
   },
   "work": {
     "titlePt": "Uma seleção de trabalhos construídos entre direção de arte, identidade e estratégia.",
