@@ -1041,7 +1041,33 @@
       coverImg.removeAttribute('src');
     }
     var coverEl = document.querySelector('.case-cover');
+    /* A proporção panorâmica que já veio no HTML estático sobrevive ao
+       setAttribute até a imagem confirmar; sem isso a capa voltaria a 16:9
+       por um instante e saltaria de volta no load. */
+    var ratioDaCapaNoHtml = coverEl ? coverEl.style.getPropertyValue('--case-cover-ratio') : '';
     if (coverEl) coverEl.setAttribute('style', blockStyleCss(P.coverSpacing, 18, 0));
+    if (coverEl && ratioDaCapaNoHtml) coverEl.style.setProperty('--case-cover-ratio', ratioDaCapaNoHtml);
+
+    /* Capa panorâmica aparece inteira. A moldura padrão é 16:9 com recorte, o
+       que funciona para capas de 1:1 até ~2:1 (todas as atuais). Uma faixa de
+       3:1 como a do dgzin perderia as laterais, onde mora o enquadramento da
+       foto. A partir de 2,4:1 a moldura passa a seguir a proporção da própria
+       imagem. Lido do arquivo carregado, não de um campo do CMS: vale também
+       para a capa mobile, que pode ter outra proporção, e não exige mudar o
+       esquema validado pelo Worker. A variável é escrita depois do
+       setAttribute acima, que apagaria qualquer estilo anterior. */
+    if (coverEl && coverImg) {
+      var ajustarMolduraDaCapa = function () {
+        var w = coverImg.naturalWidth, h = coverImg.naturalHeight;
+        if (!w || !h) return;
+        var panoramica = w / h >= 2.4;
+        coverEl.classList.toggle('is-panoramica', panoramica);
+        if (panoramica) coverEl.style.setProperty('--case-cover-ratio', String(w / h));
+        else coverEl.style.removeProperty('--case-cover-ratio');
+      };
+      coverImg.addEventListener('load', ajustarMolduraDaCapa);
+      if (coverImg.complete) ajustarMolduraDaCapa();
+    }
 
     var blocks = Array.isArray(P.blocks) ? P.blocks : [];
     renderBlocks(blocks, blockStyleCss);

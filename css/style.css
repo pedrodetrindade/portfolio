@@ -1919,6 +1919,10 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .case-cover{aspect-ratio:16/9;border-radius:var(--radius-image,16px);overflow:hidden;position:relative;
   border:1px solid var(--line-strong);background:var(--ink-2);
   margin-top:var(--block-mt-desktop,18px);margin-bottom:var(--block-mb-desktop,0px)}
+/* Capa a partir de 2,4:1: a moldura segue a imagem em vez de recortar.
+   A classe e a proporção vêm de js/content-render.js (ajustarMolduraDaCapa)
+   e, na página estática, já vêm escritas no HTML para não haver salto. */
+.case-cover.is-panoramica{aspect-ratio:var(--case-cover-ratio,16/9)}
 .case-cover-group{padding-block:0;min-height:0}
 .case-cover .scene{filter:none;transform:none}
 

@@ -259,6 +259,14 @@ mesma regra:** ausência do campo = ativo; `false` = oculto, com o texto
 preservado e sem deixar espaço residual. Nunca gravar `false` a partir de uma
 UI que só desliga; reativar remove o campo, não grava `true`.
 
+**Capa do case é 16:9 com recorte, exceto panorâmica.** A partir de 2,4:1
+a moldura segue a proporção da própria imagem (`.case-cover.is-panoramica`,
+`--case-cover-ratio`), medida no `load` por `content-render.js`, sem campo no
+CMS. Nasceu com o dgzin, cuja capa de 3,14:1 perderia as mãos que enquadram o
+logo. As capas de 1:1 a ~2,1:1 continuam iguais. A página estática do case já
+traz a classe e a proporção escritas no HTML, e o JS preserva esse valor até
+a imagem confirmar, senão a capa pularia de 16:9 para panorâmica no load.
+
 ### Prévia ao vivo
 
 O protocolo de `postMessage` entre painel e site (`js/content.js`) confia só
