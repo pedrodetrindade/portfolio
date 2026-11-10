@@ -1258,20 +1258,21 @@
       });
     });
 
-    var cursorAtual = state.global.effects && state.global.effects.cursor && state.global.effects.cursor.mode === 'orb'
-      ? 'orb' : 'native';
+    var modoGravado = state.global.effects && state.global.effects.cursor && state.global.effects.cursor.mode;
+    var cursorAtual = modoGravado === 'orb' || modoGravado === 'target' ? modoGravado : 'native';
     document.getElementById('cursorBody').innerHTML =
       fieldRow('Modo', 'Define o efeito de cursor usado no site em dispositivos com mouse.',
         '<div class="radio-options">' +
           '<label class="radio-option"><input type="radio" name="cursor_mode" value="native"' + (cursorAtual === 'native' ? ' checked' : '') + '> Padrão do navegador</label>' +
           '<label class="radio-option"><input type="radio" name="cursor_mode" value="orb"' + (cursorAtual === 'orb' ? ' checked' : '') + '> Bola + glow</label>' +
+          '<label class="radio-option"><input type="radio" name="cursor_mode" value="target"' + (cursorAtual === 'target' ? ' checked' : '') + '> Alvo (cantos que abraçam links e cards)</label>' +
         '</div>');
     document.querySelectorAll('input[name="cursor_mode"]').forEach(function (el) {
       el.addEventListener('change', function () {
         if (!el.checked) return;
         if (!state.global.effects) state.global.effects = {};
-        if (el.value === 'orb') {
-          state.global.effects.cursor = { mode: 'orb' };
+        if (el.value === 'orb' || el.value === 'target') {
+          state.global.effects.cursor = { mode: el.value };
         } else {
           var publicado = state.published['content/global.json'];
           var cursorPublicado = publicado && publicado.effects && publicado.effects.cursor;
@@ -2097,18 +2098,20 @@
     document.getElementById('workIntroBody').innerHTML =
       fieldRow('Título (PT)', '', ta('wi_titlept', w.titlePt)) +
       fieldRow('Título (EN)', '', ta('wi_titleen', w.titleEn)) +
-      fieldRow('Contexto (PT)', '', ta('wi_ctxpt', w.contextPt)) +
-      fieldRow('Contexto (EN)', '', ta('wi_ctxen', w.contextEn)) +
-      fieldRow('Texto lateral (PT)', 'a linha menor ao lado do título', ta('wi_asidept', w.asidePt)) +
-      fieldRow('Texto lateral (EN)', '', ta('wi_asideen', w.asideEn));
+      fieldRow('Texto ao lado do título (PT)', 'um parágrafo curto, à direita do título no desktop', ta('wi_ctxpt', w.contextPt)) +
+      fieldRow('Texto ao lado do título (EN)', '', ta('wi_ctxen', w.contextEn)) +
+      fieldRow('Mostrar "Todos os trabalhos"', 'A página com todos os projetos e o botão que leva até ela. Desligado, o site fica só com os destaques da Home: /work/ manda para a seção Trabalhos e os cases navegam só entre os destaques.', switchControl('wi_archive', w.showArchive !== false));
+    /* O "texto lateral" (asidePt/En) se juntou ao contexto num texto só, ao
+       lado do título. */
     /* Tamanho e espaçamentos do botão "ver todos" saíram: ele virou um botão
        comum no alto da seção, sem ajuste. Rascunho antigo que ainda traga os
        campos continua válido no Worker, só não tem mais efeito. */
     bindAll([
       ['wi_titlept', function (v) { w.titlePt = v; }], ['wi_titleen', function (v) { w.titleEn = v; }],
-      ['wi_ctxpt', function (v) { w.contextPt = v; }], ['wi_ctxen', function (v) { w.contextEn = v; }],
-      ['wi_asidept', function (v) { w.asidePt = v; }], ['wi_asideen', function (v) { w.asideEn = v; }]
+      ['wi_ctxpt', function (v) { w.contextPt = v; }], ['wi_ctxen', function (v) { w.contextEn = v; }]
     ], touch);
+    /* ausência é ligado: religar apaga o campo */
+    bindSwitch('wi_archive', function (v) { if (v) delete w.showArchive; else w.showArchive = false; touch(); });
 
     var a = H.about;
     /* As Capacidades saíram do Sobre e viraram as tags de "O que eu faço":

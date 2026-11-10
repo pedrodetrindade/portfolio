@@ -67,6 +67,18 @@
     }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
   }
   function emBreve(p) { return p && p.availability === 'coming-soon'; }
+  /* "Todos os trabalhos" pode ser desligado por enquanto (home.json >
+     work.showArchive:false, interruptor no painel). Desligado, o site fica só
+     com os destaques da Home: o botão some, /work/ manda para a seção
+     Trabalhos da Home (content.js), o breadcrumb e o rodapé dos cases apontam
+     para lá, e o anterior/próximo gira só entre os destaques. Ausência do
+     campo é ligado. Declaração de função de propósito: é içada, e renderHome
+     roda antes de qualquer var declarada mais abaixo. */
+  function arquivoLigado(H) {
+    H = H || window.__CMS_HOME__ || {};
+    return !(H.work && H.work.showArchive === false);
+  }
+  function hrefDosTrabalhos() { return arquivoLigado() ? '/work/' : '/#work'; }
   function projectMedia(p, breakpoint) {
     var cover = resolveAssetUrl(p && p.cover);
     var coverMobile = resolveAssetUrl(p && p.coverMobile);
@@ -215,7 +227,7 @@
   function footerNavHref(section) {
     if (section === 'contact') return '#site-footer';
     if (!isWorkPath()) return section === 'top' ? '#top' : '#' + section;
-    if (section === 'work') return '/work/';
+    if (section === 'work') return hrefDosTrabalhos();
     return '/' + (section === 'top' ? '' : '#' + section);
   }
 
@@ -898,7 +910,8 @@
     if (H.work) {
       setText(document.querySelector('.wi-title'), H.work.titlePt, H.work.titleEn);
       setText(document.querySelector('.wi-context'), H.work.contextPt, H.work.contextEn);
-      setText(document.querySelector('.wi-aside'), H.work.asidePt, H.work.asideEn);
+      var verTodos = document.querySelector('.wi-all');
+      if (verTodos) verTodos.hidden = !arquivoLigado(H);
     }
 
     if (H.about) {
@@ -1316,7 +1329,7 @@
     setOptionalLabel(document.querySelector('.case-hero .sub'), h.subtitlePt, h.subtitleEn);
     aplicarBreadcrumb(document.querySelector('.case-hero'), [
       { pt: 'Início', en: 'Home', href: '/', inicio: true },
-      { pt: 'Trabalhos', en: 'Work', href: '/work/' },
+      { pt: 'Trabalhos', en: 'Work', href: hrefDosTrabalhos() },
       { pt: h.titlePt || '', en: h.titleEn || h.titlePt || '' }
     ]);
 
@@ -1433,6 +1446,9 @@
       var navEl = document.querySelector('.case-nav');
       if (navEl && idx && Array.isArray(idx.projects)) {
         var visible = projetosPublicos(idx).filter(function (p) { return !emBreve(p); });
+        /* sem "Todos os trabalhos", a volta é só pelos destaques da Home: um
+           case não pode levar a um projeto que não aparece em lugar nenhum */
+        if (!arquivoLigado()) visible = visible.filter(function (p) { return p.featured === true; });
         var myPos = -1;
         for (var vi = 0; vi < visible.length; vi++) if (visible[vi].slug === P.slug) { myPos = vi; break; }
         var prevP = myPos !== -1 && visible.length > 1 ? visible[(myPos - 1 + visible.length) % visible.length] : null;

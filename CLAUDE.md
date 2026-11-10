@@ -346,7 +346,9 @@ camada de acessibilidade (skip link, foco visível, `aria-label` bilíngue,
 
 **Os cases são todos projetos reais, vindos do Behance (behance.net/trind9de).**
 Colégio Assertivo, trind9de, Karmine Corp e dgzin são os destaques da home
-(`featured`, no máximo 4); AnaLu, Social media e Skye aparecem só em `/work/`.
+(`featured`, no máximo 4); AnaLu, Social media e Skye aparecem só em `/work/`,
+que hoje está desligado (ver "Todos os trabalhos está desligado", abaixo):
+por enquanto essas três páginas só abrem por link direto.
 Os slugs provisórios saíram e viraram redirecionamento: `case-02` para
 `trind9de`, `case-03` para `karmine-corp` e `case-04`, que repetia a imagem do
 Assertivo, para `/work/`. A navegação estática de cada página de case (anterior
@@ -532,18 +534,39 @@ inalcançável. `.menu-list` e `.cform` já têm `overflow-y:auto`; qualquer
 painel novo precisa do mesmo. Foi o que escondia o e-mail e o botão de copiar
 do formulário em notebook (768px de altura), e só aparecia com zoom em 80%.
 
-**O botão "ver todos os trabalhos" é um `.ghost-cta` comum no alto de
-`#work`, à direita do título** (`.wi-all`, grid de `.work-intro`), centrado
-na primeira linha do título: metade da linha menos metade do botão. Abaixo de
-860px ele desce para depois dos dois textos, antes da grade. A entrada
+**A abertura de `#work` é o título à esquerda e um texto só à direita**,
+alinhado à última linha dele (`.work-intro`, grid de duas colunas a partir de
+860px; no celular o texto desce). Eram dois textos numa faixa própria embaixo
+do título (contexto e "texto lateral"); Pedro pediu um texto só, ao lado, e a
+abertura perdeu essa faixa. `work.asidePt/En` saiu do `home.json`, do HTML, do
+render e do painel; o texto unido mora em `work.contextPt/En` ("Texto ao lado
+do título" no painel).
+
+**O botão "ver todos os trabalhos" é um `.ghost-cta` comum embaixo desse
+texto** (`.wi-all`) e só existe com "Todos os trabalhos" ligado. A entrada
 (`.reveal`) fica no invólucro, como em `.about-actions`: no próprio `<a>`, o
-`transform:none` do `.reveal.in` anularia o hover. Antes era um pill grande,
-centrado no pé da seção, com tamanho e respiros pelo painel (`ctaScale`,
-`ctaSpacingTop`, `ctaSpacingBottom`) e um "mais" que girava; Pedro pediu algo
-mais normal. Os três campos saíram do `home.json`, do painel e do
-`content.js`; o Worker ainda os valida se um rascunho antigo os trouxer.
-Cuidado com `clampNum(null)` em campos assim, que devolveria 0 porque
-`Number(null)` é 0: ausente ou `null` precisa remover a variável.
+`transform:none` do `.reveal.in` anularia o hover. Antes foi um pill grande no
+pé da seção, com tamanho e respiros pelo painel (`ctaScale`, `ctaSpacingTop`,
+`ctaSpacingBottom`), depois um botão no alto à direita do título. Os três
+campos saíram do `home.json`, do painel e do `content.js`; o Worker ainda os
+valida se um rascunho antigo os trouxer. Cuidado com `clampNum(null)` em
+campos assim, que devolveria 0 porque `Number(null)` é 0: ausente ou `null`
+precisa remover a variável.
+
+**"Todos os trabalhos" está desligado por enquanto** (pedido de Pedro: o site
+fica só com os destaques da Home). Interruptor `home.json > work.showArchive`
+("Mostrar Todos os trabalhos" no painel; ausência = ligado, religar apaga o
+campo; o Worker valida o tipo). Desligado:
+- o botão da Home some (o HTML já nasce com `hidden`, e o `content-render`
+  decide por `arquivoLigado()`, declaração de função de propósito, içada);
+- `/work/` manda para `/#work` no `content.js`, antes de desenhar a página
+  (sem JS a página estática continua valendo, como o resto do site);
+- dentro dos cases, "Trabalhos" no breadcrumb e no rodapé aponta para
+  `/#work` (`hrefDosTrabalhos()`), e o anterior/próximo gira só entre os
+  `featured`: um case não leva a um projeto que não aparece em lugar nenhum.
+  A navegação estática dos cases (a reserva sem JS) continua com a lista
+  inteira; religar o arquivo não exige regenerá-la.
+O menu do `main.js` já levava "Trabalhos" para `index.html#work`.
 
 **O Sobre tem tom e névoa próprios, e nenhuma linha.** Pedido de Pedro: cor
 levemente diferente de Trabalhos, dither suave e passagem suave entre as duas.
@@ -878,6 +901,32 @@ se o crachá carregasse de cabeça para baixo ao chegar na seção.
 `assets/uploads/sobre/retrato-2026.webp`, quadrada. Versão em `CRACHA_V`.
 O crosshair do React Bits chegou a entrar e saiu a pedido: não volte com ele
 sem perguntar.
+
+**O cursor do site é o alvo** (React Bits, Target Cursor), em
+`js/cursor-alvo.js`: `global.json > effects.cursor.mode:'target'`, terceira
+opção do painel ("Alvo"), ao lado de nativo e "bola + glow"; o Worker aceita os
+três. O `main.js` baixa o arquivo sob demanda (`CURSOR_ALVO_V`, endereço tirado
+do `currentScript` no topo do arquivo) só com mouse e sem movimento reduzido.
+Porte do código público do React Bits (molas, sem biblioteca) com o preset
+"Calm" que Pedro mandou: giro de 5s, hover de 0,3s, 25px, cantos de 8px, traço
+de 2px, folga de 6px, ponto de 4px, raio do alvo, paralaxe, rótulo, clique e
+cursor do sistema escondido. Diferenças de propósito:
+- Cor `--paper` (o #ffffff de lá), em `--cursor-alvo-cor`.
+- **Blend por peça, não em tela cheia.** No original o `difference` fica no
+  contêiner fixo do tamanho da janela; aqui cantos, ponto e rótulo são fixos
+  soltos no `<body>`, cada um com o próprio blend. Um contêiner fixo cria
+  contexto de empilhamento e isolaria o blend dos filhos, por isso não há
+  invólucro. `will-change` nessas peças é exceção consciente: poucos pixels
+  que andam a cada quadro.
+- **Sem listener de scroll.** `aoRolar()` é chamado no fim do `readScroll`, que
+  roda a cada quadro do laço suave. `cursorAlvo` é declarado no topo do
+  `main.js`: o `readScroll` o consulta na inicialização, muito antes do bloco
+  do cursor, e uma `let` declarada lá embaixo estouraria na zona morta.
+- Alvos: links, botões, `summary`, `label[for]` e `.cards .card`. Nos cards o
+  rótulo diz "Ver projeto"/"View project" sobre o canto de cima e substitui o
+  selo `.project-cue`, escondido neste modo. Fora deles, só com
+  `data-cursor-label` (ou `-pt`/`-en`).
+- Sobre campo de texto o alvo some e o I-beam do sistema volta.
 
 **A foto do Sobre tem bloqueio contra abrir em outra aba e baixar** (pedido
 de Pedro), em três camadas: `.portrait-img` sem `pointer-events` (o clique cai

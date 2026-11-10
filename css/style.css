@@ -180,6 +180,30 @@ p[data-pt][data-en]{text-wrap:pretty}
   transition:opacity var(--dur-micro) var(--ease-soft)}
 .cursor-orb-layer.on .cursor-orb-dot{opacity:1}
 
+/* ===== CURSOR ALVO (effects.cursor.mode 'target', js/cursor-alvo.js) =====
+   Quatro cantos, um ponto e um rótulo, cada um fixo e solto no <body> com a
+   própria mistura por diferença: a área misturada é só a de cada peça, nunca
+   a janela inteira (blend em tela cheia custa como um blur, ver CLAUDE.md).
+   O #ffffff do painel do React Bits virou --paper. will-change aqui é
+   exceção consciente: são peças de poucos pixels que andam a cada quadro. */
+:root{--cursor-alvo-cor:var(--paper)}
+.cursor-alvo-canto,.cursor-alvo-ponto,.cursor-alvo-rotulo{position:fixed;top:0;left:0;
+  z-index:2147483000;pointer-events:none;mix-blend-mode:difference;opacity:0;will-change:transform}
+.cursor-alvo-canto{box-sizing:border-box;border-style:solid;border-color:var(--cursor-alvo-cor);
+  transform-origin:0 0}
+.cursor-alvo-ponto{border-radius:50%;background:var(--cursor-alvo-cor)}
+.cursor-alvo-rotulo{font-family:var(--font);font-size:12px;font-weight:var(--w-medium);line-height:1;
+  letter-spacing:.01em;white-space:nowrap;color:var(--cursor-alvo-cor)}
+/* cursor do sistema escondido em tudo, menos nos campos de texto, onde o
+   I-beam diz onde o texto vai entrar (e o alvo some, pelo JS); !important
+   porque o nome da capa e o arraste escrevem cursor direto no elemento */
+html.cursor-alvo,html.cursor-alvo *{cursor:none!important}
+html.cursor-alvo input,html.cursor-alvo textarea,html.cursor-alvo select,
+html.cursor-alvo [contenteditable="true"]{cursor:auto!important}
+/* o rótulo do alvo ("Ver projeto" sobre o canto dos cards) substitui o selo
+   que seguia o ponteiro: os dois juntos repetiriam a mesma frase */
+html.cursor-alvo .project-cue{display:none}
+
 /* Selo editorial dos cards da Home. É independente do modo do cursor: com o
    padrão nativo continua visível, mas não cria rastro, canvas ou laço de rAF. */
 .project-cue{position:fixed;top:0;left:0;z-index:101;pointer-events:none;
@@ -1870,7 +1894,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
 .js .about-k.reveal,.js .help-k.reveal,.js .eyebrow.reveal{--rv-y:10px;--rv-dur:620ms}
 /* parágrafos: 19px, 760ms (antes 16px, 1000ms) */
 .js .about-lead.reveal,.js .about-sub.reveal,.js .help-lead.reveal,
-.js .wi-context.reveal,.js .wi-aside.reveal{--rv-y:19px;--rv-dur:760ms}
+.js .wi-context.reveal{--rv-y:19px;--rv-dur:760ms}
 /* títulos: 22px, 860ms (antes 22px, 1180ms) */
 .js .help-title.reveal,.js .wi-title.reveal,.js .faq-title.reveal,
 .js .about-title.reveal{--rv-y:22px;--rv-dur:860ms}
@@ -2894,41 +2918,31 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .lp-menu button[aria-selected="true"] .lp-check{opacity:1}
 
 /* ===== ABERTURA EDITORIAL DOS PROJETOS =====
-   Frase grande ocupando duas ou três linhas, e o contexto abaixo em duas
-   colunas: o de esquerda explica, o de direita convida. Sem card, sem moldura,
-   muito espaço negativo. O peso vai até 600, teto da fonte carregada. */
+   Frase grande à esquerda e um texto só à direita dela, alinhado à última
+   linha do título. Eram dois textos numa faixa própria embaixo do título (um
+   explicava, outro convidava); Pedro pediu um texto só, ao lado, e a
+   abertura perdeu essa faixa inteira de altura. Sem card, sem moldura. O peso
+   vai até 600, teto da fonte carregada. */
 .work-intro{--wi-size:clamp(1.85rem,4.4vw,3.5rem);display:grid;grid-template-columns:minmax(0,1fr);
-  margin-bottom:clamp(3.4rem,7vw,6rem)}
+  margin-bottom:clamp(3rem,6vw,5rem)}
 .wi-title{font-size:var(--wi-size);font-weight:var(--w-medium);line-height:1.1;
   letter-spacing:-.035em;max-width:19ch}
-/* "Ver todos os trabalhos": antes era um pill grande, centrado no pé da seção,
-   com tamanho e respiro ajustáveis pelo painel e um "mais" que girava. Pedro
-   pediu algo mais normal, no alto e à direita. Ficou o .ghost-cta comum do
-   site (contorno, seta que anda 4px no hover), um pouco mais baixo, centrado
-   na primeira linha do título: metade da linha (1.1 x .5) menos metade da
-   altura do botão. Abaixo de 860px não cabe ao lado do título; desce para
-   depois dos dois textos, antes da grade, alinhado à esquerda. A entrada
-   (.reveal) fica no invólucro, como em .about-actions: no próprio botão, o
-   transform:none do .reveal.in anularia o translateY do hover. */
-.wi-all{margin-top:2rem;justify-self:start;grid-row:3}
+.wi-context{margin-top:1.6rem;font-size:clamp(.98rem,1.2vw,1.08rem);color:var(--muted);max-width:46ch}
+/* "Ver todos os trabalhos": .ghost-cta comum embaixo do texto. Some quando o
+   arquivo está desligado (home.json > work.showArchive:false; o HTML já nasce
+   com hidden e o content-render decide). A entrada (.reveal) fica no
+   invólucro, como em .about-actions: no próprio botão, o transform:none do
+   .reveal.in anularia o translateY do hover. */
+.wi-all{margin-top:1.6rem;justify-self:start}
+.wi-all[hidden]{display:none}
 .wi-all .ghost-cta{margin-top:0;padding:.72rem 1.3rem}
-.wi-foot{grid-row:2}
 @media(min-width:860px){
-  .work-intro{grid-template-columns:minmax(0,1fr) auto;column-gap:2rem}
+  .work-intro{grid-template-columns:minmax(0,1fr) minmax(0,24rem);column-gap:clamp(2rem,5vw,5rem)}
   .wi-title{grid-column:1;grid-row:1}
-  .wi-all{grid-column:2;grid-row:1;align-self:start;
-    margin-top:max(0px,calc(var(--wi-size) * .55 - 1.33rem))}
-  .wi-foot{grid-column:1 / -1}
+  .wi-context{grid-column:2;grid-row:1;align-self:end;margin-top:0;
+    padding-bottom:calc(var(--wi-size) * .12)}
+  .wi-all{grid-column:2;grid-row:2;align-self:start}
 }
-.wi-foot{display:grid;grid-template-columns:1fr;gap:1.6rem;
-  margin-top:clamp(2.2rem,4.5vw,3.6rem)}
-@media(min-width:860px){
-  .wi-foot{grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    gap:clamp(2rem,5vw,5rem);align-items:start}
-}
-.wi-context{font-size:clamp(.98rem,1.2vw,1.08rem);color:var(--muted);max-width:46ch}
-.wi-aside{font-size:.92rem;color:var(--muted-2);max-width:38ch}
-@media(min-width:860px){.wi-aside{justify-self:end;text-align:right}}
 
 /* ===== PREVIEWS GRANDES =====
    Duas colunas que juntas dominam a viewport, com gap curto. Sangra além do

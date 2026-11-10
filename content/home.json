@@ -119,12 +119,11 @@
   "work": {
     "titlePt": "Uma seleção de trabalhos construídos entre direção de arte, identidade e estratégia.",
     "titleEn": "A selection of work shaped across art direction, identity, and strategy.",
-    "contextPt": "Projetos desenvolvidos para marcas, produtos e negócios em diferentes momentos, do posicionamento à execução.",
-    "contextEn": "Projects developed for brands, products, and businesses at different stages, from positioning to execution.",
-    "asidePt": "Explore projetos de branding, campanhas, experiências digitais e comunicação.",
-    "asideEn": "Explore branding, campaigns, digital experiences, and communication projects.",
+    "contextPt": "Projetos de branding, campanhas, experiências digitais e comunicação, desenvolvidos para marcas, produtos e negócios em diferentes momentos, do posicionamento à execução.",
+    "contextEn": "Branding, campaign, digital experience and communication projects, developed for brands, products and businesses at different stages, from positioning to execution.",
     "columnsDesktop": 2,
-    "gap": 25.6
+    "gap": 25.6,
+    "showArchive": false
   },
   "about": {
     "kickerPt": "Sobre",

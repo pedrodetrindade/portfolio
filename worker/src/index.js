@@ -181,7 +181,7 @@ function erroNosEfeitosGlobais(effects) {
     if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor)) return 'effects.cursor precisa ser um objeto.';
     var cursorExtra = Object.keys(cursor).filter(function (k) { return k !== 'mode'; });
     if (cursorExtra.length) return 'effects.cursor tem campo desconhecido: ' + cursorExtra.join(', ') + '.';
-    if (['native', 'orb'].indexOf(cursor.mode) === -1) return 'effects.cursor.mode precisa ser native ou orb.';
+    if (['native', 'orb', 'target'].indexOf(cursor.mode) === -1) return 'effects.cursor.mode precisa ser native, orb ou target.';
   }
   return null;
 }
@@ -387,6 +387,10 @@ function erroNaAparenciaDaHome(home) {
      null é aceito e significa "usar o padrão do site". */
   var w = home && home.work;
   if (w && typeof w === 'object' && !Array.isArray(w)) {
+    /* "Todos os trabalhos" ligado ou desligado (ausência = ligado) */
+    if (w.showArchive !== undefined && typeof w.showArchive !== 'boolean') {
+      return 'work.showArchive precisa ser verdadeiro ou falso.';
+    }
     var faixas = [
       ['ctaScale', 80, 160, 'o tamanho do botão de trabalhos'],
       ['ctaSpacingTop', 0, 200, 'o espaço acima do botão de trabalhos'],

@@ -200,6 +200,13 @@
      com os cases. Carregar home.json também em /work/ elimina a segunda fonte
      da verdade que deixava o status diferente entre páginas. */
   window.__CMS_HOME__ = xhrJSON('content/home.json?v=4') || {};
+  /* "Todos os trabalhos" desligado (work.showArchive:false): a página de
+     arquivo não existe por enquanto, e quem chega nela vai para a seção
+     Trabalhos da Home antes de qualquer coisa ser desenhada. Sem JS a página
+     estática continua valendo, como o resto do site. */
+  if (isWorkIndex && window.__CMS_HOME__.work && window.__CMS_HOME__.work.showArchive === false) {
+    location.replace('/#work');
+  }
   if (isWorkPath) {
     window.__CMS_PROJECTS_INDEX__ = xhrJSON('content/projects/index.json?v=2') || {};
   }
