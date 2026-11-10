@@ -2532,14 +2532,15 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   transition:opacity var(--dur-default) var(--ease-soft),transform var(--dur-default) var(--ease-soft)}
 .js .home-teaser.in .card-foot{opacity:1;transform:none;transition-delay:220ms}
 .js .home-teaser.in .card-tags{opacity:1;transform:none;transition-delay:300ms}
+/* o teaser de projeto ainda indisponível segue as mesmas proporções */
 @media(min-width:900px){
-  .work-bleed .home-teaser{aspect-ratio:auto;height:clamp(38rem,88vh,58rem)}
-  .work-bleed .home-teaser.card--largo{grid-column:span 2;height:clamp(30rem,72vh,48rem)}
-  .work-bleed .home-teaser.card--alto{height:clamp(46rem,105vh,68rem)}
-  .work-bleed .home-teaser.card--grande{grid-column:span 2;height:clamp(44rem,98vh,64rem)}
-  .work-bleed .home-teaser.card--largura-completa{grid-column:1/-1;height:clamp(38rem,88vh,58rem)}
+  .work-bleed .home-teaser{aspect-ratio:4/3}
+  .work-bleed .home-teaser.card--largo{grid-column:span 2;aspect-ratio:21/9}
+  .work-bleed .home-teaser.card--alto{aspect-ratio:4/5}
+  .work-bleed .home-teaser.card--grande{grid-column:span 2;aspect-ratio:16/9}
+  .work-bleed .home-teaser.card--largura-completa{grid-column:1/-1;aspect-ratio:21/9}
 }
-@media(max-width:899px){.work-bleed .home-teaser{aspect-ratio:4/4.4}}
+@media(max-width:899px){.work-bleed .home-teaser{aspect-ratio:1/1}}
 
 .work-archive{min-height:0;padding-top:clamp(8.5rem,12vw,11.5rem);
   padding-bottom:clamp(7rem,11vw,10rem)}
@@ -2920,26 +2921,25 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   .wi-all{grid-column:2;grid-row:2;align-self:start}
 }
 
-/* ===== PREVIEWS GRANDES =====
-   Duas colunas que juntas dominam a viewport, com gap curto. Sangra além do
-   .wrap descontando a barra de rolagem, como a faixa do Sobre. */
-.work-bleed{--bleed:var(--vw,100vw);
-  width:var(--bleed);position:relative;left:50%;
-  margin-left:calc(var(--bleed) / -2);margin-right:calc(var(--bleed) / -2);
-  padding-inline:clamp(1rem,2vw,2rem);gap:clamp(1rem,1.4vw,1.5rem)}
+/* ===== PREVIEWS DOS DESTAQUES =====
+   Na linha do grid, menores. Foi uma faixa que sangrava até as bordas da tela
+   (como a do Sobre), com cards de 88% da altura da janela, "como no
+   midu.design": a 1920 cada um tinha ~920x780px. Pedro pediu os destaques
+   menores e alinhados ao grid: agora a grade ocupa a largura do .wrap, com as
+   mesmas margens do título e do texto da abertura, e a altura sai de uma
+   proporção (4:3) em vez da altura da janela. O nome .work-bleed ficou, mas
+   não sangra mais. Os tamanhos de projects/index.json (cardSizes) mantêm a
+   mesma linguagem, trocando altura em vh por proporção. */
+.work-bleed{gap:clamp(1rem,1.4vw,1.5rem)}
 @media(min-width:900px){.work-bleed{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:900px){
-  /* preenchem quase a viewport inteira, como no midu.design: a prévia é o
-     assunto da seção, não uma miniatura ao lado do texto */
-  .work-bleed .card{aspect-ratio:auto;height:clamp(38rem,88vh,58rem)}
-  /* Tamanhos já previstos em projects/index.json. O normal preserva a grade
-     atual; as variações só alteram span e altura dentro da mesma linguagem. */
-  .work-bleed .card--largo{grid-column:span 2;height:clamp(30rem,72vh,48rem)}
-  .work-bleed .card--alto{height:clamp(46rem,105vh,68rem)}
-  .work-bleed .card--grande{grid-column:span 2;height:clamp(44rem,98vh,64rem)}
-  .work-bleed .card--largura-completa{grid-column:1/-1;height:clamp(38rem,88vh,58rem)}}
+  .work-bleed .card{aspect-ratio:4/3}
+  .work-bleed .card--largo{grid-column:span 2;aspect-ratio:21/9}
+  .work-bleed .card--alto{aspect-ratio:4/5}
+  .work-bleed .card--grande{grid-column:span 2;aspect-ratio:16/9}
+  .work-bleed .card--largura-completa{grid-column:1/-1;aspect-ratio:21/9}}
 @media(max-width:899px){
-  .work-bleed .card{aspect-ratio:4/4.4}}
+  .work-bleed .card{aspect-ratio:1/1}}
 .work-bleed .card-foot{left:clamp(1.4rem,2.2vw,2.4rem);right:clamp(1.4rem,2.2vw,2.4rem);
   bottom:clamp(1.4rem,2vw,2.2rem)}
 .work-bleed .card-foot h3{font-size:clamp(1.35rem,1.9vw,2rem)}

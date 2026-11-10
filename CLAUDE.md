@@ -542,6 +542,16 @@ abertura perdeu essa faixa. `work.asidePt/En` saiu do `home.json`, do HTML, do
 render e do painel; o texto unido mora em `work.contextPt/En` ("Texto ao lado
 do título" no painel).
 
+**Os destaques ficam na linha do grid, em 4:3** (`.work-bleed`, que manteve
+o nome mas não sangra mais). Eram uma faixa de ponta a ponta da tela com
+cards de 88% da altura da janela (~920x780px a 1920); Pedro pediu menores e
+alinhados ao grid. Agora a grade ocupa a largura do `.wrap`, com as mesmas
+margens do título e do texto da abertura (medido: 120px e 1800px a 1920,
+38px a 1280, 20px no celular), e a altura sai da proporção: 828x621px a
+1920; abaixo de 900px, uma coluna em 1:1. Os outros tamanhos de
+`projects/index.json` (`cardSizes`) seguem a mesma lógica: largo e largura
+completa em 21:9, grande em 16:9, alto em 4:5.
+
 **O botão "ver todos os trabalhos" é um `.ghost-cta` comum embaixo desse
 texto** (`.wi-all`) e só existe com "Todos os trabalhos" ligado. A entrada
 (`.reveal`) fica no invólucro, como em `.about-actions`: no próprio `<a>`, o
