@@ -1265,10 +1265,12 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .ghost-cta:hover{transform:translateY(-2px);border-color:var(--accent);background:rgba(var(--paper-rgb),.05)}
 .ghost-cta:hover::after{transform:translateX(4px)}
 
-/* Três ações no Sobre, três pesos. Nenhuma cor nova e nenhum botão chapado:
+/* Ações do Sobre em dois pesos. Nenhuma cor nova e nenhum botão chapado:
    a hierarquia sai só de contraste de borda e de texto, como no resto do
-   site. .cta-primary é "Vamos conversar", .cta-resume é o currículo e
-   .cta-quiet é o LinkedIn. */
+   site. .cta-primary é o destaque, usado por LinkedIn e "Vamos conversar"
+   (o LinkedIn já foi .cta-quiet, apagado, e subiu a pedido); .cta-resume é
+   o currículo, secundário. Com .cta-primary o ícone do LinkedIn herda o
+   mesmo tratamento do envelope: --cream em repouso, --paper no hover. */
 .ghost-cta.cta-primary{border-color:var(--accent);background:rgba(var(--paper-rgb),.06)}
 .ghost-cta.cta-primary:hover{background:rgba(var(--paper-rgb),.1)}
 /* "Vamos conversar" abre o painel de contato: no lugar da seta, o mesmo
@@ -1277,8 +1279,6 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .ghost-cta.cta-primary svg{width:17px;height:17px;flex:none;color:var(--cream);
   transition:color var(--dur-micro) var(--ease-soft)}
 .ghost-cta.cta-primary:hover svg{color:var(--paper)}
-.ghost-cta.cta-quiet{color:var(--muted);border-color:var(--line)}
-.ghost-cta.cta-quiet:hover{color:var(--paper)}
 /* display:inline-flex ganha do [hidden] da folha do navegador, então o botão
    do currículo continuaria visível mesmo oculto. Mesmo detalhe que já tinha
    escondido o painel do CMS atrás da tela de "Sem acesso". */
