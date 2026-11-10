@@ -1842,9 +1842,12 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
 .js body.hero-in .h-step,.js .hero-in .h-step{opacity:1;transform:none}
 /* o nome sobe assim que a intro comeca; os secundarios entram depois,
    por cima da cauda do movimento do nome */
+/* Todas as durações daqui até o indicador passam por --intro-ritmo, o mesmo
+   fator que o main.js aplica à linha do tempo (RITMO): a intro inteira estica
+   ou encolhe junto, sem número de intro solto que possa ficar para trás. */
 .js body.name-in .hero-name .hn-line,
 .js body.hero-in .hero-name .hn-line{transform:none;
-  transition:transform 1476ms var(--ease-soft)}
+  transition:transform calc(1476ms * var(--intro-ritmo,1)) var(--ease-soft)}
 /* escalonamento dos secundários: 144ms entre eles. Entram sobre a cauda da
    subida do nome, nunca desde o começo da intro.
    Durações e atrasos acompanham a mesma escala de 20% da intro: manter os
@@ -1854,12 +1857,12 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
    a transição inteira com --dur-slow, e as durações escalonadas nunca chegavam
    a valer. Os atrasos logo abaixo valiam, porque empatam em especificidade e
    vêm depois; era só a duração que se perdia, e por isso passou despercebido. */
-.js .h-step.hero-tag{transition-duration:1476ms}
-.js .h-step.hero-when{transition-duration:1584ms}
-.js .h-step.hero-claim{transition-duration:1728ms}
+.js .h-step.hero-tag{transition-duration:calc(1476ms * var(--intro-ritmo,1))}
+.js .h-step.hero-when{transition-duration:calc(1584ms * var(--intro-ritmo,1))}
+.js .h-step.hero-claim{transition-duration:calc(1728ms * var(--intro-ritmo,1))}
 .hero-sec .hero-tag,.hero-in .hero-tag{transition-delay:0ms}
-.hero-sec .hero-when,.hero-in .hero-when{transition-delay:144ms}
-.hero-sec .hero-claim,.hero-in .hero-claim{transition-delay:288ms}
+.hero-sec .hero-when,.hero-in .hero-when{transition-delay:calc(144ms * var(--intro-ritmo,1))}
+.hero-sec .hero-claim,.hero-in .hero-claim{transition-delay:calc(288ms * var(--intro-ritmo,1))}
 
 /* O indicador da hero não pode depender do observador de rolagem: ele fica no
    rodapé da primeira dobra e só entraria na conta depois de um scroll. Aqui ele
@@ -1867,7 +1870,8 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
 .js body.intro-mode:not(.hero-sec) .hero .next-hint{opacity:0;transform:translateX(-50%) translateY(10px)}
 .js body.hero-sec .hero .next-hint,
 .js body.hero-in .hero .next-hint{opacity:1;transform:translateX(-50%);
-  transition:opacity 1620ms var(--ease-soft) 432ms,transform 1620ms var(--ease-soft) 432ms}
+  transition:opacity calc(1620ms * var(--intro-ritmo,1)) var(--ease-soft) calc(432ms * var(--intro-ritmo,1)),
+             transform calc(1620ms * var(--intro-ritmo,1)) var(--ease-soft) calc(432ms * var(--intro-ritmo,1))}
 
 /* ===== ACCESSIBILITY: focus & skip link =====
    Sem border-radius aqui: era ele que quadrava o botão de idioma em foco.

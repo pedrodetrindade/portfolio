@@ -415,12 +415,14 @@ mínima. Não há `sessionStorage`: é assinatura de entrada e Pedro quer que el
 seja vista sempre. Só `prefers-reduced-motion` pula.
 
 **A linha do tempo da intro mora só no `js/main.js`** e desce para o CSS por
-variável: `--intro-reveal` 1440ms, `--intro-move` 2160ms, `--intro-dur` 3600ms
-e `--intro-veil` 3240ms (com o morph ligado, a revelação vai a 1800ms e o total
-a 3960ms). Nenhuma duração de intro pode ser escrita direto no CSS. Ao mudar o
-total, escale tudo pelo mesmo fator, inclusive `SECUNDARIOS_MS`, a saída do véu
-e as durações de `.hero-tag`, `.hero-when`, `.hero-claim` e do indicador: mexer
-só no total muda o ritmo interno, não a duração.
+variável. Na escala 1: `--intro-reveal` 1440ms (1800 com morph), `--intro-move`
+2160ms, `--intro-dur` 3600ms (3960 com morph) e `--intro-veil` 3240ms. Tudo
+passa pela constante `RITMO`, hoje 4460/3960 (~1,126: Pedro pediu meio segundo
+a mais), então a intro com morph dura 4460ms. O mesmo fator desce como
+`--intro-ritmo`, e as durações dos secundários e do indicador no CSS são
+`calc(Nms * var(--intro-ritmo,1))`. Para mudar a duração, mude só `RITMO`:
+mexer só no total muda o ritmo interno, não a duração. Nenhuma duração de intro
+pode ser escrita no CSS sem passar por `--intro-ritmo`.
 
 **A etapa 1 da intro pode ser um morph** (Magic UI, morphing-text). Com
 `hero.morphFrom` preenchido (campo "Palavra que vira o seu nome na intro",

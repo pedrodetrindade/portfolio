@@ -973,7 +973,9 @@
      entrada dos secundários (77,5% da linha) continuam idênticos. Escalar só o
      total mudaria o ritmo interno, não a duração.
      Com o morph ligado (abaixo) só a etapa 1 muda: 0 a 1800ms é o morph,
-     1800 a 3960 o mesmo movimento, secundários em 3150. */
+     1800 a 3960 o mesmo movimento, secundários em 3150. Esses são os números
+     da escala 1; hoje tudo passa por RITMO (1,126), e a intro com morph dura
+     4460ms: morph até 2027, movimento até 4460, secundários em 3547. */
   /* ===== MORPH NA ETAPA 1 =====
      Com hero.morphFrom preenchido no painel (hoje "trind9de", a marca), a
      revelação deixa de ser máscara e blur e vira o morphing-text do Magic UI:
@@ -995,15 +997,24 @@
   const palavraMorph = typeof palavraBruta === 'string'
     ? palavraBruta.replace(/\s+/g, ' ').trim().slice(0, 24) : '';
   const comMorph = !!(heroName && palavraMorph && !reduced);
-  const MORPH = { entrada: 420, pausa: 300, fusao: 1080 };   // 1800ms
+  /* RITMO escala a intro inteira de uma vez: morph, movimento, entrada dos
+     secundários, saída do véu e, pelo --intro-ritmo, as durações dos
+     secundários e do indicador escritas no CSS. É o "escale tudo pelo mesmo
+     fator" do CLAUDE.md virado número: mudar a duração é mudar só isto, e o
+     ritmo interno não se mexe. Hoje 4460/3960, meio segundo a mais que a
+     versão de 3,96s com morph, a pedido. Os números abaixo são os da escala 1. */
+  const RITMO = 4460 / 3960;
+  const ms = v => Math.round(v * RITMO);
+  const MORPH = { entrada: ms(420), pausa: ms(300), fusao: ms(1080) };   // 2027ms
   const INTRO = {
-    revelacao: comMorph ? MORPH.entrada + MORPH.pausa + MORPH.fusao : 1440,
-    movimento: 2160
+    revelacao: comMorph ? MORPH.entrada + MORPH.pausa + MORPH.fusao : ms(1440),
+    movimento: ms(2160)
   };
-  const INTRO_MS = INTRO.revelacao + INTRO.movimento;   // 3600ms, ou 3960 com morph
-  const SECUNDARIOS_MS = INTRO.revelacao + 1350;        // 2790ms na clássica
-  const VEU_MS = 3240;                                  // saída do véu, mesma escala
+  const INTRO_MS = INTRO.revelacao + INTRO.movimento;   // 4460ms com morph, 4055 na clássica
+  const SECUNDARIOS_MS = INTRO.revelacao + ms(1350);    // mesmo ponto do movimento
+  const VEU_MS = ms(3240);                              // saída do véu, mesma escala
   const raiz = document.documentElement.style;
+  raiz.setProperty('--intro-ritmo', String(RITMO));
   raiz.setProperty('--intro-dur', INTRO_MS + 'ms');
   raiz.setProperty('--intro-reveal', INTRO.revelacao + 'ms');
   raiz.setProperty('--intro-move', INTRO.movimento + 'ms');
