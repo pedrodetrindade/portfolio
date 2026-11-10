@@ -663,3 +663,32 @@ crédito só reparte o mesmo vão: medido, 50px acima contra 214px abaixo, o gri
 não saiu do lugar. Com `margin-block:auto` são três frações iguais (uma acima
 do grid, duas abaixo) e o conteúdo passa a ocupar o centro óptico — medido,
 132px de cada lado a 1280x720, com o crédito ancorado na base.
+
+**O fundo do rodapé pode ser um dither** (Magic UI, dither-field):
+`footer.background.type: "dither"`, opção "Dither (pontos animados)" no painel.
+O vídeo do Vimeo continua gravado em `background.video` e volta ao trocar o
+tipo. O código WebGL2 mora em `js/dither-field.js`, que o `content-render.js`
+só baixa quando o gatilho do rodapé entra em cena; o endereço sai do `src` do
+próprio content-render (as páginas apontam para `js/` de três jeitos), e a
+versão é a constante `DITHER_V` lá dentro. Ao editar `dither-field.js`, suba
+`DITHER_V` e o `?v=` do content-render nas páginas.
+- Só o padrão "horizonte", ajustado ao rodapé: sol menor que o original, com
+  laterais apagadas de 16% a 44% para o crédito (canto esquerdo) e o "voltar
+  ao topo" (direito) ficarem sobre fundo liso. Em tela vertical o centro do
+  sol desce e a névoa não passa de meio raio, senão encostava no crédito, que
+  no celular ocupa a base inteira.
+- Cores dos tokens, lidas do CSS: `--dither-low` (`--ink-3`), `--dither-mid`
+  (`--warm-rgb`) e `--dither-high` (`--accent`). Com `--cream` no topo o
+  horizonte lia cinza-claro e brigava com a headline. Intensidade .5, ponto de
+  2px, 30 quadros por segundo.
+- Pausa fora de alcance pelo `.parado` do `main.js` (`medirFundos` inclui
+  `[data-footer-dither]`), não por IntersectionObserver. Sob movimento reduzido
+  desenha um quadro e para. Sem WebGL2, o CSS desenha uma grade parada.
+- Com rodapé dither, o `.edge-blur` vai a 0 na última altura dele de rolagem: no
+  fim não há mais nada para dissolver, e ele borrava os pontos do horizonte, que
+  moram justamente na faixa de baixo. A conta usa o fim real da rolagem
+  (`scrollHeight`), não a base medida do rodapé, que diferia em ~10px e deixava
+  o desfoque parado em 11%.
+- A prévia do CMS remonta o rodapé a cada tecla: `initFooterMedia` destrói o
+  dither anterior (`__CMS_FOOTER_DITHER__`) e devolve o contexto WebGL, senão o
+  navegador estoura o limite de contextos vivos.

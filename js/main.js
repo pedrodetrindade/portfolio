@@ -1413,14 +1413,39 @@
      movimento, sem o salto de uma animação que começa do zero na borda.
      Mede uma vez e reaproveita: getBoundingClientRect por quadro anularia a
      economia. As posições são recalculadas junto com os alvos de entrada. */
+  /* O dither do rodapé ([data-footer-dither]) entra na mesma conta: o
+     dither-field.js observa o .parado do host e para o laço de WebGL fora do
+     alcance, sem precisar de IntersectionObserver nem de um segundo listener.
+
+     E o .edge-blur se apaga no fim da página quando o rodapé é dither. O
+     desfoque existe para o conteúdo se dissolver na borda enquanto rola; no
+     fim não há mais nada para rolar, e ele só borrava os pontos do horizonte,
+     que moram justamente na faixa de baixo e precisam de borda nítida. A
+     opacidade acompanha a última altura do desfoque de rolagem, sem salto. */
   let fundos = [];
+  const bordaEl = document.querySelector('.edge-blur');
+  let fimDither = null, alturaBorda = 0, opacBorda = -1;
   const medirFundos = () => {
-    fundos = [...document.querySelectorAll('.liquid-bg')].map(el => {
+    fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither]')].map(el => {
       const r = el.getBoundingClientRect();
       return { el, topo: r.top + posVisual, base: r.bottom + posVisual, ativo: null };
     });
+    const rodapeDither = document.querySelector('.site-footer.is-dither');
+    fimDither = rodapeDither ? rodapeDither.getBoundingClientRect().bottom + posVisual : null;
+    alturaBorda = bordaEl ? bordaEl.offsetHeight : 0;
+    if (fimDither === null && bordaEl && opacBorda !== -1) {
+      bordaEl.style.removeProperty('opacity');
+      opacBorda = -1;
+    }
   };
   const pintarFundos = y => {
+    if (fimDither !== null && bordaEl && alturaBorda) {
+      /* conta pelo fim real da rolagem, não pela base medida do rodapé: as
+         duas diferem em alguns pixels e o desfoque parava em 11% sem sumir */
+      const falta = document.documentElement.scrollHeight - window.innerHeight - y;
+      const op = Math.round(Math.max(0, Math.min(1, falta / alturaBorda)) * 100) / 100;
+      if (op !== opacBorda) { opacBorda = op; bordaEl.style.opacity = String(op); }
+    }
     if (!fundos.length) return;
     const folga = window.innerHeight;
     for (const f of fundos) {

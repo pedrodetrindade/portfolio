@@ -1686,7 +1686,7 @@
     var copyrightPt = f.copyrightPt == null ? '© {year} · ' + (f.disclaimerPt || '') : f.copyrightPt;
     var copyrightEn = f.copyrightEn == null ? '© {year} · ' + (f.disclaimerEn || '') : f.copyrightEn;
     var bg = f.background && typeof f.background === 'object' ? f.background : {};
-    var bgType = ['solid', 'image', 'video'].indexOf(bg.type) !== -1 ? bg.type : 'solid';
+    var bgType = ['solid', 'image', 'video', 'dither'].indexOf(bg.type) !== -1 ? bg.type : 'solid';
     document.getElementById('footerBody').innerHTML =
       '<p class="hint">O mesmo footer aparece na Home, em Todos os Trabalhos e em todos os cases. Campos opcionais vazios usam o fallback seguro do site.</p>' +
       fieldRow('Chamada curta (PT)', '', inp('foot_kpt', f.kickerPt || 'Contato')) +
@@ -1710,14 +1710,14 @@
       fieldRow('Posição vertical do e-mail', 'Não altera a altura do footer. Valor positivo desce; negativo sobe.', sliderControl('foot_email_offset', f.emailOffset == null ? 12 : f.emailOffset, -40, 60, 'px')) +
       fieldRow('Posição vertical do copyright', 'Não altera a altura do footer. Valor negativo sobe e afasta do texto em looping.', sliderControl('foot_legal_offset', f.legalOffset == null ? -12 : f.legalOffset, -60, 40, 'px')) +
       '<div style="border-top:1px solid var(--line);padding-top:1rem;margin-top:1rem"><b>Background do footer</b></div>' +
-      fieldRow('Tipo', 'Sólido é o fallback quando não há configuração.', selectDe('foot_bg_type', bgType, [
-        ['solid', 'Cor sólida'], ['image', 'Imagem'], ['video', 'Vídeo']
+      fieldRow('Tipo', 'Sólido é o fallback quando não há configuração. Dither é o horizonte de pontos animados nas cores do site, que brilha sob o cursor; imagem e vídeo abaixo ficam guardados para quando voltar.', selectDe('foot_bg_type', bgType, [
+        ['solid', 'Cor sólida'], ['image', 'Imagem'], ['video', 'Vídeo'], ['dither', 'Dither (pontos animados)']
       ])) +
       fieldRow('Cor de base', 'Permanece visível enquanto a mídia não carrega ou se ela falhar.', '<input type="color" id="foot_bg_color" value="' + esc(/^#[0-9a-f]{6}$/i.test(bg.color || '') ? bg.color : '#151111') + '">') +
       fieldRow('Imagem', 'Caminho assets/, URL HTTPS ou upload.', inp('foot_bg_image', bg.image || '') + '<input type="file" id="foot_bg_image_upload" accept="image/*,.svg">') +
       fieldRow('Vídeo', 'MP4, WebM ou URL do Vimeo. O site só inicia o carregamento perto do footer.', inp('foot_bg_video', bg.video || '') + '<input type="file" id="foot_bg_video_upload" accept="video/mp4,video/webm,.mp4,.webm">') +
       fieldRow('Poster do vídeo', 'Imagem exibida antes do vídeo e no modo de movimento reduzido.', inp('foot_bg_poster', bg.poster || '') + '<input type="file" id="foot_bg_poster_upload" accept="image/*,.svg">') +
-      fieldRow('Overlay', 'Escurece imagem ou vídeo para preservar contraste.', sliderControl('foot_bg_overlay', bg.overlayOpacity == null ? (bgType === 'solid' ? 0 : 62) : bg.overlayOpacity, 0, 100, '%')) +
+      fieldRow('Overlay', 'Escurece imagem ou vídeo para preservar contraste.', sliderControl('foot_bg_overlay', bg.overlayOpacity == null ? (bgType === 'solid' || bgType === 'dither' ? 0 : 62) : bg.overlayOpacity, 0, 100, '%')) +
       '<button class="btn small danger" type="button" id="foot_bg_reset">usar background padrão</button>' +
       fieldRow('LinkedIn', 'Aceita somente http:// ou https://', '<input type="url" id="soc_li" value="' + esc(s.linkedin) + '">') +
       fieldRow('Mostrar LinkedIn', '', switchControl('soc_li_active', s.linkedinActive !== false)) +

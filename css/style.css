@@ -2422,6 +2422,26 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
   border:0;transform:translate(-50%,-50%);object-fit:initial}
 .site-footer.is-footer-video-playing .site-footer-video{opacity:1}
 .site-footer-overlay{z-index:-2;background:rgba(8,6,6,var(--site-footer-overlay))}
+/* ===== DITHER NO FUNDO DO RODAPÉ (footer.background.type 'dither') =====
+   Pontos quadrados em matriz de Bayer, desenhados pelo js/dither-field.js
+   (Magic UI, dither-field, só o padrão "horizonte"). A rampa de cor sai
+   destes três tokens, lidos pelo JS: ponto fraco em --ink-3, que mal se
+   separa do fundo, médio no marrom-acinzentado de --warm-rgb e o miolo do sol
+   em --accent. Com --cream no topo o horizonte lia cinza-claro e brigava com a
+   headline: o rodapé continua sendo do texto, o horizonte é fundo.
+   O canvas tem um ponto por pixel e é ampliado com pixelated, então o ponto
+   sai nítido em qualquer densidade de tela. Entra por fundido longo e
+   linear, como as outras camadas grandes. */
+.site-footer-dither{position:absolute;inset:0;overflow:hidden;
+  --dither-low:var(--ink-3);--dither-mid:rgb(var(--warm-rgb));--dither-high:var(--accent)}
+.dither-canvas{position:absolute;top:0;left:0;image-rendering:pixelated;opacity:0;
+  transition:opacity var(--dur-slow) linear}
+.dither-canvas.is-pronto{opacity:1}
+/* sem WebGL2 (ou contexto perdido): grade de pontos parada, só no horizonte */
+.site-footer-dither.sem-webgl{opacity:.4;
+  background-image:radial-gradient(var(--dither-mid) .6px,transparent .9px);background-size:6px 6px;
+  -webkit-mask-image:radial-gradient(ellipse 42% 38% at 50% 100%,#000,transparent);
+          mask-image:radial-gradient(ellipse 42% 38% at 50% 100%,#000,transparent)}
 .site-footer-media-trigger{position:absolute;left:0;top:-110svh;width:1px;height:1px;
   opacity:0!important;transform:none!important;pointer-events:none}
 .site-footer-contact-anchor{position:absolute;inset:0 auto auto 0;width:1px;height:1px;

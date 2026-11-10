@@ -166,7 +166,7 @@
     "legalOffset": 40,
     "grainEnabled": false,
     "background": {
-      "type": "video",
+      "type": "dither",
       "color": "#151111",
       "video": "https://vimeo.com/1218774319?fl=tl&fe=ec",
       "poster": "",

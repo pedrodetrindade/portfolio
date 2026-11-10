@@ -11,6 +11,15 @@
    estático (o que já estava no arquivo) continua valendo. */
 (function () {
   'use strict';
+  /* O dither do rodapé mora em js/dither-field.js e só é baixado quando o
+     rodapé se aproxima. O endereço sai do próprio src deste arquivo, porque as
+     páginas apontam para js/ de jeitos diferentes (js/, ../js/, /js/), e
+     currentScript só existe durante esta primeira execução: por isso fica aqui
+     no topo, antes de qualquer render. Ao editar dither-field.js, suba
+     DITHER_V e o ?v= deste arquivo nas páginas. */
+  var BASE_JS = document.currentScript && document.currentScript.src
+    ? document.currentScript.src.replace(/content-render\.js(\?.*)?$/, '') : '';
+  var DITHER_V = 1;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -232,13 +241,16 @@
 
   function footerMediaHtml(background) {
     background = background && typeof background === 'object' ? background : {};
-    var type = ['solid', 'image', 'video'].indexOf(background.type) !== -1 ? background.type : 'solid';
+    var type = ['solid', 'image', 'video', 'dither'].indexOf(background.type) !== -1 ? background.type : 'solid';
     var image = resolveAssetUrl(background.image);
     var vimeo = footerVimeoConfig(background.video);
     var video = vimeo ? '' : resolveAssetUrl(background.video);
     var poster = resolveAssetUrl(background.poster);
     var media = '';
-    if (type === 'image' && image) {
+    if (type === 'dither') {
+      /* host vazio: o canvas só nasce perto do rodapé (initFooterMedia) */
+      media = '<div class="site-footer-dither" data-footer-dither></div>';
+    } else if (type === 'image' && image) {
       media = '<picture class="site-footer-picture"><img data-footer-lazy data-src="' + esc(image) + '" alt="" onerror="this.remove()"></picture>';
     } else if (type === 'video' && (video || vimeo)) {
       if (poster) media += '<picture class="site-footer-picture"><img src="' + esc(poster) + '" alt="" onerror="this.remove()"></picture>';
@@ -251,12 +263,47 @@
     return { type: type, html: media };
   }
 
+  /* Baixa dither-field.js uma vez só, por mais que o rodapé seja remontado. */
+  var ditherCarregando = null;
+  function carregarDither() {
+    if (window.__DITHER__) return Promise.resolve(window.__DITHER__);
+    if (!ditherCarregando) {
+      ditherCarregando = new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = BASE_JS + 'dither-field.js?v=' + DITHER_V;
+        s.async = true;
+        s.onload = function () { window.__DITHER__ ? resolve(window.__DITHER__) : reject(); };
+        s.onerror = function () { ditherCarregando = null; reject(); };
+        document.head.appendChild(s);
+      });
+    }
+    return ditherCarregando;
+  }
+
   function initFooterMedia(footer, mediaType) {
     if (window.__CMS_FOOTER_MEDIA_OBSERVER__) window.__CMS_FOOTER_MEDIA_OBSERVER__.disconnect();
+    /* A prévia do CMS remonta o rodapé a cada tecla: o dither anterior precisa
+       devolver o contexto WebGL antes, senão o navegador estoura o limite de
+       contextos vivos depois de algumas dezenas de edições. */
+    if (window.__CMS_FOOTER_DITHER__) { window.__CMS_FOOTER_DITHER__.destruir(); window.__CMS_FOOTER_DITHER__ = null; }
     var trigger = footer.querySelector('[data-footer-media-trigger]');
     if (!trigger || mediaType === 'solid') return;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     function activate() {
+      /* Sob movimento reduzido o dither monta do mesmo jeito: desenha um quadro
+         e para, que é uma textura parada, sem movimento nenhum. */
+      if (mediaType === 'dither') {
+        if (window.__CMS_FOOTER_MEDIA_OBSERVER__) window.__CMS_FOOTER_MEDIA_OBSERVER__.disconnect();
+        carregarDither().then(function (D) {
+          var host = footer.querySelector('[data-footer-dither]');
+          if (!host || !host.isConnected || window.__CMS_FOOTER_DITHER__) return;
+          window.__CMS_FOOTER_DITHER__ = D.montar(host);
+        }).catch(function () {
+          var host = footer.querySelector('[data-footer-dither]');
+          if (host) host.classList.add('sem-webgl');
+        });
+        return;
+      }
       if (mediaType === 'video' && reduce) {
         if (window.__CMS_FOOTER_MEDIA_OBSERVER__) window.__CMS_FOOTER_MEDIA_OBSERVER__.disconnect();
         return;
@@ -366,7 +413,7 @@
     var media = footerMediaHtml(background);
     var solid = /^#[0-9a-f]{6}$/i.test(background.color || '') ? background.color : '#151111';
     var overlay = Number(background.overlayOpacity);
-    if (!isFinite(overlay)) overlay = media.type === 'solid' ? 0 : 62;
+    if (!isFinite(overlay)) overlay = media.type === 'solid' || media.type === 'dither' ? 0 : 62;
     overlay = Math.max(0, Math.min(100, overlay));
     var email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(social.email || '') ? social.email.trim() : '';
     var menu = G.header && Array.isArray(G.header.menu) ? G.header.menu : [];
@@ -395,6 +442,8 @@
     var footerGrainLigado = grainGlobalLigado() && f.grainEnabled !== false;
     footer.id = 'site-footer';
     footer.className = 'site-footer';
+    /* o main.js usa a classe para apagar o .edge-blur na base da página */
+    if (media.type === 'dither') footer.classList.add('is-dither');
     if (showNav) footer.classList.add('has-footer-nav');
     if (showSocial) footer.classList.add('has-footer-social');
     /* O CSS precisa saber que o marquee saiu: sem ele o bloco de crédito passa

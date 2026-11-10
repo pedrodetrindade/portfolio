@@ -231,7 +231,7 @@ function erroNasConfiguracoesGlobais(data) {
     var footerBgKeys = ['type','color','image','video','poster','overlayOpacity'];
     var footerBgExtra = Object.keys(footerBg).filter(function (k) { return footerBgKeys.indexOf(k) === -1; });
     if (footerBgExtra.length) return 'footer.background tem campo desconhecido: ' + footerBgExtra.join(', ') + '.';
-    if (footerBg.type !== undefined && ['solid','image','video'].indexOf(footerBg.type) === -1) return 'footer.background.type precisa ser solid, image ou video.';
+    if (footerBg.type !== undefined && ['solid','image','video','dither'].indexOf(footerBg.type) === -1) return 'footer.background.type precisa ser solid, image, video ou dither.';
     if (footerBg.color !== undefined && (typeof footerBg.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(footerBg.color))) return 'footer.background.color precisa usar hexadecimal com 6 dígitos.';
     var footerImages = ['.jpg','.jpeg','.png','.webp','.avif','.gif','.svg'];
     if (footerBg.image && !caminhoDeMidiaValido(footerBg.image, footerImages)) return 'footer.background.image aponta para uma imagem inválida.';
