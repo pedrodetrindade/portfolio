@@ -92,6 +92,14 @@ consequências já custaram caro e não podem voltar:
   não por observador. Sem isso, tudo abaixo da primeira dobra fica invisível.
 - `loading="lazy"` nunca carrega. Nenhuma imagem do site pode usá-lo.
 
+As posições medidas por `medirAlvos` envelhecem toda vez que a altura do
+conteúdo muda, e isso acontece sempre que uma imagem carrega numa galeria
+adaptativa (a proporção real só é aplicada no `load`). No ramo suave, o
+`ResizeObserver` do `.smooth-holder` remede; sem holder (toque, movimento
+reduzido, `?nosmooth=1`) o mesmo papel é de um `ResizeObserver` no `<main>`.
+Sem ele, no celular, lâminas, painéis e banners largos ficavam em branco na
+tela e só entravam centenas de pixels depois.
+
 Âncoras também precisam de tradução: a posição do alvo na tela vem do transform
 atrasado, então o clique em `a[href^="#"]` é interceptado e convertido para
 coordenada de conteúdo antes de rolar.

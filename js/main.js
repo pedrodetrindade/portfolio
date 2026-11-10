@@ -1701,6 +1701,20 @@
     }, { passive: true });
     if (window.ResizeObserver) new ResizeObserver(medir).observe(holder);
     acordar();
+  } else if (window.ResizeObserver && document.querySelector('main')) {
+    /* Sem o .smooth-holder (toque, ?nosmooth=1) ninguém remedia as posições
+       quando uma imagem carrega e uma galeria adaptativa muda de altura. Os
+       blocos de baixo guardavam o topo antigo e só entravam centenas de pixels
+       depois de já estarem na tela, deixando o espaço em branco. O ramo suave
+       resolve isso com o observador do holder; aqui o papel é do <main>. */
+    new ResizeObserver(() => {
+      if (scrubWords.length) measureWords();
+      medirAlvos();
+      medirFundos();
+      medirClaros();
+      medirSpy();
+      readScroll();
+    }).observe(document.querySelector('main'));
   }
 
   /* ================== CURSOR ORB OPCIONAL ==================

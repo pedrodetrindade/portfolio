@@ -156,8 +156,8 @@
           "alt": "Painel da Twitch com os benefícios de ser inscrito"
         },
         {
-          "src": "assets/uploads/dgzin/badges-sub.webp",
-          "alt": "Seis badges de inscrito em forma de coroa, uma cor para cada tempo de assinatura"
+          "src": "assets/uploads/dgzin/badges-ficha.webp",
+          "alt": "Ficha das seis badges de inscrito em forma de coroa, de 1 a 12 meses, cada uma nos tamanhos de 72, 36 e 18 pixels"
         }
       ],
       "layout": "adaptive"
