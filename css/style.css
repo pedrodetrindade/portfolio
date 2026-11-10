@@ -2627,13 +2627,17 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
    do texto. O canvas tem um ponto por pixel e é ampliado com pixelated, então
    o ponto sai nítido em qualquer densidade de tela. Entra por fundido longo e
    linear, como as outras camadas grandes. */
-.site-footer-dither{position:absolute;inset:0;overflow:hidden;
+/* 30% menos visível, a pedido: a camada inteira a 70% de opacidade baixa o
+   contraste de cada ponto contra o fundo exatamente em 30%, sem mexer no
+   desenho das ondas, na velocidade nem na borracha. A reserva sem WebGL2
+   desce na mesma proporção (.4 para .28). */
+.site-footer-dither{position:absolute;inset:0;overflow:hidden;opacity:.7;
   --dither-low:var(--ink-3);--dither-mid:rgb(var(--warm-rgb));--dither-high:var(--muted-2)}
 .dither-canvas{position:absolute;top:0;left:0;image-rendering:pixelated;opacity:0;
   transition:opacity var(--dur-slow) linear}
 .dither-canvas.is-pronto{opacity:1}
 /* sem WebGL2 (ou contexto perdido): grade de pontos parada, só no horizonte */
-.site-footer-dither.sem-webgl{opacity:.4;
+.site-footer-dither.sem-webgl{opacity:.28;
   background-image:radial-gradient(var(--dither-mid) .6px,transparent .9px);background-size:6px 6px;
   -webkit-mask-image:radial-gradient(ellipse 42% 38% at 50% 100%,#000,transparent);
           mask-image:radial-gradient(ellipse 42% 38% at 50% 100%,#000,transparent)}
@@ -2916,8 +2920,10 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 @media(min-width:860px){
   .work-intro{grid-template-columns:minmax(0,1fr) minmax(0,24rem);column-gap:clamp(2rem,5vw,5rem)}
   .wi-title{grid-column:1;grid-row:1}
-  .wi-context{grid-column:2;grid-row:1;align-self:end;margin-top:0;
-    padding-bottom:calc(var(--wi-size) * .12)}
+  /* alinhado à direita, a pedido: as linhas terminam na mesma borda dos
+     cards de baixo (a linha do grid), e o texto lê como legenda do título */
+  .wi-context{grid-column:2;grid-row:1;align-self:end;justify-self:end;margin-top:0;
+    text-align:right;padding-bottom:calc(var(--wi-size) * .12)}
   .wi-all{grid-column:2;grid-row:2;align-self:start}
 }
 

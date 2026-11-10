@@ -535,8 +535,9 @@ painel novo precisa do mesmo. Foi o que escondia o e-mail e o botão de copiar
 do formulário em notebook (768px de altura), e só aparecia com zoom em 80%.
 
 **A abertura de `#work` é o título à esquerda e um texto só à direita**,
-alinhado à última linha dele (`.work-intro`, grid de duas colunas a partir de
-860px; no celular o texto desce). Eram dois textos numa faixa própria embaixo
+alinhado à última linha dele e à direita, terminando na mesma borda dos
+cards (`.work-intro`, grid de duas colunas a partir de 860px; no celular o
+texto desce e volta a alinhar à esquerda). Eram dois textos numa faixa própria embaixo
 do título (contexto e "texto lateral"); Pedro pediu um texto só, ao lado, e a
 abertura perdeu essa faixa. `work.asidePt/En` saiu do `home.json`, do HTML, do
 render e do painel; o texto unido mora em `work.contextPt/En` ("Texto ao lado
@@ -805,6 +806,9 @@ versão é a constante `DITHER_V` lá dentro. Ao editar `dither-field.js`, suba
   (`--warm-rgb`) e `--dither-high` (`--muted-2`). Já foi `--accent` e, antes,
   `--cream`: a cada volta Pedro pediu mais suave. Intensidade .26, velocidade
   .5, ponto de 2px e 60 quadros por segundo (a 30 a onda andava em degraus).
+  Por cima disso, a camada inteira está a 70% de opacidade: Pedro pediu o
+  dither 30% menos visível, e a opacidade baixa o contraste de cada ponto
+  contra o fundo exatamente nessa medida, sem mexer no desenho.
   A crista é `pow(s, 2.5)`, mais larga que a `s^4` do original: os pontos
   acendem num gradiente longo em vez de numa faixa dura, e por cobrir mais
   área a intensidade desceu junto.
