@@ -26,7 +26,7 @@
   var DITHER_V = 9;
   var DITHER_CAPA_V = 3;
   var ASSINATURA_V = 1;
-  var CRACHA_V = 7;
+  var CRACHA_V = 8;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -531,7 +531,9 @@
       '<div class="site-footer-inner wrap">' +
         '<div class="site-footer-grid">' +
           '<section class="site-footer-contact" aria-labelledby="site-footer-title">' +
-            '<p class="site-footer-kicker" data-pt="' + esc(f.kickerPt || 'Contato') + '" data-en="' + esc(f.kickerEn || 'Contact') + '">' + esc(f.kickerPt || 'Contato') + '</p>' +
+            /* footer.showKicker:false tira o rótulo pequeno sem apagar o texto;
+               ausência do campo é ligado, como showLabel e showEyebrow */
+            (f.showKicker !== false ? '<p class="site-footer-kicker" data-pt="' + esc(f.kickerPt || 'Contato') + '" data-en="' + esc(f.kickerEn || 'Contact') + '">' + esc(f.kickerPt || 'Contato') + '</p>' : '') +
             '<h2 id="site-footer-title" data-pt="' + esc(f.headlinePt || 'Projetos, colaborações e novas conversas.') + '" data-en="' + esc(f.headlineEn || 'Projects, collaborations and new conversations.') + '">' + esc(f.headlinePt || 'Projetos, colaborações e novas conversas.') + '</h2>' +
             '<p class="site-footer-support" data-pt="' + esc(f.supportPt || '') + '" data-en="' + esc(f.supportEn || '') + '">' + esc(f.supportPt || '') + '</p>' +
             (showEmail ? '<div class="site-footer-email-row"><a class="site-footer-email" href="mailto:' + esc(email) + '">' + esc(email) + ' <span aria-hidden="true">↗</span></a>' +

@@ -1644,6 +1644,7 @@
   function renderHeaderFooter() {
     var h = state.global.header;
     document.getElementById('headerBody').innerHTML =
+      fieldRow('Mostrar menu central', 'O botão Menu no meio do header, que abre a lista de seções. Desligado, o botão some e o código continua pronto para voltar.', switchControl('hdr_menu', h.showMenu !== false)) +
       fieldRow('Mostrar seletor de idioma', '', switchControl('hdr_lang', h.showLanguageSwitch)) +
       fieldRow('Mostrar botão de contato', '', switchControl('hdr_contact', h.showContactButton)) +
       h.menu.map(function (item, i) {
@@ -1656,6 +1657,8 @@
             }).join('') + '</select>') +
           fieldRow('Mostrar item', '', switchControl('menu_' + i + '_visible', item.visible !== false));
       }).join('');
+    /* ausência é ligado: religar apaga o campo, como nos outros interruptores */
+    bindSwitch('hdr_menu', function (v) { if (v) delete state.global.header.showMenu; else state.global.header.showMenu = false; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('hdr_lang', function (v) { state.global.header.showLanguageSwitch = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('hdr_contact', function (v) { state.global.header.showContactButton = v; markDirty('content/global.json', state.global, state.globalSha); });
     h.menu.forEach(function (item, i) {
@@ -1689,6 +1692,7 @@
     var bgType = ['solid', 'image', 'video', 'dither'].indexOf(bg.type) !== -1 ? bg.type : 'solid';
     document.getElementById('footerBody').innerHTML =
       '<p class="hint">O mesmo footer aparece na Home, em Todos os Trabalhos e em todos os cases. Campos opcionais vazios usam o fallback seguro do site.</p>' +
+      fieldRow('Mostrar chamada curta', 'O rótulo pequeno acima da headline. Desligar preserva o texto.', switchControl('foot_show_kicker', f.showKicker !== false)) +
       fieldRow('Chamada curta (PT)', '', inp('foot_kpt', f.kickerPt || 'Contato')) +
       fieldRow('Chamada curta (EN)', '', inp('foot_ken', f.kickerEn || 'Contact')) +
       fieldRow('Headline (PT)', '', ta('foot_hpt', f.headlinePt || 'Projetos, colaborações e novas conversas.')) +
@@ -1744,7 +1748,7 @@
     bindEmail('soc_em', function (v) { state.global.social.email = v; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('soc_li_active', function (v) { if (v) delete s.linkedinActive; else s.linkedinActive = false; markDirty('content/global.json', state.global, state.globalSha); });
     bindSwitch('soc_be_active', function (v) { if (v) delete s.behanceActive; else s.behanceActive = false; markDirty('content/global.json', state.global, state.globalSha); });
-    [['foot_show_email','showEmail'],['foot_show_copy','showCopyEmail'],['foot_show_nav','showNavigation'],['foot_show_social','showSocial'],['foot_show_signature','showSignature'],['foot_show_hand','showHandSignature']].forEach(function (entry) {
+    [['foot_show_kicker','showKicker'],['foot_show_email','showEmail'],['foot_show_copy','showCopyEmail'],['foot_show_nav','showNavigation'],['foot_show_social','showSocial'],['foot_show_signature','showSignature'],['foot_show_hand','showHandSignature']].forEach(function (entry) {
       bindSwitch(entry[0], function (enabled) { if (enabled) delete f[entry[1]]; else f[entry[1]] = false; saveFooter(); });
     });
     bindSwitch('foot_grain', function (enabled) { if (enabled) delete f.grainEnabled; else f.grainEnabled = false; saveFooter(); renderHeaderFooter(); });

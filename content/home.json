@@ -141,7 +141,8 @@
     "resumeFile": "assets/uploads/curriculo/pedro-de-trindade-cv-pt.pdf",
     "resumeFileEn": "assets/uploads/curriculo/pedro-de-trindade-cv-en.pdf",
     "resumeLabelPt": "Currículo",
-    "resumeLabelEn": "CV"
+    "resumeLabelEn": "CV",
+    "showKicker": false
   },
   "help": {
     "kickerPt": "atuação",
@@ -271,7 +272,8 @@
           }
         ]
       }
-    ]
+    ],
+    "showKicker": false
   },
   "faq": {
     "titlePt": "Perguntas frequentes",

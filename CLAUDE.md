@@ -404,6 +404,15 @@ deixa o fundo inerte: é painel, não modal. A carência de 170ms e a ponte
 invisível `.overlay.dropdown::before` cobrem o vão entre botão e painel; sem
 elas o cursor sai da região interativa no meio do caminho e o menu pisca.
 
+**O menu central está desativado, não apagado** (pedido de Pedro):
+`global.json > header.showMenu:false`, interruptor "Mostrar menu central" no
+painel (ausência = ligado; religar apaga o campo). O `main.js` lê o campo em
+`menuLigado`, põe `.menu-desligado` no `<html>` e marca a `.ctrl-group` como
+`inert`; o clique e o hover que abriam o painel não são armados. A pílula some
+por `visibility:hidden`, não por `display:none`, para continuar ocupando a
+coluna do meio do grid `1fr auto 1fr` do header. A marcação do painel do menu
+continua sendo injetada: religar no painel devolve tudo como era.
+
 **`setLang` roda durante o IIFE nas páginas sem portal.** Qualquer `const`
 declarada depois dele e usada dentro dele estoura na zona morta temporal e
 mata o resto do script, deixando todo `.reveal` invisível. Foi o que aconteceu
@@ -559,6 +568,26 @@ levemente diferente de Trabalhos, dither suave e passagem suave entre as duas.
   e se apagam antes da coluna de texto (que começa em 51% da largura a partir
   de 900px e em 43% no tablet, medido); no celular, só nos respiros de cima e
   de baixo. Mexeu no grid do Sobre, remeça e mova os stops da máscara.
+- **A névoa desce além do Sobre, até o cabeçalho de "O que eu faço".** A
+  distância muda com a altura da tela (`#help` é 100svh centrado), então o
+  `main.js` mede em `medirExtensaoDoSobre()`, chamada no começo de
+  `medirFundos()`: topo do `.help-head` menos o fim do `.about-break`, menos
+  24px, publicado como `--sobre-pontos-extra` no `.about-break`. O
+  `.about-pontos` desce essa altura e se apaga na própria entrada de baixo;
+  no celular a faixa de baixo soma a extensão. Para a camada poder sair da
+  seção, o Sobre corta só nas laterais (`overflow-x:clip;overflow-y:visible`,
+  dentro de `@supports`: sem clip, `visible` ao lado de `hidden` vira `auto`
+  e abriria uma rolagem dentro da seção). `#help` vem depois no documento, então
+  o conteúdo dele pinta por cima dos pontos.
+- **Sem rótulos pequenos** em Sobre, "O que eu faço" e no "Contato" do rodapé,
+  a pedido: `about.showKicker` e `help.showKicker` em `false`, e o rodapé ganhou
+  o mesmo interruptor (`footer.showKicker`, "Mostrar chamada curta" no painel,
+  já na lista de chaves do Worker). O texto continua gravado nos três.
+- **O nome no título do Sobre é calibrado para caber numa linha.** Ocupa 7,74x
+  o `font-size` (medido), e a coluna de texto tem ~90% da tela no celular, ~54%
+  no tablet e ~46% a partir de 900px; com 5% de folga, `11vw` / `6,6vw` /
+  `clamp(3.1rem,5.6vw,5rem)`. Dá 80px a 1920 (era 54) e 43 no celular (era 30).
+  Mexer na fonte, no peso ou no tracking do título exige remedir.
 - **Espaço entre seções em volta do Sobre (CMS, `sections.*.spacing*`).** Para
   afastar o Sobre de Trabalhos, o que cresce é `work.spacingBottom` (170 / 130
   / 120), não `about.spacingTop`: o cordão do crachá parte do topo do
@@ -834,9 +863,11 @@ amplitude entra em 2,5s. Medido: no máximo 2,3px, 1,1px e 0,7 grau de giro no
 plano. **O giro no plano vem do cordão inteiro (âncora até a presilha), com
 piso de 180px no comprimento**: medido nos últimos quatro trechos, como era no
 arraste, o cordão curto do Sobre transformava 2px de respiro em 8 a 10 graus.
-A física continua: a presilha anda por uma mola amortecida no crítico
-(`W_CASA` 6); com a ponta solta na corda, o cordão virava pêndulo e devolvia
-30 a 70px de sobressalto (simulado). Só o meio do cordão é verlet. O laço
+A presilha anda por uma mola amortecida no crítico (`W_CASA` 6). **O cordão é
+uma linha reta da âncora à presilha, não mais uma corda de verlet**: com o
+respiro de 2px, os pontos do meio faziam ondas em S que a curva suave
+transformava numa dobra da fita logo acima da presilha (Pedro viu o cordão
+"bugado"). Pendurado pelo peso, o cordão fica esticado; reto é o certo. O laço
 dorme com a aba oculta e longe da seção, pelo mesmo `.parado` que o `main.js`
 põe em `[data-sobre-dither]`; o tempo do respiro só anda com o laço acordado.
 Entra por fundido da figura inteira, parado no lugar. A máscara de baixo para

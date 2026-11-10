@@ -9,17 +9,22 @@
    1,2px para cima e para baixo em 4,6s (o ritmo de uma respiração calma), e o
    cartão gira em Y menos de 2 graus num terceiro período. Os três períodos
    não se dividem uns pelos outros, então o desenho não se repete de um jeito
-   que o olho perceba. A física é a de antes: a mola amortecida no crítico leva
-   a presilha até esse alvo, o meio do cordão é verlet e o cartão se alinha
-   aos últimos trechos dele, então a corda e o giro acompanham sozinhos, sem
-   animação desenhada à parte.
+   que o olho perceba. Uma mola amortecida no crítico leva a presilha até esse
+   alvo, e o cartão gira pela direção do cordão.
+
+   O cordão é uma linha reta da âncora (topo da seção) até a presilha, e não
+   mais uma corda de verlet. A corda física fazia sentido com arraste; com um
+   respiro de 2px, os pontos do meio, presos entre gravidade, atrito e a
+   restrição de distância, faziam pequenas ondas em S que a curva suave
+   transformava numa dobra da fita logo acima da presilha (Pedro viu o
+   cordão "bugado"). Um crachá pendurado deixa o cordão esticado pelo peso:
+   reto é o certo, e não tem como dobrar.
 
    O original é 3D de verdade (three.js, física rapier, malha do cordão): mais
    de meio megabyte para uma foto. Aqui é 2,5D e sem biblioteca:
-   - o cordão é uma corda de verlet (pontos com gravidade e restrição de
-     distância, um pouco elástica), desenhada num <path> de SVG;
-   - o crachá é preso na ponta da corda e gira por uma mola amortecida que o
-     alinha aos últimos trechos do cordão;
+   - o cordão é um <path> de SVG reto, com o nome correndo dentro dele;
+   - o crachá é preso na ponta e gira por uma mola amortecida que o alinha ao
+     cordão;
    - o alvo da mola é a posição de layout mais o respiro, então o grid nunca
      muda: a foto oscila em volta de onde sempre esteve.
    Entra por fundido, não pela máscara de baixo para cima das outras imagens,
@@ -36,12 +41,7 @@
   'use strict';
   if (window.__CRACHA__) return;
 
-  const PASSOS = 12;          // trechos do cordão
-  const G = 2200;             // gravidade, px/s²
   const DT = 1 / 60;
-  const ITER = 8;
-  const RIGIDEZ = 0.92;       // < 1: o cordão estica um pouco, como elástico
-  const ATRITO = 0.94;        // perda de velocidade do meio do cordão, por passo
   const W_CASA = 6;           // mola da presilha (rad/s), amortecida no crítico
   const ABA = 16;             // altura da presilha acima do cartão
   /* respiro: amplitude e período de cada eixo */
@@ -106,7 +106,8 @@
     figura.insertBefore(svg, figura.firstChild);
 
     /* ---- física ---- */
-    let pts = [], casa = { x: 0, y: 0 }, ancora = { x: 0, y: 0 }, trecho = 1;
+    let casa = { x: 0, y: 0 }, ancora = { x: 0, y: 0 };
+    const ponta = { x: 0, y: 0 };
     let theta = 0, omega = 0, giro = 0, tempo = 0;
     const velPonta = { x: 0, y: 0 };
     let raf = 0, ultimo = 0, sobra = 0;
@@ -122,41 +123,16 @@
       const alvoY = casa.y + onda(RESPIRO.y, tempo + 1.3) * forca;
       giro = onda(RESPIRO.giro, tempo + 2.1) * forca;
 
-      const g = G * DT * DT;
-      const ponta = pts[pts.length - 1];
-      /* A ponta (onde o crachá prende) não é corda livre: com ela solta, o
-         cordão virava pêndulo e devolvia 30 a 70px de sobressalto mesmo com
-         muito atrito (simulado). Ela anda por uma mola amortecida no crítico
-         até o alvo do respiro, sem passar do ponto. */
-      ponta.px = ponta.x; ponta.py = ponta.y;
+      /* A presilha anda por uma mola amortecida no crítico até o alvo do
+         respiro, sem passar do ponto. */
       velPonta.x += (W_CASA * W_CASA * (alvoX - ponta.x) - 2 * W_CASA * velPonta.x) * DT;
       velPonta.y += (W_CASA * W_CASA * (alvoY - ponta.y) - 2 * W_CASA * velPonta.y) * DT;
       ponta.x += velPonta.x * DT; ponta.y += velPonta.y * DT;
-      /* o meio do cordão é verlet com gravidade, só para ter a curva viva */
-      for (let i = 1; i < pts.length - 1; i++) {
-        const p = pts[i];
-        const vx = (p.x - p.px) * ATRITO, vy = (p.y - p.py) * ATRITO;
-        p.px = p.x; p.py = p.y;
-        p.x += vx; p.y += vy + g;
-      }
-      for (let k = 0; k < ITER; k++) {
-        for (let i = 0; i < pts.length - 1; i++) {
-          const a = pts[i], b = pts[i + 1];
-          const dx = b.x - a.x, dy = b.y - a.y;
-          const d = Math.hypot(dx, dy) || 0.0001;
-          const wa = a.w, wb = b.w;
-          if (wa + wb === 0) continue;
-          const dif = (d - trecho) / d * RIGIDEZ;
-          a.x += dx * dif * wa / (wa + wb); a.y += dy * dif * wa / (wa + wb);
-          b.x -= dx * dif * wb / (wa + wb); b.y -= dy * dif * wb / (wa + wb);
-        }
-      }
-      /* O cartão se alinha ao cordão inteiro, da âncora à presilha, e não aos
-         últimos trechos dele: com o cordão curto do Sobre (60 a 100px), 2px
-         de respiro no fim viravam 8 a 10 graus de giro (medido). O comprimento
-         de referência tem piso de 180px, então o giro do respiro fica abaixo
-         de 1 grau em qualquer altura de seção. Mola com amortecimento acima
-         do crítico: ele acompanha sem sacudir. */
+      /* O cartão gira pela direção do cordão. O comprimento de referência tem
+         piso de 180px: com o cordão curto do Sobre (60 a 100px), 2px de
+         respiro virariam giro demais; assim ele fica abaixo de 1 grau em
+         qualquer altura de seção. Mola com amortecimento acima do crítico:
+         ele acompanha sem sacudir. */
       const alvoTheta = Math.atan2(-(ponta.x - ancora.x), Math.max(180, ponta.y - ancora.y));
       omega += (60 * (alvoTheta - theta) - 18 * omega) * DT;
       theta += omega * DT;
@@ -170,40 +146,19 @@
          getBoundingClientRect devolveria a caixa do cartão inclinado. */
       casa = { x: cartao.offsetLeft + cartao.offsetWidth / 2, y: cartao.offsetTop - ABA };
       ancora = { x: casa.x, y: (rs.top - rf.top) + 1 };
-      const total = Math.max(40, casa.y - ancora.y);
-      trecho = total / PASSOS;
-      /* As duas pontas do cordão são fixas na corda (peso 0): a âncora no
-         topo da seção e a presilha, que tem a própria mola. Com o comprimento
-         igual à distância, em repouso o cordão fica reto e a foto exatamente
-         no lugar dela no grid, sem calibração. */
-      pts = [];
-      for (let i = 0; i <= PASSOS; i++) {
-        const y = ancora.y + trecho * i;
-        pts.push({ x: casa.x, y, px: casa.x, py: y, w: i === 0 || i === PASSOS ? 0 : 1 });
-      }
+      /* em repouso o cordão é vertical e a foto fica exatamente no lugar
+         dela no grid, sem calibração */
+      ponta.x = casa.x; ponta.y = casa.y;
       velPonta.x = velPonta.y = 0;
       theta = omega = 0;
       desenhar();
     }
 
-    function caminho(pontos) {
-      /* curva suave pelos pontos (Catmull-Rom convertido em Bézier) */
-      let d = 'M' + pontos[0].x.toFixed(1) + ' ' + pontos[0].y.toFixed(1);
-      for (let i = 0; i < pontos.length - 1; i++) {
-        const p0 = pontos[i - 1] || pontos[i], p1 = pontos[i], p2 = pontos[i + 1], p3 = pontos[i + 2] || p2;
-        const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
-        const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
-        d += 'C' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ' ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1) + ' ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1);
-      }
-      return d;
-    }
-
     function desenhar() {
-      if (!pts.length) return;
-      const d = caminho(pts);
+      /* cordão reto da âncora à presilha: esticado pelo peso, sem dobra */
+      const d = 'M' + ancora.x.toFixed(2) + ' ' + ancora.y.toFixed(2) + 'L' + ponta.x.toFixed(2) + ' ' + ponta.y.toFixed(2);
       fita.setAttribute('d', d);
       trilho.setAttribute('d', d);
-      const ponta = pts[pts.length - 1];
       const tx = ponta.x - casa.x, ty = ponta.y - casa.y;
       cartao.style.transform = 'translate3d(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px,0) rotate(' +
         theta.toFixed(4) + 'rad) rotateY(' + giro.toFixed(4) + 'rad)';

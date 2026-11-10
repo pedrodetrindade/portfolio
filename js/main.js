@@ -130,6 +130,15 @@
 
   const cfgMenu = (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.header && Array.isArray(window.__CMS_GLOBAL__.header.menu) && window.__CMS_GLOBAL__.header.menu.length)
     ? window.__CMS_GLOBAL__.header.menu : [];
+  /* Menu central desativado, não apagado (pedido de Pedro):
+     global.json > header.showMenu:false, interruptor "Mostrar menu central"
+     no painel. A marcação do painel do menu continua sendo injetada; o que
+     some é o botão do meio do header, e com ele o clique, o hover e o foco
+     que abriam o painel. Ausência do campo é ligado. */
+  const menuLigado = !(window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.header &&
+    window.__CMS_GLOBAL__.header.showMenu === false);
+  document.documentElement.classList.toggle('menu-desligado', !menuLigado);
+  document.querySelectorAll('header .ctrl-group').forEach(g => { g.inert = !menuLigado; });
 
   /* O painel de contato lê o e-mail AQUI, e não por js/content-render.js como
      o resto do site: aquele arquivo roda antes deste, e o painel só existe
@@ -1342,7 +1351,7 @@
       rolarProgramaticamente(0);
       return;
     }
-    if (openMenu) {
+    if (openMenu && menuLigado) {
       e.preventDefault();
       /* clique alterna, para quem prefere clicar e para o teclado */
       if (menu.classList.contains('open')) closeOverlays();
@@ -1363,8 +1372,9 @@
   /* ---- menu por hover no desktop ----
      Abre sem atraso, fecha com 170ms de carência. A região interativa cobre
      o botão, o painel e a ponte invisível entre eles, então o cursor pode
-     atravessar o vão sem piscar. */
-  if (fine) {
+     atravessar o vão sem piscar. Com o menu desligado (menuLigado), nada
+     disso é armado. */
+  if (fine && menuLigado) {
     menu.classList.add('dropdown');
     const trigger = document.querySelector('[data-menu]');
     const sheet = menu.querySelector('.overlay-sheet');
@@ -1789,8 +1799,23 @@
      opacidade acompanha a última altura do desfoque de rolagem, sem salto. */
   let fundos = [];
   const bordaEl = document.querySelector('.edge-blur');
-  let fimDither = null, alturaBorda = 0, opacBorda = -1;
+  let fimDither = null, alturaBorda = 0, opacBorda = -1, extraSobre = -1;
+  /* A névoa do Sobre desce até o cabeçalho de "O que eu faço". A distância
+     muda com a altura da tela (#help é 100svh com o conteúdo centrado), então
+     é medida aqui, antes dos fundos, para o host do dither já entrar na conta
+     com a altura nova. Diferença entre dois retângulos do mesmo conteúdo: o
+     transform do .smooth-holder não altera. */
+  const medirExtensaoDoSobre = () => {
+    const sobre = document.querySelector('.about-break');
+    if (!sobre) return;
+    const cab = document.querySelector('#help:not([hidden]) .help-head');
+    const extra = cab ? Math.max(0, Math.round(cab.getBoundingClientRect().top - sobre.getBoundingClientRect().bottom - 24)) : 0;
+    if (extra === extraSobre) return;
+    extraSobre = extra;
+    sobre.style.setProperty('--sobre-pontos-extra', extra + 'px');
+  };
   const medirFundos = () => {
+    medirExtensaoDoSobre();
     fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither],[data-sobre-dither]')].map(el => {
       const r = el.getBoundingClientRect();
       return { el, topo: r.top + posVisual, base: r.bottom + posVisual, ativo: null };

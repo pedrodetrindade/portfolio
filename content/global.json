@@ -147,7 +147,8 @@
         "hrefHome": "index.html#contact",
         "hrefWork": "index.html#contact"
       }
-    ]
+    ],
+    "showMenu": false
   },
   "footer": {
     "kickerPt": "Contato",
@@ -173,7 +174,8 @@
       "poster": "",
       "overlayOpacity": 0
     },
-    "topSpacing": 48
+    "topSpacing": 48,
+    "showKicker": false
   },
   "social": {
     "linkedin": "https://www.linkedin.com/in/pedrodetrindade",
