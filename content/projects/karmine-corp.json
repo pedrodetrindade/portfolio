@@ -1,0 +1,117 @@
+{
+  "$schema": "Conteúdo completo do projeto. 'blocks' descreve, NA ORDEM, o que aparece na página depois da capa. Tipos aceitos: text (rótulo + parágrafo), gallery (grade de imagens), image (uma imagem, fit cover|auto e width content|full), quote (citação + autor) e video (mode file|vimeo). Blocos de texto vizinhos são agrupados numa seção só; cada bloco de outro tipo ganha a sua. Tipo ou campo fora dessa lista derruba a publicação com 422, nunca é descartado em silêncio. A navegação para o próximo projeto é calculada na hora a partir da ordem em projects/index.json — não existe campo prevProject/nextProject aqui.",
+  "slug": "karmine-corp",
+  "status": "published",
+  "client": "",
+  "year": 2023,
+  "category": "key visual, social media",
+  "services": [
+    "Direção de arte",
+    "Design gráfico"
+  ],
+  "seo": {
+    "title": "Karmine Corp · Pedro de Trindade",
+    "description": "Case: estudo independente de key visual e social media para a Karmine Corp no VCT LOCK//IN, em São Paulo. Direção de arte e design por Pedro de Trindade."
+  },
+  "hero": {
+    "eyebrowPt": "key visual",
+    "eyebrowEn": "key visual",
+    "titlePt": "Karmine Corp",
+    "titleEn": "Karmine Corp",
+    "subtitlePt": "Estudo criativo independente de key visual e social media para a Karmine Corp no VCT LOCK//IN, o campeonato internacional de VALORANT disputado em São Paulo.\nUm sistema de peças para dia de jogo, chegada e despedida de jogadores e resultado das partidas, em versões para feed e stories.",
+    "subtitleEn": "An independent creative study of key visual and social media for Karmine Corp at VCT LOCK//IN, the international VALORANT tournament held in São Paulo.\nA system of pieces for game days, player arrivals and farewells, and match results, in feed and story formats.",
+    "rolePt": "Direção de Arte & Design",
+    "roleEn": "Art Direction & Design",
+    "scopePt": "Key Visual, Social Media, Stories e Mockups",
+    "scopeEn": "Key Visual, Social Media, Stories & Mockups"
+  },
+  "cover": "assets/uploads/karmine-corp/capa.webp",
+  "coverMobile": "",
+  "caseCover": "assets/uploads/karmine-corp/capa-case.webp",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "Projeto autoral, sem vínculo oficial com a Karmine Corp. O objetivo foi criar um key visual para o VCT LOCK//IN, em São Paulo, e testar como ele se desdobraria na comunicação do time durante o campeonato. Algumas fotografias vêm dos arquivos da Karmine Corp, da Team Liquid e de VALORANT e foram usadas de forma transformadora, sem fins comerciais.",
+      "textEn": "A self-initiated project with no official affiliation with Karmine Corp. The goal was to create a key visual for VCT LOCK//IN in São Paulo and test how it would unfold across the team's communication during the tournament. Some photographs come from the Karmine Corp, Team Liquid, and VALORANT archives and were used in a transformative, non-commercial way."
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "O sistema parte do azul da Karmine Corp e de uma estrutura fixa: faixas tipográficas em loop no topo e na base, assinatura de patrocinadores e um bloco central que muda conforme a mensagem. Dele saem as peças de dia de jogo, as boas-vindas e despedidas de jogadores e os placares de vitória e derrota.",
+      "textEn": "The system starts from Karmine Corp blue and a fixed structure: looping type bands at the top and bottom, a sponsor strip, and a central block that changes with the message. From it come the game day pieces, the player welcomes and farewells, and the victory and defeat scorecards."
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "result",
+      "textPt": "Uma família de peças que troca de mensagem sem trocar de identidade, com versões para feed e stories e aplicação em mockups para conferir como o conteúdo apareceria depois de publicado.",
+      "textEn": "A family of pieces that changes its message without changing its identity, with feed and story versions and mockups to check how the content would look once published."
+    },
+    {
+      "type": "image",
+      "src": "assets/uploads/karmine-corp/capa.webp",
+      "alt": "Key visual de dia de jogo da Karmine Corp no VCT LOCK//IN, com logotipos dos times e foto de jogador",
+      "fit": "auto",
+      "width": "content",
+      "captionPt": "Key visual de dia de jogo.",
+      "captionEn": "Game day key visual."
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/karmine-corp/welcome-nivera.webp",
+          "alt": "Peça de boas-vindas ao jogador Nivera"
+        },
+        {
+          "src": "assets/uploads/karmine-corp/thanks-nivera.webp",
+          "alt": "Peça de despedida do jogador Nivera"
+        }
+      ],
+      "layout": "adaptive"
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/karmine-corp/victory.webp",
+          "alt": "Placar de vitória por 2 a 1"
+        },
+        {
+          "src": "assets/uploads/karmine-corp/defeat.webp",
+          "alt": "Placar de derrota por 2 a 0"
+        }
+      ],
+      "layout": "adaptive"
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "src": "assets/uploads/karmine-corp/story-gameday.webp",
+          "alt": "Story de dia de jogo"
+        },
+        {
+          "src": "assets/uploads/karmine-corp/story-welcome-scream.webp",
+          "alt": "Story de boas-vindas ao jogador ScreaM"
+        },
+        {
+          "src": "assets/uploads/karmine-corp/story-thanks-scream.webp",
+          "alt": "Story de despedida do jogador ScreaM"
+        },
+        {
+          "src": "assets/uploads/karmine-corp/story-victory.webp",
+          "alt": "Story de vitória"
+        },
+        {
+          "src": "assets/uploads/karmine-corp/story-defeat.webp",
+          "alt": "Story de derrota"
+        }
+      ],
+      "layout": "adaptive"
+    }
+  ]
+}

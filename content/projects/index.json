@@ -20,12 +20,12 @@
       "subtitleEn": "Assertivo School is an educational institution with a vibrant, contemporary identity and a close connection to its students.\nIts communication blends education, creativity, and dynamism to create a recognizable brand experience connected to school life.",
       "category": "branding, key visual",
       "tagsPt": [
-        "branding",
-        "design system"
+        "key visual",
+        "campanha"
       ],
       "tagsEn": [
-        "branding",
-        "design system"
+        "key visual",
+        "campaign"
       ],
       "year": 2024,
       "cover": "assets/uploads/case-01/kv1.webp",
@@ -57,28 +57,28 @@
       "coverLight": false
     },
     {
-      "slug": "case-03",
+      "slug": "karmine-corp",
       "visible": true,
       "featured": true,
       "cardSize": "normal",
       "order": 3,
-      "titlePt": "KARMINE CORP",
-      "titleEn": "KARMINE CORP",
-      "subtitlePt": "Fintech, ativos digitais",
-      "subtitleEn": "Fintech, digital assets",
-      "category": "direcao-criativa",
+      "titlePt": "Karmine Corp",
+      "titleEn": "Karmine Corp",
+      "subtitlePt": "Estudo criativo independente de key visual e social media para a Karmine Corp no VCT LOCK//IN, o campeonato internacional de VALORANT disputado em São Paulo.\nUm sistema de peças para dia de jogo, chegada e despedida de jogadores e resultado das partidas, em versões para feed e stories.",
+      "subtitleEn": "An independent creative study of key visual and social media for Karmine Corp at VCT LOCK//IN, the international VALORANT tournament held in São Paulo.\nA system of pieces for game days, player arrivals and farewells, and match results, in feed and story formats.",
+      "category": "key visual, social media",
       "tagsPt": [
-        "direção criativa",
-        "storytelling"
+        "key visual",
+        "social media"
       ],
       "tagsEn": [
-        "creative direction",
-        "storytelling"
+        "key visual",
+        "social media"
       ],
-      "year": 2025,
-      "cover": "assets/uploads/case-03/52689185354_19b2b87c84_k.webp",
+      "year": 2023,
+      "cover": "assets/uploads/karmine-corp/capa.webp",
       "coverMobile": "",
-      "coverLight": true
+      "coverLight": false
     },
     {
       "slug": "case-04",
