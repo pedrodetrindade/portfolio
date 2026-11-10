@@ -3,18 +3,6 @@
      continua legível caso este arquivo falhe ao carregar */
   document.documentElement.classList.add('js');
 
-  /* Endereço deste arquivo, para baixar efeitos sob demanda (cursor alvo) do
-     mesmo lugar, nos três jeitos que as páginas apontam para js/. Só existe
-     durante esta primeira execução, por isso fica no topo. */
-  const BASE_JS = document.currentScript && document.currentScript.src
-    ? document.currentScript.src.replace(/main\.js(\?.*)?$/, '') : '';
-  const CURSOR_ALVO_V = 1;
-  /* Cursor alvo montado (ou null). Declarado aqui em cima porque o laço de
-     rolagem (readScroll) já o consulta durante a inicialização, muito antes
-     do bloco do cursor: uma let declarada lá embaixo estouraria na zona
-     morta temporal e mataria o resto do script. */
-  let cursorAlvo = null;
-
   /* Largura útil da página, medida em vez de deduzida. Antes o sangramento era
      calc(100vw - --sbw), o que assumia que 100vw inclui a barra de rolagem. Isso
      era verdade, e deixou de ser quando o html ganhou scrollbar-gutter:stable:
@@ -2042,9 +2030,6 @@
        sem depender do limite proporcional à viewport. */
     pintarEntradas(noFimDaPagina ? Infinity : y + window.innerHeight * (estreito.matches ? .86 : .74));
     pintarFundos(y);
-    /* o conteúdo andou embaixo de um ponteiro parado: o cursor alvo reavalia
-       o que está sob ele (sem listener de scroll próprio) */
-    if (cursorAlvo) cursorAlvo.aoRolar();
   };
 
   /* sem suavização a posição visual é a própria rolagem; com ela, quem manda
@@ -2338,32 +2323,9 @@
   let modoCursorSelecionado = null;
   let destruirCursorOrb = null;
 
-  /* Três modos: nativo, 'orb' (bola + glow) e 'target' (cursor alvo, React
-     Bits Target Cursor, em js/cursor-alvo.js, baixado sob demanda). */
-  const MODOS_CURSOR = ['native', 'orb', 'target'];
   const modoCursorGlobal = () => {
     const effects = window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.effects;
-    const modo = effects && effects.cursor && effects.cursor.mode;
-    return MODOS_CURSOR.indexOf(modo) !== -1 ? modo : 'native';
-  };
-
-  /* Só com mouse de verdade e sem movimento reduzido, como o orb. O arquivo
-     vem depois do resto da página; se o modo mudar enquanto ele baixa (prévia
-     do painel), a montagem é descartada. */
-  const criarCursorAlvo = () => {
-    const podeCursor = window.matchMedia('(pointer: fine) and (hover: hover)').matches;
-    if (!podeCursor || reduced) return;
-    const montarAgora = () => {
-      if (modoCursorSelecionado !== 'target' || cursorAlvo || !window.__CURSOR_ALVO__) return;
-      cursorAlvo = window.__CURSOR_ALVO__.montar();
-      destruirCursorOrb = () => { if (cursorAlvo) cursorAlvo.destruir(); cursorAlvo = null; };
-    };
-    if (window.__CURSOR_ALVO__) { montarAgora(); return; }
-    const s = document.createElement('script');
-    s.src = BASE_JS + 'cursor-alvo.js?v=' + CURSOR_ALVO_V;
-    s.async = true;
-    s.onload = montarAgora;
-    document.head.appendChild(s);
+    return effects && effects.cursor && effects.cursor.mode === 'orb' ? 'orb' : 'native';
   };
 
   const criarCursorOrb = () => {
@@ -2441,13 +2403,12 @@
   };
 
   const aplicarModoCursor = modo => {
-    const proximo = MODOS_CURSOR.indexOf(modo) !== -1 ? modo : 'native';
+    const proximo = modo === 'orb' ? 'orb' : 'native';
     if (proximo === modoCursorSelecionado) return;
     if (destruirCursorOrb) destruirCursorOrb();
     destruirCursorOrb = null;
     modoCursorSelecionado = proximo;
     if (proximo === 'orb') destruirCursorOrb = criarCursorOrb();
-    else if (proximo === 'target') criarCursorAlvo();
   };
 
   window.__CMS_APPLY_CURSOR__ = aplicarModoCursor;

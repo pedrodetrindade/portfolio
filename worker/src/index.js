@@ -181,7 +181,7 @@ function erroNosEfeitosGlobais(effects) {
     if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor)) return 'effects.cursor precisa ser um objeto.';
     var cursorExtra = Object.keys(cursor).filter(function (k) { return k !== 'mode'; });
     if (cursorExtra.length) return 'effects.cursor tem campo desconhecido: ' + cursorExtra.join(', ') + '.';
-    if (['native', 'orb', 'target'].indexOf(cursor.mode) === -1) return 'effects.cursor.mode precisa ser native, orb ou target.';
+    if (['native', 'orb'].indexOf(cursor.mode) === -1) return 'effects.cursor.mode precisa ser native ou orb.';
   }
   return null;
 }

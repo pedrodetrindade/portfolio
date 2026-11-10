@@ -180,30 +180,6 @@ p[data-pt][data-en]{text-wrap:pretty}
   transition:opacity var(--dur-micro) var(--ease-soft)}
 .cursor-orb-layer.on .cursor-orb-dot{opacity:1}
 
-/* ===== CURSOR ALVO (effects.cursor.mode 'target', js/cursor-alvo.js) =====
-   Quatro cantos, um ponto e um rótulo, cada um fixo e solto no <body> com a
-   própria mistura por diferença: a área misturada é só a de cada peça, nunca
-   a janela inteira (blend em tela cheia custa como um blur, ver CLAUDE.md).
-   O #ffffff do painel do React Bits virou --paper. will-change aqui é
-   exceção consciente: são peças de poucos pixels que andam a cada quadro. */
-:root{--cursor-alvo-cor:var(--paper)}
-.cursor-alvo-canto,.cursor-alvo-ponto,.cursor-alvo-rotulo{position:fixed;top:0;left:0;
-  z-index:2147483000;pointer-events:none;mix-blend-mode:difference;opacity:0;will-change:transform}
-.cursor-alvo-canto{box-sizing:border-box;border-style:solid;border-color:var(--cursor-alvo-cor);
-  transform-origin:0 0}
-.cursor-alvo-ponto{border-radius:50%;background:var(--cursor-alvo-cor)}
-.cursor-alvo-rotulo{font-family:var(--font);font-size:12px;font-weight:var(--w-medium);line-height:1;
-  letter-spacing:.01em;white-space:nowrap;color:var(--cursor-alvo-cor)}
-/* cursor do sistema escondido em tudo, menos nos campos de texto, onde o
-   I-beam diz onde o texto vai entrar (e o alvo some, pelo JS); !important
-   porque o nome da capa e o arraste escrevem cursor direto no elemento */
-html.cursor-alvo,html.cursor-alvo *{cursor:none!important}
-html.cursor-alvo input,html.cursor-alvo textarea,html.cursor-alvo select,
-html.cursor-alvo [contenteditable="true"]{cursor:auto!important}
-/* o rótulo do alvo ("Ver projeto" sobre o canto dos cards) substitui o selo
-   que seguia o ponteiro: os dois juntos repetiriam a mesma frase */
-html.cursor-alvo .project-cue{display:none}
-
 /* Selo editorial dos cards da Home. É independente do modo do cursor: com o
    padrão nativo continua visível, mas não cria rastro, canvas ou laço de rAF. */
 .project-cue{position:fixed;top:0;left:0;z-index:101;pointer-events:none;

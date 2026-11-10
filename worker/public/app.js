@@ -1258,21 +1258,20 @@
       });
     });
 
-    var modoGravado = state.global.effects && state.global.effects.cursor && state.global.effects.cursor.mode;
-    var cursorAtual = modoGravado === 'orb' || modoGravado === 'target' ? modoGravado : 'native';
+    var cursorAtual = state.global.effects && state.global.effects.cursor && state.global.effects.cursor.mode === 'orb'
+      ? 'orb' : 'native';
     document.getElementById('cursorBody').innerHTML =
       fieldRow('Modo', 'Define o efeito de cursor usado no site em dispositivos com mouse.',
         '<div class="radio-options">' +
           '<label class="radio-option"><input type="radio" name="cursor_mode" value="native"' + (cursorAtual === 'native' ? ' checked' : '') + '> Padrão do navegador</label>' +
           '<label class="radio-option"><input type="radio" name="cursor_mode" value="orb"' + (cursorAtual === 'orb' ? ' checked' : '') + '> Bola + glow</label>' +
-          '<label class="radio-option"><input type="radio" name="cursor_mode" value="target"' + (cursorAtual === 'target' ? ' checked' : '') + '> Alvo (cantos que abraçam links e cards)</label>' +
         '</div>');
     document.querySelectorAll('input[name="cursor_mode"]').forEach(function (el) {
       el.addEventListener('change', function () {
         if (!el.checked) return;
         if (!state.global.effects) state.global.effects = {};
-        if (el.value === 'orb' || el.value === 'target') {
-          state.global.effects.cursor = { mode: el.value };
+        if (el.value === 'orb') {
+          state.global.effects.cursor = { mode: 'orb' };
         } else {
           var publicado = state.published['content/global.json'];
           var cursorPublicado = publicado && publicado.effects && publicado.effects.cursor;

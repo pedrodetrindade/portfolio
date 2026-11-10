@@ -102,9 +102,6 @@
       "enabled": true,
       "opacity": 10,
       "size": 300
-    },
-    "cursor": {
-      "mode": "target"
     }
   },
   "header": {

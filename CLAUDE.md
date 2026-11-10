@@ -902,31 +902,13 @@ se o crachá carregasse de cabeça para baixo ao chegar na seção.
 O crosshair do React Bits chegou a entrar e saiu a pedido: não volte com ele
 sem perguntar.
 
-**O cursor do site é o alvo** (React Bits, Target Cursor), em
-`js/cursor-alvo.js`: `global.json > effects.cursor.mode:'target'`, terceira
-opção do painel ("Alvo"), ao lado de nativo e "bola + glow"; o Worker aceita os
-três. O `main.js` baixa o arquivo sob demanda (`CURSOR_ALVO_V`, endereço tirado
-do `currentScript` no topo do arquivo) só com mouse e sem movimento reduzido.
-Porte do código público do React Bits (molas, sem biblioteca) com o preset
-"Calm" que Pedro mandou: giro de 5s, hover de 0,3s, 25px, cantos de 8px, traço
-de 2px, folga de 6px, ponto de 4px, raio do alvo, paralaxe, rótulo, clique e
-cursor do sistema escondido. Diferenças de propósito:
-- Cor `--paper` (o #ffffff de lá), em `--cursor-alvo-cor`.
-- **Blend por peça, não em tela cheia.** No original o `difference` fica no
-  contêiner fixo do tamanho da janela; aqui cantos, ponto e rótulo são fixos
-  soltos no `<body>`, cada um com o próprio blend. Um contêiner fixo cria
-  contexto de empilhamento e isolaria o blend dos filhos, por isso não há
-  invólucro. `will-change` nessas peças é exceção consciente: poucos pixels
-  que andam a cada quadro.
-- **Sem listener de scroll.** `aoRolar()` é chamado no fim do `readScroll`, que
-  roda a cada quadro do laço suave. `cursorAlvo` é declarado no topo do
-  `main.js`: o `readScroll` o consulta na inicialização, muito antes do bloco
-  do cursor, e uma `let` declarada lá embaixo estouraria na zona morta.
-- Alvos: links, botões, `summary`, `label[for]` e `.cards .card`. Nos cards o
-  rótulo diz "Ver projeto"/"View project" sobre o canto de cima e substitui o
-  selo `.project-cue`, escondido neste modo. Fora deles, só com
-  `data-cursor-label` (ou `-pt`/`-en`).
-- Sobre campo de texto o alvo some e o I-beam do sistema volta.
+**O cursor é o do sistema.** O Target Cursor do React Bits entrou (preset
+"Calm", em js/cursor-alvo.js, como terceiro modo do CMS) e saiu a pedido de
+Pedro no mesmo dia, inteiro: arquivo, CSS, ligação no main.js, opção do
+painel e o modo no Worker. Um Smooth Cursor do Magic UI chegou a ser pedido
+no lugar e foi cancelado antes de entrar. Como o crosshair, não volte com
+nenhum dos dois sem perguntar. O modo "bola + glow" (effects.cursor.mode
+'orb') continua disponível no painel, desligado.
 
 **A foto do Sobre tem bloqueio contra abrir em outra aba e baixar** (pedido
 de Pedro), em três camadas: `.portrait-img` sem `pointer-events` (o clique cai
