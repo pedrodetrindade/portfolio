@@ -267,6 +267,17 @@ logo. As capas de 1:1 a ~2,1:1 continuam iguais. A página estática do case já
 traz a classe e a proporção escritas no HTML, e o JS preserva esse valor até
 a imagem confirmar, senão a capa pularia de 16:9 para panorâmica no load.
 
+**O subtítulo dos projetos está vazio de propósito.** `hero.subtitlePt/En` (e o
+espelho `subtitlePt/En` em `projects/index.json`, que o painel grava junto) repetia
+o que o bloco de contexto já diz logo abaixo, e nos cards virava texto miúdo e
+ilegível sobre a capa. O que só existia ali foi levado para os blocos de texto, e
+a meta description depende de `seo.description`, que todo projeto precisa ter
+preenchido (sem ela, o Worker e o `content.js` caem no subtítulo vazio). Vazio nos
+dois idiomas some do layout no topo do case (`setOptionalLabel` + `[hidden]`), no
+card da home e no arquivo `/work/`, que não recorre mais à categoria: ela não tem
+versão em inglês e repetia as tags. O campo segue no painel e volta a aparecer
+assim que receber texto.
+
 ### Prévia ao vivo
 
 O protocolo de `postMessage` entre painel e site (`js/content.js`) confia só

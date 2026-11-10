@@ -772,7 +772,9 @@
               '  <div class="card-foot">' +
               '    <div>' +
               '      <h3 data-pt="' + esc(p.titlePt) + '" data-en="' + esc(p.titleEn) + '">' + esc(p.titlePt) + '</h3>' +
-              '      <div class="sub" data-pt="' + esc(p.subtitlePt) + '" data-en="' + esc(p.subtitleEn) + '">' + esc(p.subtitlePt) + '</div>' +
+              (String(p.subtitlePt || '').trim() || String(p.subtitleEn || '').trim()
+                ? '      <div class="sub" data-pt="' + esc(p.subtitlePt) + '" data-en="' + esc(p.subtitleEn) + '">' + esc(p.subtitlePt) + '</div>'
+                : '') +
               '    </div>' +
               '    <div class="yr">' + (coming ? '<span class="coming-label" data-pt="Em breve" data-en="Coming soon">Em breve</span> · ' : '') + esc(p.year) + '</div>' +
               '  </div>' +
@@ -833,7 +835,11 @@
         '<div class="work-archive-media"><div class="scene p' + ((i % 4) + 1) + '">' + projectMedia(p, 639) + '</div></div>' +
         '<div class="work-archive-info">' +
           '<div><h2 id="' + titleId + '" data-pt="' + esc(p.titlePt) + '" data-en="' + esc(p.titleEn) + '">' + esc(p.titlePt) + '</h2>' +
-          '<p data-pt="' + esc(p.subtitlePt || p.category || '') + '" data-en="' + esc(p.subtitleEn || p.category || '') + '">' + esc(p.subtitlePt || p.category || '') + '</p></div>' +
+          /* Sem subtítulo, nada no lugar: a categoria não tem versão em inglês
+             e repetiria as tags que o card já mostra logo abaixo. */
+          (String(p.subtitlePt || '').trim() || String(p.subtitleEn || '').trim()
+            ? '<p data-pt="' + esc(p.subtitlePt) + '" data-en="' + esc(p.subtitleEn) + '">' + esc(p.subtitlePt) + '</p>'
+            : '') + '</div>' +
           (coming ? '<span class="work-archive-state" data-pt="Em breve" data-en="Coming soon">Em breve</span>' : '') +
         '</div>' +
         (tags ? '<div class="work-archive-tags">' + tags + '</div>' : '') +
@@ -970,7 +976,9 @@
     var h = P.hero;
     setOptionalLabel(document.querySelector('.case-hero .eyebrow'), h.eyebrowPt, h.eyebrowEn, h.showEyebrow);
     setText(document.querySelector('.case-hero h1'), h.titlePt, h.titleEn);
-    setText(document.querySelector('.case-hero .sub'), h.subtitlePt, h.subtitleEn);
+    /* Subtítulo vazio nos dois idiomas some do layout: o contexto do case já
+       abre a leitura logo abaixo, e um <p> vazio ainda empurraria a meta. */
+    setOptionalLabel(document.querySelector('.case-hero .sub'), h.subtitlePt, h.subtitleEn);
 
     var metaEl = document.querySelector('.case-meta');
     if (metaEl) {

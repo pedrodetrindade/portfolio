@@ -18,8 +18,8 @@
     "eyebrowEn": "art direction and 3d",
     "titlePt": "dgzin",
     "titleEn": "dgzin",
-    "subtitlePt": "Identidade para as redes sociais e o canal da Twitch de Douglas “dgzin” Silva, jogador profissional de VALORANT pela LOUD.\nUm logotipo em 3D, com acabamento de vidro e uma coroa, organiza todo o sistema: capas, painéis e badges de inscrito.",
-    "subtitleEn": "Identity for the social channels and Twitch stream of Douglas “dgzin” Silva, a professional VALORANT player for LOUD.\nA 3D logotype, finished in glass and crowned, anchors the whole system: banners, panels, and subscriber badges.",
+    "subtitlePt": "",
+    "subtitleEn": "",
     "rolePt": "Direção de Arte, Design & 3D",
     "roleEn": "Art Direction, Design & 3D",
     "scopePt": "Logotipo 3D, Capas para Twitter e YouTube, Painéis e Badges da Twitch",
@@ -33,15 +33,15 @@
       "type": "text",
       "labelPt": "contexto",
       "labelEn": "context",
-      "textPt": "dgzin é jogador profissional de VALORANT e chegou à LOUD vindo da FURIA. Parte das peças nasceu ainda na equipe anterior. Com a mudança, o projeto virou uma releitura: preservar o que já era reconhecível no visual do atleta e ajustar o restante para acompanhar a nova fase da carreira.",
-      "textEn": "dgzin is a professional VALORANT player who joined LOUD from FURIA. Part of this work began while he was still with his previous team. After the move, the project became a reinterpretation: keep what was already recognizable in his visual identity and adjust the rest to match the new chapter of his career."
+      "textPt": "Douglas “dgzin” Silva é jogador profissional de VALORANT e chegou à LOUD vindo da FURIA. O projeto é a identidade das redes sociais e do canal dele na Twitch. Parte das peças nasceu ainda na equipe anterior e, com a mudança, tudo virou uma releitura: preservar o que já era reconhecível no visual do atleta e ajustar o restante para acompanhar a nova fase da carreira.",
+      "textEn": "Douglas “dgzin” Silva is a professional VALORANT player who joined LOUD from FURIA. The project is the identity for his social channels and Twitch stream. Part of this work began while he was still with his previous team, and after the move it became a reinterpretation: keep what was already recognizable in his visual identity and adjust the rest to match the new chapter of his career."
     },
     {
       "type": "text",
       "labelPt": "processo 3d e brilho",
       "labelEn": "3d process and glow",
-      "textPt": "O logotipo foi modelado no Blender, partindo de uma versão em argila até chegar ao vidro. Depois vieram a composição das cenas e o brilho, que dão ao nome um aspecto quase líquido.",
-      "textEn": "The logotype was modeled in Blender, moving from a clay pass to a glass finish. Scene composition and glow came next, giving the name an almost liquid quality."
+      "textPt": "O logotipo e a coroa foram modelados no Blender, partindo de uma versão em argila até chegar ao vidro. Depois vieram a composição das cenas e o brilho, que dão ao nome um aspecto quase líquido.",
+      "textEn": "The logotype and its crown were modeled in Blender, moving from a clay pass to a glass finish. Scene composition and glow came next, giving the name an almost liquid quality."
     },
     {
       "type": "gallery",

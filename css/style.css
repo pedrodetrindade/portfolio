@@ -1898,6 +1898,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .case-hero .eyebrow{margin-bottom:1.2rem}
 .case-hero h1{font-size:clamp(2rem,4.6vw,3.6rem);font-weight:var(--w-medium);line-height:1.08;letter-spacing:-.02em;max-width:20ch;margin-bottom:1.6rem}
 .case-hero .sub{max-width:56ch;font-size:clamp(1rem,1.3vw,1.1rem);color:var(--muted);font-weight:var(--w-light)}
+.case-hero .sub[hidden]{display:none}
 /* .case-meta e não .hero-meta: o nome colidia com a linha de metadados da home,
    e esta regra, por vir depois no arquivo, desmontava o grid de lá. */
 .case-meta{display:flex;flex-wrap:wrap;gap:1.6rem 3rem;margin-top:2.2rem;

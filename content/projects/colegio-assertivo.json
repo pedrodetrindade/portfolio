@@ -9,16 +9,16 @@
     "Direção de marca"
   ],
   "seo": {
-    "title": "Sistema de marca e diretrizes 2026 · Pedro de Trindade",
-    "description": "Case: sistema de marca e diretrizes 2026. Branding, design system e governança de marca por Pedro de Trindade."
+    "title": "Colégio Assertivo · Pedro de Trindade",
+    "description": "Case: key visual e campanha de matrículas do Colégio Assertivo, com desdobramentos para digital, motion e impresso. Direção de arte e design por Pedro de Trindade."
   },
   "hero": {
     "eyebrowPt": "branding",
     "eyebrowEn": "branding",
     "titlePt": "Colégio Assertivo",
     "titleEn": "Assertivo School",
-    "subtitlePt": "O Colégio Assertivo é uma instituição de ensino com uma identidade vibrante, contemporânea e próxima dos alunos.\nSua comunicação combina educação, criatividade e dinamismo para criar uma experiência de marca reconhecível e conectada ao universo escolar.",
-    "subtitleEn": "Assertivo School is an educational institution with a vibrant, contemporary identity and a close connection to its students.\nIts communication blends education, creativity, and dynamism to create a recognizable brand experience connected to school life.",
+    "subtitlePt": "",
+    "subtitleEn": "",
     "rolePt": "Direção de Arte & Design",
     "roleEn": "Art Direction & Design",
     "scopePt": "Key Visual, Campanha, Social Media, Motion Design e Materiais Impressos",
@@ -44,8 +44,8 @@
       "type": "text",
       "labelPt": "contexto",
       "labelEn": "context",
-      "textPt": "O Colégio Assertivo já tinha logo, paleta e tom de voz definidos. O desafio era criar uma campanha de matrículas que mantivesse essa identidade reconhecível em formatos e mídias diferentes.",
-      "textEn": "Assertivo School already had its logo, color palette, and tone of voice defined. The challenge was to create an enrollment campaign that kept the brand recognizable across different formats and media.",
+      "textPt": "O Colégio Assertivo é uma escola de identidade vibrante, contemporânea e próxima dos alunos, e já tinha logo, paleta e tom de voz definidos. O desafio era criar uma campanha de matrículas que mantivesse essa identidade reconhecível em formatos e mídias diferentes.",
+      "textEn": "Assertivo School has a vibrant, contemporary identity and a close connection to its students, and it already had its logo, color palette, and tone of voice defined. The challenge was to create an enrollment campaign that kept the brand recognizable across different formats and media.",
       "spacing": {
         "marginTop": {
           "desktop": 30
