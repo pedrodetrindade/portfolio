@@ -543,13 +543,14 @@ abertura perdeu essa faixa. `work.asidePt/En` saiu do `home.json`, do HTML, do
 render e do painel; o texto unido mora em `work.contextPt/En` ("Texto ao lado
 do título" no painel).
 
-**Os destaques ficam na linha do grid, em 4:3** (`.work-bleed`, que manteve
+**Os destaques ficam na linha do grid, em 5:4** (`.work-bleed`, que manteve
 o nome mas não sangra mais). Eram uma faixa de ponta a ponta da tela com
 cards de 88% da altura da janela (~920x780px a 1920); Pedro pediu menores e
 alinhados ao grid. Agora a grade ocupa a largura do `.wrap`, com as mesmas
 margens do título e do texto da abertura (medido: 120px e 1800px a 1920,
-38px a 1280, 20px no celular), e a altura sai da proporção: 828x621px a
-1920; abaixo de 900px, uma coluna em 1:1. Os outros tamanhos de
+38px a 1280, 20px no celular), e a altura sai da proporção: 828x662px a
+1920 (começou em 4:3, 828x621; Pedro pediu um pouco mais altos); abaixo de
+900px, uma coluna em 1:1. Os outros tamanhos de
 `projects/index.json` (`cardSizes`) seguem a mesma lógica: largo e largura
 completa em 21:9, grande em 16:9, alto em 4:5.
 

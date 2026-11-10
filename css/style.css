@@ -2534,7 +2534,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .js .home-teaser.in .card-tags{opacity:1;transform:none;transition-delay:300ms}
 /* o teaser de projeto ainda indisponível segue as mesmas proporções */
 @media(min-width:900px){
-  .work-bleed .home-teaser{aspect-ratio:4/3}
+  .work-bleed .home-teaser{aspect-ratio:5/4}
   .work-bleed .home-teaser.card--largo{grid-column:span 2;aspect-ratio:21/9}
   .work-bleed .home-teaser.card--alto{aspect-ratio:4/5}
   .work-bleed .home-teaser.card--grande{grid-column:span 2;aspect-ratio:16/9}
@@ -2933,13 +2933,13 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
    midu.design": a 1920 cada um tinha ~920x780px. Pedro pediu os destaques
    menores e alinhados ao grid: agora a grade ocupa a largura do .wrap, com as
    mesmas margens do título e do texto da abertura, e a altura sai de uma
-   proporção (4:3) em vez da altura da janela. O nome .work-bleed ficou, mas
+   proporção (5:4) em vez da altura da janela. O nome .work-bleed ficou, mas
    não sangra mais. Os tamanhos de projects/index.json (cardSizes) mantêm a
    mesma linguagem, trocando altura em vh por proporção. */
 .work-bleed{gap:clamp(1rem,1.4vw,1.5rem)}
 @media(min-width:900px){.work-bleed{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:900px){
-  .work-bleed .card{aspect-ratio:4/3}
+  .work-bleed .card{aspect-ratio:5/4}
   .work-bleed .card--largo{grid-column:span 2;aspect-ratio:21/9}
   .work-bleed .card--alto{aspect-ratio:4/5}
   .work-bleed .card--grande{grid-column:span 2;aspect-ratio:16/9}
