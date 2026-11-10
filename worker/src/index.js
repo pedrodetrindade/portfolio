@@ -11,7 +11,7 @@ import {
   isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO, MAX_REQUEST_BYTES_POR_PUBLICACAO,
   MODOS_VIDEO, VIMEO_HOSTS, parseVimeoUrl, isVimeoConfigValido, isPosterValido,
-  isSlugValid, bytesOf, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido
+  isSlugValid, bytesOf, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido, EXT_DE_IMAGEM
 } from './validate.js';
 
 /* Cabeçalhos de segurança em toda resposta do Worker — painel (HTML/JS/CSS
@@ -460,8 +460,50 @@ function validarVideoDaCapa(hero) {
       }
     };
   }
+
+  /* Imagens do fundo da capa: lista de caminhos, na ordem em que passam. Cada
+     um passa pela mesma régua das imagens de bloco (assets/ ou https direto,
+     extensão de imagem), porque o site os põe em src sem outra checagem. */
+  if (hero.slides !== undefined) {
+    var slides = hero.slides;
+    var slidesOk = Array.isArray(slides) && slides.length <= MAX_SLIDES_DA_CAPA &&
+      slides.every(function (s) {
+        /* item recém-adicionado e ainda vazio no painel: o site o ignora, e
+           recusar a publicação inteira por ele seria punir um rascunho */
+        if (typeof s === 'string' && !s.trim()) return true;
+        return caminhoDeMidiaValido(s, EXT_DE_IMAGEM);
+      });
+    if (!slidesOk) {
+      return {
+        status: 422,
+        corpo: {
+          error: 'invalid_hero_slides',
+          message: 'As imagens do fundo da capa precisam ser uma lista de até ' + MAX_SLIDES_DA_CAPA +
+            ' imagens (jpg, png, webp, avif, gif ou svg) em assets/ ou https. Nada foi publicado.',
+          path: 'content/home.json'
+        }
+      };
+    }
+  }
+
+  /* Palavra que vira o nome na intro. Entra no site por textContent, então
+     marcação não é o risco: o teto existe porque o nome é uma linha só e uma
+     frase longa passaria das bordas da tela durante o morph. */
+  if (hero.morphFrom !== undefined &&
+      (typeof hero.morphFrom !== 'string' || hero.morphFrom.trim().length > MAX_PALAVRA_DO_MORPH)) {
+    return {
+      status: 422,
+      corpo: {
+        error: 'invalid_morph_word',
+        message: 'A palavra da intro precisa ser um texto de até ' + MAX_PALAVRA_DO_MORPH + ' caracteres. Nada foi publicado.',
+        path: 'content/home.json'
+      }
+    };
+  }
   return null;
 }
+var MAX_SLIDES_DA_CAPA = 24;
+var MAX_PALAVRA_DO_MORPH = 24;
 
 /* O site não consegue saber se um vídeo do Vimeo existe: o iframe é de outra
    origem, e o player responde 200 com a PRÓPRIA tela de erro ("Desculpe, este

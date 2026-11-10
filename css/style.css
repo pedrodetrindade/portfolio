@@ -1,16 +1,21 @@
 /* ===== SWITZER =====
    Arquivo variável local, copiado de Switzer_Complete/Fonts/WEB/fonts/ para
    assets/fonts/: publicar o pacote inteiro levaria OTF, TTF e dezoito pesos
-   para o servidor sem necessidade. Uma declaração só, com o eixo limitado a
-   300–500, porque o teto do site é Medium. O navegador nunca recebe permissão
-   para pedir mais que isso, e font-synthesis desligado impede negrito falso.
-   Nada é baixado da internet. */
+   para o servidor sem necessidade. Uma declaração só, e font-synthesis
+   desligado impede negrito falso. Nada é baixado da internet.
+   O eixo vai de 300 a 700. O texto do site para em 600; o que passa disso é
+   só o hover cinético do nome da capa, que precisa de peso de verdade para a
+   letra engordar sem virar negrito sintético. É o mesmo arquivo variável, sem
+   byte a mais.
+   Antes estava escrito var(--w-light) 500, e var() não vale dentro de
+   @font-face: o descritor inteiro era descartado e o eixo ficava sem limite
+   nenhum, ao contrário do que o comentário prometia. */
 @font-face{
   font-family:"Switzer";
   src:url("../assets/fonts/Switzer-Variable.woff2") format("woff2-variations"),
       url("../assets/fonts/Switzer-Variable.woff2") format("woff2");
   font-style:normal;
-  font-weight:var(--w-light) 500;
+  font-weight:300 700;
   font-display:swap;
 }
 
@@ -400,6 +405,42 @@ body.intro-mode{overflow:hidden}
   @keyframes nome-intro-simples{from{opacity:.35}to{opacity:1}}
 }
 
+/* ===== MORPH DA INTRO (hero.morphFrom) =====
+   Com uma palavra de origem configurada, a etapa 1 da intro deixa de ser
+   máscara e blur e vira a fusão do Magic UI (morphing-text): a palavra se
+   condensa sozinha no centro, segura um instante e se derrete no nome.
+   O efeito é o filtro de limiar (#nome-limiar, injetado pelo main.js) no
+   .hero-name: as duas camadas desfocadas se somam e o limiar corta o alfa
+   num contorno duro, então as letras escorrem uma para dentro da outra em vez
+   de só cruzarem opacidade. O blur(.6px) depois do limiar devolve a
+   suavização das bordas.
+   Blur e opacidade de cada camada saem do main.js quadro a quadro, porque a
+   curva (8/f - 8) não se escreve bem em keyframes. Quem manda no tempo
+   continua sendo a linha da intro: a etapa 1 passa a durar o morph, e a
+   etapa 2 (escala e posição) segue idêntica, encadeada pelo mesmo
+   --intro-reveal.
+   É a mesma exceção à regra do blur que a intro já tinha: um elemento, um
+   instante, antes de existir rolagem. .limiar sai assim que o morph termina,
+   e .morfando fica até o fim da intro só para segurar o conjunto de animações
+   certo (tirar a classe no meio religaria a máscara e o acende-nome). */
+.hero-name .hn-mask{position:relative}
+.hn-morph{position:absolute;left:50%;top:0;transform:translateX(-50%);
+  white-space:nowrap;pointer-events:none}
+.js body.intro-mode .hero-name.morfando{opacity:1;filter:none}
+.js body.intro-mode .hero-name.morfando .hn-line{clip-path:none}
+.js body.intro-mode.name-in .hero-name.morfando{
+  animation:assenta-nome var(--intro-move,1200ms) var(--ease-soft) var(--intro-reveal,800ms) forwards}
+.js body.intro-mode.name-in .hero-name.morfando .hn-line{animation:none}
+@media(min-width:1360px){
+  .js body.intro-mode.name-in .hero-name.morfando{animation-name:assenta-nome-amplo}
+}
+.js body.intro-mode .hero-name.morfando.limiar{filter:url(#nome-limiar) blur(.6px)}
+/* O ponto final tem opacidade .62, e o limiar transforma qualquer alfa acima
+   de 55% em 100%: durante o morph ele ficaria aceso inteiro e cairia para .62
+   num estalo quando o filtro sai. Ele espera o morph acabar e pousa depois. */
+.js body.intro-mode .hero-name.morfando .hn-line i{transition:opacity var(--dur-default) var(--ease-smooth)}
+.js body.intro-mode .hero-name.morfando.limiar .hn-line i{opacity:0}
+
 .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;color:var(--accent);font-weight:var(--w-medium);
   display:inline-flex;align-items:center;gap:.6em}
 .eyebrow::before{content:"";width:1.6em;height:1px;background:var(--accent);opacity:.5}
@@ -667,10 +708,11 @@ body.menu-open header .ctrl-group{opacity:0}
    massas marrons da capa antiga continuam visíveis acima, animando como
    antes. O resultado é o marrom de sempre, com as imagens passando por baixo. */
 .hero-slides::after{content:"";position:absolute;inset:0;z-index:3;
-  background:rgba(var(--ink-rgb),.86)}
+  background:rgba(var(--ink-rgb),.9)}
 /* massas a 60%: somadas à imagem, a 100% clareavam o fundo atrás do rótulo
-   pequeno (--accent) até 3,7:1; medido, este par garante 4,5:1 nas capas
-   mais claras */
+   pequeno (--accent) até 3,7:1. Com o véu em .9 (era .86, escurecido a
+   pedido), medido no percentil 98 do fundo: rótulo de 4,59:1 (dgzin) a
+   5,07:1, nas seis imagens da lista */
 .liquid-bg.has-slides .lq{z-index:2;opacity:.6}
 /* Sem vinheta neste modo: sobre as imagens ela virava um halo escuro atrás
    do nome. A legibilidade vem do véu uniforme acima, escuro o bastante em
@@ -695,6 +737,23 @@ body.menu-open header .ctrl-group{opacity:0}
 }
 /* decorativo: não captura clique nem foco, e o conteúdo da capa segue acima */
 .liquid-bg .lq-veil{z-index:2}
+/* Base da capa dissolvendo no fundo do site. Sem isto o fundo da capa (fotos,
+   massas marrons) terminava num corte reto onde começa #work, e a diferença
+   de tom lia como uma linha atravessando a tela: medido, a capa acabava em
+   ~27,25,24 (cinza esverdeado) e a seção seguinte começava em ~25,22,22.
+   Máscara, e não um véu de --ink por cima: #work é transparente e mostra o
+   body com o .glow fixo atrás. Um véu terminando em --ink opaco cobria o glow
+   e deixava a base da capa MAIS escura que o topo de #work (22 contra 25,
+   medido): o degrau só trocava de sentido. Com a máscara, a base da capa
+   revela exatamente o que a seção de baixo revela, e o ruído da capa, que fica
+   fora desta camada, continua igual nas duas.
+   Stops com curva, não dois pontos: um degradê linear marca a borda onde
+   começa. */
+.liquid-bg{
+  -webkit-mask-image:linear-gradient(to bottom,#000 64%,rgba(0,0,0,.84) 74%,
+    rgba(0,0,0,.5) 85%,rgba(0,0,0,.16) 93.5%,transparent 100%);
+          mask-image:linear-gradient(to bottom,#000 64%,rgba(0,0,0,.84) 74%,
+    rgba(0,0,0,.5) 85%,rgba(0,0,0,.16) 93.5%,transparent 100%)}
 @media(prefers-reduced-motion:reduce){
   /* rede de segurança: o JS já não cria o iframe neste modo */
   .hero-vimeo{display:none}
@@ -902,6 +961,34 @@ body[data-availability="unavailable"] .menu-panel-avail .avail-dot{background:va
 .hn-line{display:block;white-space:nowrap}
 .js .hn-mask.reveal .hn-line{transform:translateY(105%)}
 .hn-line i{font-style:normal;color:inherit;opacity:.62}
+
+/* ===== NOME CINÉTICO (hover) =====
+   Adaptação do kinetic-text do Magic UI: a letra sob o cursor engorda e
+   respira, e a onda passa às vizinhas em degraus. Lá o peso vai de 300 a 900
+   com contorno; aqui parte do 500 do nome e chega a 700, o teto do eixo
+   declarado no @font-face, sem contorno: a 130px a diferença já lê, e mais que
+   isso virava caricatura num nome que é a identidade do site.
+   O main.js só quebra o nome em letras (.cinetico) onde existe cursor de
+   verdade e sem movimento reduzido. No toque o nome continua texto corrido.
+   Só vale depois de a capa assentar (.hero-in): durante a intro o nome ainda
+   está escalando, e uma letra mudando de peso ali brigaria com o morph.
+   A letra muda de largura com o peso, e o padding também abre espaço. Para
+   isso não empurrar profissão e localização, o main.js trava a largura do
+   .hero-name-wrap na medida de repouso, e o flex centralizado deixa o nome
+   crescer igual para os dois lados em vez de só para a direita. */
+.hero-name.cinetico .hn-mask{display:flex;justify-content:center}
+.hn-letra{transition:font-weight var(--dur-micro) var(--ease-smooth),
+  padding var(--dur-micro) var(--ease-smooth)}
+.hn-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(hover:hover) and (pointer:fine){
+  .js body.hero-in .hero-name.cinetico .hn-letra:hover{font-weight:700;padding-inline:.03em}
+  .js body.hero-in .hero-name.cinetico .hn-letra:hover + .hn-letra,
+  .js body.hero-in .hero-name.cinetico .hn-letra:has(+ .hn-letra:hover){font-weight:620;padding-inline:.03em}
+  .js body.hero-in .hero-name.cinetico .hn-letra:hover + .hn-letra + .hn-letra,
+  .js body.hero-in .hero-name.cinetico .hn-letra:has(+ .hn-letra + .hn-letra:hover){font-weight:560}
+}
+/* medição da largura de repouso: o main.js liga isto por um instante */
+.hero-name.em-repouso .hn-letra{font-weight:inherit!important;padding:0!important;transition:none!important}
 
 @media(max-width:760px){
   .hero-tag{white-space:nowrap}

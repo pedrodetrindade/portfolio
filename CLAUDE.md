@@ -61,7 +61,9 @@ em 70ms com teto de 6 passos. Títulos sobem de 32px, rótulos de 14px, mídia d
 
 **Nenhum `filter:blur()` no site.** Gradiente radial já é suave por natureza e
 o blur só custava pintura. Se precisar de brilho, alargue os stops do gradiente.
-`backdrop-filter` continua permitido no vidro fosco da UI flutuante.
+`backdrop-filter` continua permitido no vidro fosco da UI flutuante. A única
+exceção é a etapa 1 da intro (o `acende-nome` clássico ou o morph): um elemento,
+um instante, antes de existir rolagem.
 
 **Um único listener de scroll**, passivo e com throttle por rAF, alimenta
 header e scrub. Não adicione outro: some no
@@ -413,12 +415,34 @@ mínima. Não há `sessionStorage`: é assinatura de entrada e Pedro quer que el
 seja vista sempre. Só `prefers-reduced-motion` pula.
 
 **A linha do tempo da intro mora só no `js/main.js`** e desce para o CSS por
-variável: `--intro-reveal` 1200ms, `--intro-move` 1800ms, `--intro-dur` 3000ms
-e `--intro-veil` 2700ms. Nenhuma duração de intro pode ser escrita direto no
-CSS. Ao mudar o total, escale tudo pelo mesmo fator, inclusive
-`SECUNDARIOS_MS`, a saída do véu e as durações de `.hero-tag`, `.hero-when`,
-`.hero-claim` e do indicador: mexer só no total muda o ritmo interno, não a
-duração.
+variável: `--intro-reveal` 1440ms, `--intro-move` 2160ms, `--intro-dur` 3600ms
+e `--intro-veil` 3240ms (com o morph ligado, a revelação vai a 1800ms e o total
+a 3960ms). Nenhuma duração de intro pode ser escrita direto no CSS. Ao mudar o
+total, escale tudo pelo mesmo fator, inclusive `SECUNDARIOS_MS`, a saída do véu
+e as durações de `.hero-tag`, `.hero-when`, `.hero-claim` e do indicador: mexer
+só no total muda o ritmo interno, não a duração.
+
+**A etapa 1 da intro pode ser um morph** (Magic UI, morphing-text). Com
+`hero.morphFrom` preenchido (campo "Palavra que vira o seu nome na intro",
+hoje "trind9de", a marca dele), a palavra se condensa no centro, segura e se
+derrete no nome: 420ms de entrada, 300 de pausa e 1080 de fusão. A etapa 2 fica
+idêntica, e os secundários entram no mesmo ponto dela (`revelacao + 1350`), não
+num tempo absoluto. Vazio ou ausente devolve a intro clássica intacta. O efeito
+é o filtro SVG `#nome-limiar` (alfa x255 - 140, injetado pelo `main.js`) no
+`.hero-name` enquanto ele tem `.limiar`; blur e opacidade das duas camadas saem
+do JS quadro a quadro, com relógio por tempo e um `setTimeout` de segurança que
+fecha o morph se a aba sumir. `.morfando` fica até o fim da intro: tirá-la antes
+religaria a máscara e o `acende-nome` no meio da animação. O ponto final some
+durante o morph e pousa depois, porque o limiar acenderia os 62% dele em 100%.
+
+**O nome da capa é cinético no hover** (Magic UI, kinetic-text), só com cursor
+de verdade e sem movimento reduzido. O `main.js` quebra o nome em `.hn-letra`
+(aria-hidden, com uma cópia `.hn-sr` para leitor de tela); a letra sob o cursor
+vai de 500 a 700 e as vizinhas a 620 e 560, com `--dur-micro`. Vale só depois de
+`.hero-in`. A largura do `.hero-name-wrap` é travada na medida de repouso
+(`medirDeslocamentoNome`, com `.em-repouso` para medir) e a `.hn-mask` vira flex
+centralizado: o nome cresce igual para os dois lados e profissão e localização
+não andam com o cursor.
 
 **As durações dos secundários precisam do prefixo `.js`** (`.js .h-step.hero-tag`).
 Sem ele perdem para `.js .h-step`, que declara a transição inteira com
@@ -457,8 +481,11 @@ gravar a detecção automática a congelaria como preferência permanente.
 **Números só com dado verificável.** Nada de estimativa: o que estiver pendente
 fica comentado no HTML, não publicado.
 
-**Peso tipográfico vai até 600.** A fonte só carrega 300/400/500/600, então
-qualquer 700 vira falso-negrito.
+**Peso tipográfico vai até 600 no texto.** A Switzer é variável e o
+`@font-face` declara o eixo de 300 a 700; o que passa de 600 é só o hover
+cinético do nome da capa. `var()` não vale dentro de `@font-face`: o descritor
+antigo (`var(--w-light) 500`) era descartado inteiro e o eixo ficava sem limite,
+ao contrário do que o comentário dizia. Escreva números ali.
 
 **Um grid filho de `display:flex` não estica de forma confiável no eixo
 cruzado quando as colunas são em `fr`.** É o caso de `.faq-inner`: `.faq` é
@@ -548,22 +575,33 @@ vídeo entrava por cima dele de estalo. As massas agora saem por fundido cruzado
 (`.video-pronto` no `.liquid-bg`, posta junto com `.is-pronto` no iframe), no
 mesmo intervalo em que o vídeo entra. Nunca volte a usar `display:none` aí.
 
-**O fundo da capa pode ser as capas dos projetos, no lugar do vídeo.**
-`hero.projectSlideshow: true` (interruptor "Capas dos projetos no fundo" no
-painel) monta em `.hero-slides` a capa de cada projeto visível, na ordem do
-índice: 1,5 s cada (`SLIDE_MS`), zoom linear alternando aproxima/afasta por
+**O fundo da capa pode ser uma sequência de imagens, no lugar do vídeo.**
+`hero.projectSlideshow: true` (interruptor "Imagens no fundo da capa" no
+painel) monta em `.hero-slides` as imagens de `hero.slides`, na ordem da lista,
+que pode ter fotos que não são capa de projeto (a do palco está em
+`assets/uploads/capa/`). Lista vazia ou ausente volta às capas de todos os
+projetos visíveis, na ordem do índice. Uma imagem da lista que é capa
+`coverLight` de algum projeto herda o véu a mais. Pedro tirou de propósito as
+capas de Social media e AnaLu. O Worker valida cada caminho com a régua das
+imagens de bloco (até 24; item vazio é ignorado, não recusado).
+1,5 s cada (`SLIDE_MS`), zoom linear alternando aproxima/afasta por
 passo (não pela posição, para a volta ao início não repetir o sentido), a nova
 entrando por cima da anterior para a troca não escurecer. Chave própria, e não
 um quinto valor de `videoMode`: o Worker só aceita os quatro modos e recusaria
 a home inteira. A configuração do Vimeo continua gravada e volta ao desligar.
-As capas são fundo, não destaque: véu de `--ink` a 86% por cima delas (mais
+As capas são fundo, não destaque: véu de `--ink` a 90% por cima delas (mais
 30% nas `coverLight`) e as massas marrons do vidro líquido continuam visíveis
 acima a 60%, animando como antes (sem `has-video`, elas não saem). Neste modo
 não há vinheta (`.lq-veil`): sobre imagens ela virava um halo escuro atrás do
-nome. A legibilidade vem do fundo inteiro escuro, e foi medida nas capas mais
-claras: o rótulo pequeno em `--accent` ("Diretor de Arte...") fica em 4,6:1 no
-pior ponto; nome e frase acima de 11:1. Clarear véu ou massas derruba o rótulo
-abaixo de 4,5:1 primeiro. O ruído da capa é
+nome. A legibilidade vem do fundo inteiro escuro, medida nas seis imagens no
+percentil 98 do fundo: o rótulo pequeno em `--accent` ("Diretor de Arte...")
+fica entre 4,59:1 (dgzin) e 5,07:1; a frase acima de 12:1. Clarear véu ou massas
+derruba o rótulo abaixo de 4,5:1 primeiro.
+A base do `.liquid-bg` se dissolve por `mask-image`, não por um véu de `--ink`
+por cima: `#work` é transparente e mostra o `.glow` fixo, e um véu terminando em
+`--ink` opaco deixava a base da capa mais escura que o topo da seção seguinte
+(22 contra 25, medido). Era essa a "linha" na base da capa: um degrau de tom
+num corte reto. O ruído da capa é
 o mesmo `.cms-section-grain` do resto do site, ligado (sem
 `sections.hero.grainEnabled`): textura estática repetida, sem blend nem filtro. Fora da tela ou com a aba oculta o relógio não avança;
 sob movimento reduzido fica só a primeira capa, parada. `SLIDE_MS` e

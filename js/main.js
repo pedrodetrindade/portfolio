@@ -552,8 +552,56 @@
        intro. No celular a frase da capa usa esta largura para não ficar mais
        larga que o nome — sem isso ela ultrapassava o nome em 40px a 375, e a
        capa lia como dois blocos de medidas diferentes em vez de uma coluna. */
+    /* Nome cinético: a largura do bloco fica travada na medida de repouso. Sem
+       isto, a letra que engorda no hover alargava o wrapper (fit-content), e
+       profissão e localização, ancoradas às bordas dele, andavam junto com o
+       cursor. A medida sai com as letras forçadas ao peso normal (.em-repouso),
+       para não congelar um estado de hover. */
+    if (n.classList.contains('cinetico')) {
+      wrap.style.width = '';
+      n.classList.add('em-repouso');
+      wrap.style.width = wrap.getBoundingClientRect().width + 'px';
+      n.classList.remove('em-repouso');
+    }
     document.documentElement.style.setProperty('--nome-larg', wrap.offsetWidth + 'px');
   }
+
+  /* ===== NOME CINÉTICO =====
+     Quebra o nome da capa em letras para o hover do kinetic-text (Magic UI).
+     Só onde existe cursor de verdade e sem movimento reduzido: no toque não
+     há hover, e o nome continua texto corrido, com a mesma métrica de sempre.
+     As letras ficam aria-hidden e uma cópia em texto corrido (.hn-sr) é o que
+     o leitor de tela lê, senão o VoiceOver soletraria o nome.
+     Function e não const: roda antes de setLang, que remede o nome. */
+  function montarNomeCinetico(){
+    const n = document.querySelector('.hero-name');
+    const linha = n && n.querySelector('.hn-line');
+    if (!linha || n.classList.contains('cinetico')) return;
+    if (reduced || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const letras = document.createElement('span');
+    letras.className = 'hn-letras';
+    letras.setAttribute('aria-hidden', 'true');
+    Array.from(linha.childNodes).forEach(no => {
+      if (no.nodeType === 3) {
+        Array.from(no.textContent.replace(/\s+/g, ' ')).forEach(ch => {
+          const s = document.createElement('span');
+          s.className = 'hn-letra';
+          s.textContent = ch;
+          letras.appendChild(s);
+        });
+      } else if (no.nodeType === 1) {
+        no.classList.add('hn-letra');      // o ponto final (<i>) também reage
+        letras.appendChild(no);
+      }
+    });
+    const sr = document.createElement('span');
+    sr.className = 'hn-sr';
+    sr.textContent = letras.textContent.trim();
+    linha.textContent = '';
+    linha.append(letras, sr);
+    n.classList.add('cinetico');
+  }
+  montarNomeCinetico();
 
   const headEl = document.querySelector('header');
   const mainEl = document.querySelector('main');
@@ -600,18 +648,133 @@
      A duração atual é 20% maior que a versão de 3s. Tudo foi escalado junto,
      de modo que a proporção entre revelação (40%) e movimento (60%) e o ponto de
      entrada dos secundários (77,5% da linha) continuam idênticos. Escalar só o
-     total mudaria o ritmo interno, não a duração. */
-  const INTRO = { revelacao: 1440, movimento: 2160 };
-  const INTRO_MS = INTRO.revelacao + INTRO.movimento;   // 3600ms
-  const SECUNDARIOS_MS = 2790;
+     total mudaria o ritmo interno, não a duração.
+     Com o morph ligado (abaixo) só a etapa 1 muda: 0 a 1800ms é o morph,
+     1800 a 3960 o mesmo movimento, secundários em 3150. */
+  /* ===== MORPH NA ETAPA 1 =====
+     Com hero.morphFrom preenchido no painel (hoje "trind9de", a marca), a
+     revelação deixa de ser máscara e blur e vira o morphing-text do Magic UI:
+     a palavra se condensa no centro, segura e se derrete no nome. A etapa 1
+     passa a durar o morph inteiro; a etapa 2 continua com os mesmos 2160ms, e
+     os secundários entram no mesmo ponto DELA (1350ms depois do começo do
+     movimento), então a costura entre nome e secundários não muda.
+     Campo vazio ou ausente devolve a intro clássica, sem nenhuma diferença.
+     Quem monta o nome é quem lê o dado: o content-render já deixou a home em
+     window.__CMS_HOME__ antes deste arquivo rodar. */
+  const heroName = document.querySelector('.hero-name');
+  const cmsHero = (window.__CMS_HOME__ && window.__CMS_HOME__.hero) || {};
+  const palavraMorph = typeof cmsHero.morphFrom === 'string'
+    ? cmsHero.morphFrom.replace(/\s+/g, ' ').trim().slice(0, 24) : '';
+  const comMorph = !!(heroName && palavraMorph && !reduced);
+  const MORPH = { entrada: 420, pausa: 300, fusao: 1080 };   // 1800ms
+  const INTRO = {
+    revelacao: comMorph ? MORPH.entrada + MORPH.pausa + MORPH.fusao : 1440,
+    movimento: 2160
+  };
+  const INTRO_MS = INTRO.revelacao + INTRO.movimento;   // 3600ms, ou 3960 com morph
+  const SECUNDARIOS_MS = INTRO.revelacao + 1350;        // 2790ms na clássica
   const VEU_MS = 3240;                                  // saída do véu, mesma escala
   const raiz = document.documentElement.style;
   raiz.setProperty('--intro-dur', INTRO_MS + 'ms');
   raiz.setProperty('--intro-reveal', INTRO.revelacao + 'ms');
   raiz.setProperty('--intro-move', INTRO.movimento + 'ms');
   raiz.setProperty('--intro-veil', VEU_MS + 'ms');
-  const heroName = document.querySelector('.hero-name');
   const heroOn = () => document.body.classList.add('hero-in');
+
+  /* O limiar do morph é um filtro SVG: alfa multiplicado por 255 e deslocado
+     em -140, o que corta tudo abaixo de ~55% de opacidade num contorno duro.
+     Região folgada na vertical porque o blur das camadas passa da caixa do h1,
+     que tem line-height .9. */
+  function garantirFiltroLimiar(){
+    if (document.getElementById('nome-limiar')) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.setAttribute('width', '0');
+    svg.setAttribute('height', '0');
+    svg.style.position = 'fixed';
+    const filtro = document.createElementNS(ns, 'filter');
+    filtro.setAttribute('id', 'nome-limiar');
+    filtro.setAttribute('x', '-10%');
+    filtro.setAttribute('y', '-50%');
+    filtro.setAttribute('width', '120%');
+    filtro.setAttribute('height', '200%');
+    const matriz = document.createElementNS(ns, 'feColorMatrix');
+    matriz.setAttribute('in', 'SourceGraphic');
+    matriz.setAttribute('type', 'matrix');
+    matriz.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140');
+    filtro.appendChild(matriz);
+    svg.appendChild(filtro);
+    document.body.appendChild(svg);
+  }
+
+  /* Prepara o quadro zero do morph. Precisa rodar junto com .intro-mode, antes
+     do primeiro quadro: .morfando deixa o h1 em opacidade 1, então o nome e a
+     palavra já têm de nascer apagados por estilo próprio. */
+  function prepararMorph(){
+    garantirFiltroLimiar();
+    const linha = heroName.querySelector('.hn-line');
+    const mascara = heroName.querySelector('.hn-mask');
+    const origem = document.createElement('span');
+    origem.className = 'hn-morph';
+    origem.setAttribute('aria-hidden', 'true');
+    origem.textContent = palavraMorph;
+    origem.style.opacity = '0';
+    linha.style.opacity = '0';
+    mascara.appendChild(origem);
+    heroName.classList.add('morfando', 'limiar');
+    return { linha, origem };
+  }
+
+  /* Curva do morphing-text: a camada que chega tem blur 8/f - 8 (infinito no
+     começo, zero no fim) e opacidade f^0,4. Com o limiar, ela só aparece da
+     metade em diante, quando o alfa desfocado passa de 55%: é isso que faz a
+     letra brotar em vez de acender. */
+  function pintarCamada(el, f){
+    if (f >= 1) { el.style.filter = ''; el.style.opacity = ''; return; }
+    if (f <= 0) { el.style.filter = ''; el.style.opacity = '0'; return; }
+    el.style.filter = 'blur(' + Math.min(8 / f - 8, 100).toFixed(2) + 'px)';
+    el.style.opacity = Math.pow(f, 0.4).toFixed(3);
+  }
+
+  /* Relógio por tempo, não por quadro: se a aba sumir no meio, a volta cai no
+     ponto certo. O setTimeout de segurança fecha o morph mesmo que nenhum rAF
+     dispare de novo (aba oculta até o fim da intro), para a palavra de origem
+     nunca ficar presa por cima do nome. */
+  function rodarMorph(camadas){
+    const { linha, origem } = camadas;
+    const total = INTRO.revelacao;
+    let inicio = performance.now(), fim = false;
+    const terminar = () => {
+      if (fim) return;
+      fim = true;
+      origem.remove();
+      pintarCamada(linha, 1);
+      heroName.classList.remove('limiar');
+    };
+    const quadro = agora => {
+      if (fim) return;
+      const t = Math.max(0, agora - inicio);
+      if (t >= total) { terminar(); return; }
+      if (t < MORPH.entrada) {
+        pintarCamada(origem, t / MORPH.entrada);
+        pintarCamada(linha, 0);
+      } else if (t < MORPH.entrada + MORPH.pausa) {
+        pintarCamada(origem, 1);
+        pintarCamada(linha, 0);
+      } else {
+        const g = (t - MORPH.entrada - MORPH.pausa) / MORPH.fusao;
+        pintarCamada(origem, 1 - g);
+        pintarCamada(linha, g);
+      }
+      requestAnimationFrame(quadro);
+    };
+    /* primeiro quadro pintado já neste callback, o mesmo que liga .name-in:
+       morph e etapa 2 (pelo delay de --intro-reveal) partem do mesmo instante */
+    quadro(inicio);
+    setTimeout(terminar, total + 120);
+  }
 
   if (!heroName) {
     heroOn();                                   // páginas de case
@@ -619,6 +782,7 @@
     heroOn();                                   // movimento reduzido: direto ao conteúdo
   } else {
     document.body.classList.add('intro-mode');
+    const camadasMorph = comMorph ? prepararMorph() : null;
 
     const rodarIntro = () => {
       /* Última medição antes de a animação existir. O deslocamento vertical do
@@ -626,7 +790,10 @@
          diferente da de sistema: medir antes dela chegar deixava o nome uns
          10px fora do centro no primeiro quadro da intro. */
       medirDeslocamentoNome();
-      requestAnimationFrame(() => document.body.classList.add('name-in'));
+      requestAnimationFrame(() => {
+        document.body.classList.add('name-in');
+        if (camadasMorph) rodarMorph(camadasMorph);
+      });
       /* secundários só na parte final da etapa 2: nada aparece durante a
          revelação, e eles entram sobre a cauda do movimento do nome */
       setTimeout(() => document.body.classList.add('hero-sec'), SECUNDARIOS_MS);
@@ -636,7 +803,10 @@
       /* e o nome volta ao empilhamento normal depois que o véu terminou de sair.
          A folga acompanha a saída mais longa do véu, senão o empilhamento muda
          no meio do fundido e a troca aparece como um corte */
-      setTimeout(() => document.body.classList.remove('intro-mode'), INTRO_MS + VEU_MS + 100);
+      setTimeout(() => {
+        document.body.classList.remove('intro-mode');
+        heroName.classList.remove('morfando');
+      }, INTRO_MS + VEU_MS + 100);
     };
 
     /* A intro só começa quando a fonte chega. O véu já cobre tudo, então essa

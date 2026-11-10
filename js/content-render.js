@@ -528,8 +528,9 @@
   }
 
   /* ===== CAPAS DOS PROJETOS NO FUNDO DA CAPA =====
-     hero.projectSlideshow:true troca o vídeo por uma sequência com a capa de
-     cada projeto visível, na ordem do índice. É uma chave própria, e não um
+     hero.projectSlideshow:true troca o vídeo por uma sequência de imagens: a
+     lista hero.slides, quando preenchida, ou a capa de cada projeto visível,
+     na ordem do índice. É uma chave própria, e não um
      quinto valor de videoMode, porque o Worker só aceita os quatro modos de
      vídeo: um valor novo ali faria toda publicação da home voltar com 422. A
      configuração do vídeo continua gravada e volta a valer ao desligar.
@@ -559,11 +560,25 @@
     if (antigo) antigo.remove();
     liquidBg.classList.remove('has-slides');
   }
-  function montarSlides(liquidBg, idx, reduced) {
+  function montarSlides(liquidBg, idx, reduced, hero) {
     /* coverLight, o mesmo dado que troca o tema do header sobre os cards,
        marca as capas claras: elas ganham um véu a mais para não clarear a
        capa inteira e disputar com o nome. */
-    var capas = projetosPublicos(idx || {}).map(function (p) {
+    var publicos = projetosPublicos(idx || {});
+    var claras = {};
+    publicos.forEach(function (p) {
+      if (p.coverLight === true && typeof p.cover === 'string') claras[p.cover.trim()] = true;
+    });
+    /* hero.slides é a lista escolhida no painel, na ordem dela, e pode trazer
+       imagens que não são capa de projeto nenhum. Vazia ou ausente, valem as
+       capas de todos os projetos visíveis, como sempre foi. Uma imagem da lista
+       que também é capa clara de projeto herda o véu a mais. */
+    var lista = hero && Array.isArray(hero.slides) ? hero.slides.filter(function (s) {
+      return typeof s === 'string' && s.trim();
+    }) : [];
+    var capas = lista.length ? lista.map(function (s) {
+      return { src: s.trim(), clara: claras[s.trim()] === true };
+    }) : publicos.map(function (p) {
       return { src: typeof p.cover === 'string' ? p.cover.trim() : '', clara: p.coverLight === true };
     }).filter(function (c) { return c.src; });
     if (!capas.length) return false;
@@ -645,7 +660,7 @@
 
     /* Capas dos projetos têm prioridade sobre o vídeo. Sob movimento reduzido
        a primeira capa fica parada, sem troca nem zoom. */
-    if (hero.projectSlideshow === true && montarSlides(liquidBg, indiceDaCapa(overrideIndex), reduced)) return;
+    if (hero.projectSlideshow === true && montarSlides(liquidBg, indiceDaCapa(overrideIndex), reduced, hero)) return;
 
     /* Movimento reduzido: nada de autoplay. Fica o poster, ou o fundo animado
        em CSS, que nesse modo já está parado (ver main.js/pintarFundos). */

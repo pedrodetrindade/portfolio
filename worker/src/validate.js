@@ -327,7 +327,7 @@ function erroNosBlocos(blocks) {
 }
 
 export {
-  CHAVES_DE_BLOCO, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido,
+  CHAVES_DE_BLOCO, erroNosBlocos, erroNoSpacing, caminhoDeMidiaValido, EXT_DE_IMAGEM,
   LIMITS, MAX_JSON_BYTES, MAX_UPLOAD_BYTES, ALLOWED_UPLOAD_EXT, ALLOWED_UPLOAD_MIME,
   UPLOAD_DIR, isPathWritable, isPagePathWritable, isUploadPathWritable,
   MAX_OPS_POR_PUBLICACAO, MAX_BYTES_POR_PUBLICACAO, MAX_REQUEST_BYTES_POR_PUBLICACAO,

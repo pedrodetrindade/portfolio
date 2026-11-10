@@ -2,6 +2,7 @@
   "$schema": "Conteúdo textual e configurações da Home. Os valores abaixo são os que o site já usava.",
   "hero": {
     "name": "Pedro de Trindade",
+    "morphFrom": "trind9de",
     "tagPt": "Diretor de Arte & Designer Sênior",
     "tagEn": "Art Director & Senior Designer",
     "locationPt": "Baseado no Rio de Janeiro, Brasil",
@@ -28,6 +29,14 @@
     "backgroundVideoPoster": "",
     "videoMode": "vimeo",
     "projectSlideshow": true,
+    "slides": [
+      "assets/uploads/capa/palco.webp",
+      "assets/uploads/colegio-assertivo/capa.webp",
+      "assets/uploads/trind9de/capa-ceu.webp",
+      "assets/uploads/karmine-corp/foto-time.webp",
+      "assets/uploads/dgzin/capa-cordao.webp",
+      "assets/uploads/skye/capa.webp"
+    ],
     "vimeo": {
       "url": "https://vimeo.com/1218774319",
       "videoId": "1218774319",

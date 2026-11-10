@@ -1908,7 +1908,12 @@
     var heroSection = H.sections && H.sections.hero ? H.sections.hero : {};
     var availabilityStatus = ['available', 'unavailable', 'hidden'].indexOf(hero.availabilityStatus) !== -1
       ? hero.availabilityStatus : (hero.showAvailability === false ? 'hidden' : 'available');
+    /* A lista precisa existir para o editor de itens; vazia, o site usa as capas
+       dos projetos, então criar o array não muda nada no que aparece. */
+    if (!Array.isArray(hero.slides)) hero.slides = [];
     document.getElementById('heroBody').innerHTML =
+      fieldRow('Palavra que vira o seu nome na intro', 'Ela se condensa no centro da tela e se derrete no seu nome, no efeito de morph. Em branco, a intro volta à revelação clássica. Até 24 caracteres. A prévia ao lado não repete a intro: confira no site.',
+        inp('hero_morph', hero.morphFrom, ' maxlength="24" placeholder="trind9de"')) +
       fieldRow('Cargo (PT)', 'Enter força uma nova linha.', ta('hero_tagpt', hero.tagPt)) +
       fieldRow('Cargo (EN)', 'Enter força uma nova linha.', ta('hero_tagen', hero.tagEn)) +
       fieldRow('Localização (PT)', 'Enter força uma nova linha.', ta('hero_locpt', hero.locationPt)) +
@@ -1933,8 +1938,14 @@
       fieldRow('Indicador de rolagem — rótulo (EN)', '', ta('hero_nhlen', hero.nextHintLabelEn)) +
       fieldRow('Indicador de rolagem — destino (PT)', '"Projetos"', ta('hero_nhnpt', hero.nextHintNamePt)) +
       fieldRow('Indicador de rolagem — destino (EN)', '', ta('hero_nhnen', hero.nextHintNameEn)) +
-      fieldRow('Capas dos projetos no fundo', 'Ligado, as capas dos projetos visíveis passam atrás do seu nome, 1,5 s cada, com zoom alternado, no lugar do vídeo. A configuração de fundo abaixo fica guardada para quando desligar.',
+      fieldRow('Imagens no fundo da capa', 'Ligado, as imagens da lista abaixo passam atrás do seu nome, 1,5 s cada, com zoom alternado, no lugar do vídeo. A configuração de fundo abaixo fica guardada para quando desligar.',
         switchControl('hero_slides', hero.projectSlideshow === true)) +
+      listBlock('heroslide', hero.slides, 'Imagem', function (s, i) {
+        return fieldRow('Arquivo', 'caminho da imagem, ou envie uma nova aqui',
+          inp('hero_slide' + i, s, ' placeholder="assets/uploads/capa/..."') +
+          '<input type="file" id="hero_slide_upload' + i + '" accept="image/*">');
+      }) +
+      '<p class="hint">Na ordem da lista. Vazia, passam as capas de todos os projetos visíveis, na ordem da página de trabalhos. Até 24 imagens.</p>' +
       fieldRow('Fundo da capa', 'O que aparece atrás do seu nome.',
         '<select id="hero_videomode">' + MODOS_CAPA.map(function (m) {
           return '<option value="' + m[0] + '"' + (modoDaCapa(hero) === m[0] ? ' selected' : '') + '>' + esc(m[1]) + '</option>';
@@ -1974,8 +1985,18 @@
       ['hero_unavailspt', function (v) { hero.unavailabilityShortPt = v; }], ['hero_unavailsen', function (v) { hero.unavailabilityShortEn = v; }],
       ['hero_nhlpt', function (v) { hero.nextHintLabelPt = v; }], ['hero_nhlen', function (v) { hero.nextHintLabelEn = v; }],
       ['hero_nhnpt', function (v) { hero.nextHintNamePt = v; }], ['hero_nhnen', function (v) { hero.nextHintNameEn = v; }],
-      ['hero_bgvideo', function (v) { hero.backgroundVideo = v; }], ['hero_bgposter', function (v) { hero.backgroundVideoPoster = v; }]
-    ], touch);
+      ['hero_bgvideo', function (v) { hero.backgroundVideo = v; }], ['hero_bgposter', function (v) { hero.backgroundVideoPoster = v; }],
+      ['hero_morph', function (v) { hero.morphFrom = v; }]
+    ].concat(hero.slides.map(function (s, i) {
+      return ['hero_slide' + i, function (v) { hero.slides[i] = v; }];
+    })), touch);
+    wireListBlock('heroslide', hero.slides, function () { return ''; }, renderHome);
+    hero.slides.forEach(function (s, i) {
+      var envio = document.getElementById('hero_slide_upload' + i);
+      if (envio) envio.addEventListener('change', function () {
+        uploadFile(envio.files[0], 'capa', function (path) { hero.slides[i] = path; touch(); renderHome(); });
+      });
+    });
     document.getElementById('hero_availstatus').addEventListener('change', function (e) {
       hero.availabilityStatus = e.target.value;
       /* Compatibilidade com versões anteriores do site/CMS. O campo legado
