@@ -483,6 +483,13 @@
      página cairia para o HTML estático sem nada indicar por quê. É a mesma
      armadilha que já custou caro com measureCta em js/main.js. */
   var TIPOS_DE_BLOCO = ['text', 'gallery', 'image', 'quote', 'video'];
+  /* Mesma armadilha, com as capas no fundo da capa: declaradas lá embaixo,
+     SLIDE_MS ainda seria undefined quando renderHome() rodasse, e
+     setInterval(fn, undefined) dispara a cada poucos milissegundos. Pior, o
+     `var slidesTimer = null` executado depois apagaria a referência ao relógio
+     já criado, e nenhuma nova renderização conseguiria pará-lo. */
+  var SLIDE_MS = 1500;
+  var slidesTimer = null;
 
   /* A ponte precisa existir mesmo quando um renderer de conteúdo cai no
      fallback estático. As funções abaixo são declarações hasteadas, então a
@@ -520,7 +527,96 @@
     return u;
   }
 
-  function aplicarVideoDaCapa(hero) {
+  /* ===== CAPAS DOS PROJETOS NO FUNDO DA CAPA =====
+     hero.projectSlideshow:true troca o vídeo por uma sequência com a capa de
+     cada projeto visível, na ordem do índice. É uma chave própria, e não um
+     quinto valor de videoMode, porque o Worker só aceita os quatro modos de
+     vídeo: um valor novo ali faria toda publicação da home voltar com 422. A
+     configuração do vídeo continua gravada e volta a valer ao desligar.
+
+     Cada capa fica SLIDE_MS na tela. A nova entra por cima da anterior, que
+     só some depois de coberta, então a troca nunca escurece no meio. O zoom
+     alterna a cada passo (aproxima, afasta), contado por passo e não pela
+     posição da imagem: com número ímpar de capas, a volta ao início repetiria
+     o mesmo sentido. Fora da tela ou com a aba oculta o relógio não avança.
+     SLIDE_MS e slidesTimer moram lá em cima, junto de TIPOS_DE_BLOCO. */
+  function indiceDaCapa(overrideIndex) {
+    if (overrideIndex) return overrideIndex;
+    var cache = window.__CMS_PROJECTS_INDEX__;
+    if (cache && Array.isArray(cache.projects)) return cache;
+    try {
+      var xf = new XMLHttpRequest();
+      xf.open('GET', 'content/projects/index.json?v=1', false);
+      xf.setRequestHeader('Cache-Control', 'no-cache');
+      xf.send(null);
+      if (xf.status === 200 || xf.status === 0) return (window.__CMS_PROJECTS_INDEX__ = JSON.parse(xf.responseText));
+    } catch (e) { /* sem índice, a capa fica com o fundo de sempre */ }
+    return null;
+  }
+  function pararSlides(liquidBg) {
+    if (slidesTimer) { clearInterval(slidesTimer); slidesTimer = null; }
+    var antigo = liquidBg.querySelector('.hero-slides');
+    if (antigo) antigo.remove();
+    liquidBg.classList.remove('has-slides');
+  }
+  function montarSlides(liquidBg, idx, reduced) {
+    /* coverLight, o mesmo dado que troca o tema do header sobre os cards,
+       marca as capas claras: elas ganham um véu a mais para não clarear a
+       capa inteira e disputar com o nome. */
+    var capas = projetosPublicos(idx || {}).map(function (p) {
+      return { src: typeof p.cover === 'string' ? p.cover.trim() : '', clara: p.coverLight === true };
+    }).filter(function (c) { return c.src; });
+    if (!capas.length) return false;
+    var caixa = document.createElement('div');
+    caixa.className = 'hero-slides';
+    var slides = capas.map(function (c) {
+      var s = document.createElement('div');
+      s.className = 'hero-slide' + (c.clara ? ' is-clara' : '');
+      var img = document.createElement('img');
+      img.setAttribute('src', resolveAssetUrl(c.src));
+      img.setAttribute('alt', '');
+      img.setAttribute('decoding', 'async');
+      s.appendChild(img);
+      caixa.appendChild(s);
+      return s;
+    });
+    /* antes da vinheta no DOM; a ordem de pintura vem do z-index de cada um */
+    var veu = liquidBg.querySelector('.lq-veil');
+    liquidBg.insertBefore(caixa, veu || null);
+    liquidBg.classList.add('has-video', 'has-slides');
+
+    var atual = 0, passo = 0;
+    function mostrar(s) {
+      s.classList.remove('zoom-in', 'zoom-out');
+      void s.offsetWidth; /* reinicia a animação do zoom */
+      s.classList.add(passo % 2 ? 'zoom-out' : 'zoom-in', 'is-ativo');
+      passo++;
+    }
+    function comecar() {
+      if (!caixa.isConnected) return;
+      liquidBg.classList.add('video-pronto');
+      mostrar(slides[0]);
+      if (reduced || slides.length < 2) return;
+      slidesTimer = setInterval(function () {
+        if (document.hidden || liquidBg.classList.contains('parado')) return;
+        var anterior = slides[atual];
+        atual = (atual + 1) % slides.length;
+        anterior.classList.add('is-saindo');
+        anterior.classList.remove('is-ativo');
+        mostrar(slides[atual]);
+        setTimeout(function () { anterior.classList.remove('is-saindo'); }, 700);
+      }, SLIDE_MS);
+    }
+    var primeira = slides[0].querySelector('img');
+    if (primeira.complete && primeira.naturalWidth) comecar();
+    else {
+      primeira.addEventListener('load', comecar, { once: true });
+      primeira.addEventListener('error', comecar, { once: true });
+    }
+    return true;
+  }
+
+  function aplicarVideoDaCapa(hero, overrideIndex) {
     var liquidBg = document.querySelector('.hero .liquid-bg');
     if (!liquidBg) return;
     var video = liquidBg.querySelector('.hero-video');
@@ -530,6 +626,7 @@
 
     /* Limpa o estado anterior SEMPRE, antes de decidir o novo. É o que impede
        iframe duplicado quando a prévia do CMS reenvia dados a cada tecla. */
+    pararSlides(liquidBg);
     var iframeAntigo = liquidBg.querySelector('.hero-vimeo');
     if (iframeAntigo) iframeAntigo.remove();
     if (video) { video.hidden = true; video.removeAttribute('src'); }
@@ -544,6 +641,10 @@
     } else {
       liquidBg.classList.remove('has-poster');
     }
+
+    /* Capas dos projetos têm prioridade sobre o vídeo. Sob movimento reduzido
+       a primeira capa fica parada, sem troca nem zoom. */
+    if (hero.projectSlideshow === true && montarSlides(liquidBg, indiceDaCapa(overrideIndex), reduced)) return;
 
     /* Movimento reduzido: nada de autoplay. Fica o poster, ou o fundo animado
        em CSS, que nesse modo já está parado (ver main.js/pintarFundos). */
@@ -636,7 +737,7 @@
       nextHint.hidden = hero.showNextHint === false;
     }
 
-    aplicarVideoDaCapa(hero);
+    aplicarVideoDaCapa(hero, overrideIndex);
 
     if (H.work) {
       setText(document.querySelector('.wi-title'), H.work.titlePt, H.work.titleEn);

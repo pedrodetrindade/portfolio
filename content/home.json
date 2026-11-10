@@ -27,6 +27,7 @@
     "backgroundVideo": "",
     "backgroundVideoPoster": "",
     "videoMode": "vimeo",
+    "projectSlideshow": true,
     "vimeo": {
       "url": "https://vimeo.com/1218774319",
       "videoId": "1218774319",

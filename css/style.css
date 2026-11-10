@@ -650,6 +650,38 @@ body.menu-open header .ctrl-group{opacity:0}
      e é o mesmo intervalo em que as massas de gradiente saem. */
   opacity:0;transition:opacity var(--hero-video-fade,2200ms) linear}
 .hero-vimeo.is-pronto{opacity:1}
+
+/* Capas dos projetos no fundo da capa (hero.projectSlideshow, montadas pelo
+   content-render.js). Ocupam o lugar do iframe: mesmo z-index, mesma entrada
+   por fundido longo e linear enquanto as massas saem, e a vinheta (.lq-veil,
+   z-index 2) segue por cima protegendo o nome. O ::after escurece o conjunto
+   para as capas, muito diferentes entre si, ficarem na paleta escura do site.
+   A capa nova entra por cima (.is-ativo, z 2) e a anterior (.is-saindo) só
+   perde a opacidade depois de coberta, então a troca não escurece no meio.
+   O zoom é linear de propósito, como a escala do nome na intro: um easing
+   forte resolveria quase todo o movimento no começo e pararia a imagem. */
+.hero-slides{position:absolute;inset:0;z-index:1;opacity:0;
+  transition:opacity var(--hero-video-fade,2200ms) linear}
+.liquid-bg.video-pronto .hero-slides{opacity:1}
+.hero-slides::after{content:"";position:absolute;inset:0;z-index:3;
+  background:rgba(var(--ink-rgb),.45)}
+.hero-slide{position:absolute;inset:0;overflow:hidden;opacity:0;
+  transition:opacity var(--hero-slide-fade,450ms) linear}
+.hero-slide.is-ativo{opacity:1;z-index:2}
+.hero-slide.is-saindo{opacity:1;z-index:1;transition:none}
+.hero-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transform-origin:50% 50%}
+/* capa clara (coverLight no índice): véu a mais, só nela */
+.hero-slide.is-clara::after{content:"";position:absolute;inset:0;
+  background:rgba(var(--ink-rgb),.32)}
+.hero-slide.zoom-in img{animation:hero-zoom-in 2000ms linear forwards}
+.hero-slide.zoom-out img{animation:hero-zoom-out 2000ms linear forwards}
+@keyframes hero-zoom-in{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes hero-zoom-out{from{transform:scale(1.08)}to{transform:scale(1)}}
+.liquid-bg.parado .hero-slide img{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){
+  .hero-slide img{animation:none!important}
+}
 /* decorativo: não captura clique nem foco, e o conteúdo da capa segue acima */
 .liquid-bg .lq-veil{z-index:2}
 @media(prefers-reduced-motion:reduce){

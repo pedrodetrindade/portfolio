@@ -1933,6 +1933,8 @@
       fieldRow('Indicador de rolagem — rótulo (EN)', '', ta('hero_nhlen', hero.nextHintLabelEn)) +
       fieldRow('Indicador de rolagem — destino (PT)', '"Projetos"', ta('hero_nhnpt', hero.nextHintNamePt)) +
       fieldRow('Indicador de rolagem — destino (EN)', '', ta('hero_nhnen', hero.nextHintNameEn)) +
+      fieldRow('Capas dos projetos no fundo', 'Ligado, as capas dos projetos visíveis passam atrás do seu nome, 1,5 s cada, com zoom alternado, no lugar do vídeo. A configuração de fundo abaixo fica guardada para quando desligar.',
+        switchControl('hero_slides', hero.projectSlideshow === true)) +
       fieldRow('Fundo da capa', 'O que aparece atrás do seu nome.',
         '<select id="hero_videomode">' + MODOS_CAPA.map(function (m) {
           return '<option value="' + m[0] + '"' + (modoDaCapa(hero) === m[0] ? ' selected' : '') + '>' + esc(m[1]) + '</option>';
@@ -1988,6 +1990,13 @@
     bindSwitch('hero_shownexthint', function (enabled) {
       if (enabled) delete hero.showNextHint;
       else hero.showNextHint = false;
+      touch();
+    });
+    /* Recurso opcional: ausência é desligado (o contrário de showNextHint, que
+       nasceu ligado). Desligar apaga o campo em vez de gravar false. */
+    bindSwitch('hero_slides', function (enabled) {
+      if (enabled) hero.projectSlideshow = true;
+      else delete hero.projectSlideshow;
       touch();
     });
     bindSwitch('hero_grain', function (enabled) {

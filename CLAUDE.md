@@ -548,6 +548,21 @@ vídeo entrava por cima dele de estalo. As massas agora saem por fundido cruzado
 (`.video-pronto` no `.liquid-bg`, posta junto com `.is-pronto` no iframe), no
 mesmo intervalo em que o vídeo entra. Nunca volte a usar `display:none` aí.
 
+**O fundo da capa pode ser as capas dos projetos, no lugar do vídeo.**
+`hero.projectSlideshow: true` (interruptor "Capas dos projetos no fundo" no
+painel) monta em `.hero-slides` a capa de cada projeto visível, na ordem do
+índice: 1,5 s cada (`SLIDE_MS`), zoom linear alternando aproxima/afasta por
+passo (não pela posição, para a volta ao início não repetir o sentido), a nova
+entrando por cima da anterior para a troca não escurecer. Chave própria, e não
+um quinto valor de `videoMode`: o Worker só aceita os quatro modos e recusaria
+a home inteira. A configuração do Vimeo continua gravada e volta ao desligar.
+Um véu de `--ink` a 45% mantém as capas na paleta, e as marcadas `coverLight`
+ganham outro por cima. Fora da tela ou com a aba oculta o relógio não avança;
+sob movimento reduzido fica só a primeira capa, parada. `SLIDE_MS` e
+`slidesTimer` precisam ficar declarados no topo do `content-render.js`, junto de
+`TIPOS_DE_BLOCO`: `renderHome()` roda antes da linha onde estariam, e
+`setInterval(fn, undefined)` disparou a cada poucos milissegundos.
+
 **Fundido longo pede curva linear, não `--ease-soft`.** Medido: `.16,1,.3,1`
 resolve 49% da opacidade em 10% do tempo e 75% em 20%. Num fundido de 1s isso é
 um pulo de ~300ms com uma cauda invisível de 700ms — foi o que fazia o vídeo da
