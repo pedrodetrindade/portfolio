@@ -1065,6 +1065,12 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    isso o pseudo-elemento sangra até a largura útil da janela. Sem override do
    CMS, todos preservam o fundo histórico. */
 .hero,#work,#help,#contact{position:relative;isolation:isolate}
+/* Trabalhos pinta acima do Sobre: o cordão do crachá (cracha.js) começa
+   escondido atrás do card logo acima dele. Sem isto o Sobre, que vem depois
+   no documento, pintaria o cordão por cima do card. Nada mais do Sobre chega
+   em Trabalhos além do cordão e da subida de tom e névoa, que ficam sob o
+   ruído de Trabalhos, como o resto da seção. */
+#work{z-index:1}
 .hero::before,#work::before,#help::before,#contact::before{content:"";position:absolute;
   inset-block:0;left:50%;width:var(--vw,100vw);margin-left:calc(var(--vw,100vw) / -2);
   pointer-events:none;z-index:-3}
@@ -1425,17 +1431,22 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 .cf-nome{font-size:1.05rem;font-weight:var(--w-medium);letter-spacing:-.02em;color:var(--ink);line-height:1.1}
 .cf-cargo{font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--ink-3)}
 /* o verso saiu junto com o clique que virava o crachá */
-/* presilha: a peça metálica onde o cordão prende, entrando pela fenda */
-.cracha-presilha{position:absolute;left:50%;top:-16px;width:24px;height:30px;margin-left:-12px;z-index:3;
-  border-radius:5px;background:linear-gradient(90deg,var(--muted-2),var(--cream) 45%,var(--muted-2));
-  box-shadow:0 1px 0 rgba(var(--paper-rgb),.6) inset,0 3px 6px rgba(var(--ink-rgb),.5)}
-.cracha-presilha::after{content:"";position:absolute;left:50%;top:4px;width:12px;height:5px;margin-left:-6px;
+/* presilha: a peça metálica onde o cordão prende, entrando pela fenda.
+   Medidas a pedido de Pedro: 24px de presilha e 14px de fita liam finos
+   demais para o cartão, 48 e 42 (quase a fenda inteira, .cf-furo, 54px)
+   ficaram grossos; 36 e 30 é o meio. A presilha desce 4px para dentro da
+   fenda (altura 34: o furo começa 14px abaixo do topo do cartão), para ler
+   presa nela, e não apoiada em cima. */
+.cracha-presilha{position:absolute;left:50%;top:-16px;width:36px;height:34px;margin-left:-18px;z-index:3;
+  border-radius:6px;background:linear-gradient(90deg,var(--muted-2),var(--cream) 45%,var(--muted-2));
+  box-shadow:0 1px 0 rgba(var(--paper-rgb),.6) inset,0 -3px 0 rgba(var(--ink-rgb),.35) inset,0 3px 6px rgba(var(--ink-rgb),.5)}
+.cracha-presilha::after{content:"";position:absolute;left:50%;top:5px;width:20px;height:6px;margin-left:-10px;
   border-radius:3px;background:var(--ink-2)}
 .cracha-cordao{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:1}
-.cc-fita{fill:none;stroke:var(--ink-3);stroke-width:14;stroke-linecap:butt}
+.cc-fita{fill:none;stroke:var(--ink-3);stroke-width:30;stroke-linecap:butt}
 /* trilho do texto: invisível, o texto corre no meio da fita */
 .cc-trilho{fill:none;stroke:none}
-.cc-texto{font-family:var(--mono);font-size:7px;letter-spacing:.06em;fill:var(--muted-2);dominant-baseline:middle}
+.cc-texto{font-family:var(--mono);font-size:9px;letter-spacing:.06em;fill:var(--muted-2);dominant-baseline:middle}
 
 /* reveal por máscara: a imagem descobre de baixo para cima e assenta a escala.
    1250ms, o tempo de imagem: mais longo que texto, sem parecer preguiçoso. */

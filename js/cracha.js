@@ -13,12 +13,14 @@
    alvo, e o cartão gira pela direção do cordão.
 
    O cordão vem de trás do card de Trabalhos logo acima do crachá (pedido de
-   Pedro): a âncora fica exatamente na borda de baixo desse card. O Sobre
-   pinta depois de Trabalhos, então o cordão não pode passar dessa borda, ou
-   apareceria por cima do card; começando rente a ela, lê como se saísse de
-   trás. Sem card acima na mesma vertical, a âncora volta ao topo da seção.
-   O card entra com transform (.reveal), então a borda é remedida quando a
-   entrada dele termina, sem zerar o respiro.
+   Pedro). #work pinta acima do Sobre (z-index:1 no CSS), então a âncora fica
+   ESCONDIDA atrás do card, 16px acima da borda de baixo dele, e o cordão
+   aparece saindo de trás. A borda é a da caixa de layout (offsetTop), que
+   ignora o transform de entrada do card: medida pelo retângulo da tela, ela
+   vinha ~20px abaixo enquanto o card ainda entrava, e o topo do cordão pulava
+   quando a entrada terminava. Começando rente à borda, sem estar atrás, o
+   cordão também ficava solto embaixo do card durante a entrada. Sem card
+   acima na mesma vertical, a âncora volta ao topo da seção.
 
    O cordão é uma linha reta da âncora até a presilha, e não
    mais uma corda de verlet. A corda física fazia sentido com arraste; com um
@@ -35,8 +37,9 @@
      cordão;
    - o alvo da mola é a posição de layout mais o respiro, então o grid nunca
      muda: a foto oscila em volta de onde sempre esteve.
-   Entra por fundido, não pela máscara de baixo para cima das outras imagens,
-   que num objeto pendurado lia como se ele carregasse de cabeça para baixo.
+   Entra por fundido logo na montagem (detalhes em aparecer, mais abaixo), não
+   pela máscara de baixo para cima das outras imagens, que num objeto
+   pendurado lia como se ele carregasse de cabeça para baixo.
    O respiro também entra aos poucos (2,5s), para não começar no meio de um
    balanço.
    O laço dorme com a aba oculta e fora de alcance: usa o mesmo .parado que o
@@ -146,23 +149,35 @@
       theta += omega * DT;
     }
 
+    /* Topo da caixa de layout somando offsetTop até o fim da cadeia (o
+       .smooth-holder, ou o body sem rolagem suave): ignora transform, tanto o
+       de entrada do card quanto o da rolagem. Os dois lados da conta usam a
+       mesma cadeia, então a diferença vale em qualquer modo. */
+    const topoDeLayout = el => {
+      let y = 0;
+      for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
+      return y;
+    };
+    const ESCONDIDO = 16;     // quanto o topo do cordão fica atrás do card
     /* O card de Trabalhos cuja largura cobre a linha do cordão e que termina
        acima do Sobre, o mais baixo deles. */
     function cardAcima(xTela, topoSecao) {
       let melhor = null, base = -Infinity;
       document.querySelectorAll('#work .card, #work .home-teaser').forEach(c => {
         const r = c.getBoundingClientRect();
-        if (!r.height || xTela < r.left + 20 || xTela > r.right - 20 || r.bottom > topoSecao + 1) return;
-        if (r.bottom > base) { base = r.bottom; melhor = c; }
+        const b = topoDeLayout(c) + c.offsetHeight;
+        if (!c.offsetHeight || xTela < r.left + 30 || xTela > r.right - 30 || b > topoSecao + 1) return;
+        if (b > base) { base = b; melhor = c; }
       });
-      return melhor;
+      return melhor ? base : null;
     }
     function medirAncora() {
       const rf = figura.getBoundingClientRect();
-      const rs = secao.getBoundingClientRect();
-      const card = cardAcima(rf.left + casa.x, rs.top);
-      const topo = card ? card.getBoundingClientRect().bottom : rs.top + 1;
-      ancora = { x: casa.x, y: topo - rf.top };
+      const topoFigura = topoDeLayout(figura);
+      const topoSecao = topoDeLayout(secao);
+      const base = cardAcima(rf.left + casa.x, topoSecao);
+      const topo = base !== null ? base - ESCONDIDO : topoSecao + 1;
+      ancora = { x: casa.x, y: topo - topoFigura };
     }
 
     function medir() {
@@ -206,38 +221,36 @@
       else if (!deve && raf) { cancelAnimationFrame(raf); raf = 0; }
     }
 
-    /* entrada: quando o sistema de entradas do main.js marca a foto com .in,
-       o crachá e o cordão aparecem por fundido (CSS), parados no lugar; o
-       respiro começa a partir daí */
+    /* entrada: o fundido (CSS) começa assim que o crachá é montado, e não mais
+       quando o sistema de entradas marca a foto com .in. O cordão sai de trás
+       do card de Trabalhos e atravessa o respiro entre as seções: esperando a
+       entrada da foto, ele surgia do nada no meio da descida (Pedro achou
+       estranho). Como a montagem acontece no carregamento, quase sempre com a
+       pessoa ainda no alto da página, o fundido corre fora da tela, e cordão e
+       crachá já estão ali quando a rolagem chega neles. Se a página abrir com
+       o Sobre à vista, o fundido cobre a troca da foto pelo crachá. */
     let visivel = false;
     const aparecer = () => {
       figura.classList.add('cracha-visivel');
       visivel = true;
       sincronizar();
     };
-    if (retrato.classList.contains('in')) aparecer();
-    else {
-      const mo = new MutationObserver(() => {
-        if (!retrato.classList.contains('in')) return;
-        mo.disconnect();
-        aparecer();
-      });
-      mo.observe(retrato, { attributes: true, attributeFilter: ['class'] });
-    }
+    aparecer();
     const aoMudar = () => { if (visivel) sincronizar(); };
     document.addEventListener('visibilitychange', aoMudar);
     if (marcador) new MutationObserver(aoMudar).observe(marcador, { attributes: true, attributeFilter: ['class'] });
 
     const ro = new ResizeObserver(() => medir());
     ro.observe(figura);
-    /* a entrada do card (transform do .reveal) termina depois da medida
-       inicial: só a âncora é refeita, o respiro segue de onde estava */
+    /* A distância do card até o crachá muda sem o crachá mudar de tamanho: o
+       respiro de cima do Sobre é em vh, então basta a janela mudar de altura
+       (a barra de um aviso do navegador, por exemplo) para a âncora sair do
+       lugar. Sobre e Trabalhos observados: só a âncora é refeita, sem zerar o
+       respiro. */
     const trabalhos = document.getElementById('work');
-    if (trabalhos) trabalhos.addEventListener('transitionend', e => {
-      if (e.propertyName !== 'transform' || !e.target.matches('.card, .home-teaser')) return;
-      medirAncora();
-      desenhar();
-    });
+    const roAncora = new ResizeObserver(() => { medirAncora(); desenhar(); });
+    roAncora.observe(secao);
+    if (trabalhos) roAncora.observe(trabalhos);
     medir();
     return { remedir: medir };
   }

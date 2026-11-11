@@ -26,7 +26,7 @@
   var DITHER_V = 9;
   var DITHER_CAPA_V = 3;
   var ASSINATURA_V = 1;
-  var CRACHA_V = 9;
+  var CRACHA_V = 12;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];

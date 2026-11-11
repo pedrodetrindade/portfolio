@@ -924,12 +924,22 @@ aqui é 2,5D sem biblioteca. Visual de crachá como na referência: cartão clar
 (`--paper`, é um objeto, não uma seção), fenda e presilha metálica no alto,
 foto quadrada encaixada, nome e cargo embaixo. Cordão em SVG com o nome em
 mono, **saindo de trás do card de Trabalhos logo acima** (pedido de Pedro; antes
-saía do topo da seção): a âncora é a borda de baixo desse card, medida em
-`medirAncora()`. O Sobre pinta depois de Trabalhos, então o cordão não pode
-passar da borda (apareceria por cima do card); começando rente a ela, lê como
-se viesse de trás. O card entra com transform (`.reveal`), por isso a âncora é
-refeita no `transitionend` dele, sem zerar o respiro. Sem card na mesma
-vertical, volta ao topo da seção. Sem "trind9de" em lugar nenhum do crachá, a pedido.
+saía do topo da seção). `#work` tem `z-index:1` e pinta acima do Sobre, e a
+âncora fica 16px acima da borda de baixo do card (`ESCONDIDO`), atrás dele.
+A borda é a da caixa de layout (soma de `offsetTop`, em `medirAncora()`),
+que ignora o transform de entrada do card. Duas tentativas que não
+funcionaram: começar rente à borda pelo `getBoundingClientRect` deixava o
+topo do cordão ~20px abaixo do card enquanto ele entrava, com um pulo no fim
+da entrada; e sem observar Sobre e Trabalhos (`ResizeObserver`), a âncora
+envelhecia quando a janela mudava de altura (o respiro do Sobre é em vh), e o
+cordão passava 5,6px por cima do card. Sem card na mesma vertical, volta ao
+topo da seção.
+**Cordão e crachá já existem quando a rolagem chega neles:** o fundido começa
+na montagem, e não mais no `.in` da foto. Esperando a entrada da foto, o
+cordão surgia do nada no meio da descida (Pedro achou estranho).
+Presilha de 36px e fita de 30px (eram 24 e 14, finos; 48 e 42, grossos),
+contra a fenda de 54px. A presilha tem 34px de altura e desce 4px para
+dentro da fenda, para ler presa nela. Sem "trind9de" em lugar nenhum do crachá, a pedido.
 **Sem interação nenhuma, só respiro** (pedido de Pedro, depois de ter sido
 arrastável e de virar com clique): o verso saiu junto com a virada, e sem
 arraste ele deixou de exigir mouse, então tablet de toque também recebe. O
@@ -947,7 +957,7 @@ transformava numa dobra da fita logo acima da presilha (Pedro viu o cordão
 "bugado"). Pendurado pelo peso, o cordão fica esticado; reto é o certo. O laço
 dorme com a aba oculta e longe da seção, pelo mesmo `.parado` que o `main.js`
 põe em `[data-sobre-dither]`; o tempo do respiro só anda com o laço acordado.
-Entra por fundido da figura inteira, parado no lugar. A máscara de baixo para
+Entra por fundido da figura inteira, parado no lugar, logo na montagem. A máscara de baixo para
 cima das outras imagens fica desligada aqui: num objeto pendurado ela lia como
 se o crachá carregasse de cabeça para baixo ao chegar na seção.
 `casa` vem de `offsetLeft/offsetTop` do cartão (caixa de layout): o
