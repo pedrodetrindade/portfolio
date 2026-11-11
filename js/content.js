@@ -193,6 +193,19 @@
   }
   applyGlobalTokens(GLOBAL);
 
+  /* Antes do primeiro quadro. Os scripts de página ficam no fim do body, e num
+     Ctrl+F5 o navegador desenha o header estático enquanto ainda os baixa: por
+     um quadro aparecia a pílula do menu central (desligado no painel) e, na
+     Home, o header inteiro, que a intro esconde logo depois. Este arquivo roda
+     no <head> e já tem os dados, então decide as duas coisas antes. O main.js
+     confirma o menu e tira o intro-pendente no mesmo instante em que liga a
+     intro; se ele não rodar, uma animação de reserva devolve o header. */
+  if (GLOBAL.header && GLOBAL.header.showMenu === false) {
+    document.documentElement.classList.add('menu-desligado');
+  }
+  var semMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!isWorkPath && !semMovimento) document.documentElement.classList.add('intro-pendente');
+
   /* Página só usa a própria seção de dados a partir daqui; guardamos tudo em
      window para a Fase B (chamada de outro <script>, no fim do body,
      depois que o HTML existe) reaproveitar sem novo pedido de rede. */

@@ -569,6 +569,11 @@ body.menu-open header .ctrl-group{opacity:0}
    frações, mas visibility também tira o botão do Tab e do leitor de tela,
    e o main.js ainda marca o grupo como inert. */
 html.menu-desligado header .ctrl-group{visibility:hidden;pointer-events:none}
+/* Na Home o header fica escondido desde o primeiro quadro até a intro assumir
+   (content.js põe intro-pendente no <head>, main.js tira). A animação é só a
+   reserva para o main.js não rodar: depois de 6s o header volta sozinho. */
+html.intro-pendente header{opacity:0;animation:header-de-reserva 0s linear 6s forwards}
+@keyframes header-de-reserva{to{opacity:1}}
 @media(hover:hover) and (pointer:fine){
   .nav .ctrl-group:hover{border-color:var(--floating-line-strong)}
 }

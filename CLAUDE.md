@@ -492,6 +492,18 @@ deixa o fundo inerte: é painel, não modal. A carência de 170ms e a ponte
 invisível `.overlay.dropdown::before` cobrem o vão entre botão e painel; sem
 elas o cursor sai da região interativa no meio do caminho e o menu pisca.
 
+**O primeiro quadro é decidido no `<head>`, não no fim do body.** Num
+Ctrl+F5 o navegador desenha o header estático enquanto ainda baixa os
+scripts do fim do body, e Pedro via por um quadro a pílula do menu central
+(desligado) e, na Home, o header inteiro antes de a intro escondê-lo. O
+`content.js`, que roda no `<head>` com o `global.json` já lido, põe
+`menu-desligado` e, na Home sem movimento reduzido, `intro-pendente` no
+`<html>` (header com opacidade 0). O `main.js` tira o `intro-pendente` na
+mesma tarefa em que liga a intro, então não há quadro entre os dois; se ele
+não rodar, a animação `header-de-reserva` devolve o header em 6s. Medido
+segurando o `main.js` por 2,5s: antes, header e pílula visíveis nas duas
+páginas; depois, nada na Home e a pílula escondida no case.
+
 **O menu central está desativado, não apagado** (pedido de Pedro):
 `global.json > header.showMenu:false`, interruptor "Mostrar menu central" no
 painel (ausência = ligado; religar apaga o campo). O `main.js` lê o campo em

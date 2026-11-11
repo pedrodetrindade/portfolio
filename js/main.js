@@ -1121,6 +1121,9 @@
     setTimeout(terminar, total + 120);
   }
 
+  /* o content.js escondeu o header antes do primeiro quadro (intro-pendente);
+     daqui em diante quem manda é a intro, decidida nesta mesma tarefa */
+  document.documentElement.classList.remove('intro-pendente');
   if (!heroName) {
     heroOn();                                   // páginas de case
   } else if (reduced) {
