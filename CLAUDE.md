@@ -402,10 +402,24 @@ camada de acessibilidade (skip link, foco visível, `aria-label` bilíngue,
 `inert` no fundo com overlay aberto) já estão no lugar.
 
 **Os cases são todos projetos reais, vindos do Behance (behance.net/trind9de).**
-Colégio Assertivo, trind9de, Karmine Corp e dgzin são os destaques da home
-(`featured`, no máximo 4); AnaLu, Social media e Skye aparecem só em `/work/`,
-que hoje está desligado (ver "Todos os trabalhos está desligado", abaixo):
-por enquanto essas três páginas só abrem por link direto.
+A Home tem seis destaques (`featured`, no máximo 6, o `slice` da grade no
+`content-render`), em três linhas de dois, na ordem pedida por Pedro em
+11/11/2026: Colégio Assertivo, LOUD dgzin, Social media, Karmine Corp,
+FURIA Heat e Tenove. Os dois últimos são **"em breve"**
+(`availability:"coming-soon"` no índice, select "Disponibilidade" no painel):
+o card vira `<article class="home-teaser">`, sem link, com a capa esmaecida e
+"em breve" no canto, e o `content.js` manda o endereço direto do case para
+`/#work`. A navegação anterior/próximo dos cases já pula os "em breve".
+- **Tenove é o antigo trind9de**: só o título mudou. Slug, pasta
+  (`work/trind9de/`) e imagens continuam `trind9de`, e a imagem dele segue na
+  sequência da capa.
+- **FURIA Heat não tem página**: só `content/projects/furia-heat.json` (no
+  molde do projeto novo do painel) e a entrada no índice. Para publicar o case
+  um dia, a página `work/furia-heat/index.html` precisa ser criada antes de
+  trocar a disponibilidade para Publicado, senão o card leva a um 404.
+AnaLu e Skye aparecem só em `/work/`, que hoje está desligado (ver "Todos os
+trabalhos está desligado", abaixo): por enquanto essas páginas só abrem por
+link direto.
 Os slugs provisórios saíram e viraram redirecionamento: `case-02` para
 `trind9de`, `case-03` para `karmine-corp` e `case-04`, que repetia a imagem do
 Assertivo, para `/work/`. A navegação estática de cada página de case (anterior
@@ -417,7 +431,12 @@ O retrato do Sobre é um placeholder `.portrait`. O texto dos cases já é
 conteúdo real, gerenciado pelo CMS, não mais genérico.
 
 A seção de experiência foi removida de propósito: essa informação fica só no
-LinkedIn e no currículo. Redes sociais são apenas LinkedIn e Behance.
+LinkedIn e no currículo. **A única rede no site é o LinkedIn.** O Behance
+saiu a pedido de Pedro (11/11/2026) pelo interruptor "Mostrar Behance" do
+painel (`social.behanceActive:false`), com o endereço ainda gravado: religar
+devolve os links. O menu do `main.js` ignorava esse interruptor e tinha o
+endereço fixo como reserva; agora respeita, e nenhuma reserva (nem a do
+`content-render`, usada quando o `global.json` falha) traz o Behance.
 
 **Sob `prefers-reduced-motion` o conteúdo aparece imediatamente:** durações vão
 a 0.01ms, os `.reveal` são forçados a opacidade 1 e sem deslocamento, e o JS

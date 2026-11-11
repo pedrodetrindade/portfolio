@@ -217,7 +217,17 @@
   if (isCase) {
     var slugParts = workPath.split('/');
     var slug = slugParts[slugParts.length - 1] === 'index.html' ? slugParts[slugParts.length - 2] : slugParts[slugParts.length - 1].replace('.html', '');
-    window.__CMS_PROJECT__ = xhrJSON('content/projects/' + slug + '.json?v=2') || {};
+    /* Case "em breve" (availability:coming-soon no índice) não abre: o card
+       da Home já não tem link, e quem chega pelo endereço direto vai para a
+       seção Trabalhos, do mesmo jeito do /work/ desligado. Hoje: Tenove (o
+       slug ainda é trind9de) e FURIA Heat. */
+    var entradaDoCase = (window.__CMS_PROJECTS_INDEX__.projects || []).filter(function (p) { return p && p.slug === slug; })[0];
+    if (entradaDoCase && entradaDoCase.availability === 'coming-soon') {
+      document.documentElement.style.visibility = 'hidden';
+      location.replace('/#work');
+    } else {
+      window.__CMS_PROJECT__ = xhrJSON('content/projects/' + slug + '.json?v=2') || {};
+    }
   }
 
   function setMeta(selector, attr, value) {

@@ -33,59 +33,11 @@
       "coverLight": false
     },
     {
-      "slug": "trind9de",
-      "visible": true,
-      "featured": true,
-      "cardSize": "normal",
-      "order": 2,
-      "titlePt": "trind9de",
-      "titleEn": "trind9de",
-      "subtitlePt": "",
-      "subtitleEn": "",
-      "category": "identidade visual, branding",
-      "tagsPt": [
-        "identidade visual",
-        "branding"
-      ],
-      "tagsEn": [
-        "visual identity",
-        "branding"
-      ],
-      "year": 2023,
-      "cover": "assets/uploads/trind9de/capa-ceu-zoom.webp",
-      "coverMobile": "",
-      "coverLight": true
-    },
-    {
-      "slug": "karmine-corp",
-      "visible": true,
-      "featured": true,
-      "cardSize": "normal",
-      "order": 3,
-      "titlePt": "Karmine Corp",
-      "titleEn": "Karmine Corp",
-      "subtitlePt": "",
-      "subtitleEn": "",
-      "category": "key visual, social media",
-      "tagsPt": [
-        "key visual",
-        "social media"
-      ],
-      "tagsEn": [
-        "key visual",
-        "social media"
-      ],
-      "year": 2023,
-      "cover": "assets/uploads/karmine-corp/foto-time.webp",
-      "coverMobile": "",
-      "coverLight": false
-    },
-    {
       "slug": "dgzin",
       "visible": true,
       "featured": true,
       "cardSize": "normal",
-      "order": 4,
+      "order": 2,
       "titlePt": "LOUD dgzin",
       "titleEn": "LOUD dgzin",
       "subtitlePt": "",
@@ -105,35 +57,11 @@
       "coverLight": false
     },
     {
-      "slug": "analu",
-      "visible": true,
-      "featured": false,
-      "cardSize": "normal",
-      "order": 5,
-      "titlePt": "AnaLu",
-      "titleEn": "AnaLu",
-      "subtitlePt": "",
-      "subtitleEn": "",
-      "category": "media kit",
-      "tagsPt": [
-        "media kit",
-        "editorial"
-      ],
-      "tagsEn": [
-        "media kit",
-        "editorial"
-      ],
-      "year": 2025,
-      "cover": "assets/uploads/analu/capa.webp",
-      "coverMobile": "",
-      "coverLight": false
-    },
-    {
       "slug": "social-media",
       "visible": true,
-      "featured": false,
+      "featured": true,
       "cardSize": "normal",
-      "order": 6,
+      "order": 3,
       "titlePt": "Social media",
       "titleEn": "Social media",
       "subtitlePt": "",
@@ -153,11 +81,109 @@
       "coverLight": true
     },
     {
-      "slug": "skye",
+      "slug": "karmine-corp",
+      "visible": true,
+      "featured": true,
+      "cardSize": "normal",
+      "order": 4,
+      "titlePt": "Karmine Corp",
+      "titleEn": "Karmine Corp",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "key visual, social media",
+      "tagsPt": [
+        "key visual",
+        "social media"
+      ],
+      "tagsEn": [
+        "key visual",
+        "social media"
+      ],
+      "year": 2023,
+      "cover": "assets/uploads/karmine-corp/foto-time.webp",
+      "coverMobile": "",
+      "coverLight": false
+    },
+    {
+      "slug": "furia-heat",
+      "visible": true,
+      "featured": true,
+      "cardSize": "normal",
+      "order": 5,
+      "titlePt": "FURIA Heat",
+      "titleEn": "FURIA Heat",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "social media, streampack",
+      "tagsPt": [
+        "social media",
+        "streampack"
+      ],
+      "tagsEn": [
+        "social media",
+        "streampack"
+      ],
+      "year": 2024,
+      "cover": "",
+      "coverMobile": "",
+      "coverLight": false,
+      "availability": "coming-soon"
+    },
+    {
+      "slug": "trind9de",
+      "visible": true,
+      "featured": true,
+      "cardSize": "normal",
+      "order": 6,
+      "titlePt": "Tenove",
+      "titleEn": "Tenove",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "identidade visual, branding",
+      "tagsPt": [
+        "identidade visual",
+        "branding"
+      ],
+      "tagsEn": [
+        "visual identity",
+        "branding"
+      ],
+      "year": 2023,
+      "cover": "assets/uploads/trind9de/capa-ceu-zoom.webp",
+      "coverMobile": "",
+      "coverLight": true,
+      "availability": "coming-soon"
+    },
+    {
+      "slug": "analu",
       "visible": true,
       "featured": false,
       "cardSize": "normal",
       "order": 7,
+      "titlePt": "AnaLu",
+      "titleEn": "AnaLu",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "media kit",
+      "tagsPt": [
+        "media kit",
+        "editorial"
+      ],
+      "tagsEn": [
+        "media kit",
+        "editorial"
+      ],
+      "year": 2025,
+      "cover": "assets/uploads/analu/capa.webp",
+      "coverMobile": "",
+      "coverLight": false
+    },
+    {
+      "slug": "skye",
+      "visible": true,
+      "featured": false,
+      "cardSize": "normal",
+      "order": 8,
       "titlePt": "Skye",
       "titleEn": "Skye",
       "subtitlePt": "",

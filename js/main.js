@@ -151,7 +151,9 @@
   const redesCms = (window.__CMS_GLOBAL__ && window.__CMS_GLOBAL__.social) || {};
   const redesGlobais = {
     linkedin: redesCms.linkedin || 'https://www.linkedin.com/in/pedrodetrindade',
-    behance: redesCms.behance || 'https://www.behance.net/trind9de'
+    /* Behance só com endereço no painel e o interruptor ligado: o menu era o
+       único lugar que ignorava o "Mostrar Behance" e caía num endereço fixo */
+    behance: redesCms.behanceActive === false ? '' : (redesCms.behance || '')
   };
 
   /* Ícones temáticos, SVG inline (sem biblioteca, sem requisição). São

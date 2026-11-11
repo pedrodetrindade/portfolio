@@ -468,7 +468,6 @@
         },
         social: {
           linkedin: 'https://www.linkedin.com/in/pedrodetrindade',
-          behance: 'https://www.behance.net/trind9de',
           email: 'contact@pedrodetrindade.com'
         },
         header: { menu: [
@@ -1066,7 +1065,8 @@
       if (idx) {
         var list = projetosPublicos(idx).filter(function (p) {
           return p.featured === true;
-        }).slice(0, 4);
+        /* até seis destaques: Pedro pediu três linhas de dois na Home */
+        }).slice(0, 6);
         var cardsEl = document.querySelector('.cards');
         if (cardsEl) {
           cardsEl.innerHTML = list.map(function (p, cardIndex) {

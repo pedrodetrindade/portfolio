@@ -1,0 +1,54 @@
+{
+  "$schema": "Conteúdo de uma página de projeto. Editado pelo painel administrativo.",
+  "slug": "furia-heat",
+  "status": "draft",
+  "client": "Olavo \"HEAT\" Lemes",
+  "year": 2024,
+  "category": "social media, streampack",
+  "services": [],
+  "seo": {
+    "title": "FURIA Heat · Pedro de Trindade",
+    "description": "Identidade para as redes sociais e o canal de transmissões ao vivo de Olavo \"HEAT\" Lemes, jogador profissional de VALORANT da FURIA."
+  },
+  "hero": {
+    "eyebrowPt": "",
+    "eyebrowEn": "",
+    "titlePt": "FURIA Heat",
+    "titleEn": "FURIA Heat",
+    "subtitlePt": "",
+    "subtitleEn": "",
+    "rolePt": "",
+    "roleEn": "",
+    "scopePt": "",
+    "scopeEn": ""
+  },
+  "cover": "",
+  "coverMobile": "",
+  "blocks": [
+    {
+      "type": "text",
+      "labelPt": "contexto",
+      "labelEn": "context",
+      "textPt": "",
+      "textEn": ""
+    },
+    {
+      "type": "text",
+      "labelPt": "processo",
+      "labelEn": "process",
+      "textPt": "",
+      "textEn": ""
+    },
+    {
+      "type": "text",
+      "labelPt": "resultado",
+      "labelEn": "outcome",
+      "textPt": "",
+      "textEn": ""
+    },
+    {
+      "type": "gallery",
+      "images": []
+    }
+  ]
+}
