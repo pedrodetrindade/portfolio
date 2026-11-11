@@ -413,7 +413,8 @@ com "3D" sempre em maiúsculas.
 **Os cases são todos projetos reais, vindos do Behance (behance.net/trind9de).**
 A Home tem seis destaques (`featured`, no máximo 6, o `slice` da grade no
 `content-render`), em três linhas de dois, na ordem pedida por Pedro em
-11/11/2026: Colégio Assertivo, LOUD dgzin, Social media, Karmine Corp,
+11/11/2026 (Social media e LOUD dgzin trocados depois): Colégio Assertivo,
+Social media, LOUD dgzin, Karmine Corp,
 FURIA Heat e Tenove. Os dois últimos são **"em breve"**
 (`availability:"coming-soon"` no índice, select "Disponibilidade" no painel):
 o card vira `<article class="home-teaser">`, sem link, com a capa esmaecida,

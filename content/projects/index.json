@@ -33,35 +33,11 @@
       "coverLight": false
     },
     {
-      "slug": "dgzin",
-      "visible": true,
-      "featured": true,
-      "cardSize": "normal",
-      "order": 2,
-      "titlePt": "LOUD dgzin",
-      "titleEn": "LOUD dgzin",
-      "subtitlePt": "",
-      "subtitleEn": "",
-      "category": "3D, social media",
-      "tagsPt": [
-        "3D",
-        "Social media"
-      ],
-      "tagsEn": [
-        "3D",
-        "Social media"
-      ],
-      "year": 2023,
-      "cover": "assets/uploads/dgzin/capa-cordao.webp",
-      "coverMobile": "",
-      "coverLight": false
-    },
-    {
       "slug": "social-media",
       "visible": true,
       "featured": true,
       "cardSize": "normal",
-      "order": 3,
+      "order": 2,
       "titlePt": "Social media",
       "titleEn": "Social media",
       "subtitlePt": "",
@@ -77,6 +53,30 @@
       ],
       "year": 2024,
       "cover": "assets/uploads/social-media/capa-listagem.webp",
+      "coverMobile": "",
+      "coverLight": false
+    },
+    {
+      "slug": "dgzin",
+      "visible": true,
+      "featured": true,
+      "cardSize": "normal",
+      "order": 3,
+      "titlePt": "LOUD dgzin",
+      "titleEn": "LOUD dgzin",
+      "subtitlePt": "",
+      "subtitleEn": "",
+      "category": "3D, social media",
+      "tagsPt": [
+        "3D",
+        "Social media"
+      ],
+      "tagsEn": [
+        "3D",
+        "Social media"
+      ],
+      "year": 2023,
+      "cover": "assets/uploads/dgzin/capa-cordao.webp",
       "coverMobile": "",
       "coverLight": false
     },
