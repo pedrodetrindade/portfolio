@@ -885,6 +885,18 @@ gravado: religar devolve o texto. O `content-render.js` põe
 o CSS usa para escolher entre os dois layouts. O marquee estático foi removido
 das seis páginas porque era o que aparecia sem JS.
 
+**Deslocamento por `transform` não ocupa espaço, e isso quebrou o rodapé no
+celular.** O e-mail desce `footer.emailOffset` (hoje 30px) por `translateY`:
+no desktop Navegação e Redes ficam ao lado e nada colide, mas abaixo de 900px
+elas descem para a linha de baixo do grid, e o e-mail e o botão de copiar
+invadiam "Navegação" e "Redes" (Pedro viu no celular). Abaixo de 900px o
+deslocamento vira margem, no fluxo, e o espaço entre as linhas no celular
+subiu para 2rem. O `legalOffset` do crédito também é transform, mas só desce
+dentro do próprio espaço. Para conferir sobreposições em todas as telas há um
+detector (texto sobre texto, controle sobre texto, conteúdo fora da tela,
+rodapé cortado) rodado em Home e cases de 320 a 1920px: zero achados depois
+da correção, e ele acusa o bug na versão antiga.
+
 **Duas margens `auto` de frente uma para a outra não centralizam nada.** Ao
 tirar o marquee, o conteúdo do rodapé ficou preso em cima com um vão morto
 embaixo. `margin-bottom:auto` no grid contra o `margin-top:auto` do bloco de

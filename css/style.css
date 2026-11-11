@@ -2871,6 +2871,14 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 @media(max-width:899px){
   .site-footer,.site-footer-inner{min-height:42rem}
   .site-footer-inner{padding-top:clamp(2.25rem,5vh,3rem);padding-bottom:0}
+  /* Abaixo de 900px Navegação e Redes descem para a linha de baixo do grid, e
+     o deslocamento do e-mail (footer.emailOffset no painel, hoje 30px), que no
+     desktop é transform, não ocupava espaço: a linha do e-mail e o botão de
+     copiar invadiam "Navegação" e "Redes". Aqui ele vira margem, no fluxo,
+     e empurra a linha de baixo junto. Nunca negativo: puxaria o e-mail para
+     cima do texto de apoio. */
+  .site-footer-email-row{transform:none;
+    margin-top:max(0px,calc(clamp(1.1rem,2.2vh,1.8rem) + var(--site-footer-email-offset,12px)))}
   .site-footer.has-footer-nav .site-footer-grid,
   .site-footer.has-footer-nav.has-footer-social .site-footer-grid{grid-template-columns:minmax(0,1fr) repeat(2,minmax(8rem,1fr))}
   .site-footer-contact{grid-column:1/-1}
@@ -2880,7 +2888,7 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 @media(max-width:639px){
   .site-footer,.site-footer-inner{min-height:44rem}
   .site-footer.has-footer-nav .site-footer-grid,
-  .site-footer.has-footer-nav.has-footer-social .site-footer-grid{grid-template-columns:1fr 1fr;gap:1.35rem 1.25rem}
+  .site-footer.has-footer-nav.has-footer-social .site-footer-grid{grid-template-columns:1fr 1fr;gap:2rem 1.25rem}
   .site-footer-contact{grid-column:1/-1}
   .site-footer-contact h2{font-size:clamp(2rem,9.5vw,3rem)}
   .site-footer-support{font-size:.82rem;line-height:1.42}
