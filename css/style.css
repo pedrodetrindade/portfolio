@@ -2585,6 +2585,12 @@ body[data-availability="hidden"] .menu-panel-head{justify-content:flex-start}
 .home-teaser .scene{opacity:.62;
   transition:opacity var(--dur-micro) var(--ease-soft),transform var(--dur-micro) var(--ease-soft)}
 .home-teaser .coming-label{color:var(--cream)}
+/* A capa de um projeto em breve fica com 15% da saturação original, a pedido
+   de Pedro: o card se separa dos publicados pela cor, não só pelo esmaecido.
+   É filtro de cor numa imagem parada, não blur: pinta uma vez e fica pronta.
+   Vale também para o card de "Todos os trabalhos" (desligado hoje). */
+.home-teaser .scene img,
+.work-archive-card--coming .work-archive-media .scene img{filter:saturate(.15)}
 @media(hover:hover) and (pointer:fine){
   .home-teaser:hover .scene{opacity:.7;transform:scale(1.025)}
 }

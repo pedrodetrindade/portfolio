@@ -407,8 +407,9 @@ A Home tem seis destaques (`featured`, no máximo 6, o `slice` da grade no
 11/11/2026: Colégio Assertivo, LOUD dgzin, Social media, Karmine Corp,
 FURIA Heat e Tenove. Os dois últimos são **"em breve"**
 (`availability:"coming-soon"` no índice, select "Disponibilidade" no painel):
-o card vira `<article class="home-teaser">`, sem link, com a capa esmaecida e
-"em breve" no canto, e o `content.js` manda o endereço direto do case para
+o card vira `<article class="home-teaser">`, sem link, com a capa esmaecida,
+a 15% da saturação original (`filter:saturate(.15)` na `<img>`, pedido de
+Pedro; filtro de cor em imagem parada, não blur) e "em breve" no canto, e o `content.js` manda o endereço direto do case para
 `/#work`. A navegação anterior/próximo dos cases já pula os "em breve".
 - **Tenove é o antigo trind9de**: só o título mudou. Slug, pasta
   (`work/trind9de/`) e imagens continuam `trind9de`, e a imagem dele segue na
