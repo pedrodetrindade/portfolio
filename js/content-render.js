@@ -23,7 +23,7 @@
      baixado depois do load da página, quando o navegador fica ocioso. */
   var BASE_JS = document.currentScript && document.currentScript.src
     ? document.currentScript.src.replace(/content-render\.js(\?.*)?$/, '') : '';
-  var DITHER_V = 10;
+  var DITHER_V = 11;
   var DITHER_CAPA_V = 4;
   var ASSINATURA_V = 1;
   var CRACHA_V = 13;
@@ -318,6 +318,16 @@
         window.__CMS_SOBRE_DITHER__ = D.montar(host, {
           padrao: 'nevoa', borracha: false, intensidade: 0.42, velocidade: 0.4
         });
+        /* Painel de ondas no vão à direita, entre as ações do Sobre e a lista
+           de "O que eu faço" (pedido de Pedro: espaço desperdiçado). Mais vivo
+           e mais visível que a névoa, com as mesmas cristas do rodapé. Só a
+           partir de 1100px, onde a lista fica à direita e o vão existe. */
+        var painel = document.querySelector('[data-sobre-painel]');
+        if (painel && !window.__CMS_SOBRE_PAINEL__ && window.matchMedia('(min-width: 1100px)').matches) {
+          window.__CMS_SOBRE_PAINEL__ = D.montar(painel, {
+            padrao: 'ondas-livres', borracha: false, intensidade: 0.62, velocidade: 0.85
+          });
+        }
       }).catch(function () {
         window.__CMS_SOBRE_DITHER__ = null;
         host.classList.add('sem-webgl');

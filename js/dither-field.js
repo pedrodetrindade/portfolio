@@ -103,9 +103,19 @@ float nevoa(vec2 p, float t) {
   float n = fbm(q * 0.16 + d * 1.6 + vec2(-t * 0.01, t * 0.008));
   return smoothstep(0.36, 0.8, n);
 }
+float ondasLivres(vec2 p, float t) {
+  // As mesmas cristas diagonais do rodapé, sem o peso vertical dele (que
+  // concentra as ondas na faixa de baixo do rodapé): o painel do Sobre é um
+  // retângulo solto no meio da página, e quem dá a forma é a máscara do CSS.
+  vec2 q = p / 32.0;
+  float warp = fbm(q * 0.09 + vec2(t * 0.035, t * 0.02));
+  float s = 0.5 + 0.5 * sin(q.x * 0.9 + q.y * 0.6 + warp * 5.0 - t * 0.4);
+  return pow(s, 2.5) + 0.12 * warp;
+}
 void main() {
   vec2 p = gl_FragCoord.xy / uView * uSize;
-  float v = uPadrao > 0.5 ? nevoa(p, uTime) : pattern(p, uSize, uTime);
+  float v = uPadrao > 1.5 ? ondasLivres(p, uTime)
+          : uPadrao > 0.5 ? nevoa(p, uTime) : pattern(p, uSize, uTime);
   outColor = vec4(clamp(v, 0.0, 1.0), 0.0, 0.0, 1.0);
 }`;
 
@@ -242,7 +252,7 @@ void main() {
       },
       padrao(nome) {
         gl.useProgram(campo);
-        gl.uniform1f(em(campo, 'uPadrao'), nome === 'nevoa' ? 1 : 0);
+        gl.uniform1f(em(campo, 'uPadrao'), nome === 'ondas-livres' ? 2 : nome === 'nevoa' ? 1 : 0);
       },
       desenhar(tempo, rastro) {
         gl.useProgram(campo);

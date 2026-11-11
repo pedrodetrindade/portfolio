@@ -1852,9 +1852,34 @@
       trocaIni = Math.min(Math.round(subida + fimSobre - rs.top), trocaFim - 40);
       baseAjuda = lista ? Math.max(0, Math.round(ra.bottom - lista.getBoundingClientRect().bottom)) : 0;
     }
-    const chave = [subida, descida, trocaIni, trocaFim, baseAjuda].join();
+    /* Painel de ondas no vão à direita: do fim das ações do Sobre até o topo
+       da lista de "O que eu faço", na largura da coluna de texto até a borda
+       da lista. Altura pela caixa de layout (offsetTop), não pelo retângulo:
+       as ações e os itens entram com transform (.reveal), e medidos no meio
+       da entrada o painel nasceria deslocado. Só a partir de 1100px (a lista
+       fica à direita) e só se o vão tiver altura para respirar. */
+    const topoDeLayout = el => { let y = 0; for (let n = el; n; n = n.offsetParent) y += n.offsetTop; return y; };
+    const acoes = sobre.querySelector('.about-actions');
+    const colTexto = sobre.querySelector('.about-text');
+    let painel = null;
+    if (acoes && colTexto && lista && window.innerWidth >= 1100) {
+      const base0 = topoDeLayout(sobre);
+      const topo = topoDeLayout(acoes) + acoes.offsetHeight + 40 - base0;
+      const fim = topoDeLayout(lista) - 36 - base0;
+      const esq = colTexto.getBoundingClientRect().left - rs.left;
+      const dir = lista.getBoundingClientRect().right - rs.left;
+      if (fim - topo >= 160 && dir - esq >= 240) painel = [Math.round(esq), Math.round(topo), Math.round(dir - esq), Math.round(fim - topo)];
+    }
+    const chave = [subida, descida, trocaIni, trocaFim, baseAjuda, painel].join();
     if (chave === chaveSobre) return;
     chaveSobre = chave;
+    sobre.classList.toggle('tem-painel', !!painel);
+    if (painel) {
+      sobre.style.setProperty('--painel-esq', painel[0] + 'px');
+      sobre.style.setProperty('--painel-topo', painel[1] + 'px');
+      sobre.style.setProperty('--painel-larg', painel[2] + 'px');
+      sobre.style.setProperty('--painel-alt', painel[3] + 'px');
+    }
     sobre.style.setProperty('--sobre-subida', subida + 'px');
     sobre.style.setProperty('--sobre-descida', descida + 'px');
     sobre.style.setProperty('--sobre-troca-ini', trocaIni + 'px');
@@ -1863,7 +1888,7 @@
   };
   const medirFundos = () => {
     medirExtensaoDoSobre();
-    fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither],[data-sobre-dither],.about-photo')].map(el => {
+    fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither],[data-sobre-dither],[data-sobre-painel],.about-photo')].map(el => {
       const r = el.getBoundingClientRect();
       return { el, topo: r.top + posVisual, base: r.bottom + posVisual, ativo: null };
     });

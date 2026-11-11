@@ -728,6 +728,17 @@ entre as duas não existe emenda nenhuma.
   a lista ocupa a largura toda, e os pontos voltam só no respiro de baixo
   (`--sobre-help-base`). Mexeu no grid do Sobre ou de "O que eu faço", remeça
   e mova os stops.
+- **Painel de ondas no vão à direita** (pedido de Pedro: o espaço entre as
+  ações do Sobre e a lista de "O que eu faço" era desperdiçado). Segunda
+  instância do `dither-field.js`, mais viva e mais visível que a névoa
+  (`padrao:'ondas-livres'`, as cristas do rodapé sem o peso vertical dele;
+  intensidade .62, velocidade .85), na mesma paleta. O `main.js` mede o vão
+  em `medirExtensaoDoSobre` pela caixa de layout (as ações e os itens entram
+  com transform) e publica `--painel-*` e a classe `tem-painel`, só a partir
+  de 1100px e com pelo menos 160px de altura; abaixo disso a lista ocupa a
+  largura toda e o vão não existe. Bordas dissolvidas nos quatro lados, sem
+  texto atrás. Pausa fora de alcance pelo `.parado` (`[data-sobre-painel]`
+  no `medirFundos`). Medido: rolagem 25,4% → 26,0% da thread principal.
 - **Tom e névoa descem por "O que eu faço" inteiro** (`--sobre-descida`, a
   altura do `#help`) e saem pela base dele, na mesma curva. As distâncias
   mudam com a tela (`#help` é 100svh centrado), então o `main.js` mede tudo em
