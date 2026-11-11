@@ -4,7 +4,7 @@
   "status": "published",
   "client": "",
   "year": 2023,
-  "category": "3d",
+  "category": "3D",
   "services": [
     "Design 3D",
     "Direção de arte"
@@ -14,16 +14,16 @@
     "description": "Case: estudo autoral em 3D com a agente Skye no mapa Haven, de VALORANT. Modelagem, composição de cena e correção de cor por Pedro de Trindade."
   },
   "hero": {
-    "eyebrowPt": "arte 3d",
-    "eyebrowEn": "3d art",
+    "eyebrowPt": "arte 3D",
+    "eyebrowEn": "3D art",
     "titlePt": "Skye",
     "titleEn": "Skye",
     "subtitlePt": "",
     "subtitleEn": "",
-    "rolePt": "Direção de Arte & 3D",
-    "roleEn": "Art Direction & 3D",
-    "scopePt": "Modelagem, Composição de Cena e Correção de Cor",
-    "scopeEn": "Modeling, Scene Composition & Color Correction"
+    "rolePt": "Direção de arte & 3D",
+    "roleEn": "Art direction & 3D",
+    "scopePt": "Modelagem, composição de cena e correção de cor",
+    "scopeEn": "Modeling, scene composition & color correction"
   },
   "cover": "assets/uploads/skye/capa.webp",
   "coverMobile": "",

@@ -4,7 +4,7 @@
   "status": "published",
   "client": "",
   "year": 2023,
-  "category": "3d, social media",
+  "category": "3D, social media",
   "services": [
     "Direção de arte",
     "Design 3D"
@@ -14,16 +14,16 @@
     "description": "Case: identidade para as redes sociais e a Twitch de dgzin, jogador profissional de VALORANT da LOUD. Logotipo 3D, capas e painéis por Pedro de Trindade."
   },
   "hero": {
-    "eyebrowPt": "direção de arte e 3d",
-    "eyebrowEn": "art direction and 3d",
+    "eyebrowPt": "direção de arte e 3D",
+    "eyebrowEn": "art direction and 3D",
     "titlePt": "LOUD dgzin",
     "titleEn": "LOUD dgzin",
     "subtitlePt": "",
     "subtitleEn": "",
-    "rolePt": "Direção de Arte, Design & 3D",
-    "roleEn": "Art Direction, Design & 3D",
-    "scopePt": "Logotipo 3D, Capas para Twitter e YouTube, Painéis e Badges da Twitch",
-    "scopeEn": "3D Logotype, Twitter & YouTube Banners, Twitch Panels & Badges"
+    "rolePt": "Direção de arte, design & 3D",
+    "roleEn": "Art direction, design & 3D",
+    "scopePt": "Logotipo 3D, capas para Twitter e YouTube, painéis e badges da Twitch",
+    "scopeEn": "3D logotype, Twitter & YouTube banners, Twitch panels & badges"
   },
   "cover": "assets/uploads/dgzin/capa-cordao.webp",
   "coverMobile": "",
@@ -38,8 +38,8 @@
     },
     {
       "type": "text",
-      "labelPt": "processo 3d e brilho",
-      "labelEn": "3d process and glow",
+      "labelPt": "processo 3D e brilho",
+      "labelEn": "3D process and glow",
       "textPt": "O logotipo e a coroa foram modelados no Blender, partindo de uma versão em argila até chegar ao vidro. Depois vieram a composição das cenas e o brilho, que dão ao nome um aspecto quase líquido.",
       "textEn": "The logotype and its crown were modeled in Blender, moving from a clay pass to a glass finish. Scene composition and glow came next, giving the name an almost liquid quality."
     },
