@@ -582,14 +582,21 @@ O menu do `main.js` já levava "Trabalhos" para `index.html#work`.
 
 **O Sobre tem tom e névoa próprios, e nenhuma linha.** Pedido de Pedro: cor
 levemente diferente de Trabalhos, dither suave e passagem suave entre as duas.
+**"O que eu faço" tem o mesmo fundo** (pedido depois): tom e névoa não são
+camadas próprias dele, são as do Sobre descendo pela seção inteira, então
+entre as duas não existe emenda nenhuma.
 - O tom (`.about-fundo`) é `--ink-2` a 50% sobre o que já existe, não cor
   opaca: o `.glow` fixo continua passando por baixo. Medido a 1920: Trabalhos
   rgb(23,20,20), Sobre rgb(33,27,28). A cor do painel (`--about-section-bg`)
   manda quando existe.
 - As divisórias saíram pelo próprio interruptor do painel
   (`sections.about.showDividers:false`), e tom e pontos se dissolvem por
-  máscara nas bordas. A curva do tom é desenhada em stops, entrada e saída
-  lentas; medida, a luminância sobe de 20,6 a 28,3 em ~200px sem degrau.
+  máscara nas bordas, com a mesma curva desenhada em stops (entrada e saída
+  lentas). **A entrada é longa como a dissolução da capa em Trabalhos**:
+  as duas camadas sobem para o respiro vazio de Trabalhos (`--sobre-subida`,
+  até 24px abaixo do último card, 146px a 1920) e só fecham ~20vh dentro do
+  Sobre (`--sobre-entrada`). Antes os pontos entravam em 6rem e a borda de
+  cima do dither lia como uma linha: Pedro viu e pediu a passagem da capa.
 - A névoa é o `js/dither-field.js` com `{padrao:'nevoa', borracha:false}`
   e intensidade .42 (era .34; Pedro pediu o dither um pouco mais visível no
   site todo, menos no rodapé)
@@ -599,23 +606,35 @@ levemente diferente de Trabalhos, dither suave e passagem suave entre as duas.
   medi-lo; `.parado` pausa o laço.
 - Tom e pontos são camadas separadas (`.about-fundo` e `.about-pontos`): dentro
   da máscara do tom, os pontos do respiro de cima sumiriam junto com ele.
-- **A névoa nunca passa por trás do texto.** Com 22% ou 12% de pontos ali, o
-  "Capacidades" (`--muted-2`, mono pequeno) caía a 4,27:1 e 4,48:1 no
-  percentil 98 do fundo. A partir de 640px os pontos ficam do lado do retrato
-  e se apagam antes da coluna de texto (que começa em 51% da largura a partir
-  de 900px e em 43% no tablet, medido); no celular, só nos respiros de cima e
-  de baixo. Mexeu no grid do Sobre, remeça e mova os stops da máscara.
-- **A névoa desce além do Sobre, até o cabeçalho de "O que eu faço".** A
-  distância muda com a altura da tela (`#help` é 100svh centrado), então o
-  `main.js` mede em `medirExtensaoDoSobre()`, chamada no começo de
-  `medirFundos()`: topo do `.help-head` menos o fim do `.about-break`, menos
-  24px, publicado como `--sobre-pontos-extra` no `.about-break`. O
-  `.about-pontos` desce essa altura e se apaga na própria entrada de baixo;
-  no celular a faixa de baixo soma a extensão. Para a camada poder sair da
-  seção, o Sobre corta só nas laterais (`overflow-x:clip;overflow-y:visible`,
-  dentro de `@supports`: sem clip, `visible` ao lado de `hidden` vira `auto`
-  e abriria uma rolagem dentro da seção). `#help` vem depois no documento, então
-  o conteúdo dele pinta por cima dos pontos.
+- **Texto pequeno em `--muted-2` nunca fica sobre a névoa.** Com 22% ou 12% de
+  pontos ali, o "Capacidades" (mono pequeno) caía a 4,27:1 e 4,48:1 no
+  percentil 98 do fundo, e com a névoa cheia (.42) cai a 3,47:1. Título em
+  `--paper` e texto de apoio em `--muted` aguentam a névoa cheia (medidos
+  10,5:1 e 5,28:1), e é por isso que o cabeçalho de "O que eu faço" pode
+  ficar sobre ela. Os números dos itens (`--muted-2`) ficam só sobre o tom:
+  4,67:1.
+- **Três máscaras aninhadas, que se multiplicam:** `.about-pontos` (entrada e
+  saída verticais), `.about-pontos-lado` (o desenho do Sobre) e `.about-dither`
+  (o de "O que eu faço"). O desenho do Sobre: a partir de 640px, do lado do
+  retrato, apagado antes da coluna de texto (51% da largura a partir de 900px,
+  43% no tablet, medido); no celular, só nos respiros. O de "O que eu faço",
+  somado a uma faixa que vale 1 até o fim do conteúdo do Sobre e 0 a 24px do
+  cabeçalho de "O que eu faço" (`--sobre-troca-ini/-fim`), para a troca ser
+  gradual: a partir de 1100px, a coluna da esquerda (cheia até 26%, apagada em
+  41%; a lista começa em 43,7%, com o número colado na margem); abaixo disso
+  a lista ocupa a largura toda, e os pontos voltam só no respiro de baixo
+  (`--sobre-help-base`). Mexeu no grid do Sobre ou de "O que eu faço", remeça
+  e mova os stops.
+- **Tom e névoa descem por "O que eu faço" inteiro** (`--sobre-descida`, a
+  altura do `#help`) e saem pela base dele, na mesma curva. As distâncias
+  mudam com a tela (`#help` é 100svh centrado), então o `main.js` mede tudo em
+  `medirExtensaoDoSobre()`, chamada no começo de `medirFundos()`, e publica as
+  variáveis no `.about-break`. Para as camadas poderem sair da seção, o Sobre
+  corta só nas laterais (`overflow-x:clip;overflow-y:visible`, dentro de
+  `@supports`: sem clip, `visible` ao lado de `hidden` vira `auto` e abriria
+  uma rolagem dentro da seção). `#help` vem depois no documento, então o
+  conteúdo dele pinta por cima. A linha entre "O que eu faço" e o rodapé é
+  anterior a isso: o rodapé tem fundo próprio, rgb(21,17,17).
 - **Sem rótulos pequenos** em Sobre, "O que eu faço" e no "Contato" do rodapé,
   a pedido: `about.showKicker` e `help.showKicker` em `false`, e o rodapé ganhou
   o mesmo interruptor (`footer.showKicker`, "Mostrar chamada curta" no painel,
@@ -716,14 +735,14 @@ passo (não pela posição, para a volta ao início não repetir o sentido), a n
 entrando por cima da anterior para a troca não escurecer. Chave própria, e não
 um quinto valor de `videoMode`: o Worker só aceita os quatro modos e recusaria
 a home inteira. A configuração do Vimeo continua gravada e volta ao desligar.
-As capas são fundo, não destaque: véu de `--ink` a 90% por cima delas (mais
+As capas são fundo, não destaque: véu de `--ink` a 86% por cima delas (mais
 30% nas `coverLight`) e as massas marrons do vidro líquido continuam visíveis
 acima a 60%, animando como antes (sem `has-video`, elas não saem). Neste modo
 não há vinheta (`.lq-veil`): sobre imagens ela virava um halo escuro atrás do
 nome. A legibilidade vem do fundo inteiro escuro, medida nas seis imagens no
 percentil 98 do fundo: o rótulo pequeno em `--accent` ("Diretor de Arte...")
-fica entre 5,05:1 e 5,38:1 com o dither atual e véu de 90% (era 4,59:1 com
-as `<img>` lisas e o mesmo véu); a frase acima de 15:1. Clarear véu ou massas derruba o rótulo
+fica entre 4,83:1 e 5,28:1 com o dither atual e véu de 86% (com as `<img>`
+lisas e véu de 90% era 4,59:1); a frase acima de 15:1. Clarear véu ou massas derruba o rótulo
 abaixo de 4,5:1 primeiro.
 A base do `.liquid-bg` se dissolve por `mask-image`, não por um véu de `--ink`
 por cima: `#work` é transparente e mostra o `.glow` fixo, e um véu terminando em
@@ -847,12 +866,16 @@ níveis de Bayer, contraste 1,28, cor 70% puxada para
 ordem: mais lento e suave (zoom de 5%, porque os 8% da `<img>` faziam as
 células ferverem; deriva a um terço da velocidade), depois a trama um pouco
 mais visível (de seis para quatro níveis, contraste de 1,12 para 1,28) com as
-imagens um pouco mais escuras (véu de 90% para 92%), e por fim o dither um
-pouco mais visível de novo, pelo véu, que voltou a 90%: a trama passa 25% mais
-forte sem mexer no desenho. O canvas
+imagens um pouco mais escuras (véu de 90% para 92%), e por fim o dither mais
+visível duas vezes seguidas, pelo véu: 90% e depois 86%, que deixa passar 14%
+da trama contra os 8% de antes, sem mexer no desenho. O canvas
 fica entre as `<img>` e o véu, e as `<img>` só somem depois do fundido
-de entrada. Medido nas seis imagens, no mesmo método: rótulo da capa de
-5,44:1 a 5,79:1 com véu de 92% e de 5,05:1 a 5,38:1 com os 90% atuais.
+de entrada. Medido nas seis imagens, exatamente na caixa do rótulo da capa
+(texto escondido, p98 do fundo): de 4,93:1 a 5,39:1 com véu de 90% e de
+4,83:1 a 5,28:1 com os 86% atuais. Quem pesa mais nessa conta são as massas
+marrons por cima do véu, não as imagens. Cuidado ao medir pelo
+`computer zoom` do Chrome: a região é em coordenadas do quadro da captura
+(1568 de largura numa janela de 1920), não em px de CSS; converta.
 Texturas reduzidas a 1280px (seis fotos de 2000px com mipmap passariam de
 80MB de vídeo). Versão em `DITHER_CAPA_V`, no content-render.
 O trind9de entra na capa e como capa de listagem (card da home e `/work/`) por

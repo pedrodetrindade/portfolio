@@ -712,9 +712,10 @@ html.menu-desligado header .ctrl-group{visibility:hidden;pointer-events:none}
 /* As capas são fundo, não destaque: véu forte de --ink por cima delas e as
    massas marrons da capa antiga continuam visíveis acima, animando como
    antes. O resultado é o marrom de sempre, com as imagens passando por baixo.
-   90% (foi 92%): a pedido, o dither da capa um pouco mais visível. */
+   86% (foi 92%, depois 90%): a pedido, o dither da capa mais visível. Medido
+   no rótulo pequeno da capa, p98 do fundo: de 4,83:1 a 5,28:1. */
 .hero-slides::after{content:"";position:absolute;inset:0;z-index:4;
-  background:rgba(var(--ink-rgb),.9)}
+  background:rgba(var(--ink-rgb),.86)}
 /* Dither das imagens (js/dither-capa.js, a partir do Retro Dither do Canvas
    UI): o canvas desenha a mesma sequência em pixels de 3px, com o brilho em
    quatro níveis de Bayer e a cor puxada para a rampa abaixo. Fica entre as
@@ -1227,75 +1228,107 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    - O dither (js/dither-field.js, padrão "névoa", sem borracha: o crachá já
      é a interação da seção) fica do lado do retrato e nos respiros de cima
      e de baixo no celular, nunca atrás do texto (detalhes em .about-pontos). */
-.about-fundo{--about-fade-top:clamp(9rem,26vh,15rem);--about-fade-bottom:clamp(6rem,18vh,10rem);
-  position:absolute;inset:0;z-index:-2;pointer-events:none;
-  background:var(--about-section-bg,rgba(var(--ink-2-rgb),.5));
+/* Tom e pontos saem do Sobre pelos dois lados, com medidas que o main.js
+   publica no .about-break (medirExtensaoDoSobre):
+   --sobre-subida   quanto sobem para dentro do respiro de baixo de
+                    Trabalhos, até 24px abaixo do último card
+   --sobre-descida  quanto descem além do Sobre: "O que eu faço" inteiro,
+                    que tem o mesmo fundo (pedido de Pedro)
+   Sem JS as duas ficam em 0 e a camada fica dentro do Sobre, como antes.
+   A entrada é longa como a dissolução da capa em Trabalhos: começa no
+   respiro vazio de Trabalhos e só fecha ~20vh dentro do Sobre. Com a entrada
+   curta de antes (6rem nos pontos), a borda de cima do dither lia como linha. */
+.about-fundo,.about-pontos{
+  --sobre-entrada:calc(var(--sobre-subida,0px) + clamp(8rem,20vh,12rem));
+  --sobre-saida:clamp(8rem,22vh,13rem);
+  position:absolute;left:0;right:0;z-index:-2;pointer-events:none;
+  top:calc(-1 * var(--sobre-subida,0px));bottom:calc(-1 * var(--sobre-descida,0px));
   -webkit-mask-image:linear-gradient(to bottom,
     transparent 0,
-    rgba(0,0,0,.06) calc(var(--about-fade-top) * .2),
-    rgba(0,0,0,.25) calc(var(--about-fade-top) * .4),
-    rgba(0,0,0,.6) calc(var(--about-fade-top) * .65),
-    rgba(0,0,0,.88) calc(var(--about-fade-top) * .85),
-    #000 var(--about-fade-top),
-    #000 calc(100% - var(--about-fade-bottom)),
-    rgba(0,0,0,.88) calc(100% - var(--about-fade-bottom) * .85),
-    rgba(0,0,0,.6) calc(100% - var(--about-fade-bottom) * .65),
-    rgba(0,0,0,.25) calc(100% - var(--about-fade-bottom) * .4),
-    rgba(0,0,0,.06) calc(100% - var(--about-fade-bottom) * .2),
+    rgba(0,0,0,.06) calc(var(--sobre-entrada) * .2),
+    rgba(0,0,0,.25) calc(var(--sobre-entrada) * .4),
+    rgba(0,0,0,.6) calc(var(--sobre-entrada) * .65),
+    rgba(0,0,0,.88) calc(var(--sobre-entrada) * .85),
+    #000 var(--sobre-entrada),
+    #000 calc(100% - var(--sobre-saida)),
+    rgba(0,0,0,.88) calc(100% - var(--sobre-saida) * .85),
+    rgba(0,0,0,.6) calc(100% - var(--sobre-saida) * .65),
+    rgba(0,0,0,.25) calc(100% - var(--sobre-saida) * .4),
+    rgba(0,0,0,.06) calc(100% - var(--sobre-saida) * .2),
     transparent 100%);
           mask-image:linear-gradient(to bottom,
     transparent 0,
-    rgba(0,0,0,.06) calc(var(--about-fade-top) * .2),
-    rgba(0,0,0,.25) calc(var(--about-fade-top) * .4),
-    rgba(0,0,0,.6) calc(var(--about-fade-top) * .65),
-    rgba(0,0,0,.88) calc(var(--about-fade-top) * .85),
-    #000 var(--about-fade-top),
-    #000 calc(100% - var(--about-fade-bottom)),
-    rgba(0,0,0,.88) calc(100% - var(--about-fade-bottom) * .85),
-    rgba(0,0,0,.6) calc(100% - var(--about-fade-bottom) * .65),
-    rgba(0,0,0,.25) calc(100% - var(--about-fade-bottom) * .4),
-    rgba(0,0,0,.06) calc(100% - var(--about-fade-bottom) * .2),
+    rgba(0,0,0,.06) calc(var(--sobre-entrada) * .2),
+    rgba(0,0,0,.25) calc(var(--sobre-entrada) * .4),
+    rgba(0,0,0,.6) calc(var(--sobre-entrada) * .65),
+    rgba(0,0,0,.88) calc(var(--sobre-entrada) * .85),
+    #000 var(--sobre-entrada),
+    #000 calc(100% - var(--sobre-saida)),
+    rgba(0,0,0,.88) calc(100% - var(--sobre-saida) * .85),
+    rgba(0,0,0,.6) calc(100% - var(--sobre-saida) * .65),
+    rgba(0,0,0,.25) calc(100% - var(--sobre-saida) * .4),
+    rgba(0,0,0,.06) calc(100% - var(--sobre-saida) * .2),
     transparent 100%)}
+.about-fundo{background:var(--about-section-bg,rgba(var(--ink-2-rgb),.5))}
 /* Os pontos têm camada própria, fora da máscara do tom: dentro dela, tudo o
-   que ficasse no respiro de cima ou de baixo sumiria junto com o tom. Aqui a
-   entrada é curta (3,5rem no celular, 6rem a partir do tablet), só para a
-   borda não cortar seco.
+   que ficasse no respiro de cima ou de baixo sumiria junto com o tom.
    Onde os pontos aparecem é decidido por máscara, e não no shader, porque
-   depende do layout. A névoa nunca passa por trás do texto: com 22% ou 12%
-   de pontos ali, o rótulo "Capacidades" (--muted-2, mono pequeno) caía a
-   4,27:1 e 4,48:1 no percentil 98 do fundo.
+   depende do layout. Três camadas aninhadas, e as máscaras se multiplicam:
+   .about-pontos (entrada e saída verticais, acima), .about-pontos-lado (o
+   desenho do Sobre) e .about-dither (o de "O que eu faço", que assume aos
+   poucos numa faixa entre as duas seções).
+   Texto pequeno em --muted-2 nunca fica sobre pontos: com 22% ou 12% de
+   pontos atrás, o rótulo "Capacidades" caía a 4,27:1 e 4,48:1 no percentil
+   98 do fundo, e com os pontos cheios (intensidade .42) ele cai a 3,47:1.
+   Título (--paper) e texto de apoio (--muted) aguentam a névoa cheia:
+   10,5:1 e 5,46:1 medidos no p98, por isso o cabeçalho de "O que eu faço"
+   pode ficar sobre ela. */
+/* Desenho do Sobre.
+   - No celular o texto ocupa a largura toda, então os pontos ficam só nos
+     respiros: o de cima (com a subida) e tudo abaixo do conteúdo do Sobre,
+     onde a camada de dentro decide o que sobra em "O que eu faço".
    - A partir de 640px: do lado do retrato, cheia até perto do crachá e
      apagada antes da coluna de texto, que começa em 51% da largura a partir
-     de 900px e em 43% no tablet (medido).
-   - No celular o texto ocupa a largura toda, então os pontos ficam só no
-     respiro de cima e no de baixo, onde tom e seção se dissolvem. */
-/* --sobre-pontos-extra é medido pelo main.js (medirFundos): a distância do
-   fim do Sobre até o cabeçalho de "O que eu faço", menos 24px. A camada
-   desce até lá e se apaga na própria entrada de baixo, logo acima do título.
-   Sem JS fica em 0, dentro do Sobre como antes. */
-.about-pontos{--pontos-fade:3.5rem;position:absolute;inset:0;bottom:calc(-1 * var(--sobre-pontos-extra,0px));
-  z-index:-2;pointer-events:none;
-  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 var(--pontos-fade),#000 calc(100% - var(--pontos-fade)),transparent 100%);
-          mask-image:linear-gradient(to bottom,transparent 0,#000 var(--pontos-fade),#000 calc(100% - var(--pontos-fade)),transparent 100%)}
-.about-dither{position:absolute;inset:0;overflow:hidden;
-  --dither-low:var(--ink-2);--dither-mid:var(--ink-3);--dither-high:rgb(var(--warm-rgb));
-  /* no celular a faixa de baixo cobre o respiro do Sobre mais a extensão */
-  --faixa-topo:var(--about-pad-top-mobile,7rem);
-  --faixa-base:calc(var(--about-pad-bottom-mobile,7rem) + var(--sobre-pontos-extra,0px));
+     de 900px e em 43% no tablet (medido). */
+.about-pontos-lado{position:absolute;inset:0;
+  --faixa-topo:calc(var(--sobre-subida,0px) + var(--about-pad-top-mobile,7rem));
+  --faixa-base:calc(var(--about-pad-bottom-mobile,7rem) + var(--sobre-descida,0px));
   -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 calc(var(--faixa-topo) - 2.5rem),transparent calc(var(--faixa-topo) - .5rem)),
                      linear-gradient(to top,#000 0,#000 calc(var(--faixa-base) - 2.5rem),transparent calc(var(--faixa-base) - .5rem));
           mask-image:linear-gradient(to bottom,#000 0,#000 calc(var(--faixa-topo) - 2.5rem),transparent calc(var(--faixa-topo) - .5rem)),
                      linear-gradient(to top,#000 0,#000 calc(var(--faixa-base) - 2.5rem),transparent calc(var(--faixa-base) - .5rem))}
 @media(min-width:640px){
-  .about-pontos{--pontos-fade:6rem}
-  .about-dither{
+  .about-pontos-lado{
     -webkit-mask-image:linear-gradient(to right,#000 0,#000 26%,rgba(0,0,0,.3) 35%,transparent 41%);
             mask-image:linear-gradient(to right,#000 0,#000 26%,rgba(0,0,0,.3) 35%,transparent 41%)}
 }
 @media(min-width:900px){
-  .about-dither{
+  .about-pontos-lado{
     -webkit-mask-image:linear-gradient(to right,#000 0,#000 34%,rgba(0,0,0,.3) 42%,transparent 49%);
             mask-image:linear-gradient(to right,#000 0,#000 34%,rgba(0,0,0,.3) 42%,transparent 49%)}
+}
+/* Desenho de "O que eu faço", somado (máscaras em camadas se somam) a uma
+   faixa que vale 1 até o fim do conteúdo do Sobre e 0 a partir de 24px
+   acima do cabeçalho de "O que eu faço" (--sobre-troca-ini/-fim, contadas do
+   topo da camada). Acima da faixa manda só o desenho do Sobre; abaixo dela,
+   o produto dos dois; no meio, a passagem é gradual.
+   - Abaixo de 1100px "O que eu faço" é uma coluna só, com a lista na largura
+     toda e o número de cada item (--muted-2) colado na margem: os pontos
+     voltam só no respiro de baixo, depois da lista (--sobre-help-base).
+   - A partir de 1100px a lista vai para a direita (começa em 43,7% da
+     largura) e o cabeçalho fica à esquerda, até 27%: os pontos seguem pela
+     coluna da esquerda, cheios até 26% e apagados em 41%. */
+.about-dither{position:absolute;inset:0;overflow:hidden;
+  --dither-low:var(--ink-2);--dither-mid:var(--ink-3);--dither-high:rgb(var(--warm-rgb));
+  --troca:linear-gradient(to bottom,#000 0,#000 var(--sobre-troca-ini,99999px),transparent var(--sobre-troca-fim,99999px));
+  -webkit-mask-image:var(--troca),
+    linear-gradient(to top,#000 0,#000 calc(var(--sobre-help-base,0px) - 2.5rem),transparent calc(var(--sobre-help-base,0px) - .5rem));
+          mask-image:var(--troca),
+    linear-gradient(to top,#000 0,#000 calc(var(--sobre-help-base,0px) - 2.5rem),transparent calc(var(--sobre-help-base,0px) - .5rem))}
+@media(min-width:1100px){
+  .about-dither{
+    -webkit-mask-image:var(--troca),linear-gradient(to right,#000 0,#000 26%,rgba(0,0,0,.3) 34%,transparent 41%);
+            mask-image:var(--troca),linear-gradient(to right,#000 0,#000 26%,rgba(0,0,0,.3) 34%,transparent 41%)}
 }
 /* sem WebGL2: grade de pontos parada, bem fraca, nos mesmos lugares */
 .about-dither.sem-webgl{opacity:.25;

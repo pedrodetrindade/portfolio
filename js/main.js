@@ -1787,20 +1787,45 @@
      opacidade acompanha a última altura do desfoque de rolagem, sem salto. */
   let fundos = [];
   const bordaEl = document.querySelector('.edge-blur');
-  let fimDither = null, alturaBorda = 0, opacBorda = -1, extraSobre = -1;
-  /* A névoa do Sobre desce até o cabeçalho de "O que eu faço". A distância
-     muda com a altura da tela (#help é 100svh com o conteúdo centrado), então
-     é medida aqui, antes dos fundos, para o host do dither já entrar na conta
-     com a altura nova. Diferença entre dois retângulos do mesmo conteúdo: o
-     transform do .smooth-holder não altera. */
+  let fimDither = null, alturaBorda = 0, opacBorda = -1, chaveSobre = '';
+  /* Tom e névoa do Sobre sobem para o respiro vazio de Trabalhos (a entrada
+     longa que apaga a linha onde o dither começava) e descem por "O que eu
+     faço" inteiro, que tem o mesmo fundo. As distâncias mudam com a largura
+     e a altura da tela (#help é 100svh com o conteúdo centrado), então são
+     medidas aqui, antes dos fundos, para o host do dither já entrar na conta
+     com a altura nova. Diferenças entre retângulos do mesmo conteúdo: o
+     transform do .smooth-holder não as altera. O CSS (.about-fundo,
+     .about-pontos e filhos) explica cada variável. */
   const medirExtensaoDoSobre = () => {
     const sobre = document.querySelector('.about-break');
     if (!sobre) return;
-    const cab = document.querySelector('#help:not([hidden]) .help-head');
-    const extra = cab ? Math.max(0, Math.round(cab.getBoundingClientRect().top - sobre.getBoundingClientRect().bottom - 24)) : 0;
-    if (extra === extraSobre) return;
-    extraSobre = extra;
-    sobre.style.setProperty('--sobre-pontos-extra', extra + 'px');
+    const caixa = el => el ? el.getBoundingClientRect() : null;
+    const recuoBase = el => parseFloat(getComputedStyle(el).paddingBottom) || 0;
+    const rs = sobre.getBoundingClientRect();
+    const trabalhos = document.querySelector('#work:not([hidden])');
+    const rt = caixa(trabalhos);
+    const subida = rt && rt.height ? Math.max(0, Math.round(rs.top - (rt.bottom - recuoBase(trabalhos) + 24))) : 0;
+    const ajuda = document.querySelector('#help:not([hidden])');
+    const cab = ajuda && ajuda.querySelector('.help-head');
+    const lista = ajuda && ajuda.querySelector('.help-list');
+    const grade = sobre.querySelector('.about-grid');
+    let descida = 0, trocaIni = 99999, trocaFim = 99999, baseAjuda = 0;
+    if (ajuda && cab) {
+      const ra = ajuda.getBoundingClientRect();
+      descida = Math.max(0, Math.round(ra.bottom - rs.bottom));
+      const fimSobre = grade ? grade.getBoundingClientRect().bottom : rs.bottom - recuoBase(sobre);
+      trocaFim = Math.round(subida + cab.getBoundingClientRect().top - 24 - rs.top);
+      trocaIni = Math.min(Math.round(subida + fimSobre - rs.top), trocaFim - 40);
+      baseAjuda = lista ? Math.max(0, Math.round(ra.bottom - lista.getBoundingClientRect().bottom)) : 0;
+    }
+    const chave = [subida, descida, trocaIni, trocaFim, baseAjuda].join();
+    if (chave === chaveSobre) return;
+    chaveSobre = chave;
+    sobre.style.setProperty('--sobre-subida', subida + 'px');
+    sobre.style.setProperty('--sobre-descida', descida + 'px');
+    sobre.style.setProperty('--sobre-troca-ini', trocaIni + 'px');
+    sobre.style.setProperty('--sobre-troca-fim', trocaFim + 'px');
+    sobre.style.setProperty('--sobre-help-base', baseAjuda + 'px');
   };
   const medirFundos = () => {
     medirExtensaoDoSobre();

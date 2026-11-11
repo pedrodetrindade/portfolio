@@ -132,7 +132,7 @@ void main() {
 
   function montar(caixa, liquidBg, opcoes) {
     /* quatro níveis (eram seis): degraus maiores, a trama aparece mais; o
-       véu de 90% no CSS (foi 92%, voltou a pedido para a trama aparecer
+       véu de 86% no CSS (foi 92% e 90%, desceu a pedido para a trama aparecer
        mais) escurece o conjunto para compensar */
     const o = Object.assign({ celula: 4, niveis: 4, cor: 0.7, fps: 24 }, opcoes || {});
     const estado = caixa.__estado;
