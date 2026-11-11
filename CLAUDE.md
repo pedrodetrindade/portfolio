@@ -740,6 +740,34 @@ entre as duas não existe emenda nenhuma.
   largura toda e o vão não existe. Bordas dissolvidas nos quatro lados, sem
   texto atrás. Pausa fora de alcance pelo `.parado` (`[data-sobre-painel]`
   no `medirFundos`). Medido: rolagem 25,4% → 26,0% da thread principal.
+  Fica em z -2, junto com tom e névoa, **abaixo** do ruído do Sobre: ele desce
+  até "O que eu faço", onde o ruído de `#help` já pinta por cima, e em z -1
+  ficava por cima do ruído só acima da divisa (degrau de 1,2 nível nela). Por
+  baixo do ruído as ondas não perderam contraste (medido, desfocado: 9,75 →
+  11,0).
+- **Ruído contínuo entre seções: fase e ordem.** Cada seção tem a sua
+  `.cms-section-grain`, e uma divisa entre duas só some se as duas desenharem
+  a mesma trama no mesmo lugar e na mesma ordem de pintura. Fase: o
+  `main.js` (`alinharRuido`, em `medirFundos`) publica em `--grain-fase` o
+  topo de cada camada na página e o tile é deslocado por ele; com `0 0` a
+  trama recomeçava em cada seção. Ordem: a seção de baixo pinta depois, então
+  o ruído dela fica por cima de tudo que a de cima deixa passar da divisa,
+  enquanto o ruído da de cima fica por baixo do que é dela. Pedro viu isso
+  como linha logo abaixo do crachá: a sombra dele (até 64px abaixo do cartão)
+  cruzava a divisa, e o brilho do ruído saltava 1,1 nível ali, na largura do
+  cartão. No alto, o mesmo com o cordão: `#work` pinta acima do Sobre, e o
+  cordão trocava de textura na altura da divisa (~6 níveis). Correção: as
+  emendas foram para onde nada cruza. O ruído do Sobre desce 6rem
+  (`--ruido-emenda`) e o de `#help` começa ali; o ruído do Sobre sobe até a
+  borda de baixo dos cards, onde o cordão nasce, e o de Trabalhos termina ali
+  (`--ruido-sobe` e `--ruido-corte`, medidos em `medirExtensaoDoSobre`). As
+  regras ficam no `@supports (overflow-x:clip)` e usam `:has` dos dois lados,
+  então ou valem as duas pontas de uma emenda ou nenhuma, sem faixa sem ruído
+  nem com ruído dobrado. Medido nas duas emendas novas: no máximo 0,05 nível
+  de diferença de um lado para o outro, e a sombra do crachá se dissolve sem
+  corte onde antes era a divisa. Qualquer camada nova que atravesse uma
+  divisa (sombra, cordão, painel) cai no mesmo problema: ou fica abaixo do
+  ruído dos dois lados, ou a emenda precisa ir para além dela.
 - **Tom e névoa descem por "O que eu faço" inteiro** (`--sobre-descida`, a
   altura do `#help`) e saem pela base dele, na mesma curva. As distâncias
   mudam com a tela (`#help` é 100svh centrado), então o `main.js` mede tudo em

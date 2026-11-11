@@ -1839,6 +1839,26 @@
     const trabalhos = document.querySelector('#work:not([hidden])');
     const rt = caixa(trabalhos);
     const subida = rt && rt.height ? Math.max(0, Math.round(rs.top - (rt.bottom - recuoBase(trabalhos) + 24))) : 0;
+    const topoDeLayout = el => { let y = 0; for (let n = el; n; n = n.offsetParent) y += n.offsetTop; return y; };
+    /* Emenda do ruído entre Trabalhos e Sobre na borda de baixo dos cards (o
+       CSS, em .about-break, explica): o cordão do crachá nasce ali, e daí para
+       baixo o ruído precisa ser o do Sobre, que fica sob o cordão como fica
+       no resto da descida. Caixa de layout, que ignora a entrada dos cards. */
+    let ruidoCorte = 0, ruidoSobe = 0;
+    if (rt && rt.height) {
+      const topoSobre = topoDeLayout(sobre);
+      let baseCards = -Infinity;
+      trabalhos.querySelectorAll('.card, .home-teaser').forEach(c => {
+        if (!c.offsetHeight) return;
+        const b = topoDeLayout(c) + c.offsetHeight;
+        if (b <= topoSobre + 1 && b > baseCards) baseCards = b;
+      });
+      if (baseCards > -Infinity) {
+        const fimTrabalhos = topoDeLayout(trabalhos) + trabalhos.clientTop + trabalhos.clientHeight;
+        ruidoCorte = Math.max(0, Math.round(fimTrabalhos - baseCards));
+        ruidoSobe = Math.max(0, Math.round(topoSobre + sobre.clientTop - baseCards));
+      }
+    }
     const ajuda = document.querySelector('#help:not([hidden])');
     const cab = ajuda && ajuda.querySelector('.help-head');
     const lista = ajuda && ajuda.querySelector('.help-list');
@@ -1858,7 +1878,6 @@
        as ações e os itens entram com transform (.reveal), e medidos no meio
        da entrada o painel nasceria deslocado. Só a partir de 1100px (a lista
        fica à direita) e só se o vão tiver altura para respirar. */
-    const topoDeLayout = el => { let y = 0; for (let n = el; n; n = n.offsetParent) y += n.offsetTop; return y; };
     const acoes = sobre.querySelector('.about-actions');
     const colTexto = sobre.querySelector('.about-text');
     let painel = null;
@@ -1870,9 +1889,11 @@
       const dir = lista.getBoundingClientRect().right - rs.left;
       if (fim - topo >= 160 && dir - esq >= 240) painel = [Math.round(esq), Math.round(topo), Math.round(dir - esq), Math.round(fim - topo)];
     }
-    const chave = [subida, descida, trocaIni, trocaFim, baseAjuda, painel].join();
+    const chave = [subida, descida, trocaIni, trocaFim, baseAjuda, painel, ruidoCorte, ruidoSobe].join();
     if (chave === chaveSobre) return;
     chaveSobre = chave;
+    if (trabalhos) trabalhos.style.setProperty('--ruido-corte', ruidoCorte + 'px');
+    sobre.style.setProperty('--ruido-sobe', ruidoSobe + 'px');
     sobre.classList.toggle('tem-painel', !!painel);
     if (painel) {
       sobre.style.setProperty('--painel-esq', painel[0] + 'px');
@@ -1886,8 +1907,21 @@
     sobre.style.setProperty('--sobre-troca-fim', trocaFim + 'px');
     sobre.style.setProperty('--sobre-help-base', baseAjuda + 'px');
   };
+  /* Ruído contínuo entre seções: cada .cms-section-grain recebe o próprio topo
+     na página (caixa de layout, que ignora transform) e o CSS desloca o tile
+     por ele, então todas as camadas desenham a mesma trama alinhada ao topo
+     da página e a passagem de uma seção para a outra não tem salto. */
+  const alinharRuido = () => {
+    document.querySelectorAll('.cms-section-grain').forEach(g => {
+      let y = 0;
+      for (let n = g; n; n = n.offsetParent) y += n.offsetTop;
+      const fase = Math.round(y) + 'px';
+      if (g.style.getPropertyValue('--grain-fase') !== fase) g.style.setProperty('--grain-fase', fase);
+    });
+  };
   const medirFundos = () => {
     medirExtensaoDoSobre();
+    alinharRuido();
     fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither],[data-sobre-dither],[data-sobre-painel],.about-photo')].map(el => {
       const r = el.getBoundingClientRect();
       return { el, topo: r.top + posVisual, base: r.bottom + posVisual, ativo: null };

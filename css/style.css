@@ -1090,10 +1090,15 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    todo conteúdo; a opacidade permite preservar contraste sem editar o arquivo
    original. O sangramento usa a mesma largura útil medida pelo site. */
 .cms-section-surface{position:relative;isolation:isolate}
+/* O desenho do ruído é alinhado à página, não à seção: cada seção tem a sua
+   camada, e com background-position 0 0 o tile recomeçava na borda de cada
+   uma, um salto na trama que lia como linha entre Sobre e "O que eu faço"
+   (Pedro viu), e mais discreta entre Trabalhos e Sobre. O main.js publica em
+   --grain-fase o topo de cada camada na página (medirFundos). */
 .cms-section-grain{position:absolute;inset-block:0;left:50%;width:var(--vw,100vw);
   margin-left:calc(var(--vw,100vw) / -2);z-index:-1;pointer-events:none;
   background-image:var(--grain-url);background-size:var(--grain-size) var(--grain-size);
-  background-position:0 0;background-repeat:repeat;opacity:var(--section-grain-opacity,var(--grain-opacity))}
+  background-position:0 calc(var(--grain-fase,0px) * -1);background-repeat:repeat;opacity:var(--section-grain-opacity,var(--grain-opacity))}
 .hero>.cms-section-grain{z-index:1}
 .site-footer>.cms-section-grain{inset:0;left:0;width:100%;margin-left:0;z-index:-1}
 .cms-section-surface.has-section-image::after{content:"";position:absolute;inset-block:0;
@@ -1227,6 +1232,31 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    isso fica atrás do @supports, e o navegador antigo só corta a extensão. */
 @supports (overflow-x:clip){
   .about-break{overflow-x:clip;overflow-y:visible}
+  /* Emenda do ruído entre Sobre e "O que eu faço". #help pinta depois do
+     Sobre, então o ruído dela fica por cima de tudo que o Sobre deixa passar
+     da divisa, e o do Sobre fica por baixo do crachá. A sombra do crachá
+     (até 64px abaixo do cartão) cruzava a divisa: acima dela o ruído ficava
+     sob a sombra, abaixo ficava por cima, e o brilho do ruído saltava 1,1
+     nível na divisa, uma linha da largura do cartão (Pedro viu). O ruído do
+     Sobre desce 6rem e o de #help começa ali: a emenda vai para onde nada do
+     Sobre chega, e com a fase alinhada à página (--grain-fase) ela não
+     aparece. Os dois lados dependem de :has e de clip juntos; sem um deles,
+     nenhum se aplica e não sobra faixa sem ruído nem com ruído dobrado. */
+  #about,#help{--ruido-emenda:6rem}
+  #about:has(+ #help.has-section-grain)>.about-break.has-section-grain>.cms-section-grain{
+    bottom:calc(-1 * var(--ruido-emenda))}
+  #about:has(>.about-break.has-section-grain)+#help.has-section-grain>.cms-section-grain{
+    top:var(--ruido-emenda)}
+  /* A mesma coisa no alto, com o cordão: #work pinta acima do Sobre (z-index
+     1, para o cordão nascer atrás do card), então o ruído de Trabalhos cobria
+     o trecho do cordão até a divisa e o do Sobre ficava por baixo dele dali
+     para a frente; o cordão trocava de textura na altura da divisa. A emenda
+     sobe para a borda de baixo dos cards, onde o cordão nasce: o main.js
+     publica as distâncias (--ruido-corte em #work, --ruido-sobe no Sobre). */
+  #work.has-section-grain:has(+ #about>.about-break.has-section-grain)>.cms-section-grain{
+    bottom:var(--ruido-corte,0px)}
+  #work.has-section-grain+#about:has(>.about-break.has-section-grain)>.about-break>.cms-section-grain{
+    top:calc(-1 * var(--ruido-sobe,0px))}
 }
 /* ===== FUNDO DO SOBRE: tom próprio e névoa de pontos =====
    Pedro pediu o Sobre numa cor levemente diferente de Trabalhos, com um
@@ -1357,7 +1387,9 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    e horizontal), para nunca ler como caixa. Não há texto nessa área. */
 .about-painel{display:none}
 @media(min-width:1100px){
-  .about-break.tem-painel .about-painel{display:block;position:absolute;z-index:-1;pointer-events:none;
+  /* z -2, com tom e névoa: abaixo do ruído do Sobre, como já fica abaixo do
+     ruído de "O que eu faço" no trecho que desce até lá */
+  .about-break.tem-painel .about-painel{display:block;position:absolute;z-index:-2;pointer-events:none;
     left:var(--painel-esq);top:var(--painel-topo);width:var(--painel-larg);height:var(--painel-alt);
     -webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.35) 12%,rgba(0,0,0,.8) 24%,#000 34%,#000 66%,rgba(0,0,0,.8) 76%,rgba(0,0,0,.35) 88%,transparent 100%);
             mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.35) 12%,rgba(0,0,0,.8) 24%,#000 34%,#000 66%,rgba(0,0,0,.8) 76%,rgba(0,0,0,.35) 88%,transparent 100%)}
