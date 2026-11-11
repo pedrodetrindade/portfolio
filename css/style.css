@@ -728,8 +728,11 @@ html.menu-desligado header .ctrl-group{visibility:hidden;pointer-events:none}
 .hero-dither{position:absolute;top:0;left:0;z-index:3;image-rendering:pixelated;
   opacity:0;transition:opacity var(--dur-slow) linear}
 .hero-slides.dither-pronto .hero-dither{opacity:1}
+/* Com o dither pronto as <img> não aparecem mais: a troca de opacidade de
+   cada passo (450ms a cada 1,5s) só gastava processador nelas. Fica só a
+   saída atrasada da visibilidade, que espera o fundido do canvas. */
 .hero-slides.dither-pronto .hero-slide{visibility:hidden;
-  transition:opacity var(--hero-slide-fade,450ms) linear,visibility 0s linear var(--dur-slow)}
+  transition:visibility 0s linear var(--dur-slow)}
 .hero-slides.dither-pronto .hero-slide img{animation-play-state:paused}
 /* massas a 60%: somadas à imagem, a 100% clareavam o fundo atrás do rótulo
    pequeno (--accent) até 3,7:1. Com o véu em .9 (era .86, escurecido a
@@ -1132,7 +1135,9 @@ section{padding-block:clamp(4rem,8vw,7rem)}
 /* mesmo esquema de três camadas do espaçamento de seção, resolvido pelo JS */
 .cards{display:grid;grid-template-columns:1fr;gap:var(--grid-gap-mobile,var(--grid-gap-desktop,1.6rem))}
 @media(min-width:640px) and (max-width:899px){.cards{gap:var(--grid-gap-tablet,var(--grid-gap-desktop,1.6rem))}}
-@media(min-width:860px){.cards{grid-template-columns:1fr 1fr;gap:var(--grid-gap-desktop,1.6rem)}}
+/* 900, como a .work-bleed: em 860 a grade virava duas colunas de cards
+   quadrados entre 860 e 899px, onde o combinado é uma coluna em 1:1 */
+@media(min-width:900px){.cards{grid-template-columns:1fr 1fr;gap:var(--grid-gap-desktop,1.6rem)}}
 .card{position:relative;display:block;aspect-ratio:4/3.4;border-radius:var(--radius-card,16px);overflow:hidden;
   border:1px solid var(--line-strong);background:var(--ink-2);
   transition:border-color var(--dur-hover) var(--ease-hover),
@@ -1510,6 +1515,11 @@ section{padding-block:clamp(4rem,8vw,7rem)}
    especificidade é maior de propósito, senão o envelope some no branco */
 .ghost-cta.cta-primary.cta-solid svg,.ghost-cta.cta-primary.cta-solid:hover svg{color:var(--ink)}
 .ghost-cta.cta-primary:hover{background:rgba(var(--paper-rgb),.1)}
+/* "Vamos conversar" é .cta-primary e .cta-solid ao mesmo tempo, e a regra
+   de hover acima, de mesma especificidade e escrita depois, vencia a do
+   botão cheio: no hover ele ficava com fundo quase transparente e texto
+   escuro, sumindo. Aqui volta o creme pretendido. */
+.ghost-cta.cta-primary.cta-solid:hover{background:var(--cream);border-color:var(--cream)}
 /* "Vamos conversar" abre o painel de contato: no lugar da seta, o mesmo
    envelope do botão Contato do header */
 .ghost-cta.cta-primary::after{content:none}
@@ -1943,7 +1953,10 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
   transition:opacity var(--rv-w-dur,1248ms) var(--ease-soft),
              filter var(--rv-w-dur,1248ms) var(--ease-soft),
              transform var(--rv-w-dur,1248ms) var(--ease-soft)}
-.js [data-reveal="words"].in .rv-w{opacity:1;filter:blur(0);transform:none}
+/* fim em filter:none, e não blur(0): a transição é idêntica (none interpola
+   como blur 0), mas blur(0) deixava um filtro ativo em cada palavra depois de
+   aparecer, uma camada a mais para o compositor para sempre */
+.js [data-reveal="words"].in .rv-w{opacity:1;filter:none;transform:none}
 /* Duas animações concorrentes seriam o bloco e as palavras entrando juntos.
    Quem tem palavra por palavra abre mão da entrada de bloco: o container fica
    parado e visível, e só as palavras animam. */
@@ -1957,7 +1970,7 @@ footer{border-top:var(--contact-divider-width,1px) solid var(--line);
              transform var(--rv-dur) var(--ease-soft),
              filter var(--rv-dur) var(--ease-soft);
   transition-delay:var(--d,0ms)}
-.js .reveal[data-reveal="soft"].in{filter:blur(0)}
+.js .reveal[data-reveal="soft"].in{filter:none}
 
 /* máscara de linha: só o transform interno anima, o pai não some */
 .js .hn-mask.reveal{opacity:1;transform:none}
@@ -2055,6 +2068,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 .veil{position:fixed;inset:0;z-index:90;pointer-events:none;background:var(--ink);
   opacity:0;transition:opacity var(--dur-default) var(--ease-out-smooth)}
 .veil.on{opacity:1;pointer-events:all}
+/* Sem guarda .js de propósito: a classe js só nasce no main.js, no fim do
+   body, e com a guarda o conteúdo apareceria por um instante antes da intro.
+   O custo é a página em branco se o main.js não rodar. */
 main,footer{opacity:0;transform:translateY(10px);transition:opacity var(--dur-slow) var(--ease-out-smooth),transform var(--dur-slow) var(--ease-out-smooth)}
 body.ready main,body.ready footer{opacity:1;transform:none}
 

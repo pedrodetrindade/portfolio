@@ -194,18 +194,40 @@
       desenhar();
     }
 
+    /* Cordão reto da âncora à presilha: esticado pelo peso, sem dobra.
+       O caminho é escrito uma vez só, na posição de repouso (vertical, da
+       âncora até a casa), e o respiro chega por transform no <svg>: giro em
+       volta da âncora e escala ao longo do cordão. O ponto final cai
+       exatamente onde a presilha está, como antes. Reescrever o "d" a cada
+       quadro obrigava o navegador a refazer o layout do SVG e do texto que
+       corre pelo cordão 60 vezes por segundo, e isso aparecia no trace como
+       a maior parte do trabalho da página parada. A fita não engrossa: a
+       escala é só no comprimento, e passa de 1% no máximo. */
+    let dRepouso = '', compRepouso = 1;
     function desenhar() {
-      /* cordão reto da âncora à presilha: esticado pelo peso, sem dobra */
-      const d = 'M' + ancora.x.toFixed(2) + ' ' + ancora.y.toFixed(2) + 'L' + ponta.x.toFixed(2) + ' ' + ponta.y.toFixed(2);
-      fita.setAttribute('d', d);
-      trilho.setAttribute('d', d);
+      const comp0 = casa.y - ancora.y;
+      const d = 'M' + ancora.x.toFixed(2) + ' ' + ancora.y.toFixed(2) + 'L' + ancora.x.toFixed(2) + ' ' + casa.y.toFixed(2);
+      if (d !== dRepouso) {
+        dRepouso = d;
+        compRepouso = comp0 > 1 ? comp0 : 1;
+        fita.setAttribute('d', d);
+        trilho.setAttribute('d', d);
+        svg.style.transformOrigin = ancora.x.toFixed(2) + 'px ' + ancora.y.toFixed(2) + 'px';
+      }
+      const dx = ponta.x - ancora.x, dy = ponta.y - ancora.y;
+      const giroCordao = Math.atan2(-dx, dy);
+      const escala = Math.hypot(dx, dy) / compRepouso;
+      svg.style.transform = 'translate3d(0,0,0) rotate(' + giroCordao.toFixed(5) + 'rad) scaleY(' + escala.toFixed(5) + ')';
       const tx = ponta.x - casa.x, ty = ponta.y - casa.y;
       cartao.style.transform = 'translate3d(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px,0) rotate(' +
         theta.toFixed(4) + 'rad) rotateY(' + giro.toFixed(4) + 'rad)';
     }
 
     /* ---- laço: só roda com a aba visível e a seção por perto ---- */
-    const marcador = secao.querySelector('[data-sobre-dither]');
+    /* a pausa vem da distância do próprio crachá (o main.js põe .parado na
+       .about-photo): a névoa, que servia de referência, agora desce até o fim
+       de "O que eu faço", e com ela o laço seguia rodando no rodapé */
+    const marcador = figura;
     const deveRodar = () => !document.hidden && !(marcador && marcador.classList.contains('parado'));
     function laco(agora) {
       raf = requestAnimationFrame(laco);

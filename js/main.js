@@ -296,9 +296,9 @@
         </div>
         <nav class="menu-list">
           ${MENU.map(i => `
-            <a class="menu-item" href="${i.href}" data-secao="${i.id}"${i.visivel ? '' : ' hidden'}>
+            <a class="menu-item" href="${esc(i.href)}" data-secao="${esc(i.id)}"${i.visivel ? '' : ' hidden'}>
               <span class="menu-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconeDaSecao(i.id)}</svg></span>
-              <span data-pt="${i.pt}" data-en="${i.en}">${i.pt}</span>
+              <span data-pt="${esc(i.pt)}" data-en="${esc(i.en)}">${esc(i.pt)}</span>
             </a>`).join('')}
         </nav>
         ${linksSociaisMenu ? `<div class="menu-social"><span data-pt="Redes" data-en="Social">Redes</span><div>${linksSociaisMenu}</div></div>` : ''}
@@ -348,8 +348,8 @@
             <div class="cform-direct">
               <span class="cform-direct-k" data-pt="ou escreva direto para" data-en="or write directly to">ou escreva direto para</span>
               <div class="cform-direct-row">
-                <a class="cform-direct-mail" href="mailto:${emailDeContato}">${emailDeContato}</a>
-                <button type="button" class="cform-direct-copy" data-copy="${emailDeContato}"
+                <a class="cform-direct-mail" href="mailto:${esc(emailDeContato)}">${esc(emailDeContato)}</a>
+                <button type="button" class="cform-direct-copy" data-copy="${esc(emailDeContato)}"
                         data-pt-label="Copiar endereço de e-mail" data-en-label="Copy email address"
                         aria-label="Copiar endereço de e-mail">
                   <svg class="ico-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 5.2A2.7 2.7 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3c0 1.2.8 2.2 1.9 2.5"/></svg>
@@ -430,11 +430,22 @@
   if (stamp) {
     paintStamp();
     /* alinha o primeiro tique com a virada do minuto e só então periodiza */
-    stampTimer = setTimeout(() => {
-      paintStamp();
-      stampTimer = setInterval(paintStamp, 60000);
-    }, (60 - new Date().getSeconds()) * 1000);
+    const armarStamp = () => {
+      stampTimer = setTimeout(() => {
+        paintStamp();
+        stampTimer = setInterval(paintStamp, 60000);
+      }, (60 - new Date().getSeconds()) * 1000);
+    };
+    armarStamp();
     window.addEventListener('pagehide', () => { clearTimeout(stampTimer); clearInterval(stampTimer); });
+    /* voltando pelo histórico (bfcache) a página é restaurada com os timers
+       já limpos pelo pagehide: sem isto o relógio ficava parado na hora antiga */
+    window.addEventListener('pageshow', e => {
+      if (!e.persisted) return;
+      clearTimeout(stampTimer); clearInterval(stampTimer);
+      paintStamp();
+      armarStamp();
+    });
   }
 
   let buildScrub = null;
@@ -491,7 +502,10 @@
   const TZ_BR = /^America\/(Sao_Paulo|Bahia|Fortaleza|Recife|Belem|Manaus|Cuiaba|Campo_Grande|Porto_Velho|Boa_Vista|Rio_Branco|Maceio|Araguaina|Santarem|Eirunepe)$/;
   function detectLang(){
     /* escolha explícita do usuário manda em tudo */
-    const saved = localStorage.getItem('lang');
+    /* com dados do site bloqueados, o navegador lança SecurityError aqui: sem
+       o try, o script inteiro parava e a página ficava em branco (.reveal) */
+    let saved = null;
+    try { saved = localStorage.getItem('lang'); } catch (erro) { /* sem preferência gravada */ }
     if (saved === 'pt' || saved === 'en') return saved;
 
     const langs = navigator.languages && navigator.languages.length
@@ -529,7 +543,7 @@
     /* só grava quando a pessoa escolhe. Se gravasse a detecção automática,
        ela viraria uma escolha permanente e o site pararia de acompanhar
        quem trocar o idioma do navegador ou abrir de outro país. */
-    if (explicit) localStorage.setItem('lang', lang);
+    if (explicit) { try { localStorage.setItem('lang', lang); } catch (erro) { /* armazenamento bloqueado */ } }
     if (buildScrub) buildScrub();
     if (buildPalavras) buildPalavras();
     measureCta();
@@ -915,8 +929,11 @@
   const headEl = document.querySelector('header');
   const mainEl = document.querySelector('main');
   const footEl = document.querySelector('footer');
+  /* o link de pular para o conteúdo é filho direto do body: fora da lista, o
+     Tab escapava do painel de contato para ele */
+  const skipEl = document.querySelector('.skip-link');
   function lockBackground(state){
-    [headEl, mainEl, footEl].forEach(el => { if (el) el.inert = state; });
+    [headEl, mainEl, footEl, skipEl].forEach(el => { if (el) el.inert = state; });
   }
 
   aplicarDisponibilidade();
@@ -1485,8 +1502,17 @@
       /* 422 é erro de preenchimento e vem com uma frase útil do Worker; o
          resto é falha nossa, e nesse caso o que a pessoa precisa é do caminho
          alternativo, não de um código de erro. */
-      if (resposta.status === 422 && corpo.message) {
-        dizerStatus(corpo.message, corpo.message, 'erro');
+      /* O Worker só escreve em português: quem navega em inglês recebia
+         "Confira o e-mail digitado." Pelo código do erro, cada idioma tem a
+         sua frase; um código desconhecido usa a do Worker, como antes. */
+      const ERROS_422 = {
+        invalid_name: ['Preencha o nome.', 'Please enter your name.'],
+        invalid_email: ['Confira o e-mail digitado.', 'Please check your email address.'],
+        invalid_message: ['Escreva a mensagem.', 'Please write your message.']
+      };
+      if (resposta.status === 422 && (ERROS_422[corpo.error] || corpo.message)) {
+        const frase = ERROS_422[corpo.error] || [corpo.message, corpo.message];
+        dizerStatus(frase[0], frase[1], 'erro');
       } else {
         dizerStatus('Não consegui enviar agora. Escreva direto no e-mail abaixo.',
                     'Could not send right now. Please use the email below.', 'erro');
@@ -1509,6 +1535,9 @@
     document.addEventListener('click', e => {
       const a = e.target.closest('a');
       if (!a) return;
+      /* Ctrl/Cmd/Shift-clique e botão do meio abrem em outra aba ou janela:
+         com o véu no meio, a aba atual navegava no lugar da nova */
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.hasAttribute('download')) return;
       const href = a.getAttribute('href');
       if (!href || a.target === '_blank' || href.startsWith('#') || href.startsWith('mailto:') || a.closest('.overlay')) return;
       if (a.origin !== location.origin) return;
@@ -1829,7 +1858,7 @@
   };
   const medirFundos = () => {
     medirExtensaoDoSobre();
-    fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither],[data-sobre-dither]')].map(el => {
+    fundos = [...document.querySelectorAll('.liquid-bg,[data-footer-dither],[data-sobre-dither],.about-photo')].map(el => {
       const r = el.getBoundingClientRect();
       return { el, topo: r.top + posVisual, base: r.bottom + posVisual, ativo: null };
     });
@@ -2043,11 +2072,15 @@
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', () => {
-    if (scrubWords.length) measureWords();
-    medirAlvos();
-    medirFundos();
-    medirClaros();
-    medirSpy();
+    /* com rolagem suave, o resize do próprio laço (medir) já faz estas cinco
+       medidas: repetidas aqui, cada resize remedia a página duas vezes */
+    if (!suavizando) {
+      if (scrubWords.length) measureWords();
+      medirAlvos();
+      medirFundos();
+      medirClaros();
+      medirSpy();
+    }
     medirDeslocamentoNome();
     onScroll();
   }, { passive: true });
@@ -2194,6 +2227,10 @@
       medirFundos();
       medirClaros();
       medirSpy();
+      /* measureWords apaga as palavras acesas e só a rolagem as reacendia: uma
+         imagem carregando mais abaixo (o holder muda de altura) deixava o
+         parágrafo lido apagado até o próximo movimento */
+      if (scrubWords.length) readScroll();
     };
 
     const aplicar = agora => {
@@ -2283,10 +2320,36 @@
       const pos = alvo.getBoundingClientRect().top + curr - recuo;
       const limite = Math.max(0, altura - window.innerHeight);
       rolarProgramaticamente(Math.max(0, Math.min(pos, limite)));
+      /* o salto nativo levaria o foco junto (o main tem tabindex="-1"); com o
+         preventDefault, o "pular para o conteúdo" deixava o foco no próprio link */
+      if (alvo.hasAttribute('tabindex')) alvo.focus({ preventScroll: true });
     });
 
     medir();
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(medir);
+    /* Chegando com âncora na URL (/#work, vindo do breadcrumb ou do rodapé de
+       um case): o conteúdo foi para dentro do holder fixo antes de o navegador
+       tratar o fragmento, e ele não rola até um alvo dentro de um container
+       fixo. Sem isto a página abria no topo. Mesma conta do clique em âncora,
+       mas instantânea, como o salto nativo do toque e do ?nosmooth=1. Refeita
+       quando a fonte chega e muda as alturas, se a pessoa ainda não rolou. */
+    let posDaAncora = null;
+    const irParaAncora = () => {
+      let alvo = null;
+      try { alvo = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null; } catch (erro) { alvo = null; }
+      if (!alvo || !holder.contains(alvo)) return;
+      if (posDaAncora !== null && Math.abs(window.scrollY - posDaAncora) > 1) return;
+      const recuo = alvo.id === 'top' ? 0 : (parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0);
+      const pos = Math.max(0, Math.min(alvo.getBoundingClientRect().top + curr - recuo, altura - window.innerHeight));
+      window.scrollTo(0, pos);
+      posDaAncora = window.scrollY;
+      curr = posDaAncora;
+      posVisual = curr;
+      holder.style.transform = 'translate3d(0,' + (-Math.round(curr * 100) / 100) + 'px,0)';
+      readScroll();
+    };
+    irParaAncora();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { medir(); irParaAncora(); });
+    window.addEventListener('load', irParaAncora, { once: true });
     window.addEventListener('resize', () => {
       medir();
       /* Resize pode limitar window.scrollY ao novo fim do documento. Sincroniza

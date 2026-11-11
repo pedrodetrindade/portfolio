@@ -206,6 +206,56 @@ por um `ResizeObserver` no `documentElement`. O observador não é redundante:
 abrir um item do FAQ numa página curta faz a barra de rolagem nascer e encolhe
 a largura útil sem disparar `resize`.
 
+## Desempenho: como medir e o que já foi feito
+
+**A aba do Chrome dirigida pela extensão roda a 1 quadro por segundo** (janela
+sem foco): qualquer medida de quadros feita ali é inválida. Meça com o Chrome
+sem interface, por trace (puppeteer-core, que vem com o Lighthouse do npx):
+custo da thread principal parado na capa, rolando a Home inteira com a roda e
+parado no fim, e o que invalida estilo, layout e pintura
+(`disabled-by-default-devtools.timeline.invalidationTracking`). Lighthouse
+pelo `npx lighthouse@12` no site publicado, celular e desktop.
+
+Rodada de 10/11/2026, sem mudar nada visível (antes → depois, Chrome sem
+interface a 1920x1080): parado na capa 10,7% → 6,7% da thread principal;
+rolando a Home 32% → 24,5%, quadros descartados 158 → 90; parado no fim 21% →
+4,8%, com pintura e layout a zero. O que mudou:
+- cordão do crachá por transform e pausa pela distância do próprio crachá;
+- `dither-capa.js` prepara só a próxima imagem: as seis texturas subindo
+  juntas viravam uma tarefa de ~460ms no celular do Lighthouse, na intro;
+- `projects/index.json` era pedido duas vezes por XHR síncrono na Home (capa
+  e grade): agora uma, por `indiceDaCapa()`;
+- as `<img>` da capa, escondidas atrás do dither, não transicionam mais a
+  opacidade a cada troca; as entradas por blur terminam em `filter:none`;
+- posições dos uniforms do WebGL guardadas, não buscadas por quadro;
+- capa do case com `fetchpriority="high"` e imagens das galerias com `low`.
+
+O que ficou de fora de propósito, com o motivo:
+- **O XHR síncrono do `content.js` continua.** É o maior custo de carga (o
+  Lighthouse do celular cai a ~45 por ele e pela intro), mas é o que garante
+  zero flash de conteúdo antigo; trocar mudaria a abertura. Caminho, se um dia
+  for preciso: o Worker escrever tokens e dados direto no HTML ao publicar.
+- **As massas da capa (`.lq`) animam na thread principal**: o Chrome recusa a
+  composição (`compositeFailed` 131072) com ou sem máscara, `will-change`,
+  opacidade ou unidades em px. Custa ~6% parado na capa.
+- Quatro WebP pesados (foto-time 584KB, capa-cordao 380KB, capa-case-cordao
+  448KB, camisa-loud 375KB) estão com qualidade ~2,5× acima das outras.
+  Recomprimir muda pixels: decisão de Pedro.
+- **`main,footer{opacity:0}` não tem a guarda `.js`.** A classe `js` só nasce
+  no `main.js`, no fim do body; com a guarda, o conteúdo piscaria antes da
+  intro. O preço é a página em branco se o `main.js` não rodar.
+
+**A prévia do CMS só aceita o painel** (`origemDoPainel` em `content.js`:
+`https://admin.pedrodetrindade.com` e localhost). Antes qualquer site abria o
+portfólio com `?cmsOrigin=` da própria origem e mandava "rascunho", e o texto
+chega ao `innerHTML` pelo `setLang`: era injeção de script no domínio real.
+
+**Âncora na URL com rolagem suave** (`/#work`, `/#about`, o breadcrumb e o
+rodapé dos cases): o conteúdo vai para o holder fixo antes de o navegador
+tratar o fragmento, e ele não rola até um alvo dentro de container fixo. O
+`main.js` (`irParaAncora`) faz a conta do clique em âncora na abertura, de
+novo quando a fonte chega e no `load`, se a pessoa ainda não rolou.
+
 ## CMS (painel administrativo)
 
 O site tem um CMS próprio: um Cloudflare Worker em `worker/` (código em
@@ -954,9 +1004,15 @@ A presilha anda por uma mola amortecida no crítico (`W_CASA` 6). **O cordão é
 uma linha reta da âncora à presilha, não mais uma corda de verlet**: com o
 respiro de 2px, os pontos do meio faziam ondas em S que a curva suave
 transformava numa dobra da fita logo acima da presilha (Pedro viu o cordão
-"bugado"). Pendurado pelo peso, o cordão fica esticado; reto é o certo. O laço
-dorme com a aba oculta e longe da seção, pelo mesmo `.parado` que o `main.js`
-põe em `[data-sobre-dither]`; o tempo do respiro só anda com o laço acordado.
+"bugado"). Pendurado pelo peso, o cordão fica esticado; reto é o certo. **O
+caminho do cordão é escrito uma vez, em repouso, e o respiro chega por
+transform no `<svg>`** (giro em volta da âncora e escala só no comprimento,
+com `translate3d` para ir à GPU). Reescrever o `d` a cada quadro refazia o
+layout do SVG e do texto do cordão 60 vezes por segundo: era a maior parte do
+trabalho da página parada no trace. O laço dorme com a aba oculta e longe do
+crachá, pelo `.parado` que o `main.js` põe na própria `.about-photo` (antes
+era o da névoa, que agora desce até o fim de "O que eu faço" e mantinha o
+laço rodando no rodapé); o tempo do respiro só anda com o laço acordado.
 Entra por fundido da figura inteira, parado no lugar, logo na montagem. A máscara de baixo para
 cima das outras imagens fica desligada aqui: num objeto pendurado ela lia como
 se o crachá carregasse de cabeça para baixo ao chegar na seção.

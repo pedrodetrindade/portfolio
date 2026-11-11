@@ -204,10 +204,14 @@
      arquivo não existe por enquanto, e quem chega nela vai para a seção
      Trabalhos da Home antes de qualquer coisa ser desenhada. Sem JS a página
      estática continua valendo, como o resto do site. */
-  if (isWorkIndex && window.__CMS_HOME__.work && window.__CMS_HOME__.work.showArchive === false) {
+  var redirecionando = isWorkIndex && window.__CMS_HOME__.work && window.__CMS_HOME__.work.showArchive === false;
+  if (redirecionando) {
+    /* a página continua sendo montada até a navegação acontecer: escondida,
+       ela não pisca o arquivo, e o índice não é pedido à toa */
+    document.documentElement.style.visibility = 'hidden';
     location.replace('/#work');
   }
-  if (isWorkPath) {
+  if (isWorkPath && !redirecionando) {
     window.__CMS_PROJECTS_INDEX__ = xhrJSON('content/projects/index.json?v=2') || {};
   }
   if (isCase) {
@@ -255,6 +259,10 @@
     links.forEach(function (duplicada) { duplicada.remove(); });
   }
   function applyMetadata(g, project) {
+    /* JSON do case que não carregou vira {} (verdadeiro): sem esta saída, o
+       título virava " · Pedro de Trindade" e o canonical /work//. As tags
+       estáticas da página já estão certas; basta não tocá-las. */
+    if (project && !project.hero) return;
     var seo = g.seo || {}, brand = g.brand || {};
     var siteName = brand.name || seo.siteName || 'Pedro de Trindade';
     var pseo = project && project.seo || {}, hero = project && project.hero || {};
@@ -418,7 +426,8 @@
 
      O que entra é dado, nunca código: postMessage usa clone estruturado, que
      não transporta função, e o payload é lido campo a campo — nada é avaliado
-     e nada vira seletor ou HTML sem passar pelo esc() do content-render.
+     e nada vira seletor. Texto do rascunho chega ao innerHTML pelo setLang,
+     por isso a origem é conferida contra uma lista fixa (origemDoPainel).
      Nada disso toca o GitHub ou o localStorage: os valores vivem só nesta aba
      e somem ao recarregar. */
   window.__CMS_APPLY__ = { global: applyGlobalTokens, sections: applySectionSpacing };
@@ -436,6 +445,13 @@
          limpa — sem caminho, sem credencial, sem query */
       var u = new URL(declarada);
       if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+      /* Só o painel de verdade (ou ele rodando na máquina de quem desenvolve).
+         Sem esta lista, qualquer site abria o portfólio com ?cmsOrigin= da
+         própria origem e mandava "rascunho": o texto chega ao innerHTML pelo
+         setLang (data-pt/data-en), então isso era injeção de HTML e script
+         no domínio real, numa aba de verdade. */
+      var local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(u.hostname);
+      if (u.origin !== 'https://admin.pedrodetrindade.com' && !local) return null;
       return u.origin;
     } catch (e) { return null; }
   }

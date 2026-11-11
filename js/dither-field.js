@@ -208,7 +208,10 @@ void main() {
       if (dither) gl.deleteProgram(dither);
       return null;
     }
-    const em = (p, nome) => gl.getUniformLocation(p, nome);
+    /* posições dos uniforms guardadas por programa: eram sete consultas por
+       quadro, a 60 quadros por segundo */
+    const posicoes = new Map();
+    const em = (p, nome) => { const k = (p === campo ? 'c:' : 'd:') + nome; if (!posicoes.has(k)) posicoes.set(k, gl.getUniformLocation(p, nome)); return posicoes.get(k); };
     const texCampo = textura(gl);
     const fb = gl.createFramebuffer();
     let vista = [1, 1], vistaCampo = [1, 1], css = [1, 1];

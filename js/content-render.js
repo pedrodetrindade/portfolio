@@ -23,10 +23,10 @@
      baixado depois do load da página, quando o navegador fica ocioso. */
   var BASE_JS = document.currentScript && document.currentScript.src
     ? document.currentScript.src.replace(/content-render\.js(\?.*)?$/, '') : '';
-  var DITHER_V = 9;
-  var DITHER_CAPA_V = 3;
+  var DITHER_V = 10;
+  var DITHER_CAPA_V = 4;
   var ASSINATURA_V = 1;
-  var CRACHA_V = 12;
+  var CRACHA_V = 13;
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -551,7 +551,7 @@
             (showEmail ? '<div class="site-footer-email-row"><a class="site-footer-email" href="mailto:' + esc(email) + '">' + esc(email) + ' <span aria-hidden="true">↗</span></a>' +
               (showCopyEmail ? '<button class="site-footer-copy" type="button" data-footer-copy data-copy="' + esc(email) + '" data-pt-label="Copiar endereço de e-mail" data-en-label="Copy email address" aria-label="Copiar endereço de e-mail"><svg class="ico-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.6"/><path d="M15.5 5.2A2.7 2.7 0 0 0 12.9 4H6.6A2.6 2.6 0 0 0 4 6.6v6.3c0 1.2.8 2.2 1.9 2.5"/></svg><svg class="ico-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 12.6l4.6 4.6L19.2 7.4"/></svg></button><span class="site-footer-copy-status" data-footer-copy-status role="status" aria-live="polite"></span>' : '') + '</div>' : '') +
           '</section>' +
-          (showNav ? '<nav class="site-footer-nav" aria-label="Footer"><p data-pt="Navegação" data-en="Navigation">Navegação</p>' + nav + '</nav>' : '') +
+          (showNav ? '<nav class="site-footer-nav" aria-label="Rodapé" data-pt-label="Rodapé" data-en-label="Footer"><p data-pt="Navegação" data-en="Navigation">Navegação</p>' + nav + '</nav>' : '') +
           (showSocial ? '<div class="site-footer-social"><p data-pt="Redes" data-en="Social">Redes</p>' + socials.join('') + '</div>' : '') +
         '</div>' +
         '<div class="site-footer-bottom">' +
@@ -576,7 +576,10 @@
     var G = window.__CMS_GLOBAL__ || {};
     renderGlobalFooter(G);
     var brand = G.brand || {};
-    function brandSrc(path) { return /^https?:\/\//i.test(path || '') ? path : (isWorkPath() ? '../' : '') + path; }
+    /* resolveAssetUrl já conhece a profundidade de cada página; o '../' fixo
+       de antes servia a /work/ mas mandava os cases (/work/<slug>/) para
+       /work/assets/..., um 404 assim que um logo fosse enviado pelo painel */
+    function brandSrc(path) { return resolveAssetUrl(path); }
     var brandLinks = document.querySelectorAll('a.brand');
     for (var bi = 0; bi < brandLinks.length; bi++) {
       if (brand.logo) {
@@ -711,6 +714,9 @@
       return { src: typeof p.cover === 'string' ? p.cover.trim() : '', clara: p.coverLight === true };
     }).filter(function (c) { return c.src; });
     if (!capas.length) return false;
+    /* sob movimento reduzido só a primeira capa aparece, parada: as outras
+       não precisam ser baixadas */
+    if (reduced) capas = capas.slice(0, 1);
     var caixa = document.createElement('div');
     caixa.className = 'hero-slides';
     var slides = capas.map(function (c) {
@@ -1053,14 +1059,10 @@
     try {
       /* overrideIndex chega da prévia do painel, com a lista ainda não
          publicada. Sem ele, o índice vem do repositório como sempre. */
-      var idx = overrideIndex || null;
-      if (!idx) {
-        var xf = new XMLHttpRequest();
-        xf.open('GET', 'content/projects/index.json?v=1', false);
-        xf.setRequestHeader('Cache-Control', 'no-cache');
-        xf.send(null);
-        if (xf.status === 200 || xf.status === 0) idx = JSON.parse(xf.responseText);
-      }
+      /* Mesmo pedido da capa (indiceDaCapa guarda o índice em
+         window.__CMS_PROJECTS_INDEX__): eram dois XHR síncronos do mesmo
+         arquivo a cada abertura da Home, um deles bloqueando à toa. */
+      var idx = indiceDaCapa(overrideIndex);
       if (idx) {
         var list = projetosPublicos(idx).filter(function (p) {
           return p.featured === true;
@@ -1208,7 +1210,7 @@
       var galleryLayout = ['adaptive', 'single', 'two', 'three'].indexOf(b.layout) !== -1 ? b.layout : '';
       var galleryClass = 'case-gallery' + (galleryLayout ? ' case-gallery--' + galleryLayout : '');
       return '<div class="' + galleryClass + '" style="' + css + '">' + imgs.map(function (img) {
-        return '<div class="thumb reveal" data-case-media><div class="scene"><img src="' + esc(resolveAssetUrl(img.src)) +
+        return '<div class="thumb reveal" data-case-media><div class="scene"><img fetchpriority="low" src="' + esc(resolveAssetUrl(img.src)) +
           '" alt="' + esc(img.alt || '') + '" onerror="this.remove()"></div></div>';
       }).join('') + '</div>';
     }
@@ -1220,7 +1222,7 @@
         ? '<figcaption data-pt="' + esc(b.captionPt || '') + '" data-en="' + esc(b.captionEn || '') + '">' + esc(b.captionPt || '') + '</figcaption>'
         : '';
       return '<figure class="' + cls + '" data-case-media style="' + css + '">' +
-        '<div class="scene"><img src="' + esc(resolveAssetUrl(b.src)) + '" alt="' + esc(b.alt || '') +
+        '<div class="scene"><img fetchpriority="low" src="' + esc(resolveAssetUrl(b.src)) + '" alt="' + esc(b.alt || '') +
         '" onerror="this.remove()"></div>' + cap + '</figure>';
     }
     if (b.type === 'quote') {

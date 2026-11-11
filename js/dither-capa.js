@@ -153,7 +153,10 @@ void main() {
     }
     caixa.insertBefore(canvas, caixa.firstChild);
 
-    const u = n => gl.getUniformLocation(prog, n);
+    /* posições dos uniforms guardadas: buscadas a cada quadro, eram onze
+       consultas ao driver e onze objetos novos 24 vezes por segundo */
+    const posicoes = new Map();
+    const u = n => { if (!posicoes.has(n)) posicoes.set(n, gl.getUniformLocation(prog, n)); return posicoes.get(n); };
     gl.useProgram(prog);
     gl.uniform1i(u('uA'), 0);
     gl.uniform1i(u('uB'), 1);
@@ -168,20 +171,30 @@ void main() {
        imagem vira a ativa pela primeira vez. */
     const texturas = new Map();
     const pendentes = new Set();
+    /* imagem que o WebGL recusou (outra origem sem CORS, por exemplo): não
+       tenta de novo a cada quadro, e a capa segue com as outras */
+    const falhas = new Set();
     function texturaDe(slide) {
       if (texturas.has(slide.img)) return texturas.get(slide.img);
       const img = slide.img;
-      if (pendentes.has(img) || !img.complete || !img.naturalWidth) return null;
+      if (falhas.has(img) || pendentes.has(img) || !img.complete || !img.naturalWidth) return null;
       pendentes.add(img);
       const escala = Math.min(1, 1280 / img.naturalWidth);
       const w = Math.max(1, Math.round(img.naturalWidth * escala));
       const h = Math.max(1, Math.round(img.naturalHeight * escala));
       const subir = fonte => {
         pendentes.delete(img);
-        if (destruido) return;
+        if (destruido) { if (fonte.close) fonte.close(); return; }
         const t = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, t);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fonte);
+        try {
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fonte);
+        } catch (erro) {
+          gl.deleteTexture(t);
+          falhas.add(img);
+          if (fonte.close) fonte.close();
+          return;
+        }
         gl.generateMipmap(gl.TEXTURE_2D);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -252,8 +265,13 @@ void main() {
         pronto = true;
         caixa.classList.add('dither-pronto');
       }
-      /* as próximas sobem antes de precisarem: a troca não espera upload */
-      for (const s of estado.slides) if (!texturas.has(s.img)) texturaDe(s);
+      /* A próxima sobe antes de precisar: a troca não espera upload. Só a
+         próxima, e não todas: pedidas juntas no primeiro quadro, as seis
+         terminavam juntas e o envio para a GPU (texImage2D com mipmap) virava
+         uma tarefa de ~460ms no celular do Lighthouse, em plena intro. Com
+         1,5s por imagem, uma de cada vez sobra tempo. */
+      const proxima = estado.slides[(estado.atual + 1) % estado.slides.length];
+      if (proxima && !texturas.has(proxima.img)) texturaDe(proxima);
     }
 
     const rodando = () => !destruido && !document.hidden && !reduzido.matches && !liquidBg.classList.contains('parado');
