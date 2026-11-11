@@ -12,7 +12,15 @@
    que o olho perceba. Uma mola amortecida no crítico leva a presilha até esse
    alvo, e o cartão gira pela direção do cordão.
 
-   O cordão é uma linha reta da âncora (topo da seção) até a presilha, e não
+   O cordão vem de trás do card de Trabalhos logo acima do crachá (pedido de
+   Pedro): a âncora fica exatamente na borda de baixo desse card. O Sobre
+   pinta depois de Trabalhos, então o cordão não pode passar dessa borda, ou
+   apareceria por cima do card; começando rente a ela, lê como se saísse de
+   trás. Sem card acima na mesma vertical, a âncora volta ao topo da seção.
+   O card entra com transform (.reveal), então a borda é remedida quando a
+   entrada dele termina, sem zerar o respiro.
+
+   O cordão é uma linha reta da âncora até a presilha, e não
    mais uma corda de verlet. A corda física fazia sentido com arraste; com um
    respiro de 2px, os pontos do meio, presos entre gravidade, atrito e a
    restrição de distância, faziam pequenas ondas em S que a curva suave
@@ -138,14 +146,31 @@
       theta += omega * DT;
     }
 
-    function medir() {
+    /* O card de Trabalhos cuja largura cobre a linha do cordão e que termina
+       acima do Sobre, o mais baixo deles. */
+    function cardAcima(xTela, topoSecao) {
+      let melhor = null, base = -Infinity;
+      document.querySelectorAll('#work .card, #work .home-teaser').forEach(c => {
+        const r = c.getBoundingClientRect();
+        if (!r.height || xTela < r.left + 20 || xTela > r.right - 20 || r.bottom > topoSecao + 1) return;
+        if (r.bottom > base) { base = r.bottom; melhor = c; }
+      });
+      return melhor;
+    }
+    function medirAncora() {
       const rf = figura.getBoundingClientRect();
       const rs = secao.getBoundingClientRect();
+      const card = cardAcima(rf.left + casa.x, rs.top);
+      const topo = card ? card.getBoundingClientRect().bottom : rs.top + 1;
+      ancora = { x: casa.x, y: topo - rf.top };
+    }
+
+    function medir() {
       /* A casa é o topo da presilha, centralizada no cartão. Medida pela caixa
          de layout (offset*), que ignora o transform: com o crachá girado, o
          getBoundingClientRect devolveria a caixa do cartão inclinado. */
       casa = { x: cartao.offsetLeft + cartao.offsetWidth / 2, y: cartao.offsetTop - ABA };
-      ancora = { x: casa.x, y: (rs.top - rf.top) + 1 };
+      medirAncora();
       /* em repouso o cordão é vertical e a foto fica exatamente no lugar
          dela no grid, sem calibração */
       ponta.x = casa.x; ponta.y = casa.y;
@@ -205,6 +230,14 @@
 
     const ro = new ResizeObserver(() => medir());
     ro.observe(figura);
+    /* a entrada do card (transform do .reveal) termina depois da medida
+       inicial: só a âncora é refeita, o respiro segue de onde estava */
+    const trabalhos = document.getElementById('work');
+    if (trabalhos) trabalhos.addEventListener('transitionend', e => {
+      if (e.propertyName !== 'transform' || !e.target.matches('.card, .home-teaser')) return;
+      medirAncora();
+      desenhar();
+    });
     medir();
     return { remedir: medir };
   }

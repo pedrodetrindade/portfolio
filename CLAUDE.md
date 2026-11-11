@@ -917,8 +917,14 @@ carregado pelo `content-render` sem movimento reduzido e a partir de 640px (no
 celular a foto fica no meio do texto). O original é 3D com three.js e física;
 aqui é 2,5D sem biblioteca. Visual de crachá como na referência: cartão claro
 (`--paper`, é um objeto, não uma seção), fenda e presilha metálica no alto,
-foto quadrada encaixada, nome e cargo embaixo. Cordão em SVG saindo do topo da
-seção, com o nome em mono. Sem "trind9de" em lugar nenhum do crachá, a pedido.
+foto quadrada encaixada, nome e cargo embaixo. Cordão em SVG com o nome em
+mono, **saindo de trás do card de Trabalhos logo acima** (pedido de Pedro; antes
+saía do topo da seção): a âncora é a borda de baixo desse card, medida em
+`medirAncora()`. O Sobre pinta depois de Trabalhos, então o cordão não pode
+passar da borda (apareceria por cima do card); começando rente a ela, lê como
+se viesse de trás. O card entra com transform (`.reveal`), por isso a âncora é
+refeita no `transitionend` dele, sem zerar o respiro. Sem card na mesma
+vertical, volta ao topo da seção. Sem "trind9de" em lugar nenhum do crachá, a pedido.
 **Sem interação nenhuma, só respiro** (pedido de Pedro, depois de ter sido
 arrastável e de virar com clique): o verso saiu junto com a virada, e sem
 arraste ele deixou de exigir mouse, então tablet de toque também recebe. O
