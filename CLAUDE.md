@@ -401,6 +401,15 @@ enviando de verdade (ver seções acima). Favicon, Open Graph e a primeira
 camada de acessibilidade (skip link, foco visível, `aria-label` bilíngue,
 `inert` no fundo com overlay aberto) já estão no lugar.
 
+**Grafia dos rótulos dos projetos (11/11/2026, pedido de Pedro).** Tags dos
+cards (`tagsPt/En`) com inicial maiúscula: "Identidade visual", "Branding",
+"Key visual", "3D". Em minúsculas, o "i" de "identidade" lia como maiúsculo
+nesse tamanho e Pedro via duas grafias lado a lado. Papel e escopo do case em
+caixa de frase (só a primeira palavra, nomes próprios e siglas): o Title Case
+de antes ("Key Visual, Campanha, Social Media") era anglicismo. O rótulo
+acima do título do case segue em minúsculas, como os outros rótulos pequenos,
+com "3D" sempre em maiúsculas.
+
 **Os cases são todos projetos reais, vindos do Behance (behance.net/trind9de).**
 A Home tem seis destaques (`featured`, no máximo 6, o `slice` da grade no
 `content-render`), em três linhas de dois, na ordem pedida por Pedro em
