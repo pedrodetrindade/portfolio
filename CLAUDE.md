@@ -594,9 +594,14 @@ entre as duas não existe emenda nenhuma.
   máscara nas bordas, com a mesma curva desenhada em stops (entrada e saída
   lentas). **A entrada é longa como a dissolução da capa em Trabalhos**:
   as duas camadas sobem para o respiro vazio de Trabalhos (`--sobre-subida`,
-  até 24px abaixo do último card, 146px a 1920) e só fecham ~20vh dentro do
+  até 24px abaixo do último card, 146px a 1920) e só fecham ~30vh dentro do
   Sobre (`--sobre-entrada`). Antes os pontos entravam em 6rem e a borda de
   cima do dither lia como uma linha: Pedro viu e pediu a passagem da capa.
+  A curva é smootherstep (6t⁵ - 15t⁴ + 10t³) em onze stops, na variável
+  `--sobre-mascara`: começa e termina sem inclinação. Com cinco stops e
+  quinas entre eles, a altura em que a textura acendia ainda lia como linha.
+  Medido a 1920, ao lado do crachá: o brilho sobe de 21 a 41 em ~400px, sem
+  degrau.
 - A névoa é o `js/dither-field.js` com `{padrao:'nevoa', borracha:false}`
   e intensidade .42 (era .34; Pedro pediu o dither um pouco mais visível no
   site todo, menos no rodapé)

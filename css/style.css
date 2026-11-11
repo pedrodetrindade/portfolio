@@ -1236,39 +1236,40 @@ section{padding-block:clamp(4rem,8vw,7rem)}
                     que tem o mesmo fundo (pedido de Pedro)
    Sem JS as duas ficam em 0 e a camada fica dentro do Sobre, como antes.
    A entrada é longa como a dissolução da capa em Trabalhos: começa no
-   respiro vazio de Trabalhos e só fecha ~20vh dentro do Sobre. Com a entrada
+   respiro vazio de Trabalhos e só fecha ~30vh dentro do Sobre. Com a entrada
    curta de antes (6rem nos pontos), a borda de cima do dither lia como linha. */
 .about-fundo,.about-pontos{
-  --sobre-entrada:calc(var(--sobre-subida,0px) + clamp(8rem,20vh,12rem));
+  --sobre-entrada:calc(var(--sobre-subida,0px) + clamp(11rem,30vh,18rem));
   --sobre-saida:clamp(8rem,22vh,13rem);
+  /* curva smootherstep (6t^5 - 15t^4 + 10t^3) em onze stops: começa e termina
+     sem inclinação, então não existe altura em que a textura "comece" */
+  --sobre-mascara:linear-gradient(to bottom,
+    transparent 0,
+    rgba(0,0,0,.009) calc(var(--sobre-entrada) * .1),
+    rgba(0,0,0,.058) calc(var(--sobre-entrada) * .2),
+    rgba(0,0,0,.163) calc(var(--sobre-entrada) * .3),
+    rgba(0,0,0,.317) calc(var(--sobre-entrada) * .4),
+    rgba(0,0,0,.5) calc(var(--sobre-entrada) * .5),
+    rgba(0,0,0,.683) calc(var(--sobre-entrada) * .6),
+    rgba(0,0,0,.837) calc(var(--sobre-entrada) * .7),
+    rgba(0,0,0,.942) calc(var(--sobre-entrada) * .8),
+    rgba(0,0,0,.991) calc(var(--sobre-entrada) * .9),
+    #000 var(--sobre-entrada),
+    #000 calc(100% - var(--sobre-saida)),
+    rgba(0,0,0,.991) calc(100% - var(--sobre-saida) * .9),
+    rgba(0,0,0,.942) calc(100% - var(--sobre-saida) * .8),
+    rgba(0,0,0,.837) calc(100% - var(--sobre-saida) * .7),
+    rgba(0,0,0,.683) calc(100% - var(--sobre-saida) * .6),
+    rgba(0,0,0,.5) calc(100% - var(--sobre-saida) * .5),
+    rgba(0,0,0,.317) calc(100% - var(--sobre-saida) * .4),
+    rgba(0,0,0,.163) calc(100% - var(--sobre-saida) * .3),
+    rgba(0,0,0,.058) calc(100% - var(--sobre-saida) * .2),
+    rgba(0,0,0,.009) calc(100% - var(--sobre-saida) * .1),
+    transparent 100%);
   position:absolute;left:0;right:0;z-index:-2;pointer-events:none;
   top:calc(-1 * var(--sobre-subida,0px));bottom:calc(-1 * var(--sobre-descida,0px));
-  -webkit-mask-image:linear-gradient(to bottom,
-    transparent 0,
-    rgba(0,0,0,.06) calc(var(--sobre-entrada) * .2),
-    rgba(0,0,0,.25) calc(var(--sobre-entrada) * .4),
-    rgba(0,0,0,.6) calc(var(--sobre-entrada) * .65),
-    rgba(0,0,0,.88) calc(var(--sobre-entrada) * .85),
-    #000 var(--sobre-entrada),
-    #000 calc(100% - var(--sobre-saida)),
-    rgba(0,0,0,.88) calc(100% - var(--sobre-saida) * .85),
-    rgba(0,0,0,.6) calc(100% - var(--sobre-saida) * .65),
-    rgba(0,0,0,.25) calc(100% - var(--sobre-saida) * .4),
-    rgba(0,0,0,.06) calc(100% - var(--sobre-saida) * .2),
-    transparent 100%);
-          mask-image:linear-gradient(to bottom,
-    transparent 0,
-    rgba(0,0,0,.06) calc(var(--sobre-entrada) * .2),
-    rgba(0,0,0,.25) calc(var(--sobre-entrada) * .4),
-    rgba(0,0,0,.6) calc(var(--sobre-entrada) * .65),
-    rgba(0,0,0,.88) calc(var(--sobre-entrada) * .85),
-    #000 var(--sobre-entrada),
-    #000 calc(100% - var(--sobre-saida)),
-    rgba(0,0,0,.88) calc(100% - var(--sobre-saida) * .85),
-    rgba(0,0,0,.6) calc(100% - var(--sobre-saida) * .65),
-    rgba(0,0,0,.25) calc(100% - var(--sobre-saida) * .4),
-    rgba(0,0,0,.06) calc(100% - var(--sobre-saida) * .2),
-    transparent 100%)}
+  -webkit-mask-image:var(--sobre-mascara);
+          mask-image:var(--sobre-mascara)}
 .about-fundo{background:var(--about-section-bg,rgba(var(--ink-2-rgb),.5))}
 /* Os pontos têm camada própria, fora da máscara do tom: dentro dela, tudo o
    que ficasse no respiro de cima ou de baixo sumiria junto com o tom.
