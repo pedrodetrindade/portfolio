@@ -230,6 +230,13 @@ rolando a Home 32% → 24,5%, quadros descartados 158 → 90; parado no fim 21% 
 - posições dos uniforms do WebGL guardadas, não buscadas por quadro;
 - capa do case com `fetchpriority="high"` e imagens das galerias com `low`.
 
+No site publicado, depois da rodada: parado na capa 5,9%, rolando 25,4%,
+parado no fim 3,8%. Lighthouse desktop 85 → 88 (bloqueio 210 → 130ms). **O
+Lighthouse do celular não serve para comparar rodadas**: o mesmo código deu
+36, 39 e 58 seguidos, porque a espera dos XHR síncronos do `content.js` (que
+o Lighthouse conta como script) variou de 0,18s a 1,9s conforme a resposta do
+GitHub atrás do Cloudflare. Compare pelo trace, que não depende da rede.
+
 O que ficou de fora de propósito, com o motivo:
 - **O XHR síncrono do `content.js` continua.** É o maior custo de carga (o
   Lighthouse do celular cai a ~45 por ele e pela intro), mas é o que garante
