@@ -76,9 +76,9 @@
         "content"
       ],
       "year": 2024,
-      "cover": "assets/uploads/social-media/capa.webp",
+      "cover": "assets/uploads/social-media/capa-listagem.webp",
       "coverMobile": "",
-      "coverLight": true
+      "coverLight": false
     },
     {
       "slug": "karmine-corp",
