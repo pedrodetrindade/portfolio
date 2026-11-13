@@ -1,17 +1,26 @@
 # Portfólio Pedro de Trindade
 
 Site de portfólio pessoal. HTML, CSS e JS puro, sem framework e sem build.
-Basta abrir `index.html` no navegador, não há servidor nem instalação.
+Não há instalação, mas teste por um servidor local (o Live Server na 5500 é o
+que o Worker de contato já espera): as páginas em `work/` usam caminhos
+absolutos e, abertas como arquivo, ficam sem CSS e sem JS.
 
 **Leia `PROJETO-PORTFOLIO.md` antes de editar.** Ele traz o objetivo, a direção
-visual, a estrutura das seções e os próximos passos do projeto.
+visual, a Home seção por seção, a situação de cada case e o que falta.
+O `AGENTS.md` é só um ponteiro para este arquivo: não volte a copiar conteúdo
+para lá.
 
 ## Convenções que quebram o site se ignoradas
 
-**Cache dos assets.** `css/style.css` e `js/main.js` são compartilhados pelas 5
-páginas e os links carregam `?v=N`. Ao editar qualquer um dos dois, incremente esse
-número em todas as páginas (`index.html` e `work/case-0*.html`), senão o navegador
-continua servindo a versão antiga e a mudança parece não ter funcionado.
+**Cache dos assets.** `css/style.css`, `js/main.js`, `js/content.js` e
+`js/content-render.js` são compartilhados por nove páginas (`index.html`,
+`work/index.html` e as sete `work/<slug>/index.html`), e os links carregam
+`?v=N`. Ao editar um deles, incremente o número daquele arquivo nas nove,
+senão o navegador continua servindo a versão antiga e a mudança parece não ter
+funcionado. `js/work-nav.js` tem o próprio `?v=` só nas oito de `work/`. Os
+scripts que o `content-render` baixa sob demanda levam a versão numa constante
+no topo dele (`DITHER_V`, `DITHER_CAPA_V`, `CRACHA_V`, `ASSINATURA_V`): ao
+editar um deles, suba a constante e o `?v=` do `content-render` nas nove.
 
 **Bilíngue.** Todo elemento com texto visível precisa de `data-pt` e `data-en`.
 O JS troca o `innerHTML` a partir desses atributos. Isso vale também para datas
@@ -19,10 +28,13 @@ O JS troca o `innerHTML` a partir desses atributos. Isso vale também para datas
 
 **Chrome compartilhado.** O menu overlay, o painel de contato e o véu de transição
 são injetados por `js/main.js` em todas as páginas. Não duplique essa marcação no
-HTML. Para mudar o menu, edite o array `MENU` no topo do arquivo.
+HTML. Os itens do menu vêm do painel (`global.json > header.menu`); a lista
+dentro do `main.js` é só reserva para quando o JSON não carrega.
 
-**Caminhos relativos.** As páginas em `work/` usam `../` para css, js e voltar à
-home. O JS detecta a pasta com `location.pathname.includes('/work/')`.
+**Caminhos.** A Home usa caminhos relativos (`css/`, `js/`); as páginas em
+`work/` usam absolutos (`/css/`, `/js/`, `/` para voltar à home). O JS detecta
+a pasta com `location.pathname.includes('/work/')`, e o `content.js` calcula
+a base dos JSON pelo protocolo e pela pasta.
 
 ## Paleta
 
@@ -156,12 +168,20 @@ faixa que `.edge-blur` (o desfoque fixo do fundo da janela) borra
 permanentemente, e ficava difícil de ler. O marquee, decorativo e com baixa
 opacidade, é o fim visual real da página; o bloco utilitário (voltar ao topo
 em cima, crédito embaixo) fica acima dele, os dois centralizados.
+Isso hoje vale só para o rodapé de reserva, o estático que aparece sem JS; o
+marquee saiu depois (ver "O texto em looping do rodapé saiu", mais abaixo).
 
-**Contato e rodapé formam uma viewport exata no desktop.** `js/main.js` mede
-a altura real do `footer` com `ResizeObserver` e publica
-`--footer-block-height`; `#contact` ocupa o restante de `100svh`. Não substitua
-essa medida por uma altura fixa nem adicione espaço depois do marquee: ele
-encosta na base da página e o `.edge-blur` permanece ativo sobre essa faixa.
+**O contato mora dentro do rodapé do CMS.** A seção `#contact` separada não
+existe mais: o `content-render` troca o `<footer>` inteiro pelo `.site-footer`,
+que tem `height:100svh` (mínimo 42rem) e traz headline, e-mail, navegação e
+redes. `#contact` virou uma âncora de 1px dentro dele
+(`.site-footer-contact-anchor`), para os links `#contact` continuarem
+funcionando. Sobrou da versão antiga: o `main.js` ainda mede o `footer` e
+publica `--footer-block-height`, e o CSS ainda tem regras de `#contact`
+(padding, `min-height`, `position:relative` e o `::before` de fundo), que por
+especificidade de id vencem as da âncora. Sem efeito visível hoje, porque o
+rodapé tem altura fixa com `overflow:hidden` e o fundo de seção do contato
+está vazio; quem remover esse código confira o rodapé e os links de âncora.
 
 **O indicador "continue" da hero (`.next-hint`) é sempre centralizado por
 `left:50% + translateX(-50%)`.** Qualquer regra que troque o `transform` dele
@@ -438,8 +458,9 @@ e próximo, dando a volta na lista) acompanha a ordem do índice; ao incluir,
 remover ou reordenar um projeto, regenere-a em todas as páginas, senão a
 reserva sem JS aponta para o vizinho antigo.
 
-O retrato do Sobre é um placeholder `.portrait`. O texto dos cases já é
-conteúdo real, gerenciado pelo CMS, não mais genérico.
+O retrato do Sobre é a foto real (`assets/uploads/sobre/retrato-2026.webp`),
+dentro do crachá. O texto dos cases já é conteúdo real, gerenciado pelo CMS,
+não mais genérico.
 
 A seção de experiência foi removida de propósito: essa informação fica só no
 LinkedIn e no currículo. **A única rede no site é o LinkedIn.** O Behance
@@ -581,8 +602,9 @@ pior, um véu preto parado. Se mexer na intro, mantenha essa guarda.
 **O nome da hero é uma linha só, sempre.** `white-space:nowrap` e tamanho
 proporcional à viewport. O texto ocupa exatamente 8,0x o `font-size` (medido,
 estável depois de `document.fonts.ready`), e o `clamp(1.5rem,10.4vw,8.3rem)`
-sai dessa razão com folga de ~5%. O teto existe porque `.wrap` trava em 1280px,
-então acima disso a largura útil para de crescer e fica fixa em 1120px.
+sai dessa razão com folga de ~5%. O teto (8,3rem, ~1060px de nome) nasceu
+quando o `.wrap` travava em 1280px; hoje ele vai até 1680px
+(`--content-max`), então o teto é escolha de proporção, não limite de largura.
 Mexer em `letter-spacing`, no peso ou na fonte muda a razão e exige recalibrar,
 senão o nome volta a quebrar ou a estourar a lateral.
 

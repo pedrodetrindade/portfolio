@@ -1,130 +1,148 @@
-# Portfólio — Pedro de Trindade
+# Portfólio Pedro de Trindade
 
-Brief de projeto para continuar o desenvolvimento no Claude Code.
-Leia este brief antes de editar.
+Brief do projeto: o que o site é, o que existe nele hoje e o que ainda falta.
+As regras técnicas (convenções que quebram o site, medidas, decisões tomadas
+com Pedro e o motivo de cada uma) moram no `CLAUDE.md`. Este arquivo não as
+repete, para os dois não andarem separados.
+
+Estado conferido no código em 13/11/2026.
 
 ## Objetivo
-Site de portfólio pessoal, codado, hospedado no GitHub Pages com domínio próprio.
-Posicionamento: diretor de arte e designer sênior, com foco em direção criativa,
-branding, identidade visual, campanhas e estratégia de marca para fintech,
-ativos digitais e negócios B2B e B2C.
+Portfólio pessoal codado, no ar em pedrodetrindade.com. Posicionamento: diretor
+de arte e designer sênior, com foco em direção criativa, branding, identidade
+visual, campanhas e estratégia de marca para fintech, ativos digitais e
+negócios B2B e B2C.
 
 ## Identidade
 - Nome público: Pedro de Trindade
-- Handle (todas as redes): @pedrodetrindade
+- Handle: @pedrodetrindade
 - Domínio: pedrodetrindade.com
-- E-mail: contact@pedrodetrindade.com (e contato@, ambos encaminham para o Gmail)
+- E-mail público: contact@pedrodetrindade.com (e contato@, os dois encaminham
+  para o Gmail)
+- Única rede no site: LinkedIn. O Behance está desligado pelo painel, com o
+  endereço guardado; religar devolve os links.
 
-## Stack
-Site estático: HTML + CSS + JS puro, sem framework e sem build.
-Deploy no GitHub Pages. O objetivo é controle total do design e zero custo além do domínio.
+## Stack e hospedagem
+- HTML, CSS e JS puro, sem framework e sem build. GitHub Pages a partir da
+  branch `main` de github.com/pedrodetrindade/portfolio, com `CNAME` na raiz.
+- Conteúdo em `content/*.json`, editado pelo CMS próprio em
+  admin.pedrodetrindade.com (Cloudflare Worker em `worker/`, atrás do
+  Cloudflare Access). Cada publicação vira um commit em `main`. Desenho
+  completo em `CMS-README.md`.
+- Formulário de contato: Worker público em `worker-contact/`, na rota
+  pedrodetrindade.com/api/contact, com entrega pelo Resend. Passo a passo em
+  `worker-contact/README.md`.
+- Fonte única: Switzer variável (`assets/fonts/Switzer-Variable.woff2`). Os
+  rótulos usam a mesma família (`--mono` aponta para ela).
 
-## Arquivos
+## Mapa de arquivos
 ```
-index.html          home (capa, trabalhos, sobre, ferramentas, experiência, contato)
-css/style.css       todo o CSS do site
-js/main.js          todo o JS; injeta menu, painel de contato e transições em todas as páginas
-work/case-01..04    páginas de case, bilíngues, mesmo sistema visual
-assets/             favicon, ícone Apple e imagem Open Graph. Faltam as imagens dos projetos
-CNAME               pedrodetrindade.com
+index.html                    Home
+work/<slug>/index.html        páginas de case (sete)
+work/index.html               "Todos os trabalhos", hoje desligado (vai para /#work)
+work/case-0*, work/colegio-assertivo.html
+                              redirecionamentos de endereços antigos
+css/style.css                 todo o CSS
+js/content.js                 lê os JSON no <head> e cuida da prévia do CMS
+js/content-render.js          desenha Home, cases, rodapé e breadcrumb a partir dos JSON
+js/main.js                    rolagem suave, entradas, intro, header e painel de contato
+js/dither-capa.js             dither WebGL das imagens da capa
+js/dither-field.js            campo de pontos WebGL: rodapé, névoa e ondas do Sobre
+js/cracha.js                  crachá do Sobre
+js/assinatura.js              assinatura manuscrita do rodapé (hoje desligada)
+js/work-nav.js                ajuste do menu nas páginas de /work/
+content/global.json           header, menu, redes e efeitos
+content/home.json             textos e aparência da Home
+content/projects/index.json   ordem, destaques, disponibilidade e capas dos projetos
+content/projects/<slug>.json  corpo de cada case, em blocos
+assets/uploads/               imagens e PDFs enviados pelo painel
+worker/, worker-contact/      os dois Workers da Cloudflare
 ```
-
-CSS e JS são compartilhados pelas 5 páginas. Os links usam `?v=N` para furar o cache
-do navegador: ao editar `css/style.css` ou `js/main.js`, incremente esse número em
-todas as páginas, senão o navegador continua servindo a versão antiga.
 
 ## Direção visual
-Escura, monocromática, levemente quente e puxada para marrom. Clean, editorial,
-baixo contraste, sem peso tipográfico exagerado.
-- Fundo: quase preto quente, não preto puro.
-- Texturas: grain e massas de luz muito discretas. Nenhum filter:blur() no site.
-- Tipografia: Onest (display/corpo, teto de peso 600) + JetBrains Mono (rótulos).
-- Tracking baixo: teto de .06em, e só em rótulo curto.
+Escura, monocromática, levemente quente e puxada para marrom. Clean,
+editorial, baixo contraste, peso tipográfico até 600 e tracking baixo. A
+separação entre seções vem de tom, textura e ritmo vertical, não de linhas
+nem de fundo claro. A textura do site é de pontos (dither) e ruído discreto,
+sem `filter:blur()`. Tokens de cor, tipografia e movimento: `:root` em
+`css/style.css`, com as regras de uso no `CLAUDE.md`.
 
-Tokens principais (ver `:root` em css/style.css):
-ink #0D0A0A · ink-2 #261B1D · ink-3 #403638 · paper #F2EEEE · muted #B7ACAC ·
-muted-2 #8A7E7E · accent #A29595 · cream #C9BDBD
+## A Home hoje, de cima para baixo
+1. **Intro.** "Bem-vindo(a)" ("Welcome" em inglês) se condensa e derrete no
+   nome. Roda em toda abertura; só o movimento reduzido pula.
+2. **Capa.** O nome numa linha só, no centro, com cargo, "Baseado no Rio de
+   Janeiro, Brasil", o relógio do Brasil e a frase de efeito. Fundo: as capas
+   dos projetos em sequência, passando por um dither, sob um véu escuro e as
+   massas marrons do vidro líquido. Com cursor, a letra sob ele vira contorno
+   vetorial, com medida e alças, e pode ser arrastada.
+3. **Trabalhos.** Título à esquerda, um texto à direita e seis destaques em
+   três linhas de dois, em 5:4: Colégio Assertivo, Social media, LOUD dgzin,
+   Karmine Corp, FURIA Heat e Tenove. Os dois últimos estão "em breve": sem
+   link e com a capa a 15% da saturação.
+4. **Sobre.** Crachá com a foto, pendurado por um cordão que sai de trás do
+   card acima; título com o nome, texto e três botões (Vamos conversar,
+   LinkedIn e Currículo, com PDF em português e em inglês). Tom e névoa de
+   pontos próprios, que descem até a seção seguinte.
+5. **O que eu faço.** Seis frentes numeradas, escritas a partir do currículo e
+   do LinkedIn, cada uma com as suas tags (as antigas Capacidades do Sobre). A
+   partir de 1100px, um painel de ondas em dither ocupa o vão à esquerda.
+6. **Rodapé, que é também o contato.** Uma tela inteira com headline, e-mail
+   copiável, navegação e LinkedIn sobre um fundo de pontos em ondas, que o
+   cursor apaga ao passar.
 
-## Estrutura atual
-1. Intro: assinatura curta com "Pedro de Trindade.", só na primeira visita da
-   sessão (sessionStorage). Sem porcentagem falsa e sem spinner. A hero acende
-   antes de a intro terminar.
-2. Topo: marca à esquerda, "Menu" centralizado, PT/EN e CTA "Contato" à direita.
-3. Hero: o nome ocupa a primeira viewport, em duas linhas mascaradas, peso 600.
-   Sem frase de impacto. Em volta ficam a tag profissional, o carimbo de data e
-   hora do Brasil e "role para explorar".
-4. Trabalhos: 4 cards grandes.
-5. Sobre: retrato à esquerda, headline, parágrafo, grade de capacidades e CTA
-   à direita. Faixa com elevação mínima de tom, sem fundo claro.
-6. Como eu consigo te ajudar: três frentes numeradas, com linha que cresce.
-7. Números: três dados verificáveis, com count-up uma única vez.
-8. Contato: headline grande em duas linhas, e-mail copiável e redes. Footer.
+No topo: a marca à esquerda; idioma e "Contato" à direita. O menu central está
+desligado pelo painel. "Contato" abre o painel com o formulário (nome, e-mail e
+mensagem).
 
-A seção de experiência foi removida do site: essa informação vive só no LinkedIn
-e no currículo. A de ferramentas saiu na revisão estrutural, por sobrepor as
-capacidades do Sobre.
+Fora da página por escolha: o FAQ existe no HTML e no painel, desligado. As
+seções de experiência, ferramentas e números saíram; experiência fica no
+LinkedIn e no currículo.
 
-**Números só com dado verificável.** Hoje são seis anos de prática (desde 2020),
-quatro casos selecionados e 120+ países alcançados pela marca cujo rebranding o
-Pedro liderou. Marcas atendidas, lançamentos e mercados seguem pendentes de
-confirmação e estão comentados no HTML, não inventados.
+## Cases
+Todos são projetos reais, vindos do Behance (behance.net/trind9de). O corpo de
+cada case é uma lista de blocos (texto, imagem, galeria, citação e vídeo)
+editada no painel. Cada página tem breadcrumb e navegação anterior e próximo,
+que gira só entre os destaques enquanto "Todos os trabalhos" estiver desligado.
 
-Bilíngue via atributos `data-pt` / `data-en` em cada elemento traduzível.
-Todo texto novo precisa dos dois atributos.
+| Projeto            | Página                       | Situação                                         |
+|--------------------|------------------------------|--------------------------------------------------|
+| Colégio Assertivo  | `/work/colegio-assertivo/`   | publicado, destaque                              |
+| Social media       | `/work/social-media/`        | publicado, destaque                              |
+| LOUD dgzin         | `/work/dgzin/`               | publicado, destaque                              |
+| Karmine Corp       | `/work/karmine-corp/`        | publicado, destaque                              |
+| FURIA Heat         | nenhuma ainda                | em breve, destaque                               |
+| Tenove             | `/work/trind9de/`            | em breve, destaque; a página existe, mas leva a `/#work` |
+| AnaLu              | `/work/analu/`               | publicado, só por link direto                    |
+| Skye               | `/work/skye/`                | publicado, só por link direto                    |
 
-## Interações
-- Menu overlay em vidro fosco com miniaturas e redes (LinkedIn e Behance).
-- CTA "Contato" fica no topo, ao lado do menu, e abre o painel de contato.
-- Painel de contato: nome, e-mail e mensagem apenas. Sem campos de orçamento ou escopo.
-- Transições entre páginas: véu escurece, navega, a próxima entra em fade.
-- Entrada das seções: 24px e opacidade em 650ms, escalonadas em 70ms com teto de
-  seis passos, disparando assim que o elemento encosta na viewport.
-- Scroll por inércia na roda do mouse. O midu.design usa Lenis (lerp .1); aqui é
-  escrito à mão, com decaimento por tempo para não acelerar em telas de 120Hz.
-  Toque, teclado, âncoras e barra de rolagem seguem nativos, e o alvo resincroniza
-  quando a rolagem vem de outra origem. Não age com overlay aberto.
-- Scrub de leitura: nos parágrafos do Sobre e dos cases as palavras clareiam conforme
-  cruzam 72% da altura da tela. O JS quebra o texto em spans e precisa reconstruí-los
-  a cada troca de idioma, porque a tradução reescreve o `innerHTML`.
-- Glow suave seguindo o cursor pelo site.
-- Selo translúcido "ver caso" acompanhando o mouse sobre os cards de projeto.
+Tenove é o antigo trind9de: só o título mudou, slug e pastas continuam
+`trind9de`.
 
-Sob `prefers-reduced-motion` o conteúdo aparece imediatamente, sem deslocamento e sem
-scroll por inércia. Efeitos que dependem de cursor são desligados em telas touch.
-
-Atenção ao testar: navegadores headless, incluindo o painel de preview do Claude Code,
-reportam `prefers-reduced-motion: reduce` por padrão. No Windows, o mesmo acontece se
-"Efeitos de animação" estiver desligado em Configurações > Acessibilidade > Efeitos
-visuais. Nesses casos só os fades aparecem, e é o comportamento esperado.
-
-## Próximos passos
-1. Trocar as prévias placeholder por imagens reais dos projetos.
-   Cada prévia é uma `<div class="scene pX"></div>`.
-   Substituir por: `<img src="assets/case-01.jpg" class="scene" alt="...">`
-   (mesmo enquadramento, grain e hover continuam funcionando).
-2. Colocar o retrato real no Sobre. Hoje é um placeholder `.portrait` com um selo
-   escrito "foto". Substituir por:
-   `<img src="assets/pedro.jpg" class="portrait-img" alt="Pedro de Trindade">`
-3. Curadoria: escrever o conteúdo real de cada case (contexto, processo, resultado).
-   Hoje é texto placeholder genérico. Elevar a nível de direção criativa sênior.
-4. Deploy: o repositório já existe em github.com/pedrodetrindade/portfolio.
-   Falta enviar os arquivos, ligar o Pages e apontar o DNS.
-5. Confirmar as URLs de LinkedIn e Behance (hoje assumem /pedrodetrindade).
-6. Decidir o envio do formulário: hoje abre o cliente de e-mail via `mailto:`.
-   Para envio real sem sair do site, usar um serviço como Formspree (tem plano grátis).
-7. Acabamento restante: performance e revisão final de acessibilidade.
-   Favicon, Open Graph, foco visível, skip link e `aria-label` bilíngue já estão feitos.
-
-## Deploy no GitHub Pages (resumo)
-- Criar conta no GitHub e um repositório público (ex.: `pedrodetrindade`).
-  Pages em repositório privado exige plano pago, então use público.
-- Enviar os arquivos, mantendo o `CNAME` na raiz com apenas: pedrodetrindade.com
-- Em Settings > Pages, apontar para a branch principal.
-- No DNS do domínio (Porkbun): registros A do domínio apex apontando para os IPs do
-  GitHub Pages e um CNAME `www` para `SEU-USUARIO.github.io`.
-  Confirmar os IPs atuais na documentação do GitHub Pages antes de configurar.
-- Ativar "Enforce HTTPS" após a propagação.
+## O que falta
+1. **FURIA Heat.** Criar `work/furia-heat/index.html` no molde das outras
+   páginas e montar o corpo do case no painel. Só depois trocar a
+   disponibilidade para Publicado, senão o card leva a um 404.
+2. **Tenove.** A página existe. Falta revisar o case e trocar a
+   disponibilidade para Publicado no painel.
+3. **Imagens pesadas**, bem acima do padrão das outras: foto-time do Karmine
+   (584KB), capa do Karmine (490KB), capa-case-cordao do dgzin (448KB), capa
+   de listagem do Social media (414KB), capa-cordao (380KB) e camisa-loud
+   (375KB) do dgzin. Recomprimir muda pixels, então a decisão é de Pedro, com
+   antes e depois lado a lado. `assets/uploads/sobre/prancheta-1.webp`
+   (528KB) não é usada em lugar nenhum.
+4. **Textos que dependem de Pedro.** O número de países alcançados (o
+   currículo diz mais de 200, o LinkedIn mais de 120; fica fora do site até
+   haver um número só) e a frase sobre o uso de IA no item 05 de "O que eu
+   faço", que é escolha de posicionamento.
+5. **"Todos os trabalhos" desligado.** AnaLu e Skye só abrem por link direto.
+   Religar é um interruptor no painel.
+6. **Limpeza de código possível.** A antiga seção `#contact` foi absorvida pelo
+   rodapé do CMS e virou uma âncora de 1px dentro dele, mas o `main.js` ainda
+   mede o rodapé para ela (`--footer-block-height`) e o CSS ainda tem regras de
+   `#contact`, que hoje caem nessa âncora. Sem efeito visível, mas é código
+   que sobrou.
 
 ## Preferências de escrita
-Sem travessões (—) no corpo do texto. Sem caixa alta em texto corrido.
-Registro premium, claro e estratégico. Evitar tom que soe gerado por IA.
+Sem travessões no corpo do texto. Sem caixa alta em texto corrido. Registro
+premium, claro e estratégico. Evitar tom que soe gerado por IA. Números só com
+dado verificável: o que estiver pendente fica fora do site, não estimado.
